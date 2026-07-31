@@ -42,7 +42,8 @@ function RangeToggle({ range, onChange }: { range: Range; onChange: (r: Range) =
   );
 }
 
-function ChartCard({ metric, range }: { metric: ChartMetric; range: Range }) {
+function ChartCard({ metric }: { metric: ChartMetric }) {
+  const [range, setRange] = useState<Range>("24h");
   const points = range === "24h" ? metric.daily14 : metric.allTime;
   const hasData = metric.allTime.length > 0;
 
@@ -69,13 +70,14 @@ function ChartCard({ metric, range }: { metric: ChartMetric; range: Range }) {
           ariaLabel={`${metric.label} — ${range === "24h" ? "last 14 days" : "all time"}`}
         />
       </div>
+      <div className="mt-4">
+        <RangeToggle range={range} onChange={setRange} />
+      </div>
     </div>
   );
 }
 
 export function AnalyticsView({ data }: { data: AnalyticsData }) {
-  const [range, setRange] = useState<Range>("24h");
-
   const latestCompleteDay = data.charts.find((c) => c.daily14.length > 0)?.daily14.at(-1)?.date;
   const caption = data.updatedAt
     ? `Updated ${formatAsOf(data.updatedAt)}${latestCompleteDay ? `, latest complete day ${formatDayShort(latestCompleteDay)} UTC` : ""}`
@@ -97,7 +99,6 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
             <p className="pt-1 font-mono text-[11px] text-ink-400">{caption}</p>
           </div>
           <div className="flex items-center gap-3">
-            <RangeToggle range={range} onChange={setRange} />
             <a
               href={DUNE_DASHBOARD_URL}
               target="_blank"
@@ -135,7 +136,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
       {/* Chart cards */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {data.charts.map((chart) => (
-          <ChartCard key={chart.id} metric={chart} range={range} />
+          <ChartCard key={chart.id} metric={chart} />
         ))}
       </div>
     </section>
