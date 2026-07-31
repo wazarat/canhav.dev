@@ -4,6 +4,15 @@
  * the launchpad is developed incrementally. Nothing here touches a network.
  */
 
+/** Chain metadata — single source for the hidden launchpad pages and the
+ *  future wallet layer's hard network guard. */
+export const LAUNCH_CHAIN = {
+  name: "Robinhood Chain Testnet",
+  chainId: 46630,
+  explorerUrl: "https://explorer.testnet.chain.robinhood.com",
+  factoryAddress: "0x1dAaa8294806d216Df36dc07B3803ED26584c909",
+} as const;
+
 export const LAUNCH_FORM = {
   name: {
     max: 32,
