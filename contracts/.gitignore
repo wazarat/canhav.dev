@@ -21,6 +21,3 @@ docs/
 
 # Foundry deps — restored from foundry.lock via `forge install`
 lib/
-
-# All broadcast logs (nothing is deployed yet)
-broadcast/

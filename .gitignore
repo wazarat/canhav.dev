@@ -25,3 +25,6 @@ npm-debug.log*
 
 # typescript
 *.tsbuildinfo
+
+# local dev changelog — maintained by Claude Code across sessions, never committed
+CHANGELOG.local.md

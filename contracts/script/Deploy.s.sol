@@ -3,22 +3,25 @@ pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 
+import {LaunchToken} from "../src/LaunchToken.sol";
 import {TokenFactory} from "../src/TokenFactory.sol";
 
-/// @notice Deploys TokenFactory (which deploys its own LaunchToken implementation).
-/// @dev NOT run yet — nothing is deployed anywhere. When Robinhood testnet
-///      details are in contracts/.env:
+/// @notice Deploys the LaunchToken implementation, then TokenFactory pointing
+///         at it (registered as version 1). Factory owner = broadcast EOA.
 ///
 ///        forge script script/Deploy.s.sol --rpc-url robinhood_testnet --broadcast
 contract Deploy is Script {
     function run() external {
         vm.startBroadcast(vm.envUint("DEPLOYER_PRIVATE_KEY"));
 
-        TokenFactory factory = new TokenFactory();
+        LaunchToken impl = new LaunchToken();
+        TokenFactory factory = new TokenFactory(address(impl));
 
         vm.stopBroadcast();
 
+        console.log("LaunchToken implementation (v1):", address(impl));
         console.log("TokenFactory:", address(factory));
-        console.log("LaunchToken implementation:", factory.implementation());
+        console.log("Factory owner:", factory.owner());
+        console.log("Current version:", factory.currentVersion());
     }
 }
