@@ -1,10 +1,8 @@
+import { AnalyticsSection } from "@/components/home/AnalyticsSection";
 import { BuiltForBuilders } from "@/components/home/BuiltForBuilders";
 import { ContactCta } from "@/components/home/ContactCta";
 import { HeroVideo } from "@/components/home/HeroVideo";
-import { ProductLines } from "@/components/home/ProductLines";
 import { WaitlistCta } from "@/components/home/WaitlistCta";
-import { StatCard } from "@/components/ui/StatCard";
-import { STATS } from "@/content/site";
 
 export default function LandingPage() {
   return (
@@ -73,15 +71,8 @@ export default function LandingPage() {
       </section>
 
       <div className="container space-y-16 py-14 md:py-20">
-        {/* Summary stats */}
-        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {STATS.map((stat) => (
-            <StatCard key={stat.label} label={stat.label} value={stat.value} hint={stat.hint} />
-          ))}
-        </section>
-
-        {/* Product-line showcase */}
-        <ProductLines />
+        {/* Robinhood Chain protocol analytics, sourced from Dune */}
+        <AnalyticsSection />
 
         <BuiltForBuilders />
       </div>
