@@ -5,15 +5,12 @@ import Image from "next/image";
 import { Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { inputClasses } from "@/components/ui/Input";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { cn } from "@/lib/utils";
 
 type LeadType = "individual" | "team";
 type Status = "idle" | "submitting" | "success";
-
-const inputClasses =
-  "w-full rounded-xl border border-ink-700/60 bg-ink-950/70 px-3.5 py-2.5 text-sm text-ink-50 " +
-  "placeholder:text-ink-500 focus:border-electric-500/60 focus:outline-none focus:ring-1 focus:ring-electric-500/30";
 
 export function ContactModal({
   open,
