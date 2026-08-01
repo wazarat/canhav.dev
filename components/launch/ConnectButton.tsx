@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useConnect, useDisconnect } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,9 @@ export function ConnectButton() {
   const { disconnect } = useDisconnect();
   const { isConnected, address, onCorrectChain, ensureChain } = useLaunchChain();
 
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   // EIP-6963-discovered wallets carry their rdns as id (e.g. "io.metamask");
   // the config's generic fallback connector keeps id "injected". Discovery is
   // client-only, so gate the no-wallet hint behind an effect to avoid a
@@ -30,35 +34,69 @@ export function ConnectButton() {
     typeof window !== "undefined" &&
     typeof (window as { ethereum?: unknown }).ethereum === "undefined";
 
+  // Close the dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   if (!isConnected) {
     const fallback = connectors.find((c) => c.id === "injected");
+
     return (
       <div className="flex flex-col items-end gap-1.5">
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {discovered.length > 0 ? (
-            discovered.map((connector) => (
-              <Button
-                key={connector.uid}
-                size="sm"
-                disabled={isPending}
-                onClick={() => connect({ connector })}
-              >
-                {connector.icon ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={connector.icon} alt="" className="h-4 w-4 rounded" />
-                ) : null}
-                {isPending ? "Connecting…" : `Connect ${connector.name}`}
-              </Button>
-            ))
-          ) : (
-            <Button
-              size="sm"
-              disabled={!fallback || isPending || noWalletDetected}
-              onClick={() => fallback && connect({ connector: fallback })}
-            >
-              {isPending ? "Connecting…" : "Connect wallet"}
-            </Button>
-          )}
+        <div ref={menuRef} className="relative">
+          <Button
+            size="sm"
+            disabled={isPending || noWalletDetected}
+            onClick={() => {
+              if (discovered.length > 0) {
+                setOpen((v) => !v);
+              } else if (fallback) {
+                connect({ connector: fallback });
+              }
+            }}
+          >
+            {isPending ? "Connecting…" : "Connect wallet"}
+            {discovered.length > 0 && !isPending ? (
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+            ) : null}
+          </Button>
+
+          {open ? (
+            <div className="glass-strong absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-ink-700/70 py-1 shadow-xl">
+              {discovered.map((connector) => (
+                <button
+                  key={connector.uid}
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    connect({ connector });
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ink-100 transition-colors hover:bg-ink-800/70"
+                >
+                  {connector.icon ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={connector.icon} alt="" className="h-5 w-5 rounded" />
+                  ) : (
+                    <span className="h-5 w-5 rounded bg-ink-700" />
+                  )}
+                  {connector.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {isPending ? (
