@@ -16,8 +16,10 @@ version registry, factory-level pause, and two-step ownership.
 | Explorer | https://explorer.testnet.chain.robinhood.com |
 | Faucet | https://faucet.testnet.chain.robinhood.com (0.01 ETH + stock tokens / 24h) |
 | ArbOS | 61 (`arbOSVersion()` raw 116 − 55 offset) — Cancun confirmed via PUSH0/MCOPY probes |
-| **TokenFactory** | [`0x1dAaa8294806d216Df36dc07B3803ED26584c909`](https://explorer.testnet.chain.robinhood.com/address/0x1dAaa8294806d216Df36dc07B3803ED26584c909) ✅ verified |
-| **LaunchToken impl (v1)** | [`0x3E8c9be8BB486abEc132B0d1C35266b2336b129B`](https://explorer.testnet.chain.robinhood.com/address/0x3E8c9be8BB486abEc132B0d1C35266b2336b129B) ✅ verified |
+| **TokenFactory v2** (vesting) | [`0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0`](https://explorer.testnet.chain.robinhood.com/address/0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0) ✅ verified — block 95922560 |
+| **LaunchVestingWallet impl** | [`0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC`](https://explorer.testnet.chain.robinhood.com/address/0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC) ✅ verified |
+| TokenFactory v1 (**PAUSED**) | [`0x1dAaa8294806d216Df36dc07B3803ED26584c909`](https://explorer.testnet.chain.robinhood.com/address/0x1dAaa8294806d216Df36dc07B3803ED26584c909) ✅ verified — paused after v2 migration; its tokens remain live and indexed |
+| **LaunchToken impl (v1)** | [`0x3E8c9be8BB486abEc132B0d1C35266b2336b129B`](https://explorer.testnet.chain.robinhood.com/address/0x3E8c9be8BB486abEc132B0d1C35266b2336b129B) ✅ verified — reused by both factories |
 | Owner (EOA) | `0x955fc594dd992Ef7bb7d175b6C9a68Be2b622DEB` (throwaway testnet deployer — key in local `.env` only; controls pause/setImplementation; migrate to TimelockController before anything real) |
 | Compiler | solc 0.8.28, optimizer 200 runs, `via_ir = true`, `evm_version = cancun` |
 | First launch (smoke test) | token [`0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe`](https://explorer.testnet.chain.robinhood.com/address/0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe) ("CanHav First" / CHF1), tx `0x08aec516d847ababe5b6c39496358fa350fd87f02fa49e59eb342899f3bb8fdc` |
@@ -27,20 +29,25 @@ Deployment record: `broadcast/Deploy.s.sol/46630/run-latest.json` (committed).
 ## Layout
 
 ```
-src/LaunchToken.sol    ERC20Upgradeable + Initializable; fixed supply minted at
-                       initialize; implementation locked via _disableInitializers()
-src/TokenFactory.sol   Ownable2Step + Pausable; version registry
-                       (currentVersion / implementations mapping); cloneDeterministic
-                       with sender-scoped salts; initializes the clone in the same tx;
-                       emits TokenLaunched with all metadata (image / X / website /
-                       descriptionHash / journeyHash / version live in the event, not
-                       token storage — the indexer reads the log)
-script/Deploy.s.sol    deploys LaunchToken impl, then TokenFactory(impl) — impl
-                       registered as version 1, owner = broadcast EOA
-test/                  22 tests: init semantics, double/direct-init reverts, address
-                       prediction, metadata event, salt scoping, pause gating,
-                       onlyOwner reverts, two-step ownership, version-bump behavior
-                       (old-clone survival, prediction changes, salt reuse), fuzz
+src/LaunchToken.sol           ERC20Upgradeable + Initializable; fixed supply minted at
+                              initialize; implementation locked via _disableInitializers()
+src/LaunchVestingWallet.sol   concrete wrapper over abstract VestingWalletCliffUpgradeable;
+                              4-arg initializer (beneficiary, start, duration, cliff);
+                              inherited cliff-less initializer override-reverts;
+                              cliff = 0 degrades to plain linear vesting
+src/TokenFactory.sol          Ownable2Step + Pausable; version registry; cloneDeterministic
+                              with sender-scoped salts; optional vesting: token + funded
+                              vesting wallet in ONE tx (VestingParams.amount > 0); emits
+                              TokenLaunched (byte-identical to v1) + VestingCreated with
+                              the RESOLVED start (0 sentinel → block.timestamp)
+script/Deploy.s.sol           v1 deploy (historical)
+script/DeployV2.s.sol         v2 deploy: reuses the existing LaunchToken impl via
+                              LAUNCH_TOKEN_IMPL env; deploys vesting impl + factory
+test/                         53 tests across three suites: init semantics, prediction,
+                              events, salt scoping, pause, ownership, version bumps,
+                              vesting schedule math (cliff/linear/full), balance splits,
+                              permissionless release, salt-reuse-across-versions
+                              regression, fuzz
 ```
 
 ## Setup
@@ -102,20 +109,26 @@ via_ir, optimizer runs, evm_version all baked into the standard JSON).
   launchpad repos as references. Concentration-at-launch analysis belongs on the
   future metrics list precisely because multi-wallet bundlers exist.
 
-## Roadmap (decisions locked, not built)
+## Vesting design notes (v2)
 
-- **Metadata/storage/UI/wallet**: Cloudflare R2 (content-addressed keys =
-  keccak256 of bytes, so imageURI/journeyHash commitments are checkable),
-  Postgres on Neon, journey doc = canonicalized JSON hashed client-side,
-  viem + wagmi with a hard `chainId === 46630` guard in one shared wallet
-  wrapper.
-- ~~**Indexer**~~ **Done** — see `../indexer/` (Ponder → `token` /
-  `implementation` tables, GraphQL on :42069, one-command replay) and the
-  hidden site pages `/launch/explore` + `/launch/t/[address]`.
-- **Vesting**: one thin wrapper `LaunchVestingWallet is
-  VestingWalletCliffUpgradeable` (concrete initializer over the abstract OZ
-  base; cliff = 0 degrades to no-cliff). Launch token + vesting clone in one tx,
-  emit schedule params, indexer surfaces them. OZ v5 note: beneficiary is the
-  Ownable owner and can transfer ownership — accepted, documented.
-- TimelockController over factory admin; AMM/liquidity layer (ReentrancyGuard
-  on fund-touching code); Python tooling.
+- **Vesting salt derives from the TOKEN ADDRESS** (`keccak256(abi.encode(token))`),
+  not the scoped launch salt. The token address already encodes
+  (version, sender, salt), so vesting clone addresses stay collision-free even
+  when a userSalt is reused across template versions (an explicitly tested
+  guarantee of the version registry).
+- `startTimestamp == 0` is resolved to `block.timestamp` in the contract and
+  the **resolved** value is emitted — the 0 sentinel never reaches the log.
+- `TokenLaunched` is byte-identical between vesting and plain launches; all
+  vesting data lives in the separate `VestingCreated` event.
+- OZ v5 property: the vesting beneficiary IS the Ownable owner and can transfer
+  ownership (sell unvested tokens). Consumers must live-read `owner()` rather
+  than trusting the event's beneficiary forever. `release(token)` is
+  permissionless and always pays the current owner.
+
+## Roadmap (original 4 items complete)
+
+Done: hidden launch page → factory + testnet deploy → Ponder indexer +
+explore/token pages → journeys/storage/wallet → vesting (this).
+Remaining ideas: TimelockController over factory admin (Ownable2Step handoff is
+ready for it); AMM/liquidity layer (ReentrancyGuard on fund-touching code);
+Python tooling; Solady/LibClone swap once the design stops moving.

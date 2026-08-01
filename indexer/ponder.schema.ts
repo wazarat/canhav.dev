@@ -1,8 +1,12 @@
-import { onchainTable } from "ponder";
+import { onchainTable, primaryKey } from "ponder";
 
-/** One row per TokenLaunched event — the indexer's source of truth is the log. */
+/** One row per TokenLaunched event — the indexer's source of truth is the log.
+ *  `factory` records which factory deployment emitted the launch (version
+ *  numbers are per-factory registries, so factory+version disambiguates the
+ *  template). */
 export const token = onchainTable("token", (t) => ({
   address: t.hex().primaryKey(),
+  factory: t.hex().notNull(),
   creator: t.hex().notNull(),
   name: t.text().notNull(),
   symbol: t.text().notNull(),
@@ -19,10 +23,37 @@ export const token = onchainTable("token", (t) => ({
   txHash: t.hex().notNull(),
 }));
 
-/** One row per ImplementationSet event — the on-chain version registry mirror. */
-export const implementation = onchainTable("implementation", (t) => ({
-  version: t.integer().primaryKey(),
-  address: t.hex().notNull(),
+/** One row per ImplementationSet event — the on-chain version registry mirror.
+ *  Composite PK: every factory deployment starts its own registry at version 1,
+ *  so version alone is not unique across factories. */
+export const implementation = onchainTable(
+  "implementation",
+  (t) => ({
+    factory: t.hex().notNull(),
+    version: t.integer().notNull(),
+    address: t.hex().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.factory, table.version] }),
+  }),
+);
+
+/** One row per VestingCreated event. `startTimestamp` is the RESOLVED start
+ *  (the contract replaces the 0 sentinel with block.timestamp before
+ *  emitting). NOTE: `beneficiary` is historical — the vesting wallet's
+ *  Ownable owner is transferable, so live consumers read owner() on-chain. */
+export const vesting = onchainTable("vesting", (t) => ({
+  walletAddress: t.hex().primaryKey(),
+  tokenAddress: t.hex().notNull(),
+  factory: t.hex().notNull(),
+  beneficiary: t.hex().notNull(),
+  amount: t.bigint().notNull(),
+  startTimestamp: t.bigint().notNull(),
+  durationSeconds: t.bigint().notNull(),
+  cliffSeconds: t.bigint().notNull(),
   blockNumber: t.bigint().notNull(),
   blockTimestamp: t.bigint().notNull(),
   txHash: t.hex().notNull(),

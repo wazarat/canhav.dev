@@ -10,8 +10,37 @@ export const LAUNCH_CHAIN = {
   name: "Robinhood Chain Testnet",
   chainId: 46630,
   explorerUrl: "https://explorer.testnet.chain.robinhood.com",
-  factoryAddress: "0x1dAaa8294806d216Df36dc07B3803ED26584c909",
+  // v2 factory (vesting support). v1 (0x1dAaa829…c909) is paused but its
+  // tokens remain indexed and browsable.
+  factoryAddress: "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0",
 } as const;
+
+/** Vesting form constraints (client-side mirror of factory validation). */
+export const LAUNCH_VESTING = {
+  percent: { min: 1, max: 100 },
+  durationDays: { min: 1, max: 3650 },
+  cliffDays: { min: 0 },
+} as const;
+
+export function validateVesting(v: {
+  percent: number;
+  durationDays: number;
+  cliffDays: number;
+}): string | undefined {
+  const L = LAUNCH_VESTING;
+  if (!Number.isInteger(v.percent) || v.percent < L.percent.min || v.percent > L.percent.max)
+    return `Vested percent must be ${L.percent.min}–${L.percent.max}.`;
+  if (
+    !Number.isInteger(v.durationDays) ||
+    v.durationDays < L.durationDays.min ||
+    v.durationDays > L.durationDays.max
+  )
+    return `Duration must be ${L.durationDays.min}–${L.durationDays.max} days.`;
+  if (!Number.isInteger(v.cliffDays) || v.cliffDays < L.cliffDays.min)
+    return "Cliff must be 0 or more days.";
+  if (v.cliffDays > v.durationDays) return "Cliff cannot exceed the duration.";
+  return undefined;
+}
 
 export const LAUNCH_FORM = {
   name: {
@@ -52,10 +81,8 @@ export const LAUNCH_COPY = {
   kicker: "Launchpad",
   title: "Launch token",
   subtitle:
-    "Create a test token on Robinhood Chain testnet. Fill in the details and preview how your token will appear.",
+    "Create a test token on Robinhood Chain testnet. Fill in the details, write the journey, and launch — the journey's hash is committed on-chain with the token.",
   previewTitle: "Your token",
-  submitDisabled: "Testnet deployment coming soon",
-  footnote: "Nothing is deployed yet. This form does not send data anywhere.",
 } as const;
 
 export function validateName(value: string): string | undefined {

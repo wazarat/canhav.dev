@@ -1,12 +1,16 @@
 # Launchpad Indexer
 
-[Ponder](https://ponder.sh) app indexing the `TokenFactory` on Robinhood Chain
-Testnet (chain ID 46630) into Postgres. Source of truth is the on-chain event
-log: `TokenLaunched` → `token` table, `ImplementationSet` → `implementation`
-table (the version registry mirror; `version` column everywhere from day one).
+[Ponder](https://ponder.sh) app indexing the `TokenFactory` deployments on
+Robinhood Chain Testnet (chain ID 46630) into Postgres. Source of truth is the
+on-chain event log: `TokenLaunched` → `token`, `ImplementationSet` →
+`implementation` (composite PK `(factory, version)` — every factory deployment
+starts its own registry at version 1), `VestingCreated` → `vesting` (schedule
+params with the resolved start; `beneficiary` is historical — the wallet's
+Ownable owner is transferable, so live consumers read `owner()` on-chain).
 
-Factory: `0x1dAaa8294806d216Df36dc07B3803ED26584c909`, start block `95600880`
-(deployment block, from `contracts/broadcast/Deploy.s.sol/46630/run-latest.json`).
+Both factories are watched with the v2 ABI from start block `95600880`:
+- v1 `0x1dAaa8294806d216Df36dc07B3803ED26584c909` (paused; never emits VestingCreated)
+- v2 `0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0` (vesting-capable, block 95922560)
 
 ## Run
 

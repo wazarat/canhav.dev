@@ -65,6 +65,29 @@ export async function getToken(address: string): Promise<IndexedToken | null> {
   return data?.token ?? null;
 }
 
+export interface IndexedVesting {
+  walletAddress: string;
+  tokenAddress: string;
+  /** Historical — the wallet's live owner() is the real beneficiary. */
+  beneficiary: string;
+  amount: string;
+  startTimestamp: string;
+  durationSeconds: string;
+  cliffSeconds: string;
+  txHash: string;
+}
+
+/** Vesting schedule for a token (from the VestingCreated event), if any. */
+export async function getVesting(tokenAddress: string): Promise<IndexedVesting | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const data = await query<{ vestings: { items: IndexedVesting[] } }>(
+    `{ vestings(where: { tokenAddress: "${tokenAddress.toLowerCase()}" }, limit: 1) { items {
+      walletAddress tokenAddress beneficiary amount startTimestamp durationSeconds cliffSeconds txHash
+    } } }`,
+  );
+  return data?.vestings.items[0] ?? null;
+}
+
 /** Whole-token supply (assumes 18 decimals) for display. */
 export function formatSupply(totalSupply: string): number {
   return Number(BigInt(totalSupply) / 10n ** 18n);

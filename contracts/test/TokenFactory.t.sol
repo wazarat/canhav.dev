@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import {LaunchToken} from "../src/LaunchToken.sol";
+import {LaunchVestingWallet} from "../src/LaunchVestingWallet.sol";
 import {TokenFactory} from "../src/TokenFactory.sol";
 
 contract TokenFactoryTest is Test {
     LaunchToken internal implementation;
+    LaunchVestingWallet internal vestingImplementation;
     TokenFactory internal factory;
 
     address internal alice = makeAddr("alice");
@@ -30,11 +32,22 @@ contract TokenFactoryTest is Test {
         uint64 version
     );
 
+    event VestingCreated(
+        address indexed token,
+        address indexed vestingWallet,
+        address indexed beneficiary,
+        uint256 amount,
+        uint64 startTimestamp,
+        uint64 durationSeconds,
+        uint64 cliffSeconds
+    );
+
     event ImplementationSet(uint64 indexed version, address indexed implementation);
 
     function setUp() public {
         implementation = new LaunchToken();
-        factory = new TokenFactory(address(implementation));
+        vestingImplementation = new LaunchVestingWallet();
+        factory = new TokenFactory(address(implementation), address(vestingImplementation));
     }
 
     function _params() internal pure returns (TokenFactory.LaunchParams memory) {
@@ -50,6 +63,24 @@ contract TokenFactoryTest is Test {
         });
     }
 
+    function _noVesting() internal pure returns (TokenFactory.VestingParams memory) {
+        return TokenFactory.VestingParams({
+            amount: 0,
+            startTimestamp: 0,
+            durationSeconds: 0,
+            cliffSeconds: 0
+        });
+    }
+
+    function _vesting(uint256 amount) internal pure returns (TokenFactory.VestingParams memory) {
+        return TokenFactory.VestingParams({
+            amount: amount,
+            startTimestamp: 0,
+            durationSeconds: 360 days,
+            cliffSeconds: 90 days
+        });
+    }
+
     // ---------------------------------------------------------------- launches
 
     function test_PredictedAddressMatchesDeployed() public {
@@ -57,7 +88,7 @@ contract TokenFactoryTest is Test {
         address predicted = factory.predictTokenAddress(alice, userSalt);
 
         vm.prank(alice);
-        address deployed = factory.launchToken(_params(), userSalt);
+        address deployed = factory.launchToken(_params(), _noVesting(), userSalt);
 
         assertEq(deployed, predicted);
     }
@@ -87,12 +118,12 @@ contract TokenFactoryTest is Test {
         );
 
         vm.prank(alice);
-        factory.launchToken(p, userSalt);
+        factory.launchToken(p, _noVesting(), userSalt);
     }
 
     function test_CreatorReceivesFullSupply() public {
         vm.prank(alice);
-        address token = factory.launchToken(_params(), bytes32(uint256(3)));
+        address token = factory.launchToken(_params(), _noVesting(), bytes32(uint256(3)));
 
         assertEq(LaunchToken(token).balanceOf(alice), _params().totalSupply);
         assertEq(LaunchToken(token).totalSupply(), _params().totalSupply);
@@ -103,22 +134,22 @@ contract TokenFactoryTest is Test {
     function test_RevertWhen_SameSenderReusesSalt() public {
         bytes32 userSalt = bytes32(uint256(4));
         vm.prank(alice);
-        factory.launchToken(_params(), userSalt);
+        factory.launchToken(_params(), _noVesting(), userSalt);
 
         // CREATE2 collision at the same address (same version, same init code).
         vm.prank(alice);
         vm.expectRevert();
-        factory.launchToken(_params(), userSalt);
+        factory.launchToken(_params(), _noVesting(), userSalt);
     }
 
     function test_SameSaltDifferentSendersYieldsDifferentAddresses() public {
         bytes32 userSalt = bytes32(uint256(5));
 
         vm.prank(alice);
-        address tokenA = factory.launchToken(_params(), userSalt);
+        address tokenA = factory.launchToken(_params(), _noVesting(), userSalt);
 
         vm.prank(bob);
-        address tokenB = factory.launchToken(_params(), userSalt);
+        address tokenB = factory.launchToken(_params(), _noVesting(), userSalt);
 
         assertTrue(tokenA != tokenB);
     }
@@ -128,17 +159,17 @@ contract TokenFactoryTest is Test {
 
         p.name = "";
         vm.expectRevert(TokenFactory.EmptyName.selector);
-        factory.launchToken(p, bytes32(0));
+        factory.launchToken(p, _noVesting(), bytes32(0));
 
         p = _params();
         p.symbol = "";
         vm.expectRevert(TokenFactory.EmptySymbol.selector);
-        factory.launchToken(p, bytes32(0));
+        factory.launchToken(p, _noVesting(), bytes32(0));
 
         p = _params();
         p.totalSupply = 0;
         vm.expectRevert(TokenFactory.ZeroSupply.selector);
-        factory.launchToken(p, bytes32(0));
+        factory.launchToken(p, _noVesting(), bytes32(0));
     }
 
     function testFuzz_LaunchWithArbitrarySaltAndSupply(bytes32 userSalt, uint256 supply) public {
@@ -150,7 +181,7 @@ contract TokenFactoryTest is Test {
         address predicted = factory.predictTokenAddress(alice, userSalt);
 
         vm.prank(alice);
-        address token = factory.launchToken(p, userSalt);
+        address token = factory.launchToken(p, _noVesting(), userSalt);
 
         assertEq(token, predicted);
         assertEq(LaunchToken(token).balanceOf(alice), supply);
@@ -162,15 +193,24 @@ contract TokenFactoryTest is Test {
         assertEq(factory.currentVersion(), 1);
         assertEq(factory.implementations(1), address(implementation));
         assertEq(factory.implementation(), address(implementation));
+        assertEq(factory.vestingImplementation(), address(vestingImplementation));
         assertEq(factory.owner(), address(this));
     }
 
     function test_RevertWhen_ConstructorImplementationZeroOrEOA() public {
         vm.expectRevert(TokenFactory.ZeroImplementation.selector);
-        new TokenFactory(address(0));
+        new TokenFactory(address(0), address(vestingImplementation));
 
         vm.expectRevert(TokenFactory.NotAContract.selector);
-        new TokenFactory(makeAddr("eoa"));
+        new TokenFactory(makeAddr("eoa"), address(vestingImplementation));
+    }
+
+    function test_RevertWhen_VestingImplZeroOrEOA() public {
+        vm.expectRevert(TokenFactory.ZeroImplementation.selector);
+        new TokenFactory(address(implementation), address(0));
+
+        vm.expectRevert(TokenFactory.NotAContract.selector);
+        new TokenFactory(address(implementation), makeAddr("eoa2"));
     }
 
     // ------------------------------------------------------------------ pause
@@ -184,13 +224,20 @@ contract TokenFactoryTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        factory.launchToken(_params(), bytes32(uint256(6)));
+        factory.launchToken(_params(), _noVesting(), bytes32(uint256(6)));
 
         factory.unpause();
 
         vm.prank(alice);
-        address token = factory.launchToken(_params(), bytes32(uint256(6)));
+        address token = factory.launchToken(_params(), _noVesting(), bytes32(uint256(6)));
         assertTrue(token != address(0));
+    }
+
+    function test_Pause_BlocksVestingLaunch() public {
+        factory.pause();
+        vm.prank(alice);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        factory.launchToken(_params(), _vesting(1000e18), bytes32(uint256(60)));
     }
 
     function test_RevertWhen_PauseUnpauseByNonOwner() public {
@@ -254,7 +301,7 @@ contract TokenFactoryTest is Test {
         factory.setImplementation(address(0));
 
         vm.expectRevert(TokenFactory.NotAContract.selector);
-        factory.setImplementation(makeAddr("eoa2"));
+        factory.setImplementation(makeAddr("eoa3"));
     }
 
     function test_VersionBump_ChangesPredictedAddress() public {
@@ -285,13 +332,13 @@ contract TokenFactoryTest is Test {
         );
 
         vm.prank(alice);
-        address token = factory.launchToken(p, userSalt);
+        address token = factory.launchToken(p, _noVesting(), userSalt);
         assertEq(token, predictedV2);
     }
 
     function test_OldClonesSurviveVersionBump() public {
         vm.prank(alice);
-        address tokenA = factory.launchToken(_params(), bytes32(uint256(8)));
+        address tokenA = factory.launchToken(_params(), _noVesting(), bytes32(uint256(8)));
 
         factory.setImplementation(address(new LaunchTokenV2()));
 
@@ -304,7 +351,7 @@ contract TokenFactoryTest is Test {
         LaunchTokenV2(tokenA).isV2();
 
         vm.prank(alice);
-        address tokenB = factory.launchToken(_params(), bytes32(uint256(9)));
+        address tokenB = factory.launchToken(_params(), _noVesting(), bytes32(uint256(9)));
         assertTrue(LaunchTokenV2(tokenB).isV2());
     }
 
@@ -312,15 +359,260 @@ contract TokenFactoryTest is Test {
         bytes32 userSalt = bytes32(uint256(10));
 
         vm.prank(alice);
-        address tokenV1 = factory.launchToken(_params(), userSalt);
+        address tokenV1 = factory.launchToken(_params(), _noVesting(), userSalt);
 
         factory.setImplementation(address(new LaunchTokenV2()));
 
         // Different init code (new impl address) → different CREATE2 address,
         // so the same userSalt deploys cleanly.
         vm.prank(alice);
-        address tokenV2 = factory.launchToken(_params(), userSalt);
+        address tokenV2 = factory.launchToken(_params(), _noVesting(), userSalt);
         assertTrue(tokenV1 != tokenV2);
+    }
+
+    // ---------------------------------------------------------------- vesting
+
+    function test_LaunchWithoutVesting_MatchesV1Behavior() public {
+        vm.recordLogs();
+        vm.prank(alice);
+        address token = factory.launchToken(_params(), _noVesting(), bytes32(uint256(20)));
+
+        assertEq(LaunchToken(token).balanceOf(alice), _params().totalSupply);
+
+        // No VestingCreated anywhere in the launch.
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 vestingTopic = VestingCreated.selector;
+        for (uint256 i = 0; i < logs.length; i++) {
+            assertTrue(logs[i].topics[0] != vestingTopic);
+        }
+    }
+
+    function test_RevertWhen_NoVestingAmountButScheduleSet() public {
+        TokenFactory.VestingParams memory v = _noVesting();
+
+        v.startTimestamp = 1;
+        vm.expectRevert(TokenFactory.VestingParamsNotEmpty.selector);
+        factory.launchToken(_params(), v, bytes32(0));
+
+        v = _noVesting();
+        v.durationSeconds = 1;
+        vm.expectRevert(TokenFactory.VestingParamsNotEmpty.selector);
+        factory.launchToken(_params(), v, bytes32(0));
+
+        v = _noVesting();
+        v.cliffSeconds = 1;
+        vm.expectRevert(TokenFactory.VestingParamsNotEmpty.selector);
+        factory.launchToken(_params(), v, bytes32(0));
+    }
+
+    function test_LaunchWithVesting_SplitsBalances() public {
+        uint256 amount = 200_000e18;
+        vm.prank(alice);
+        address token = factory.launchToken(_params(), _vesting(amount), bytes32(uint256(21)));
+
+        address wallet = factory.predictVestingAddress(alice, bytes32(uint256(21)));
+        assertEq(LaunchToken(token).balanceOf(alice), _params().totalSupply - amount);
+        assertEq(LaunchToken(token).balanceOf(wallet), amount);
+        assertEq(LaunchToken(token).balanceOf(address(factory)), 0);
+    }
+
+    function test_LaunchWithVesting_FullSupplyToWallet() public {
+        uint256 amount = _params().totalSupply;
+        vm.prank(alice);
+        address token = factory.launchToken(_params(), _vesting(amount), bytes32(uint256(22)));
+
+        address wallet = factory.predictVestingAddress(alice, bytes32(uint256(22)));
+        assertEq(LaunchToken(token).balanceOf(alice), 0);
+        assertEq(LaunchToken(token).balanceOf(wallet), amount);
+    }
+
+    function test_RevertWhen_VestingAmountExceedsSupply() public {
+        vm.expectRevert(TokenFactory.VestingAmountExceedsSupply.selector);
+        factory.launchToken(_params(), _vesting(_params().totalSupply + 1), bytes32(0));
+    }
+
+    function test_RevertWhen_VestingDurationZero() public {
+        TokenFactory.VestingParams memory v = _vesting(1000e18);
+        v.durationSeconds = 0;
+        v.cliffSeconds = 0;
+        vm.expectRevert(TokenFactory.VestingDurationZero.selector);
+        factory.launchToken(_params(), v, bytes32(0));
+    }
+
+    function test_RevertWhen_VestingCliffExceedsDuration() public {
+        TokenFactory.VestingParams memory v = _vesting(1000e18);
+        v.cliffSeconds = v.durationSeconds + 1;
+        // Bubbles from LaunchVestingWallet.initialize (OZ InvalidCliffDuration).
+        vm.expectRevert();
+        factory.launchToken(_params(), v, bytes32(0));
+    }
+
+    function test_VestingCreated_EmitsResolvedStart() public {
+        bytes32 userSalt = bytes32(uint256(23));
+        TokenFactory.VestingParams memory v = _vesting(50_000e18); // startTimestamp = 0
+        address predictedToken = factory.predictTokenAddress(alice, userSalt);
+        address predictedWallet = factory.predictVestingAddress(alice, userSalt);
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit VestingCreated(
+            predictedToken,
+            predictedWallet,
+            alice,
+            v.amount,
+            uint64(block.timestamp), // resolved, never the 0 sentinel
+            v.durationSeconds,
+            v.cliffSeconds
+        );
+
+        vm.prank(alice);
+        factory.launchToken(_params(), v, userSalt);
+    }
+
+    function test_VestingCreated_ExplicitStartPassedThrough() public {
+        bytes32 userSalt = bytes32(uint256(24));
+        TokenFactory.VestingParams memory v = _vesting(50_000e18);
+        v.startTimestamp = uint64(block.timestamp) + 30 days;
+        address predictedWallet = factory.predictVestingAddress(alice, userSalt);
+
+        vm.prank(alice);
+        factory.launchToken(_params(), v, userSalt);
+
+        assertEq(LaunchVestingWallet(payable(predictedWallet)).start(), v.startTimestamp);
+    }
+
+    function test_TokenLaunchedEvent_IdenticalInVestingPath() public {
+        // Indexer-compat proof: the vesting path emits exactly the same
+        // TokenLaunched as the plain path.
+        bytes32 userSalt = bytes32(uint256(25));
+        TokenFactory.LaunchParams memory p = _params();
+        address predicted = factory.predictTokenAddress(alice, userSalt);
+        bytes32 scopedSalt = keccak256(abi.encode(alice, userSalt));
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit TokenLaunched(
+            predicted,
+            alice,
+            p.name,
+            p.symbol,
+            p.totalSupply,
+            p.imageURI,
+            p.xHandle,
+            p.website,
+            p.descriptionHash,
+            p.journeyHash,
+            scopedSalt,
+            1
+        );
+
+        vm.prank(alice);
+        factory.launchToken(p, _vesting(1000e18), userSalt);
+    }
+
+    function test_PredictVestingAddressMatchesDeployed() public {
+        bytes32 userSalt = bytes32(uint256(26));
+        address predictedWallet = factory.predictVestingAddress(alice, userSalt);
+
+        vm.recordLogs();
+        vm.prank(alice);
+        factory.launchToken(_params(), _vesting(1000e18), userSalt);
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        address emittedWallet;
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == VestingCreated.selector) {
+                emittedWallet = address(uint160(uint256(logs[i].topics[2])));
+            }
+        }
+        assertEq(emittedWallet, predictedWallet);
+        assertTrue(predictedWallet.code.length > 0);
+    }
+
+    function test_VestingWalletState_OwnerAndScheduleCorrect() public {
+        bytes32 userSalt = bytes32(uint256(27));
+        TokenFactory.VestingParams memory v = _vesting(1000e18);
+
+        vm.prank(alice);
+        factory.launchToken(_params(), v, userSalt);
+
+        LaunchVestingWallet wallet =
+            LaunchVestingWallet(payable(factory.predictVestingAddress(alice, userSalt)));
+        assertEq(wallet.owner(), alice);
+        assertEq(wallet.start(), block.timestamp);
+        assertEq(wallet.duration(), v.durationSeconds);
+        assertEq(wallet.cliff(), block.timestamp + v.cliffSeconds);
+    }
+
+    function test_SaltReuseAfterVersionBump_VestingLaunchesCleanly() public {
+        // Regression: the vesting salt derives from the token address, so a
+        // userSalt reused across template versions must not collide on the
+        // fixed vesting implementation's CREATE2.
+        bytes32 userSalt = bytes32(uint256(28));
+
+        vm.prank(alice);
+        factory.launchToken(_params(), _vesting(1000e18), userSalt);
+        address walletV1 = factory.predictVestingAddress(alice, userSalt);
+
+        factory.setImplementation(address(new LaunchTokenV2()));
+
+        vm.prank(alice);
+        factory.launchToken(_params(), _vesting(1000e18), userSalt);
+        address walletV2 = factory.predictVestingAddress(alice, userSalt);
+
+        assertTrue(walletV1 != walletV2);
+        assertTrue(walletV1.code.length > 0 && walletV2.code.length > 0);
+    }
+
+    function test_RevertWhen_SaltReusedSameVersion_WithVesting() public {
+        bytes32 userSalt = bytes32(uint256(29));
+        vm.prank(alice);
+        factory.launchToken(_params(), _vesting(1000e18), userSalt);
+
+        // Still collides — on the token clone, before vesting is reached.
+        vm.prank(alice);
+        vm.expectRevert();
+        factory.launchToken(_params(), _vesting(1000e18), userSalt);
+    }
+
+    function test_ReleaseAfterCliff_EndToEnd() public {
+        uint256 amount = 100_000e18;
+        bytes32 userSalt = bytes32(uint256(30));
+        TokenFactory.VestingParams memory v = _vesting(amount);
+        uint64 launchTime = uint64(block.timestamp);
+
+        vm.prank(alice);
+        address token = factory.launchToken(_params(), v, userSalt);
+        LaunchVestingWallet wallet =
+            LaunchVestingWallet(payable(factory.predictVestingAddress(alice, userSalt)));
+
+        uint64 elapsed = v.cliffSeconds + 30 days;
+        vm.warp(uint256(launchTime) + elapsed);
+
+        uint256 expected = (amount * elapsed) / v.durationSeconds;
+        wallet.release(token);
+
+        assertEq(
+            LaunchToken(token).balanceOf(alice),
+            _params().totalSupply - amount + expected
+        );
+    }
+
+    function testFuzz_VestingSplit(uint256 amount, uint256 supply) public {
+        supply = bound(supply, 1, type(uint208).max);
+        amount = bound(amount, 1, supply);
+
+        TokenFactory.LaunchParams memory p = _params();
+        p.totalSupply = supply;
+
+        bytes32 userSalt = keccak256(abi.encode(amount, supply));
+        vm.prank(alice);
+        address token = factory.launchToken(p, _vesting(amount), userSalt);
+
+        address wallet = factory.predictVestingAddress(alice, userSalt);
+        assertEq(
+            LaunchToken(token).balanceOf(alice) + LaunchToken(token).balanceOf(wallet),
+            supply
+        );
+        assertEq(LaunchToken(token).balanceOf(wallet), amount);
     }
 }
 

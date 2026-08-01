@@ -3,9 +3,78 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
+import { JourneyCard } from "@/components/launch/JourneyCard";
+import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { LAUNCH_CHAIN } from "@/content/launch";
+import { getDb } from "@/lib/db";
 import { formatCount } from "@/lib/format";
-import { formatSupply, getToken } from "@/lib/indexer";
+import { formatSupply, getToken, getVesting, type IndexedVesting } from "@/lib/indexer";
+import { hashJourney, type JourneyDoc } from "@/lib/journey";
+import { publicClient } from "@/lib/publicClient";
+
+const vestingWalletAbi = [
+  {
+    type: "function",
+    name: "releasable",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "released",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "owner",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+] as const;
+
+/** Live vesting progress straight from the chain; null when the RPC fails. */
+async function getLiveVesting(v: IndexedVesting): Promise<LiveVesting | null> {
+  try {
+    const wallet = v.walletAddress as `0x${string}`;
+    const token = v.tokenAddress as `0x${string}`;
+    const [releasable, released, owner] = await Promise.all([
+      publicClient.readContract({
+        address: wallet, abi: vestingWalletAbi, functionName: "releasable", args: [token],
+      }),
+      publicClient.readContract({
+        address: wallet, abi: vestingWalletAbi, functionName: "released", args: [token],
+      }),
+      publicClient.readContract({
+        address: wallet, abi: vestingWalletAbi, functionName: "owner",
+      }),
+    ]);
+    return { releasable, released, owner };
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch the stored journey doc and verify it against the on-chain hash. */
+async function getVerifiedJourney(
+  journeyHash: string,
+): Promise<{ doc: JourneyDoc; verified: boolean } | null> {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const rows = await db`
+      select doc from launchpad.journeys where journey_hash = ${journeyHash.toLowerCase()}
+    `;
+    if (rows.length === 0) return null;
+    const doc = rows[0].doc as JourneyDoc;
+    return { doc, verified: hashJourney(doc).toLowerCase() === journeyHash.toLowerCase() };
+  } catch {
+    return null;
+  }
+}
 
 export const metadata: Metadata = {
   title: "Token",
@@ -34,6 +103,11 @@ export default async function TokenPage({
   const token = await getToken(address);
   if (!token) notFound();
 
+  const [journey, vesting] = await Promise.all([
+    getVerifiedJourney(token.journeyHash),
+    getVesting(token.address),
+  ]);
+  const liveVesting = vesting ? await getLiveVesting(vesting) : null;
   const explorer = LAUNCH_CHAIN.explorerUrl;
 
   return (
@@ -139,9 +213,26 @@ export default async function TokenPage({
         <Row label="Network" value={LAUNCH_CHAIN.name} />
       </div>
 
+      {vesting ? (
+        <VestingCard vesting={vesting} symbol={token.symbol} live={liveVesting} />
+      ) : null}
+
+      {journey ? (
+        <JourneyCard doc={journey.doc} verified={journey.verified} />
+      ) : (
+        <div className="mt-8 rounded-2xl border border-ink-800/70 bg-ink-950/40 p-6">
+          <p className="text-sm text-ink-400">
+            No journey document found for hash{" "}
+            <span className="break-all font-mono text-xs">{token.journeyHash}</span> — this
+            token was launched without publishing its journey to this site.
+          </p>
+        </div>
+      )}
+
       <p className="mt-4 text-xs text-ink-500">
-        All fields are read from the on-chain TokenLaunched event via the local
-        indexer — nothing on this page comes from a form.
+        Token fields are read from the on-chain TokenLaunched event via the
+        indexer. The journey document is stored off-chain; its keccak256 hash is
+        recomputed on every page load and compared to the hash in the event.
       </p>
     </div>
   );
