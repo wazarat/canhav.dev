@@ -18,10 +18,16 @@ Hosted at **https://canhav-indexer.onrender.com** (web service
 `canhav-indexer`, starter plan, Virginia) with its own Render Postgres
 (`canhav-indexer-db`, basic-256mb) — deliberately NOT Neon, so the indexer's
 persistent connections don't keep Neon compute awake. Env:
-`DATABASE_URL` (internal Render Postgres), `DATABASE_SCHEMA=launchpad`
-(required by `ponder start`), `PONDER_RPC_URL_46630`, `NODE_VERSION=22`.
+`DATABASE_URL` (internal Render Postgres), `PONDER_RPC_URL_46630`,
+`NODE_VERSION=22`.
 Auto-deploys on push to `main`; each deploy resyncs from the start block
-(minutes). `postcss.config.cjs` here is load-bearing: it stops PostCSS config
+(minutes). **Schema per deploy**: `npm start` derives
+`DATABASE_SCHEMA=launchpad_<git sha8>` from `RENDER_GIT_COMMIT` — a fixed
+schema breaks Render's zero-downtime deploys (Ponder's MigrationError: the
+old, still-live instance owns the schema, so the new instance exits 1 and the
+deploy fails). Old `launchpad_*` schemas are tiny (a few tables; the heavy
+`ponder_sync` RPC cache schema is shared and reused) but accumulate — drop
+stale ones occasionally: `DROP SCHEMA launchpad_<oldsha> CASCADE`. `postcss.config.cjs` here is load-bearing: it stops PostCSS config
 resolution from walking up to the repo root's Tailwind config, which breaks
 standalone installs. The site reads it via `INDEXER_URL` on Vercel.
 
