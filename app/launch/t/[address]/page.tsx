@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import { formatEther } from "viem";
 
 import { JourneyCard } from "@/components/launch/JourneyCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
@@ -195,6 +196,16 @@ export default async function TokenPage({
         <Row label="Description hash" mono value={token.descriptionHash} />
         <Row label="Journey hash" mono value={token.journeyHash} />
         <Row label="Salt" mono value={token.salt} />
+        {token.launchFee !== null ? (
+          <Row
+            label="Launch fee"
+            value={
+              token.launchFee === "0"
+                ? "Free"
+                : `${formatEther(BigInt(token.launchFee))} ETH`
+            }
+          />
+        ) : null}
         <Row
           label="Launch transaction"
           mono

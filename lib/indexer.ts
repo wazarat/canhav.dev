@@ -22,6 +22,10 @@ export interface IndexedToken {
   journeyHash: string;
   salt: string;
   version: number;
+  /** Fee paid at launch (wei). Null for tokens from pre-fee factories (v1/v2). */
+  launchFee: string | null;
+  /** Treasury at launch time. Null for tokens from pre-fee factories (v1/v2). */
+  treasury: string | null;
   blockNumber: string;
   blockTimestamp: string;
   txHash: string;
@@ -29,7 +33,8 @@ export interface IndexedToken {
 
 const TOKEN_FIELDS =
   "address creator name symbol totalSupply imageURI xHandle website " +
-  "descriptionHash journeyHash salt version blockNumber blockTimestamp txHash";
+  "descriptionHash journeyHash salt version launchFee treasury " +
+  "blockNumber blockTimestamp txHash";
 
 async function query<T>(gql: string): Promise<T | null> {
   try {

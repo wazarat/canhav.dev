@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Check, ExternalLink } from "lucide-react";
-import { decodeEventLog } from "viem";
-import { usePublicClient, useWriteContract } from "wagmi";
+import { decodeEventLog, formatEther } from "viem";
+import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
@@ -82,6 +82,15 @@ export function LaunchForm() {
   const { isConnected, address, ensureChain } = useLaunchChain();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
+
+  // Launch fee is read live from the factory (settable only through the
+  // timelock, hard-capped by MAX_LAUNCH_FEE). Shown on the review step and
+  // sent as the exact tx value — the factory requires strict equality.
+  const { data: launchFee } = useReadContract({
+    abi: tokenFactoryAbi,
+    address: LAUNCH_CHAIN.factoryAddress,
+    functionName: "launchFee",
+  });
 
   const previewUrlRef = useRef<string | null>(null);
   useEffect(() => {
@@ -211,6 +220,7 @@ export function LaunchForm() {
           vestingParams,
           randomSalt(),
         ],
+        value: launchFee ?? 0n,
       });
 
       setStatus({ kind: "working", label: "Waiting for confirmation…" });
@@ -519,6 +529,16 @@ export function LaunchForm() {
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Network</span>
                 <span className="text-ink-100">{LAUNCH_CHAIN.name}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-ink-500">Launch fee</span>
+                <span className="text-ink-100">
+                  {launchFee === undefined
+                    ? "—"
+                    : launchFee === 0n
+                      ? "Free"
+                      : `${formatEther(launchFee)} ETH`}
+                </span>
               </div>
             </div>
 

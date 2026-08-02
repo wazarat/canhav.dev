@@ -1,5 +1,5 @@
-// Generated from contracts/out/TokenFactory.sol/TokenFactory.json — regenerate after contract changes.
-export const tokenFactoryAbi = [
+// Generated from contracts/out/TokenFactory.sol/TokenFactory.json (factory v3) — regenerate after contract changes.
+export const TokenFactoryV3Abi = [
   {
     "type": "constructor",
     "inputs": [

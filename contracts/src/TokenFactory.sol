@@ -16,9 +16,12 @@ import {LaunchVestingWallet} from "./LaunchVestingWallet.sol";
 ///         Image, X handle, website, and the description/journey commitments
 ///         deliberately live in the event rather than token storage: the token
 ///         stays minimal, the indexer reads the log.
-/// @dev Admin surface (pause, setImplementation) is Ownable2Step owned by the
-///      deployer EOA — acceptable for testnet. Migrate ownership to a
-///      TimelockController before anything real.
+/// @dev Admin surface (setImplementation, setLaunchFee, setTreasury, setPauser,
+///      unpause) is Ownable2Step, intended to be owned by a TimelockController
+///      so every change carries a public delay. `pause()` alone is also open to
+///      a `pauser` guardian: emergencies can't wait out a timelock; recovery can.
+///      The launch fee can never exceed the hardcoded MAX_LAUNCH_FEE — an
+///      immutable ceiling anyone can read off the contract.
 contract TokenFactory is Ownable2Step, Pausable {
     struct LaunchParams {
         string name;
@@ -51,6 +54,23 @@ contract TokenFactory is Ownable2Step, Pausable {
     /// @notice The vesting wallet template every vesting clone delegates to.
     address public immutable vestingImplementation;
 
+    /// @notice Hard ceiling on `launchFee`. A constant, not storage: no admin,
+    ///         timelock, or upgrade can ever raise the fee past this.
+    uint256 public constant MAX_LAUNCH_FEE = 0.05 ether;
+
+    /// @notice Fee required (exactly) with every launch. Defaults to zero.
+    uint256 public launchFee;
+
+    /// @notice Where accrued fees go. Fees accumulate in the factory and move
+    ///         only via the permissionless `withdraw()` — withdrawal-only, so
+    ///         no key can redirect already-accrued funds without a timelocked
+    ///         `setTreasury` first.
+    address public treasury;
+
+    /// @notice Guardian that can `pause()` (but never unpause) without waiting
+    ///         on the timelock that owns the factory.
+    address public pauser;
+
     event TokenLaunched(
         address indexed token,
         address indexed creator,
@@ -63,7 +83,9 @@ contract TokenFactory is Ownable2Step, Pausable {
         bytes32 descriptionHash,
         bytes32 journeyHash,
         bytes32 salt,
-        uint64 version
+        uint64 version,
+        uint256 launchFee,
+        address treasury
     );
 
     event VestingCreated(
@@ -78,6 +100,11 @@ contract TokenFactory is Ownable2Step, Pausable {
 
     event ImplementationSet(uint64 indexed version, address indexed implementation);
 
+    event LaunchFeeSet(uint256 launchFee);
+    event TreasurySet(address indexed treasury);
+    event PauserSet(address indexed pauser);
+    event FeesWithdrawn(address indexed treasury, uint256 amount);
+
     error EmptyName();
     error EmptySymbol();
     error ZeroSupply();
@@ -86,13 +113,26 @@ contract TokenFactory is Ownable2Step, Pausable {
     error VestingParamsNotEmpty();
     error VestingAmountExceedsSupply();
     error VestingDurationZero();
+    error WrongLaunchFee(uint256 sent, uint256 required);
+    error FeeExceedsMax(uint256 fee);
+    error ZeroTreasury();
+    error NotPauser();
+    error WithdrawFailed();
+    error NothingToWithdraw();
 
-    constructor(address initialImplementation, address initialVestingImplementation)
-        Ownable(msg.sender)
-    {
+    constructor(
+        address initialImplementation,
+        address initialVestingImplementation,
+        address initialOwner,
+        address initialTreasury,
+        address initialPauser
+    ) Ownable(initialOwner) {
         _requireContract(initialVestingImplementation);
         vestingImplementation = initialVestingImplementation;
         _setImplementation(initialImplementation);
+        _setTreasury(initialTreasury);
+        pauser = initialPauser;
+        emit PauserSet(initialPauser);
     }
 
     /// @notice The LaunchToken logic contract new clones will delegate to.
@@ -111,12 +151,46 @@ contract TokenFactory is Ownable2Step, Pausable {
 
     /// @notice Stop new launches. Already-launched tokens and vesting wallets
     ///         are untouched — pause lives on the factory, never downstream.
-    function pause() external onlyOwner {
+    ///         Open to the guardian `pauser` as well as the owner so an
+    ///         emergency stop never waits on the owning timelock's delay.
+    function pause() external {
+        if (msg.sender != pauser && msg.sender != owner()) revert NotPauser();
         _pause();
     }
 
+    /// @dev Deliberately owner-only (i.e. timelocked): resuming is never an
+    ///      emergency, and a compromised guardian must not be able to undo a
+    ///      protective pause.
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    /// @notice Set the fee required with every launch. Capped by
+    ///         MAX_LAUNCH_FEE forever.
+    function setLaunchFee(uint256 newFee) external onlyOwner {
+        if (newFee > MAX_LAUNCH_FEE) revert FeeExceedsMax(newFee);
+        launchFee = newFee;
+        emit LaunchFeeSet(newFee);
+    }
+
+    function setTreasury(address newTreasury) external onlyOwner {
+        _setTreasury(newTreasury);
+    }
+
+    function setPauser(address newPauser) external onlyOwner {
+        pauser = newPauser;
+        emit PauserSet(newPauser);
+    }
+
+    /// @notice Move all accrued fees to the treasury. Permissionless: anyone
+    ///         may trigger it, funds can only ever land at `treasury`.
+    function withdraw() external {
+        uint256 amount = address(this).balance;
+        if (amount == 0) revert NothingToWithdraw();
+        address to = treasury;
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) revert WithdrawFailed();
+        emit FeesWithdrawn(to, amount);
     }
 
     /// @notice Deploy and initialize a new token clone — and, when
@@ -130,9 +204,13 @@ contract TokenFactory is Ownable2Step, Pausable {
     ///      across template versions.
     function launchToken(LaunchParams calldata p, VestingParams calldata v, bytes32 userSalt)
         external
+        payable
         whenNotPaused
         returns (address token)
     {
+        // Strict equality: the fee is fixed and public, wallets simulate the
+        // exact value, and refund paths are more surface than they're worth.
+        if (msg.value != launchFee) revert WrongLaunchFee(msg.value, launchFee);
         if (bytes(p.name).length == 0) revert EmptyName();
         if (bytes(p.symbol).length == 0) revert EmptySymbol();
         if (p.totalSupply == 0) revert ZeroSupply();
@@ -165,7 +243,9 @@ contract TokenFactory is Ownable2Step, Pausable {
             p.descriptionHash,
             p.journeyHash,
             salt,
-            currentVersion
+            currentVersion,
+            msg.value,
+            treasury
         );
 
         if (vesting) {
@@ -237,6 +317,12 @@ contract TokenFactory is Ownable2Step, Pausable {
         }
         implementations[currentVersion] = impl;
         emit ImplementationSet(currentVersion, impl);
+    }
+
+    function _setTreasury(address newTreasury) private {
+        if (newTreasury == address(0)) revert ZeroTreasury();
+        treasury = newTreasury;
+        emit TreasurySet(newTreasury);
     }
 
     function _requireContract(address impl) private view {

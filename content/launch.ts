@@ -10,9 +10,13 @@ export const LAUNCH_CHAIN = {
   name: "Robinhood Chain Testnet",
   chainId: 46630,
   explorerUrl: "https://explorer.testnet.chain.robinhood.com",
-  // v2 factory (vesting support). v1 (0x1dAaa829…c909) is paused but its
-  // tokens remain indexed and browsable.
-  factoryAddress: "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0",
+  // v3 factory (launch fee plumbing, owned by the timelock). v1 (0x1dAaa829…c909)
+  // and v2 (0x10F33eE0…9Bc0) are paused but their tokens remain indexed and
+  // browsable.
+  factoryAddress: "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5",
+  // TimelockController that owns the factory: every admin change (fee,
+  // treasury, implementation, unpause) waits out its public delay.
+  timelockAddress: "0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae",
 } as const;
 
 /** Vesting form constraints (client-side mirror of factory validation). */

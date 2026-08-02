@@ -21,7 +21,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 const INDEXER = process.env.INDEXER_URL ?? "http://localhost:42069";
-const FACTORY = "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0"; // v2
+const FACTORY = process.env.FACTORY ?? "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5"; // v3 (fee plumbing)
 
 const chain = defineChain({
   id: 46630,
@@ -33,9 +33,10 @@ const chain = defineChain({
 const abi = parseAbi([
   "struct LaunchParams { string name; string symbol; uint256 totalSupply; string imageURI; string xHandle; string website; bytes32 descriptionHash; bytes32 journeyHash; }",
   "struct VestingParams { uint256 amount; uint64 startTimestamp; uint64 durationSeconds; uint64 cliffSeconds; }",
-  "function launchToken(LaunchParams p, VestingParams v, bytes32 userSalt) returns (address)",
+  "function launchToken(LaunchParams p, VestingParams v, bytes32 userSalt) payable returns (address)",
+  "function launchFee() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
-  "event TokenLaunched(address indexed token, address indexed creator, string name, string symbol, uint256 totalSupply, string imageURI, string xHandle, string website, bytes32 descriptionHash, bytes32 journeyHash, bytes32 salt, uint64 version)",
+  "event TokenLaunched(address indexed token, address indexed creator, string name, string symbol, uint256 totalSupply, string imageURI, string xHandle, string website, bytes32 descriptionHash, bytes32 journeyHash, bytes32 salt, uint64 version, uint256 launchFee, address treasury)",
   "event VestingCreated(address indexed token, address indexed vestingWallet, address indexed beneficiary, uint256 amount, uint64 startTimestamp, uint64 durationSeconds, uint64 cliffSeconds)",
 ]);
 
@@ -78,12 +79,14 @@ const pub = await fetch(`${SITE}/api/journeys`, {
 if (!pub.ok) throw new Error(`journey publish failed: ${(await pub.json()).error}`);
 console.log("journey stored:", journeyHash);
 
-// 2. Launch with vesting.
+// 2. Launch with vesting (v3: exact-value launch fee, 0 unless raised via timelock).
+const launchFee = await client.readContract({ address: FACTORY, abi, functionName: "launchFee" });
 const salt = `0x${Date.now().toString(16).padStart(64, "0")}`;
 const txHash = await wallet.writeContract({
   address: FACTORY,
   abi,
   functionName: "launchToken",
+  value: launchFee,
   args: [
     {
       name: doc.tokenName,

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Test, Vm} from "forge-std/Test.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import {LaunchToken} from "../src/LaunchToken.sol";
@@ -16,6 +17,8 @@ contract TokenFactoryTest is Test {
 
     address internal alice = makeAddr("alice");
     address internal bob = makeAddr("bob");
+    address internal treasuryAddr = makeAddr("treasury");
+    address internal pauserGuardian = makeAddr("pauser");
 
     event TokenLaunched(
         address indexed token,
@@ -29,7 +32,9 @@ contract TokenFactoryTest is Test {
         bytes32 descriptionHash,
         bytes32 journeyHash,
         bytes32 salt,
-        uint64 version
+        uint64 version,
+        uint256 launchFee,
+        address treasury
     );
 
     event VestingCreated(
@@ -44,10 +49,25 @@ contract TokenFactoryTest is Test {
 
     event ImplementationSet(uint64 indexed version, address indexed implementation);
 
+    event LaunchFeeSet(uint256 launchFee);
+    event TreasurySet(address indexed treasury);
+    event PauserSet(address indexed pauser);
+    event FeesWithdrawn(address indexed treasury, uint256 amount);
+
     function setUp() public {
         implementation = new LaunchToken();
         vestingImplementation = new LaunchVestingWallet();
-        factory = new TokenFactory(address(implementation), address(vestingImplementation));
+        factory = _newFactory(address(this));
+    }
+
+    function _newFactory(address owner_) internal returns (TokenFactory) {
+        return new TokenFactory(
+            address(implementation),
+            address(vestingImplementation),
+            owner_,
+            treasuryAddr,
+            pauserGuardian
+        );
     }
 
     function _params() internal pure returns (TokenFactory.LaunchParams memory) {
@@ -114,7 +134,9 @@ contract TokenFactoryTest is Test {
             p.descriptionHash,
             p.journeyHash,
             scopedSalt,
-            1
+            1,
+            0,
+            treasuryAddr
         );
 
         vm.prank(alice);
@@ -195,22 +217,48 @@ contract TokenFactoryTest is Test {
         assertEq(factory.implementation(), address(implementation));
         assertEq(factory.vestingImplementation(), address(vestingImplementation));
         assertEq(factory.owner(), address(this));
+        assertEq(factory.treasury(), treasuryAddr);
+        assertEq(factory.pauser(), pauserGuardian);
+        assertEq(factory.launchFee(), 0);
     }
 
     function test_RevertWhen_ConstructorImplementationZeroOrEOA() public {
         vm.expectRevert(TokenFactory.ZeroImplementation.selector);
-        new TokenFactory(address(0), address(vestingImplementation));
+        new TokenFactory(
+            address(0), address(vestingImplementation), address(this), treasuryAddr, pauserGuardian
+        );
 
         vm.expectRevert(TokenFactory.NotAContract.selector);
-        new TokenFactory(makeAddr("eoa"), address(vestingImplementation));
+        new TokenFactory(
+            makeAddr("eoa"),
+            address(vestingImplementation),
+            address(this),
+            treasuryAddr,
+            pauserGuardian
+        );
     }
 
     function test_RevertWhen_VestingImplZeroOrEOA() public {
         vm.expectRevert(TokenFactory.ZeroImplementation.selector);
-        new TokenFactory(address(implementation), address(0));
+        new TokenFactory(
+            address(implementation), address(0), address(this), treasuryAddr, pauserGuardian
+        );
 
         vm.expectRevert(TokenFactory.NotAContract.selector);
-        new TokenFactory(address(implementation), makeAddr("eoa2"));
+        new TokenFactory(
+            address(implementation), makeAddr("eoa2"), address(this), treasuryAddr, pauserGuardian
+        );
+    }
+
+    function test_RevertWhen_ConstructorTreasuryZero() public {
+        vm.expectRevert(TokenFactory.ZeroTreasury.selector);
+        new TokenFactory(
+            address(implementation),
+            address(vestingImplementation),
+            address(this),
+            address(0),
+            pauserGuardian
+        );
     }
 
     // ------------------------------------------------------------------ pause
@@ -240,9 +288,9 @@ contract TokenFactoryTest is Test {
         factory.launchToken(_params(), _vesting(1000e18), bytes32(uint256(60)));
     }
 
-    function test_RevertWhen_PauseUnpauseByNonOwner() public {
+    function test_RevertWhen_PauseUnpauseByStranger() public {
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        vm.expectRevert(TokenFactory.NotPauser.selector);
         factory.pause();
 
         factory.pause();
@@ -250,6 +298,41 @@ contract TokenFactoryTest is Test {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         factory.unpause();
+    }
+
+    function test_PauserCanPause_ButNeverUnpause() public {
+        vm.prank(pauserGuardian);
+        factory.pause();
+        assertTrue(factory.paused());
+
+        // Recovery stays behind the owner (i.e. the timelock in production).
+        vm.prank(pauserGuardian);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, pauserGuardian)
+        );
+        factory.unpause();
+
+        factory.unpause();
+        assertFalse(factory.paused());
+    }
+
+    function test_SetPauser_OnlyOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        factory.setPauser(alice);
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit PauserSet(bob);
+        factory.setPauser(bob);
+        assertEq(factory.pauser(), bob);
+
+        // Old guardian is out, new one works.
+        vm.prank(pauserGuardian);
+        vm.expectRevert(TokenFactory.NotPauser.selector);
+        factory.pause();
+        vm.prank(bob);
+        factory.pause();
+        assertTrue(factory.paused());
     }
 
     // -------------------------------------------------------------- ownership
@@ -267,11 +350,13 @@ contract TokenFactoryTest is Test {
         factory.acceptOwnership();
         assertEq(factory.owner(), bob);
 
-        // Old owner has lost the admin surface.
+        // Old owner has lost the admin surface (and was never the pauser).
+        vm.expectRevert(TokenFactory.NotPauser.selector);
+        factory.pause();
         vm.expectRevert(
             abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this))
         );
-        factory.pause();
+        factory.setLaunchFee(1);
     }
 
     // ------------------------------------------------------- version registry
@@ -328,7 +413,9 @@ contract TokenFactoryTest is Test {
             p.descriptionHash,
             p.journeyHash,
             scopedSalt,
-            2
+            2,
+            0,
+            treasuryAddr
         );
 
         vm.prank(alice);
@@ -501,7 +588,9 @@ contract TokenFactoryTest is Test {
             p.descriptionHash,
             p.journeyHash,
             scopedSalt,
-            1
+            1,
+            0,
+            treasuryAddr
         );
 
         vm.prank(alice);
@@ -613,6 +702,185 @@ contract TokenFactoryTest is Test {
             supply
         );
         assertEq(LaunchToken(token).balanceOf(wallet), amount);
+    }
+
+    // ------------------------------------------------------------------- fees
+
+    function test_RevertWhen_ValueSentWhileFeeZero() public {
+        vm.deal(alice, 1 ether);
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenFactory.WrongLaunchFee.selector, 1 wei, 0)
+        );
+        factory.launchToken{value: 1 wei}(_params(), _noVesting(), bytes32(uint256(40)));
+    }
+
+    function test_SetLaunchFee_AppliesAndEnforcesExactValue() public {
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit LaunchFeeSet(0.01 ether);
+        factory.setLaunchFee(0.01 ether);
+        assertEq(factory.launchFee(), 0.01 ether);
+
+        vm.deal(alice, 1 ether);
+
+        // Underpay and overpay both revert with the exact shortfall visible.
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenFactory.WrongLaunchFee.selector, 0, 0.01 ether)
+        );
+        factory.launchToken(_params(), _noVesting(), bytes32(uint256(41)));
+
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenFactory.WrongLaunchFee.selector, 0.02 ether, 0.01 ether)
+        );
+        factory.launchToken{value: 0.02 ether}(_params(), _noVesting(), bytes32(uint256(41)));
+
+        // Exact fee launches; fee accrues in the factory, supply untouched.
+        vm.prank(alice);
+        address token =
+            factory.launchToken{value: 0.01 ether}(_params(), _noVesting(), bytes32(uint256(41)));
+        assertEq(address(factory).balance, 0.01 ether);
+        assertEq(LaunchToken(token).balanceOf(alice), _params().totalSupply);
+    }
+
+    function test_TokenLaunched_CarriesFeeAndTreasury() public {
+        factory.setLaunchFee(0.01 ether);
+
+        bytes32 userSalt = bytes32(uint256(42));
+        TokenFactory.LaunchParams memory p = _params();
+        address predicted = factory.predictTokenAddress(alice, userSalt);
+        bytes32 scopedSalt = keccak256(abi.encode(alice, userSalt));
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit TokenLaunched(
+            predicted,
+            alice,
+            p.name,
+            p.symbol,
+            p.totalSupply,
+            p.imageURI,
+            p.xHandle,
+            p.website,
+            p.descriptionHash,
+            p.journeyHash,
+            scopedSalt,
+            1,
+            0.01 ether,
+            treasuryAddr
+        );
+
+        vm.deal(alice, 1 ether);
+        vm.prank(alice);
+        factory.launchToken{value: 0.01 ether}(p, _noVesting(), userSalt);
+    }
+
+    function test_SetLaunchFee_CapBoundary() public {
+        uint256 cap = factory.MAX_LAUNCH_FEE();
+
+        factory.setLaunchFee(cap);
+        assertEq(factory.launchFee(), cap);
+
+        vm.expectRevert(abi.encodeWithSelector(TokenFactory.FeeExceedsMax.selector, cap + 1));
+        factory.setLaunchFee(cap + 1);
+    }
+
+    function test_RevertWhen_SetLaunchFeeByNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        factory.setLaunchFee(1);
+    }
+
+    function test_Withdraw_PermissionlessAndTreasuryOnly() public {
+        factory.setLaunchFee(0.02 ether);
+        vm.deal(alice, 1 ether);
+        vm.prank(alice);
+        factory.launchToken{value: 0.02 ether}(_params(), _noVesting(), bytes32(uint256(43)));
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit FeesWithdrawn(treasuryAddr, 0.02 ether);
+
+        // Anyone can trigger; funds can only land at the treasury.
+        vm.prank(bob);
+        factory.withdraw();
+        assertEq(treasuryAddr.balance, 0.02 ether);
+        assertEq(address(factory).balance, 0);
+    }
+
+    function test_RevertWhen_WithdrawWithNothingAccrued() public {
+        vm.expectRevert(TokenFactory.NothingToWithdraw.selector);
+        factory.withdraw();
+    }
+
+    function test_SetTreasury_RotatesAndRejectsZero() public {
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit TreasurySet(bob);
+        factory.setTreasury(bob);
+        assertEq(factory.treasury(), bob);
+
+        vm.expectRevert(TokenFactory.ZeroTreasury.selector);
+        factory.setTreasury(address(0));
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        factory.setTreasury(alice);
+    }
+
+    // --------------------------------------------------------------- timelock
+
+    function _newTimelock(address proposer, uint256 delay)
+        internal
+        returns (TimelockController)
+    {
+        address[] memory proposers = new address[](1);
+        proposers[0] = proposer;
+        address[] memory executors = new address[](1);
+        executors[0] = address(0); // open execution: anyone may run a ready op
+        return new TimelockController(delay, proposers, executors, address(0));
+    }
+
+    function test_TimelockOwnedFactory_AdminGoesThroughDelay() public {
+        address proposer = makeAddr("proposer");
+        TimelockController timelock = _newTimelock(proposer, 1 days);
+        TokenFactory tlFactory = _newFactory(address(timelock));
+        assertEq(tlFactory.owner(), address(timelock));
+
+        // No one — not even the proposer — can hit the admin surface directly.
+        vm.prank(proposer);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, proposer)
+        );
+        tlFactory.setLaunchFee(0.01 ether);
+
+        bytes memory call = abi.encodeCall(TokenFactory.setLaunchFee, (0.01 ether));
+        vm.prank(proposer);
+        timelock.schedule(address(tlFactory), 0, call, bytes32(0), bytes32(0), 1 days);
+
+        // Executing before the published delay fails.
+        vm.expectRevert();
+        timelock.execute(address(tlFactory), 0, call, bytes32(0), bytes32(0));
+        assertEq(tlFactory.launchFee(), 0);
+
+        vm.warp(block.timestamp + 1 days);
+        timelock.execute(address(tlFactory), 0, call, bytes32(0), bytes32(0));
+        assertEq(tlFactory.launchFee(), 0.01 ether);
+    }
+
+    function test_TimelockOwnedFactory_GuardianPausesInstantly() public {
+        TimelockController timelock = _newTimelock(makeAddr("proposer"), 1 days);
+        TokenFactory tlFactory = _newFactory(address(timelock));
+
+        // The guardian needs no timelock hop to stop launches...
+        vm.prank(pauserGuardian);
+        tlFactory.pause();
+        assertTrue(tlFactory.paused());
+
+        // ...but cannot undo a pause: recovery waits on the timelock.
+        vm.prank(pauserGuardian);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, pauserGuardian)
+        );
+        tlFactory.unpause();
     }
 }
 

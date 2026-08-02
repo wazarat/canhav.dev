@@ -18,6 +18,10 @@ export const token = onchainTable("token", (t) => ({
   journeyHash: t.hex().notNull(),
   salt: t.hex().notNull(),
   version: t.integer().notNull(),
+  // v3+ factories emit the fee paid and the treasury at launch time; tokens
+  // from earlier factories predate the fields and stay null.
+  launchFee: t.bigint(),
+  treasury: t.hex(),
   blockNumber: t.bigint().notNull(),
   blockTimestamp: t.bigint().notNull(),
   txHash: t.hex().notNull(),
