@@ -1,5 +1,6 @@
 import { createConfig } from "ponder";
 
+import { AllocationSaleAbi } from "./abis/AllocationSaleAbi";
 import { JourneyUpdatesAbi } from "./abis/JourneyUpdatesAbi";
 import { MilestoneEscrowAbi } from "./abis/MilestoneEscrowAbi";
 import { TimelockControllerAbi } from "./abis/TimelockControllerAbi";
@@ -58,6 +59,14 @@ export default createConfig({
       abi: JourneyUpdatesAbi,
       address: "0x31358209375591b1285EaA437c2c9f189c48D073",
       startBlock: 96220433,
+    },
+    // Fixed-price fee-free allocation sales with milestone-dated proceeds
+    // lockups (2026-08-02). Deployment record: broadcast/DeploySale.s.sol.
+    AllocationSale: {
+      chain: "robinhoodTestnet",
+      abi: AllocationSaleAbi,
+      address: "0x869cE70ff8174802d98D26835ce4040754Ad284A",
+      startBlock: 96229564,
     },
   },
 });

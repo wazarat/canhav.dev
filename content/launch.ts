@@ -21,6 +21,9 @@ export const LAUNCH_CHAIN = {
   // progress-update anchor. No owner, no attester, nothing to rug.
   escrowAddress: "0x90C71DBA8A61Da14CA699f72D311e404094Cf192",
   updatesAddress: "0x31358209375591b1285EaA437c2c9f189c48D073",
+  // Fixed-price allocation sales: fee-free (zero platform cut), proceeds
+  // claimable only in milestone-dated tranches. Also admin-less.
+  saleAddress: "0x869cE70ff8174802d98D26835ce4040754Ad284A",
 } as const;
 
 /** Vesting form constraints (client-side mirror of factory validation). */

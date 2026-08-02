@@ -4,6 +4,9 @@ import {
   escrowTranche,
   implementation,
   milestoneUpdate,
+  purchase,
+  sale,
+  saleTranche,
   timelockOperation,
   token,
   vesting,
@@ -197,4 +200,74 @@ ponder.on("Timelock:Cancelled", async ({ event, context }) => {
       .update(timelockOperation, { id: event.args.id, callIndex: 0n })
       .set({ status: "cancelled" });
   }
+});
+
+// AllocationSale: fixed-price fee-free sales with milestone-dated proceeds.
+
+ponder.on("AllocationSale:SaleCreated", async ({ event, context }) => {
+  await context.db.insert(sale).values({
+    saleId: event.args.saleId,
+    tokenAddress: event.args.token,
+    creator: event.args.creator,
+    journeyHash: event.args.journeyHash,
+    price: event.args.price,
+    allocation: event.args.allocation,
+    sold: 0n,
+    raised: 0n,
+    startTime: BigInt(event.args.startTime),
+    endTime: BigInt(event.args.endTime),
+    perWalletCap: event.args.perWalletCap,
+    unsoldReclaimed: false,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    txHash: event.transaction.hash,
+  });
+});
+
+ponder.on("AllocationSale:ProceedsTranchePlanned", async ({ event, context }) => {
+  await context.db.insert(saleTranche).values({
+    saleId: event.args.saleId,
+    trancheIndex: event.args.trancheIndex,
+    milestoneIndex: Number(event.args.milestoneIndex),
+    bps: Number(event.args.bps),
+    unlockTime: BigInt(event.args.unlockTime),
+    claimed: false,
+  });
+});
+
+ponder.on("AllocationSale:TokensPurchased", async ({ event, context }) => {
+  await context.db.insert(purchase).values({
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
+    saleId: event.args.saleId,
+    buyer: event.args.buyer,
+    tokenAmount: event.args.tokenAmount,
+    cost: event.args.cost,
+    blockTimestamp: event.block.timestamp,
+  });
+  await context.db
+    .update(sale, { saleId: event.args.saleId })
+    .set((row) => ({
+      sold: row.sold + event.args.tokenAmount,
+      raised: row.raised + event.args.cost,
+    }));
+});
+
+ponder.on("AllocationSale:ProceedsClaimed", async ({ event, context }) => {
+  await context.db
+    .update(saleTranche, {
+      saleId: event.args.saleId,
+      trancheIndex: event.args.trancheIndex,
+    })
+    .set({
+      claimed: true,
+      claimedAmount: event.args.amount,
+      claimedTxHash: event.transaction.hash,
+    });
+});
+
+ponder.on("AllocationSale:UnsoldReclaimed", async ({ event, context }) => {
+  await context.db
+    .update(sale, { saleId: event.args.saleId })
+    .set({ unsoldReclaimed: true });
 });

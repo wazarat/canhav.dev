@@ -184,6 +184,98 @@ export async function getTimelockOperations(): Promise<IndexedTimelockOperation[
   return data?.timelockOperations.items ?? null;
 }
 
+export interface IndexedSaleTranche {
+  saleId: string;
+  trancheIndex: string;
+  milestoneIndex: number;
+  bps: number;
+  unlockTime: string;
+  claimed: boolean;
+  claimedAmount: string | null;
+  claimedTxHash: string | null;
+}
+
+export interface IndexedSale {
+  saleId: string;
+  tokenAddress: string;
+  creator: string;
+  journeyHash: string;
+  price: string;
+  allocation: string;
+  sold: string;
+  raised: string;
+  startTime: string;
+  endTime: string;
+  perWalletCap: string;
+  unsoldReclaimed: boolean;
+  blockTimestamp: string;
+  txHash: string;
+  tranches: IndexedSaleTranche[];
+}
+
+const SALE_FIELDS =
+  "saleId tokenAddress creator journeyHash price allocation sold raised " +
+  "startTime endTime perWalletCap unsoldReclaimed blockTimestamp txHash";
+
+/** All sales for a token (oldest first), each with its proceeds tranches. */
+export async function getSales(tokenAddress: string): Promise<IndexedSale[] | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const data = await query<{
+    sales: { items: Omit<IndexedSale, "tranches">[] };
+    saleTranches: { items: IndexedSaleTranche[] };
+  }>(
+    `{
+      sales(where: { tokenAddress: "${tokenAddress.toLowerCase()}" }, orderBy: "saleId", orderDirection: "asc", limit: 20) { items { ${SALE_FIELDS} } }
+      saleTranches(orderBy: "trancheIndex", orderDirection: "asc", limit: 100) { items {
+        saleId trancheIndex milestoneIndex bps unlockTime claimed claimedAmount claimedTxHash
+      } }
+    }`,
+  );
+  if (!data) return null;
+  return data.sales.items.map((s) => ({
+    ...s,
+    tranches: data.saleTranches.items.filter((t) => t.saleId === s.saleId),
+  }));
+}
+
+export interface IndexedPurchase {
+  buyer: string;
+  tokenAmount: string;
+  cost: string;
+  blockTimestamp: string;
+  txHash: string;
+}
+
+/** Most recent purchases for a sale. */
+export async function getRecentPurchases(
+  saleId: string,
+  limit = 10,
+): Promise<IndexedPurchase[] | null> {
+  if (!/^[0-9]+$/.test(saleId)) return null;
+  const data = await query<{ purchases: { items: IndexedPurchase[] } }>(
+    `{ purchases(where: { saleId: "${saleId}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: ${limit}) { items {
+      buyer tokenAmount cost blockTimestamp txHash
+    } } }`,
+  );
+  return data?.purchases.items ?? null;
+}
+
+/** Lowercase token addresses that currently have a live sale window. */
+export async function getActiveSaleTokens(): Promise<Set<string> | null> {
+  const now = Math.floor(Date.now() / 1000);
+  const data = await query<{
+    sales: { items: { tokenAddress: string; startTime: string; endTime: string }[] };
+  }>(
+    `{ sales(where: { endTime_gt: "${now}" }, limit: 100) { items { tokenAddress startTime endTime } } }`,
+  );
+  if (!data) return null;
+  return new Set(
+    data.sales.items
+      .filter((s) => Number(s.startTime) <= now)
+      .map((s) => s.tokenAddress.toLowerCase()),
+  );
+}
+
 /** Whole-token supply (assumes 18 decimals) for display. */
 export function formatSupply(totalSupply: string): number {
   return Number(BigInt(totalSupply) / 10n ** 18n);

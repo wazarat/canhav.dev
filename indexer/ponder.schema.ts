@@ -122,6 +122,62 @@ export const timelockOperation = onchainTable(
   }),
 );
 
+/** One row per SaleCreated event (AllocationSale singleton). `sold`/`raised`
+ *  are kept current by TokensPurchased handlers. */
+export const sale = onchainTable("sale", (t) => ({
+  saleId: t.bigint().primaryKey(),
+  tokenAddress: t.hex().notNull(),
+  creator: t.hex().notNull(),
+  journeyHash: t.hex().notNull(),
+  price: t.bigint().notNull(),
+  allocation: t.bigint().notNull(),
+  sold: t.bigint().notNull(),
+  raised: t.bigint().notNull(),
+  startTime: t.bigint().notNull(),
+  endTime: t.bigint().notNull(),
+  perWalletCap: t.bigint().notNull(),
+  unsoldReclaimed: t.boolean().notNull(),
+  blockNumber: t.bigint().notNull(),
+  blockTimestamp: t.bigint().notNull(),
+  txHash: t.hex().notNull(),
+}));
+
+/** One row per ProceedsTranchePlanned event; `claimed` flips on
+ *  ProceedsClaimed. bps of the final raise, unlocked by date after sale end. */
+export const saleTranche = onchainTable(
+  "sale_tranche",
+  (t) => ({
+    saleId: t.bigint().notNull(),
+    trancheIndex: t.bigint().notNull(),
+    milestoneIndex: t.integer().notNull(),
+    bps: t.integer().notNull(),
+    unlockTime: t.bigint().notNull(),
+    claimed: t.boolean().notNull(),
+    claimedAmount: t.bigint(),
+    claimedTxHash: t.hex(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.saleId, table.trancheIndex] }),
+  }),
+);
+
+/** One row per TokensPurchased event. */
+export const purchase = onchainTable(
+  "purchase",
+  (t) => ({
+    txHash: t.hex().notNull(),
+    logIndex: t.integer().notNull(),
+    saleId: t.bigint().notNull(),
+    buyer: t.hex().notNull(),
+    tokenAmount: t.bigint().notNull(),
+    cost: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.txHash, table.logIndex] }),
+  }),
+);
+
 /** One row per VestingCreated event. `startTimestamp` is the RESOLVED start
  *  (the contract replaces the 0 sentinel with block.timestamp before
  *  emitting). NOTE: `beneficiary` is historical — the vesting wallet's

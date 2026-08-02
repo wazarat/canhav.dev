@@ -8,6 +8,8 @@ import { EscrowActions, type EscrowActionTranche } from "@/components/launch/Esc
 import { EscrowCard } from "@/components/launch/EscrowCard";
 import { JourneyCard, type VerifiedUpdate } from "@/components/launch/JourneyCard";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
+import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
+import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { getDb } from "@/lib/db";
@@ -16,8 +18,11 @@ import {
   formatSupply,
   getEscrows,
   getMilestoneUpdates,
+  getRecentPurchases,
+  getSales,
   getToken,
   getVesting,
+  type IndexedPurchase,
   type IndexedVesting,
 } from "@/lib/indexer";
 import {
@@ -162,15 +167,21 @@ export default async function TokenPage({
   const token = await getToken(address);
   if (!token) notFound();
 
-  const [journey, vesting, escrows] = await Promise.all([
+  const [journey, vesting, escrows, sales] = await Promise.all([
     getVerifiedJourney(token.journeyHash),
     getVesting(token.address),
     getEscrows(token.address),
+    getSales(token.address),
   ]);
-  const [liveVesting, updates] = await Promise.all([
+  const [liveVesting, updates, ...purchaseLists] = await Promise.all([
     vesting ? getLiveVesting(vesting) : null,
     getVerifiedUpdates(token.address, token.creator),
+    ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
   ]);
+  const purchases: Record<string, IndexedPurchase[]> = {};
+  (sales ?? []).forEach((s, i) => {
+    purchases[s.saleId] = (purchaseLists[i] as IndexedPurchase[] | null) ?? [];
+  });
   const explorer = LAUNCH_CHAIN.explorerUrl;
 
   const milestones = journey?.verified ? journey.doc.milestones : null;
@@ -184,6 +195,20 @@ export default async function TokenPage({
       claimed: t.claimed,
     })),
   );
+  const actionSales: SaleActionSale[] = (sales ?? []).map((s) => ({
+    saleId: s.saleId,
+    price: s.price,
+    allocation: s.allocation,
+    sold: s.sold,
+    startTime: s.startTime,
+    endTime: s.endTime,
+    unsoldReclaimed: s.unsoldReclaimed,
+    tranches: s.tranches.map((t) => ({
+      trancheIndex: t.trancheIndex,
+      unlockTime: t.unlockTime,
+      claimed: t.claimed,
+    })),
+  }));
 
   return (
     <div className="container max-w-3xl py-14 md:py-20">
@@ -310,6 +335,25 @@ export default async function TokenPage({
           nowSeconds={Math.floor(Date.now() / 1000)}
         />
       ) : null}
+
+      {sales && sales.length > 0 ? (
+        <SaleCard
+          sales={sales}
+          purchases={purchases}
+          symbol={token.symbol}
+          milestones={milestones}
+          nowSeconds={Math.floor(Date.now() / 1000)}
+        />
+      ) : null}
+
+      <SaleActions
+        tokenAddress={token.address}
+        creator={token.creator}
+        journeyHash={token.journeyHash}
+        symbol={token.symbol}
+        milestones={milestones}
+        sales={actionSales}
+      />
 
       <EscrowActions
         tokenAddress={token.address}
