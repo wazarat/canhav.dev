@@ -182,6 +182,35 @@ function Stat({ label, value, mono }: { label: string; value: React.ReactNode; m
   );
 }
 
+function Term({
+  label,
+  value,
+  ceiling,
+  enforced,
+}: {
+  label: string;
+  value: React.ReactNode;
+  ceiling: string;
+  enforced: string;
+}) {
+  return (
+    <li className="rounded-xl border border-ink-700/60 bg-ink-950/50 px-4 py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <span className="text-sm font-medium text-ink-100">{label}</span>
+        <span className="tabular text-sm text-ink-100">{value}</span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 text-xs">
+        <span className="text-ink-500">
+          Ceiling: <span className="text-ink-300">{ceiling}</span>
+        </span>
+        <span className="text-ink-500">
+          Enforced by: <span className="text-ink-300">{enforced}</span>
+        </span>
+      </div>
+    </li>
+  );
+}
+
 export default async function GovernancePage() {
   const [state, amm, ops] = await Promise.all([
     getFactoryState(),
@@ -213,6 +242,68 @@ export default async function GovernancePage() {
           launch fee is capped by a constant no key can ever exceed.
         </p>
       </div>
+
+      <h2 className="mt-8 font-display text-xl font-semibold tracking-tight text-ink-50">
+        Economic terms
+      </h2>
+      <p className="mt-1 text-sm text-ink-400">
+        Everything the platform charges — current value, ceiling, and what
+        enforces it.
+      </p>
+      <ul className="mt-4 space-y-2">
+        <Term
+          label="Launch fee"
+          value={
+            state
+              ? state.launchFee === 0n
+                ? "Free"
+                : `${formatEther(state.launchFee)} ETH`
+              : "—"
+          }
+          ceiling={state ? `${formatEther(state.maxLaunchFee)} ETH` : "0.05 ETH"}
+          enforced="MAX_LAUNCH_FEE constant; any change waits out the timelock"
+        />
+        <Term
+          label="Token supply taken at launch"
+          value="0 — 100% to the creator"
+          ceiling="0, always"
+          enforced="LaunchToken has no mint function after its locked initializer; the factory allocates everything to the creator (± their own vesting)"
+        />
+        <Term
+          label="Cut of allocation sale proceeds"
+          value="0"
+          ceiling="0, always"
+          enforced="AllocationSale has no fee path at all; proceeds go only to the creator's milestone-dated schedule"
+        />
+        <Term
+          label="LP swap fee (all pools)"
+          value="0.30%"
+          ceiling="fixed"
+          enforced="LP_FEE_BPS constant — goes to liquidity providers, never the platform"
+        />
+        <Term
+          label="Protocol swap fee (opt-in pools only)"
+          value={
+            amm
+              ? `${(amm.defaultProtocolFeeBps / 100).toFixed(2)}% of each swap total — of which ${((amm.defaultProtocolFeeBps * 0.7) / 100).toFixed(2)}% to the project, ${((amm.defaultProtocolFeeBps * 0.3) / 100).toFixed(2)}% to the platform`
+              : "—"
+          }
+          ceiling={amm ? `${(amm.maxProtocolFeeBps / 100).toFixed(2)}% total` : "0.50% total"}
+          enforced="MAX_PROTOCOL_FEE_BPS and the 70/30 PROJECT_SHARE_BPS split are constants"
+        />
+        <Term
+          label="Changing an existing pool's fee"
+          value="Never — frozen at pool creation"
+          ceiling="—"
+          enforced="the rate is written once into pool storage; the settable default applies only to pools created later"
+        />
+        <Term
+          label="Any admin change"
+          value={state ? `${fmtDelay(state.minDelay)} public delay` : "—"}
+          ceiling="—"
+          enforced="a TimelockController owns every knob (testnet delay; anything real gets 24h+)"
+        />
+      </ul>
 
       {state ? (
         <div className="mt-8 grid gap-3 sm:grid-cols-2">

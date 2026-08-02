@@ -98,6 +98,12 @@ export function PoolActions({
     args: address ? [tokenAddress as `0x${string}`, address] : undefined,
     query: { enabled: !!address },
   });
+  const { data: defaultFeeBps } = useReadContract({
+    abi: launchAmmAbi,
+    address: LAUNCH_CHAIN.ammAddress,
+    functionName: "defaultProtocolFeeBps",
+    query: { enabled: !pool && isCreator },
+  });
 
   function quote(amountIn: bigint, reserveIn: bigint, reserveOut: bigint, feeBps: number): bigint {
     if (reserveIn === 0n || reserveOut === 0n || amountIn === 0n) return 0n;
@@ -309,8 +315,9 @@ export function PoolActions({
               className="h-4 w-4 accent-electric-500"
             />
             <span>
-              Opt in to the protocol fee — 70% of it goes to you, 30% to the
-              platform, split fixed in bytecode and rate hard-capped at 0.50%.
+              {defaultFeeBps !== undefined
+                ? `Opt in to the protocol fee: ${(Number(defaultFeeBps) / 100).toFixed(2)}% of each swap in total — ${((Number(defaultFeeBps) * 0.7) / 100).toFixed(2)}% to you, ${((Number(defaultFeeBps) * 0.3) / 100).toFixed(2)}% to the platform. The 70/30 split is fixed in bytecode, the total is hard-capped at 0.50%, and your pool's rate is frozen at creation forever.`
+                : "Opt in to the protocol fee — split 70/30 in your favour (bytecode constant), total hard-capped at 0.50%, and frozen at creation forever."}
             </span>
           </label>
           <Button size="sm" disabled={status.kind === "working"} onClick={createPool}>

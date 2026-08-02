@@ -16,7 +16,8 @@ version registry, factory-level pause, and two-step ownership.
 | Explorer | https://explorer.testnet.chain.robinhood.com |
 | Faucet | https://faucet.testnet.chain.robinhood.com (0.01 ETH + stock tokens / 24h) |
 | ArbOS | 61 (`arbOSVersion()` raw 116 − 55 offset) — Cancun confirmed via PUSH0/MCOPY probes |
-| **TokenFactory v3** (launch fee plumbing) | [`0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5`](https://explorer.testnet.chain.robinhood.com/address/0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5) ✅ verified — block 96208927; owned by the timelock |
+| **TokenFactory v4** (Solady LibClone) | [`0x30Db3A828F65B92434c6aDB27AEeD01850277b08`](https://explorer.testnet.chain.robinhood.com/address/0x30Db3A828F65B92434c6aDB27AEeD01850277b08) ✅ verified — block 96243249; ABI identical to v3, clones via LibClone (optimized proxy — NOT ERC-1167-byte-identical, predictions must use the factory's own views); owned by the timelock; launchFee 0.0002 ETH |
+| TokenFactory v3 (**PAUSED**) | [`0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5`](https://explorer.testnet.chain.robinhood.com/address/0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5) ✅ verified — block 96208927; paused after v4 migration; its tokens remain live and indexed |
 | **MilestoneEscrow** (admin-less singleton) | [`0x90C71DBA8A61Da14CA699f72D311e404094Cf192`](https://explorer.testnet.chain.robinhood.com/address/0x90C71DBA8A61Da14CA699f72D311e404094Cf192) ✅ verified — block 96220433; milestone-dated lockups, no owner/attester/pause |
 | **JourneyUpdates** (admin-less singleton) | [`0x31358209375591b1285EaA437c2c9f189c48D073`](https://explorer.testnet.chain.robinhood.com/address/0x31358209375591b1285EaA437c2c9f189c48D073) ✅ verified — block 96220433; content-addressed milestone progress updates |
 | **AllocationSale** (admin-less singleton) | [`0x869cE70ff8174802d98D26835ce4040754Ad284A`](https://explorer.testnet.chain.robinhood.com/address/0x869cE70ff8174802d98D26835ce4040754Ad284A) ✅ verified — block 96229564; fixed-price fee-free sales, milestone-dated proceeds lockup, zero platform cut |
@@ -32,7 +33,15 @@ version registry, factory-level pause, and two-step ownership.
 | Compiler | solc 0.8.28, optimizer 200 runs, `via_ir = true`, `evm_version = cancun` |
 | First launch (smoke test) | token [`0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe`](https://explorer.testnet.chain.robinhood.com/address/0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe) ("CanHav First" / CHF1), tx `0x08aec516d847ababe5b6c39496358fa350fd87f02fa49e59eb342899f3bb8fdc` |
 
-Deployment records: `broadcast/{Deploy,DeployV2,DeployV3,DeployEscrow,DeploySale,DeployAMM}.s.sol/46630/run-latest.json` (committed).
+Deployment records: `broadcast/{Deploy,DeployV2,DeployV3,DeployEscrow,DeploySale,DeployAMM,DeployV4}.s.sol/46630/run-latest.json` (committed).
+
+Phase-5 validation finding (Solady): `LibClone.cloneDeterministic` deploys
+Solady's gas-optimized minimal proxy, **not** the canonical ERC-1167 bytecode —
+CREATE2 addresses diverge from OZ `Clones` math for identical salts (pinned by
+`testFuzz_LibCloneAddressParityWithOZ`). The UI-critical invariant
+(`predictTokenAddress` == deployed address) holds because both sides share
+LibClone's math. Blockscout still resolves the optimized proxy's
+implementation and token metadata (checked empirically on testnet).
 
 ## Layout
 

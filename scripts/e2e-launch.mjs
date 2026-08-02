@@ -23,7 +23,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 
 const SITE = process.env.SITE_URL ?? "http://localhost:3000";
-const FACTORY = process.env.FACTORY ?? "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5"; // v3 (fee plumbing)
+const FACTORY = process.env.FACTORY ?? "0x30Db3A828F65B92434c6aDB27AEeD01850277b08"; // v4 (LibClone)
 
 const chain = defineChain({
   id: 46630,

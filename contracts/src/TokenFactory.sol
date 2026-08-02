@@ -3,8 +3,14 @@ pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+// Solady's minimal proxy is the gas-optimized variant, NOT byte-identical to
+// ERC-1167 — so CREATE2 addresses DIVERGE from the OZ Clones math for the
+// same salt (pinned by the parity fuzz test). The invariant the UI relies on
+// is unaffected: predictTokenAddress and cloneDeterministic share LibClone's
+// math, so predicted == deployed always. Never mix OZ predictions with
+// LibClone deploys (or vice versa) for this factory version.
+import {LibClone} from "solady/utils/LibClone.sol";
 
 import {LaunchToken} from "./LaunchToken.sol";
 import {LaunchVestingWallet} from "./LaunchVestingWallet.sol";
@@ -226,7 +232,7 @@ contract TokenFactory is Ownable2Step, Pausable {
         }
 
         bytes32 salt = _scopedSalt(msg.sender, userSalt);
-        token = Clones.cloneDeterministic(implementations[currentVersion], salt);
+        token = LibClone.cloneDeterministic(implementations[currentVersion], salt);
         LaunchToken(token).initialize(
             p.name, p.symbol, p.totalSupply, vesting ? address(this) : msg.sender
         );
@@ -252,7 +258,7 @@ contract TokenFactory is Ownable2Step, Pausable {
             uint64 start =
                 v.startTimestamp == 0 ? uint64(block.timestamp) : v.startTimestamp;
 
-            address wallet = Clones.cloneDeterministic(
+            address wallet = LibClone.cloneDeterministic(
                 vestingImplementation, keccak256(abi.encode(token))
             );
             // Init before funding; cliff > duration reverts inside (OZ
@@ -297,7 +303,7 @@ contract TokenFactory is Ownable2Step, Pausable {
         view
         returns (address)
     {
-        return Clones.predictDeterministicAddress(
+        return LibClone.predictDeterministicAddress(
             vestingImplementation,
             keccak256(abi.encode(_predictToken(deployer, userSalt))),
             address(this)
@@ -305,7 +311,7 @@ contract TokenFactory is Ownable2Step, Pausable {
     }
 
     function _predictToken(address deployer, bytes32 userSalt) private view returns (address) {
-        return Clones.predictDeterministicAddress(
+        return LibClone.predictDeterministicAddress(
             implementations[currentVersion], _scopedSalt(deployer, userSalt), address(this)
         );
     }

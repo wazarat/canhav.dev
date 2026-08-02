@@ -22,7 +22,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 const INDEXER = process.env.INDEXER_URL ?? "http://localhost:42069";
-const FACTORY = process.env.FACTORY ?? "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5";
+const FACTORY = process.env.FACTORY ?? "0x30Db3A828F65B92434c6aDB27AEeD01850277b08";
 const ESCROW = process.env.ESCROW ?? "0x90C71DBA8A61Da14CA699f72D311e404094Cf192";
 const UPDATES = process.env.UPDATES ?? "0x31358209375591b1285EaA437c2c9f189c48D073";
 

@@ -34,10 +34,16 @@ export default createConfig({
       ],
       startBlock: 95600880,
     },
+    // Fee-era factories: v3 + v4 share this entry — v4 (Solady LibClone,
+    // 2026-08-02, block 96243249) kept the ABI/events byte-identical, so it
+    // is just a second address, exactly like v1/v2 above.
     TokenFactoryV3: {
       chain: "robinhoodTestnet",
       abi: TokenFactoryV3Abi,
-      address: "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5",
+      address: [
+        "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5",
+        "0x30Db3A828F65B92434c6aDB27AEeD01850277b08",
+      ],
       startBlock: 96208927,
     },
     // TimelockController that owns the v3 factory — indexed so the governance

@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {Test, Vm} from "forge-std/Test.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import {LaunchToken} from "../src/LaunchToken.sol";
@@ -824,6 +825,36 @@ contract TokenFactoryTest is Test {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         factory.setTreasury(alice);
+    }
+
+    // ---------------------------------------------------- LibClone/OZ parity
+
+    /// @dev VALIDATION FINDING (the point of the testnet swap): Solady's
+    ///      minimal proxy is the gas-optimized variant, NOT byte-identical to
+    ///      ERC-1167 — CREATE2 addresses DIVERGE from the OZ Clones math for
+    ///      identical salts. The invariant the optimistic UI relies on is the
+    ///      factory's own prediction matching the deployed address, which
+    ///      holds because both use LibClone. This test pins BOTH facts so the
+    ///      divergence can never be assumed away and the UI invariant can
+    ///      never silently break.
+    function testFuzz_LibCloneAddressParityWithOZ(bytes32 userSalt) public {
+        bytes32 scopedSalt = keccak256(abi.encode(alice, userSalt));
+
+        address factoryToken = factory.predictTokenAddress(alice, userSalt);
+        address factoryVesting = factory.predictVestingAddress(alice, userSalt);
+
+        // The UI invariant: factory prediction == deployed clone, both sides.
+        vm.prank(alice);
+        address deployed = factory.launchToken(_params(), _vesting(1000e18), userSalt);
+        assertEq(deployed, factoryToken, "factory prediction diverges from deployment");
+        assertTrue(factoryVesting.code.length > 0, "vesting clone not at predicted address");
+
+        // The documented divergence: OZ Clones math must NOT be used to
+        // predict addresses for this factory (different proxy bytecode).
+        address ozToken = Clones.predictDeterministicAddress(
+            address(implementation), scopedSalt, address(factory)
+        );
+        assertTrue(ozToken != factoryToken, "OZ math unexpectedly matches; comment is stale");
     }
 
     // --------------------------------------------------------------- timelock
