@@ -79,11 +79,22 @@ export const LAUNCH_FORM = {
 
 export const LAUNCH_COPY = {
   kicker: "Launchpad",
-  title: "Launch token",
-  subtitle:
-    "Create a test token on Robinhood Chain testnet. Fill in the details, write the journey, and launch — the journey's hash is committed on-chain with the token.",
+  title: "Ideate Token Launch",
+  subtitleLead: "Create a test token on Robinhood Chain testnet.",
+  subtitleDetail:
+    "Fill in the details, write the journey, and launch. The journey's hash will build credibility as it is committed on-chain with the token.",
   previewTitle: "Your token",
 } as const;
+
+/**
+ * Wallets that appear via EIP-6963 but cannot add custom EVM chains, so they
+ * can never reach Robinhood Chain Testnet (46630). Keyed by rdns. They're
+ * shown disabled in the picker with the reason, rather than silently failing.
+ */
+export const UNSUPPORTED_WALLETS: Record<string, string> = {
+  "app.keplr": "Keplr can't add custom EVM testnets",
+  "app.hashpack": "HashPack is Hedera-only",
+};
 
 export function validateName(value: string): string | undefined {
   if (!value) return undefined;

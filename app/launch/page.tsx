@@ -18,8 +18,11 @@ export default function LaunchPage() {
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
           {LAUNCH_COPY.title}
         </h1>
-        <p className="mt-4 text-base leading-relaxed text-ink-300">
-          {LAUNCH_COPY.subtitle}
+        <p className="mt-4 text-lg font-medium leading-relaxed text-ink-100">
+          {LAUNCH_COPY.subtitleLead}
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-400">
+          {LAUNCH_COPY.subtitleDetail}
         </p>
       </div>
 

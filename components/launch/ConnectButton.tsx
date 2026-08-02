@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { useConnect, useDisconnect } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { LAUNCH_CHAIN, UNSUPPORTED_WALLETS } from "@/content/launch";
 
 import { useLaunchChain } from "./useLaunchChain";
 
@@ -16,7 +16,7 @@ function shortAddress(addr: string): string {
 export function ConnectButton() {
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
-  const { isConnected, address, onCorrectChain, ensureChain } = useLaunchChain();
+  const { isConnected, address, onCorrectChain, ensureChain, switchError } = useLaunchChain();
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -75,26 +75,41 @@ export function ConnectButton() {
           </Button>
 
           {open ? (
-            <div className="glass-strong absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-ink-700/70 py-1 shadow-xl">
-              {discovered.map((connector) => (
-                <button
-                  key={connector.uid}
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    connect({ connector });
-                  }}
-                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ink-100 transition-colors hover:bg-ink-800/70"
-                >
-                  {connector.icon ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={connector.icon} alt="" className="h-5 w-5 rounded" />
-                  ) : (
-                    <span className="h-5 w-5 rounded bg-ink-700" />
-                  )}
-                  {connector.name}
-                </button>
-              ))}
+            <div className="glass-strong absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-xl border border-ink-700/70 py-1 shadow-xl">
+              {discovered.map((connector) => {
+                const unsupported = UNSUPPORTED_WALLETS[connector.id];
+                return (
+                  <button
+                    key={connector.uid}
+                    type="button"
+                    disabled={!!unsupported}
+                    onClick={() => {
+                      setOpen(false);
+                      connect({ connector });
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ink-100 transition-colors hover:bg-ink-800/70 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  >
+                    {connector.icon ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={connector.icon}
+                        alt=""
+                        className={`h-5 w-5 rounded ${unsupported ? "opacity-40" : ""}`}
+                      />
+                    ) : (
+                      <span className="h-5 w-5 rounded bg-ink-700" />
+                    )}
+                    <span className="min-w-0">
+                      <span className={`block ${unsupported ? "text-ink-500" : ""}`}>
+                        {connector.name}
+                      </span>
+                      {unsupported ? (
+                        <span className="block text-xs text-ink-600">{unsupported}</span>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ) : null}
         </div>
@@ -117,7 +132,8 @@ export function ConnectButton() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col items-end gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
       {!onCorrectChain ? (
         <button
           type="button"
@@ -142,6 +158,10 @@ export function ConnectButton() {
       >
         Disconnect
       </button>
+      </div>
+      {switchError ? (
+        <p className="max-w-sm text-right text-xs text-rose-400">{switchError}</p>
+      ) : null}
     </div>
   );
 }
