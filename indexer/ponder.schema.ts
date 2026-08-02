@@ -178,6 +178,76 @@ export const purchase = onchainTable(
   }),
 );
 
+/** One row per PoolCreated event; reserves/totalShares kept current by the
+ *  liquidity + swap handlers. Pools are per (token, creator) — display layers
+ *  must surface only the pool whose creator equals the token's creator. */
+export const pool = onchainTable("pool", (t) => ({
+  poolId: t.bigint().primaryKey(),
+  tokenAddress: t.hex().notNull(),
+  creator: t.hex().notNull(),
+  protocolFeeBps: t.integer().notNull(),
+  ethReserve: t.bigint().notNull(),
+  tokenReserve: t.bigint().notNull(),
+  totalShares: t.bigint().notNull(),
+  blockNumber: t.bigint().notNull(),
+  blockTimestamp: t.bigint().notNull(),
+  txHash: t.hex().notNull(),
+}));
+
+/** One row per Swapped event — the volume record. */
+export const swap = onchainTable(
+  "swap",
+  (t) => ({
+    txHash: t.hex().notNull(),
+    logIndex: t.integer().notNull(),
+    poolId: t.bigint().notNull(),
+    trader: t.hex().notNull(),
+    ethToToken: t.boolean().notNull(),
+    amountIn: t.bigint().notNull(),
+    amountOut: t.bigint().notNull(),
+    protocolFeePaid: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.txHash, table.logIndex] }),
+  }),
+);
+
+/** One row per LiquidityAdded/LiquidityRemoved event. */
+export const liquidityEvent = onchainTable(
+  "liquidity_event",
+  (t) => ({
+    txHash: t.hex().notNull(),
+    logIndex: t.integer().notNull(),
+    poolId: t.bigint().notNull(),
+    provider: t.hex().notNull(),
+    kind: t.text().notNull(), // "add" | "remove"
+    ethAmount: t.bigint().notNull(),
+    tokenAmount: t.bigint().notNull(),
+    shares: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.txHash, table.logIndex] }),
+  }),
+);
+
+/** One row per FeeSplitter Distributed event — the auditable payout trail. */
+export const feeDistribution = onchainTable(
+  "fee_distribution",
+  (t) => ({
+    txHash: t.hex().notNull(),
+    logIndex: t.integer().notNull(),
+    asset: t.hex().notNull(), // 0x0 = ETH
+    payee: t.hex().notNull(),
+    amount: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.txHash, table.logIndex] }),
+  }),
+);
+
 /** One row per VestingCreated event. `startTimestamp` is the RESOLVED start
  *  (the contract replaces the 0 sentinel with block.timestamp before
  *  emitting). NOTE: `beneficiary` is historical — the vesting wallet's

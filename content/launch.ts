@@ -24,6 +24,11 @@ export const LAUNCH_CHAIN = {
   // Fixed-price allocation sales: fee-free (zero platform cut), proceeds
   // claimable only in milestone-dated tranches. Also admin-less.
   saleAddress: "0x869cE70ff8174802d98D26835ce4040754Ad284A",
+  // Minimal AMM (token ⇄ ETH pools). 0.30% LP fee; opt-in protocol fee
+  // (hard-capped, 70/30 project/platform enforced in bytecode) routed to the
+  // FeeSplitter. Both knobs owned by the timelock.
+  ammAddress: "0xDd070b1f8e000D27491A3d38543ef0D72C758Df4",
+  splitterAddress: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
 } as const;
 
 /** Vesting form constraints (client-side mirror of factory validation). */

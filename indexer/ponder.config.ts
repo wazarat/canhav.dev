@@ -1,7 +1,9 @@
 import { createConfig } from "ponder";
 
 import { AllocationSaleAbi } from "./abis/AllocationSaleAbi";
+import { FeeSplitterAbi } from "./abis/FeeSplitterAbi";
 import { JourneyUpdatesAbi } from "./abis/JourneyUpdatesAbi";
+import { LaunchAMMAbi } from "./abis/LaunchAMMAbi";
 import { MilestoneEscrowAbi } from "./abis/MilestoneEscrowAbi";
 import { TimelockControllerAbi } from "./abis/TimelockControllerAbi";
 import { TokenFactoryAbi } from "./abis/TokenFactoryAbi";
@@ -67,6 +69,20 @@ export default createConfig({
       abi: AllocationSaleAbi,
       address: "0x869cE70ff8174802d98D26835ce4040754Ad284A",
       startBlock: 96229564,
+    },
+    // Minimal AMM + platform fee splitter (2026-08-02). Deployment record:
+    // broadcast/DeployAMM.s.sol.
+    LaunchAMM: {
+      chain: "robinhoodTestnet",
+      abi: LaunchAMMAbi,
+      address: "0xDd070b1f8e000D27491A3d38543ef0D72C758Df4",
+      startBlock: 96235054,
+    },
+    FeeSplitter: {
+      chain: "robinhoodTestnet",
+      abi: FeeSplitterAbi,
+      address: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
+      startBlock: 96235052,
     },
   },
 });

@@ -8,6 +8,8 @@ import { EscrowActions, type EscrowActionTranche } from "@/components/launch/Esc
 import { EscrowCard } from "@/components/launch/EscrowCard";
 import { JourneyCard, type VerifiedUpdate } from "@/components/launch/JourneyCard";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
+import { PoolActions, type PoolActionPool } from "@/components/launch/PoolActions";
+import { PoolCard } from "@/components/launch/PoolCard";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
 import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
@@ -18,7 +20,9 @@ import {
   formatSupply,
   getEscrows,
   getMilestoneUpdates,
+  getPool,
   getRecentPurchases,
+  getRecentSwaps,
   getSales,
   getToken,
   getVesting,
@@ -167,15 +171,17 @@ export default async function TokenPage({
   const token = await getToken(address);
   if (!token) notFound();
 
-  const [journey, vesting, escrows, sales] = await Promise.all([
+  const [journey, vesting, escrows, sales, ammPool] = await Promise.all([
     getVerifiedJourney(token.journeyHash),
     getVesting(token.address),
     getEscrows(token.address),
     getSales(token.address),
+    getPool(token.address, token.creator),
   ]);
-  const [liveVesting, updates, ...purchaseLists] = await Promise.all([
+  const [liveVesting, updates, swapData, ...purchaseLists] = await Promise.all([
     vesting ? getLiveVesting(vesting) : null,
     getVerifiedUpdates(token.address, token.creator),
+    ammPool ? getRecentSwaps(ammPool.poolId) : null,
     ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
   ]);
   const purchases: Record<string, IndexedPurchase[]> = {};
@@ -353,6 +359,31 @@ export default async function TokenPage({
         symbol={token.symbol}
         milestones={milestones}
         sales={actionSales}
+      />
+
+      {ammPool ? (
+        <PoolCard
+          pool={ammPool}
+          symbol={token.symbol}
+          swapData={swapData as Awaited<ReturnType<typeof getRecentSwaps>>}
+        />
+      ) : null}
+
+      <PoolActions
+        tokenAddress={token.address}
+        creator={token.creator}
+        symbol={token.symbol}
+        pool={
+          ammPool
+            ? ({
+                poolId: ammPool.poolId,
+                protocolFeeBps: ammPool.protocolFeeBps,
+                ethReserve: ammPool.ethReserve,
+                tokenReserve: ammPool.tokenReserve,
+                totalShares: ammPool.totalShares,
+              } satisfies PoolActionPool)
+            : null
+        }
       />
 
       <EscrowActions

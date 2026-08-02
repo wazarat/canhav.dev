@@ -2,11 +2,15 @@ import { ponder } from "ponder:registry";
 import {
   escrow,
   escrowTranche,
+  feeDistribution,
   implementation,
+  liquidityEvent,
   milestoneUpdate,
+  pool,
   purchase,
   sale,
   saleTranche,
+  swap,
   timelockOperation,
   token,
   vesting,
@@ -270,4 +274,101 @@ ponder.on("AllocationSale:UnsoldReclaimed", async ({ event, context }) => {
   await context.db
     .update(sale, { saleId: event.args.saleId })
     .set({ unsoldReclaimed: true });
+});
+
+// LaunchAMM pools, liquidity, swaps + FeeSplitter distributions.
+
+ponder.on("LaunchAMM:PoolCreated", async ({ event, context }) => {
+  await context.db.insert(pool).values({
+    poolId: event.args.poolId,
+    tokenAddress: event.args.token,
+    creator: event.args.creator,
+    protocolFeeBps: Number(event.args.protocolFeeBps),
+    ethReserve: 0n,
+    tokenReserve: 0n,
+    totalShares: 0n,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    txHash: event.transaction.hash,
+  });
+});
+
+ponder.on("LaunchAMM:LiquidityAdded", async ({ event, context }) => {
+  await context.db.insert(liquidityEvent).values({
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
+    poolId: event.args.poolId,
+    provider: event.args.provider,
+    kind: "add",
+    ethAmount: event.args.ethIn,
+    tokenAmount: event.args.tokensIn,
+    shares: event.args.sharesMinted,
+    blockTimestamp: event.block.timestamp,
+  });
+  await context.db.update(pool, { poolId: event.args.poolId }).set((row) => ({
+    ethReserve: row.ethReserve + event.args.ethIn,
+    tokenReserve: row.tokenReserve + event.args.tokensIn,
+    // The first add locks MINIMUM_LIQUIDITY (1000) shares in the contract's
+    // totalShares beyond the minted amount the event carries.
+    totalShares:
+      row.totalShares + event.args.sharesMinted + (row.totalShares === 0n ? 1000n : 0n),
+  }));
+});
+
+ponder.on("LaunchAMM:LiquidityRemoved", async ({ event, context }) => {
+  await context.db.insert(liquidityEvent).values({
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
+    poolId: event.args.poolId,
+    provider: event.args.provider,
+    kind: "remove",
+    ethAmount: event.args.ethOut,
+    tokenAmount: event.args.tokensOut,
+    shares: event.args.sharesBurned,
+    blockTimestamp: event.block.timestamp,
+  });
+  await context.db.update(pool, { poolId: event.args.poolId }).set((row) => ({
+    ethReserve: row.ethReserve - event.args.ethOut,
+    tokenReserve: row.tokenReserve - event.args.tokensOut,
+    totalShares: row.totalShares - event.args.sharesBurned,
+  }));
+});
+
+ponder.on("LaunchAMM:Swapped", async ({ event, context }) => {
+  await context.db.insert(swap).values({
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
+    poolId: event.args.poolId,
+    trader: event.args.trader,
+    ethToToken: event.args.ethToToken,
+    amountIn: event.args.amountIn,
+    amountOut: event.args.amountOut,
+    protocolFeePaid: event.args.protocolFeePaid,
+    blockTimestamp: event.block.timestamp,
+  });
+  // Mirror the contract's reserve math: net input (minus protocol fee) enters
+  // the curve, output leaves it.
+  await context.db.update(pool, { poolId: event.args.poolId }).set((row) => {
+    const inNet = event.args.amountIn - event.args.protocolFeePaid;
+    return event.args.ethToToken
+      ? {
+          ethReserve: row.ethReserve + inNet,
+          tokenReserve: row.tokenReserve - event.args.amountOut,
+        }
+      : {
+          tokenReserve: row.tokenReserve + inNet,
+          ethReserve: row.ethReserve - event.args.amountOut,
+        };
+  });
+});
+
+ponder.on("FeeSplitter:Distributed", async ({ event, context }) => {
+  await context.db.insert(feeDistribution).values({
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
+    asset: event.args.asset,
+    payee: event.args.payee,
+    amount: event.args.amount,
+    blockTimestamp: event.block.timestamp,
+  });
 });

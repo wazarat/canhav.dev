@@ -276,6 +276,63 @@ export async function getActiveSaleTokens(): Promise<Set<string> | null> {
   );
 }
 
+export interface IndexedPool {
+  poolId: string;
+  tokenAddress: string;
+  creator: string;
+  protocolFeeBps: number;
+  ethReserve: string;
+  tokenReserve: string;
+  totalShares: string;
+  txHash: string;
+}
+
+/** The creator-authored pool for a token, or null. Pools are per
+ *  (token, creator); this is the display-layer authorship filter. */
+export async function getPool(
+  tokenAddress: string,
+  creator: string,
+): Promise<IndexedPool | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  if (!/^0x[a-fA-F0-9]{40}$/.test(creator)) return null;
+  const data = await query<{ pools: { items: IndexedPool[] } }>(
+    `{ pools(where: { tokenAddress: "${tokenAddress.toLowerCase()}", creator: "${creator.toLowerCase()}" }, limit: 1) { items {
+      poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
+    } } }`,
+  );
+  return data?.pools.items[0] ?? null;
+}
+
+export interface IndexedSwap {
+  trader: string;
+  ethToToken: boolean;
+  amountIn: string;
+  amountOut: string;
+  protocolFeePaid: string;
+  blockTimestamp: string;
+  txHash: string;
+}
+
+/** Recent swaps for a pool (newest first) plus simple volume totals. */
+export async function getRecentSwaps(
+  poolId: string,
+  limit = 10,
+): Promise<{ swaps: IndexedSwap[]; count: number; ethVolume: bigint } | null> {
+  if (!/^[0-9]+$/.test(poolId)) return null;
+  const data = await query<{ swaps: { items: IndexedSwap[]; totalCount: number } }>(
+    `{ swaps(where: { poolId: "${poolId}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: 100) { totalCount items {
+      trader ethToToken amountIn amountOut protocolFeePaid blockTimestamp txHash
+    } } }`,
+  );
+  if (!data) return null;
+  const all = data.swaps.items;
+  const ethVolume = all.reduce(
+    (s, x) => s + BigInt(x.ethToToken ? x.amountIn : x.amountOut),
+    0n,
+  );
+  return { swaps: all.slice(0, limit), count: data.swaps.totalCount, ethVolume };
+}
+
 /** Whole-token supply (assumes 18 decimals) for display. */
 export function formatSupply(totalSupply: string): number {
   return Number(BigInt(totalSupply) / 10n ** 18n);

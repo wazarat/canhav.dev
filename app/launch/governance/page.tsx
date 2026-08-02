@@ -4,6 +4,8 @@ import { ArrowLeft, ExternalLink, ShieldCheck } from "lucide-react";
 import { decodeFunctionData, formatEther } from "viem";
 
 import { LAUNCH_CHAIN } from "@/content/launch";
+import { feeSplitterAbi } from "@/lib/abi/feeSplitter";
+import { launchAmmAbi } from "@/lib/abi/launchAmm";
 import { tokenFactoryAbi } from "@/lib/abi/tokenFactory";
 import { getTimelockOperations, type IndexedTimelockOperation } from "@/lib/indexer";
 import { publicClient } from "@/lib/publicClient";
@@ -35,6 +37,42 @@ interface FactoryState {
   minDelay: bigint;
 }
 
+interface AmmState {
+  defaultProtocolFeeBps: number;
+  maxProtocolFeeBps: number;
+  projectShareBps: number;
+  ammOwner: string;
+  splitterPayees: string[];
+  splitterShares: number[];
+}
+
+async function getAmmState(): Promise<AmmState | null> {
+  try {
+    const amm = { abi: launchAmmAbi, address: LAUNCH_CHAIN.ammAddress } as const;
+    const [defaultBps, maxBps, projectBps, ammOwner, payeesResult] = await Promise.all([
+      publicClient.readContract({ ...amm, functionName: "defaultProtocolFeeBps" }),
+      publicClient.readContract({ ...amm, functionName: "MAX_PROTOCOL_FEE_BPS" }),
+      publicClient.readContract({ ...amm, functionName: "PROJECT_SHARE_BPS" }),
+      publicClient.readContract({ ...amm, functionName: "owner" }),
+      publicClient.readContract({
+        abi: feeSplitterAbi,
+        address: LAUNCH_CHAIN.splitterAddress,
+        functionName: "payees",
+      }),
+    ]);
+    return {
+      defaultProtocolFeeBps: Number(defaultBps),
+      maxProtocolFeeBps: Number(maxBps),
+      projectShareBps: Number(projectBps),
+      ammOwner: ammOwner as string,
+      splitterPayees: [...(payeesResult as readonly [readonly string[], readonly number[]])[0]],
+      splitterShares: [...(payeesResult as readonly [readonly string[], readonly number[]])[1]].map(Number),
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function getFactoryState(): Promise<FactoryState | null> {
   try {
     const factory = { abi: tokenFactoryAbi, address: LAUNCH_CHAIN.factoryAddress } as const;
@@ -60,31 +98,58 @@ async function getFactoryState(): Promise<FactoryState | null> {
 
 /** Human sentence for a timelock operation's calldata, best-effort. */
 function describeCall(op: IndexedTimelockOperation): string {
-  if (op.target.toLowerCase() !== LAUNCH_CHAIN.factoryAddress.toLowerCase()) {
-    return `Call to ${op.target}`;
-  }
-  try {
-    const { functionName, args } = decodeFunctionData({
-      abi: tokenFactoryAbi,
-      data: op.data as `0x${string}`,
-    });
-    switch (functionName) {
-      case "setLaunchFee":
-        return `Set the launch fee to ${formatEther(args[0] as bigint)} ETH`;
-      case "setTreasury":
-        return `Set the treasury to ${args[0]}`;
-      case "setPauser":
-        return `Set the pause guardian to ${args[0]}`;
-      case "setImplementation":
-        return `Register new token implementation ${args[0]}`;
-      case "unpause":
-        return "Unpause launches";
-      default:
-        return `Factory call: ${functionName}`;
+  const target = op.target.toLowerCase();
+  if (target === LAUNCH_CHAIN.factoryAddress.toLowerCase()) {
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: tokenFactoryAbi,
+        data: op.data as `0x${string}`,
+      });
+      switch (functionName) {
+        case "setLaunchFee":
+          return `Set the launch fee to ${formatEther(args[0] as bigint)} ETH`;
+        case "setTreasury":
+          return `Set the treasury to ${args[0]}`;
+        case "setPauser":
+          return `Set the pause guardian to ${args[0]}`;
+        case "setImplementation":
+          return `Register new token implementation ${args[0]}`;
+        case "unpause":
+          return "Unpause launches";
+        default:
+          return `Factory call: ${functionName}`;
+      }
+    } catch {
+      return `Factory call (selector ${op.data.slice(0, 10)})`;
     }
-  } catch {
-    return `Factory call (selector ${op.data.slice(0, 10)})`;
   }
+  if (target === LAUNCH_CHAIN.ammAddress.toLowerCase()) {
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: launchAmmAbi,
+        data: op.data as `0x${string}`,
+      });
+      if (functionName === "setDefaultProtocolFeeBps") {
+        return `Set the AMM protocol fee for new pools to ${(Number(args[0]) / 100).toFixed(2)}%`;
+      }
+      return `AMM call: ${functionName}`;
+    } catch {
+      return `AMM call (selector ${op.data.slice(0, 10)})`;
+    }
+  }
+  if (target === LAUNCH_CHAIN.splitterAddress.toLowerCase()) {
+    try {
+      const { functionName } = decodeFunctionData({
+        abi: feeSplitterAbi,
+        data: op.data as `0x${string}`,
+      });
+      if (functionName === "setPayees") return "Change the platform fee splitter's payees";
+      return `Splitter call: ${functionName}`;
+    } catch {
+      return `Splitter call (selector ${op.data.slice(0, 10)})`;
+    }
+  }
+  return `Call to ${op.target}`;
 }
 
 function fmtWhen(unixSeconds: string): string {
@@ -118,7 +183,11 @@ function Stat({ label, value, mono }: { label: string; value: React.ReactNode; m
 }
 
 export default async function GovernancePage() {
-  const [state, ops] = await Promise.all([getFactoryState(), getTimelockOperations()]);
+  const [state, amm, ops] = await Promise.all([
+    getFactoryState(),
+    getAmmState(),
+    getTimelockOperations(),
+  ]);
   const explorer = LAUNCH_CHAIN.explorerUrl;
   const nowSec = Math.floor(Date.now() / 1000);
 
@@ -200,6 +269,61 @@ export default async function GovernancePage() {
           Live chain reads are unavailable right now — the RPC could not be reached.
         </p>
       )}
+
+      {amm ? (
+        <>
+          <h2 className="mt-10 font-display text-xl font-semibold tracking-tight text-ink-50">
+            Trading (AMM)
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Stat
+              label="Protocol fee for new opted-in pools"
+              value={`${(amm.defaultProtocolFeeBps / 100).toFixed(2)}% — hard cap ${(amm.maxProtocolFeeBps / 100).toFixed(2)}% (constant)`}
+            />
+            <Stat
+              label="Protocol fee split (constant)"
+              value={`${amm.projectShareBps / 100}% to the project / ${(10_000 - amm.projectShareBps) / 100}% to the platform`}
+            />
+            <Stat
+              label="AMM owner"
+              value={
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono text-xs">{amm.ammOwner}</span>
+                  {amm.ammOwner.toLowerCase() === LAUNCH_CHAIN.timelockAddress.toLowerCase() ? (
+                    <span className="text-emerald-300">(the timelock)</span>
+                  ) : null}
+                </span>
+              }
+            />
+            <Stat
+              label="Platform fee splitter"
+              value={
+                <span className="flex flex-col gap-1 text-xs">
+                  <a
+                    className="font-mono text-electric-300 hover:text-electric-200"
+                    href={`${explorer}/address/${LAUNCH_CHAIN.splitterAddress}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {LAUNCH_CHAIN.splitterAddress}
+                  </a>
+                  {amm.splitterPayees.map((p, i) => (
+                    <span key={p} className="font-mono text-ink-300">
+                      {p.slice(0, 10)}… · {(amm.splitterShares[i] ?? 0) / 100}%
+                    </span>
+                  ))}
+                </span>
+              }
+            />
+          </div>
+          <p className="mt-3 text-xs text-ink-500">
+            LP fee is 0.30% on every pool. Protocol fees accrue only from real
+            swap volume — nothing pays per-launch. Pool rates are frozen at
+            creation; only the default for future pools can change, behind the
+            timelock, never above the cap.
+          </p>
+        </>
+      ) : null}
 
       <h2 className="mt-10 font-display text-xl font-semibold tracking-tight text-ink-50">
         Timelock operations
