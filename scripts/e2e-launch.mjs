@@ -22,7 +22,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-const SITE = "http://localhost:3000";
+const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 const FACTORY = "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0"; // v2 (vesting-capable)
 
 const chain = defineChain({

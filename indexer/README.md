@@ -12,7 +12,20 @@ Both factories are watched with the v2 ABI from start block `95600880`:
 - v1 `0x1dAaa8294806d216Df36dc07B3803ED26584c909` (paused; never emits VestingCreated)
 - v2 `0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0` (vesting-capable, block 95922560)
 
-## Run
+## Production (Render)
+
+Hosted at **https://canhav-indexer.onrender.com** (web service
+`canhav-indexer`, starter plan, Virginia) with its own Render Postgres
+(`canhav-indexer-db`, basic-256mb) — deliberately NOT Neon, so the indexer's
+persistent connections don't keep Neon compute awake. Env:
+`DATABASE_URL` (internal Render Postgres), `DATABASE_SCHEMA=launchpad`
+(required by `ponder start`), `PONDER_RPC_URL_46630`, `NODE_VERSION=22`.
+Auto-deploys on push to `main`; each deploy resyncs from the start block
+(minutes). `postcss.config.cjs` here is load-bearing: it stops PostCSS config
+resolution from walking up to the repo root's Tailwind config, which breaks
+standalone installs. The site reads it via `INDEXER_URL` on Vercel.
+
+## Local dev
 
 ```sh
 npm install

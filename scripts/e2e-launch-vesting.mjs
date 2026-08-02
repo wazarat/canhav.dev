@@ -19,8 +19,8 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-const SITE = "http://localhost:3000";
-const INDEXER = "http://localhost:42069";
+const SITE = process.env.SITE_URL ?? "http://localhost:3000";
+const INDEXER = process.env.INDEXER_URL ?? "http://localhost:42069";
 const FACTORY = "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0"; // v2
 
 const chain = defineChain({
