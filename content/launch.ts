@@ -17,6 +17,10 @@ export const LAUNCH_CHAIN = {
   // TimelockController that owns the factory: every admin change (fee,
   // treasury, implementation, unpause) waits out its public delay.
   timelockAddress: "0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae",
+  // Admin-less singletons: milestone-dated token lockups + content-addressed
+  // progress-update anchor. No owner, no attester, nothing to rug.
+  escrowAddress: "0x90C71DBA8A61Da14CA699f72D311e404094Cf192",
+  updatesAddress: "0x31358209375591b1285EaA437c2c9f189c48D073",
 } as const;
 
 /** Vesting form constraints (client-side mirror of factory validation). */

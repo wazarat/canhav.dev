@@ -1,5 +1,8 @@
 import { createConfig } from "ponder";
 
+import { JourneyUpdatesAbi } from "./abis/JourneyUpdatesAbi";
+import { MilestoneEscrowAbi } from "./abis/MilestoneEscrowAbi";
+import { TimelockControllerAbi } from "./abis/TimelockControllerAbi";
 import { TokenFactoryAbi } from "./abis/TokenFactoryAbi";
 import { TokenFactoryV3Abi } from "./abis/TokenFactoryV3Abi";
 
@@ -33,6 +36,28 @@ export default createConfig({
       abi: TokenFactoryV3Abi,
       address: "0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5",
       startBlock: 96208927,
+    },
+    // TimelockController that owns the v3 factory — indexed so the governance
+    // page can show pending/executed admin operations.
+    Timelock: {
+      chain: "robinhoodTestnet",
+      abi: TimelockControllerAbi,
+      address: "0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae",
+      startBlock: 96208926,
+    },
+    // Admin-less singletons (2026-08-02): milestone-dated lockups + progress
+    // update anchor. Deployment record: broadcast/DeployEscrow.s.sol.
+    MilestoneEscrow: {
+      chain: "robinhoodTestnet",
+      abi: MilestoneEscrowAbi,
+      address: "0x90C71DBA8A61Da14CA699f72D311e404094Cf192",
+      startBlock: 96220433,
+    },
+    JourneyUpdates: {
+      chain: "robinhoodTestnet",
+      abi: JourneyUpdatesAbi,
+      address: "0x31358209375591b1285EaA437c2c9f189c48D073",
+      startBlock: 96220433,
     },
   },
 });

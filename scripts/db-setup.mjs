@@ -41,6 +41,26 @@ await sql`
     on launchpad.journeys (creator_address, created_at desc)
 `;
 
+// Milestone progress updates, content-addressed like journeys: update_hash =
+// keccak256 of the canonical JSON bytes, also anchored on-chain via the
+// JourneyUpdates contract event.
+await sql`
+  create table if not exists launchpad.milestone_updates (
+    update_hash text primary key check (update_hash ~ '^0x[0-9a-f]{64}$'),
+    token_address text not null check (token_address ~ '^0x[0-9a-f]{40}$'),
+    milestone_index int not null check (milestone_index between 0 and 4),
+    author_address text not null check (author_address ~ '^0x[0-9a-f]{40}$'),
+    doc jsonb not null,
+    canonical text not null,
+    created_at timestamptz not null default now()
+  )
+`;
+
+await sql`
+  create index if not exists milestone_updates_token_idx
+    on launchpad.milestone_updates (token_address, milestone_index, created_at)
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LaunchForm } from "@/components/launch/LaunchForm";
 import { LAUNCH_COPY } from "@/content/launch";
@@ -22,7 +23,13 @@ export default function LaunchPage() {
           {LAUNCH_COPY.subtitleLead}
         </p>
         <p className="mt-2 text-sm leading-relaxed text-ink-400">
-          {LAUNCH_COPY.subtitleDetail}
+          {LAUNCH_COPY.subtitleDetail}{" "}
+          <Link
+            href="/launch/governance"
+            className="text-electric-300 transition-colors hover:text-electric-200"
+          >
+            Fees &amp; governance →
+          </Link>
         </p>
       </div>
 

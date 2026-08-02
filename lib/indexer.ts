@@ -93,6 +93,97 @@ export async function getVesting(tokenAddress: string): Promise<IndexedVesting |
   return data?.vestings.items[0] ?? null;
 }
 
+export interface IndexedEscrowTranche {
+  escrowId: string;
+  trancheIndex: string;
+  milestoneIndex: number;
+  amount: string;
+  unlockTime: string;
+  claimed: boolean;
+  claimedTxHash: string | null;
+  claimedAt: string | null;
+}
+
+export interface IndexedEscrow {
+  escrowId: string;
+  tokenAddress: string;
+  creator: string;
+  journeyHash: string;
+  blockTimestamp: string;
+  txHash: string;
+  tranches: IndexedEscrowTranche[];
+}
+
+/** All escrows for a token (oldest first), each with its tranches. */
+export async function getEscrows(tokenAddress: string): Promise<IndexedEscrow[] | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const data = await query<{
+    escrows: { items: Omit<IndexedEscrow, "tranches">[] };
+    escrowTranches: { items: IndexedEscrowTranche[] };
+  }>(
+    `{
+      escrows(where: { tokenAddress: "${tokenAddress.toLowerCase()}" }, orderBy: "escrowId", orderDirection: "asc", limit: 20) { items {
+        escrowId tokenAddress creator journeyHash blockTimestamp txHash
+      } }
+      escrowTranches(orderBy: "trancheIndex", orderDirection: "asc", limit: 100) { items {
+        escrowId trancheIndex milestoneIndex amount unlockTime claimed claimedTxHash claimedAt
+      } }
+    }`,
+  );
+  if (!data) return null;
+  return data.escrows.items.map((e) => ({
+    ...e,
+    tranches: data.escrowTranches.items.filter((t) => t.escrowId === e.escrowId),
+  }));
+}
+
+export interface IndexedMilestoneUpdate {
+  txHash: string;
+  logIndex: number;
+  tokenAddress: string;
+  author: string;
+  milestoneIndex: number;
+  updateHash: string;
+  blockTimestamp: string;
+}
+
+/** On-chain-anchored milestone updates for a token, oldest first. Callers
+ *  must filter to author === token.creator before display. */
+export async function getMilestoneUpdates(
+  tokenAddress: string,
+): Promise<IndexedMilestoneUpdate[] | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const data = await query<{ milestoneUpdates: { items: IndexedMilestoneUpdate[] } }>(
+    `{ milestoneUpdates(where: { tokenAddress: "${tokenAddress.toLowerCase()}" }, orderBy: "blockTimestamp", orderDirection: "asc", limit: 100) { items {
+      txHash logIndex tokenAddress author milestoneIndex updateHash blockTimestamp
+    } } }`,
+  );
+  return data?.milestoneUpdates.items ?? null;
+}
+
+export interface IndexedTimelockOperation {
+  id: string;
+  callIndex: string;
+  target: string;
+  data: string;
+  delay: string;
+  scheduledAt: string;
+  readyAt: string;
+  status: string;
+  scheduledTxHash: string;
+  executedTxHash: string | null;
+}
+
+/** Timelock operations, newest first — the governance page's table. */
+export async function getTimelockOperations(): Promise<IndexedTimelockOperation[] | null> {
+  const data = await query<{ timelockOperations: { items: IndexedTimelockOperation[] } }>(
+    `{ timelockOperations(orderBy: "scheduledAt", orderDirection: "desc", limit: 50) { items {
+      id callIndex target data delay scheduledAt readyAt status scheduledTxHash executedTxHash
+    } } }`,
+  );
+  return data?.timelockOperations.items ?? null;
+}
+
 /** Whole-token supply (assumes 18 decimals) for display. */
 export function formatSupply(totalSupply: string): number {
   return Number(BigInt(totalSupply) / 10n ** 18n);

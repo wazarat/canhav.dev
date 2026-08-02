@@ -65,6 +65,43 @@ export function hashDescription(description: string): `0x${string}` {
   return keccak256(stringToBytes(description));
 }
 
+/**
+ * A milestone progress update: body stored off-chain, hash anchored on-chain
+ * via JourneyUpdates.postUpdate. Same canonicalization consensus rule as the
+ * journey doc.
+ */
+export interface MilestoneUpdateDoc {
+  version: 1;
+  /** Token address, lowercase hex. */
+  token: string;
+  /** Array index into the journey doc's milestones. */
+  milestoneIndex: number;
+  body: string;
+}
+
+export const UPDATE_LIMITS = { body: { min: 1, max: 1000 } } as const;
+
+export function canonicalizeMilestoneUpdate(doc: MilestoneUpdateDoc): string {
+  return JSON.stringify(sortValue(doc));
+}
+
+export function hashMilestoneUpdate(doc: MilestoneUpdateDoc): `0x${string}` {
+  return keccak256(stringToBytes(canonicalizeMilestoneUpdate(doc)));
+}
+
+/** Returns null when valid, otherwise the first human-readable problem. */
+export function validateMilestoneUpdate(doc: MilestoneUpdateDoc): string | null {
+  if (doc.version !== 1) return "Unsupported update version.";
+  if (!/^0x[0-9a-f]{40}$/.test(doc.token)) return "Update token address must be lowercase hex.";
+  if (!Number.isInteger(doc.milestoneIndex) || doc.milestoneIndex < 0 || doc.milestoneIndex > 4)
+    return "Milestone index must be 0–4.";
+  const body = doc.body.trim();
+  if (body.length < UPDATE_LIMITS.body.min) return "Update body is empty.";
+  if (doc.body.length > UPDATE_LIMITS.body.max)
+    return `Update body is over ${UPDATE_LIMITS.body.max} characters.`;
+  return null;
+}
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Returns null when valid, otherwise the first human-readable problem. */

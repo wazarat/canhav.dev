@@ -4,13 +4,28 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { formatEther } from "viem";
 
-import { JourneyCard } from "@/components/launch/JourneyCard";
+import { EscrowActions, type EscrowActionTranche } from "@/components/launch/EscrowActions";
+import { EscrowCard } from "@/components/launch/EscrowCard";
+import { JourneyCard, type VerifiedUpdate } from "@/components/launch/JourneyCard";
+import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { getDb } from "@/lib/db";
 import { formatCount } from "@/lib/format";
-import { formatSupply, getToken, getVesting, type IndexedVesting } from "@/lib/indexer";
-import { hashJourney, type JourneyDoc } from "@/lib/journey";
+import {
+  formatSupply,
+  getEscrows,
+  getMilestoneUpdates,
+  getToken,
+  getVesting,
+  type IndexedVesting,
+} from "@/lib/indexer";
+import {
+  hashJourney,
+  hashMilestoneUpdate,
+  type JourneyDoc,
+  type MilestoneUpdateDoc,
+} from "@/lib/journey";
 import { publicClient } from "@/lib/publicClient";
 
 const vestingWalletAbi = [
@@ -77,6 +92,49 @@ async function getVerifiedJourney(
   }
 }
 
+/**
+ * Resolve on-chain update anchors to verified update threads per milestone:
+ * keep only anchors authored by the token's creator whose stored body's
+ * recomputed hash matches the anchor.
+ */
+async function getVerifiedUpdates(
+  tokenAddress: string,
+  creator: string,
+): Promise<Record<number, VerifiedUpdate[]>> {
+  const anchors = await getMilestoneUpdates(tokenAddress);
+  const db = getDb();
+  if (!anchors || anchors.length === 0 || !db) return {};
+
+  const fromCreator = anchors.filter(
+    (a) => a.author.toLowerCase() === creator.toLowerCase(),
+  );
+  if (fromCreator.length === 0) return {};
+
+  try {
+    const hashes = fromCreator.map((a) => a.updateHash.toLowerCase());
+    const rows = await db`
+      select update_hash, doc from launchpad.milestone_updates
+      where update_hash = any(${hashes})
+    `;
+    const docs = new Map(rows.map((r) => [r.update_hash as string, r.doc as MilestoneUpdateDoc]));
+
+    const grouped: Record<number, VerifiedUpdate[]> = {};
+    for (const a of fromCreator) {
+      const doc = docs.get(a.updateHash.toLowerCase());
+      if (!doc) continue;
+      if (hashMilestoneUpdate(doc).toLowerCase() !== a.updateHash.toLowerCase()) continue;
+      (grouped[a.milestoneIndex] ??= []).push({
+        body: doc.body,
+        postedAt: Number(a.blockTimestamp),
+        txHash: a.txHash,
+      });
+    }
+    return grouped;
+  } catch {
+    return {};
+  }
+}
+
 export const metadata: Metadata = {
   title: "Token",
   robots: { index: false, follow: false },
@@ -104,12 +162,28 @@ export default async function TokenPage({
   const token = await getToken(address);
   if (!token) notFound();
 
-  const [journey, vesting] = await Promise.all([
+  const [journey, vesting, escrows] = await Promise.all([
     getVerifiedJourney(token.journeyHash),
     getVesting(token.address),
+    getEscrows(token.address),
   ]);
-  const liveVesting = vesting ? await getLiveVesting(vesting) : null;
+  const [liveVesting, updates] = await Promise.all([
+    vesting ? getLiveVesting(vesting) : null,
+    getVerifiedUpdates(token.address, token.creator),
+  ]);
   const explorer = LAUNCH_CHAIN.explorerUrl;
+
+  const milestones = journey?.verified ? journey.doc.milestones : null;
+  const actionTranches: EscrowActionTranche[] = (escrows ?? []).flatMap((e) =>
+    e.tranches.map((t) => ({
+      escrowId: e.escrowId,
+      trancheIndex: t.trancheIndex,
+      milestoneIndex: t.milestoneIndex,
+      amount: t.amount,
+      unlockTime: t.unlockTime,
+      claimed: t.claimed,
+    })),
+  );
 
   return (
     <div className="container max-w-3xl py-14 md:py-20">
@@ -228,8 +302,32 @@ export default async function TokenPage({
         <VestingCard vesting={vesting} symbol={token.symbol} live={liveVesting} />
       ) : null}
 
+      {escrows && escrows.length > 0 ? (
+        <EscrowCard
+          escrows={escrows}
+          symbol={token.symbol}
+          milestones={milestones}
+          nowSeconds={Math.floor(Date.now() / 1000)}
+        />
+      ) : null}
+
+      <EscrowActions
+        tokenAddress={token.address}
+        creator={token.creator}
+        journeyHash={token.journeyHash}
+        symbol={token.symbol}
+        milestones={milestones}
+        tranches={actionTranches}
+      />
+
+      <MilestoneUpdateComposer
+        tokenAddress={token.address}
+        creator={token.creator}
+        milestoneTitles={(milestones ?? []).map((m) => m.title)}
+      />
+
       {journey ? (
-        <JourneyCard doc={journey.doc} verified={journey.verified} />
+        <JourneyCard doc={journey.doc} verified={journey.verified} updates={updates} />
       ) : (
         <div className="mt-8 rounded-2xl border border-ink-800/70 bg-ink-950/40 p-6">
           <p className="text-sm text-ink-400">

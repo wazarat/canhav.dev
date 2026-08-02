@@ -1,5 +1,13 @@
 import { ponder } from "ponder:registry";
-import { implementation, token, vesting } from "ponder:schema";
+import {
+  escrow,
+  escrowTranche,
+  implementation,
+  milestoneUpdate,
+  timelockOperation,
+  token,
+  vesting,
+} from "ponder:schema";
 
 ponder.on("TokenFactory:TokenLaunched", async ({ event, context }) => {
   await context.db.insert(token).values({
@@ -100,4 +108,93 @@ ponder.on("TokenFactoryV3:VestingCreated", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
     txHash: event.transaction.hash,
   });
+});
+
+// Admin-less singletons: milestone escrow + progress updates.
+
+ponder.on("MilestoneEscrow:EscrowCreated", async ({ event, context }) => {
+  await context.db.insert(escrow).values({
+    escrowId: event.args.escrowId,
+    tokenAddress: event.args.token,
+    creator: event.args.creator,
+    journeyHash: event.args.journeyHash,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    txHash: event.transaction.hash,
+  });
+});
+
+ponder.on("MilestoneEscrow:TrancheAdded", async ({ event, context }) => {
+  await context.db.insert(escrowTranche).values({
+    escrowId: event.args.escrowId,
+    trancheIndex: event.args.trancheIndex,
+    milestoneIndex: Number(event.args.milestoneIndex),
+    amount: event.args.amount,
+    unlockTime: BigInt(event.args.unlockTime),
+    claimed: false,
+  });
+});
+
+ponder.on("MilestoneEscrow:TrancheClaimed", async ({ event, context }) => {
+  await context.db
+    .update(escrowTranche, {
+      escrowId: event.args.escrowId,
+      trancheIndex: event.args.trancheIndex,
+    })
+    .set({
+      claimed: true,
+      claimedTxHash: event.transaction.hash,
+      claimedAt: event.block.timestamp,
+    });
+});
+
+ponder.on("JourneyUpdates:MilestoneUpdate", async ({ event, context }) => {
+  await context.db.insert(milestoneUpdate).values({
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
+    tokenAddress: event.args.token,
+    author: event.args.author,
+    milestoneIndex: Number(event.args.milestoneIndex),
+    updateHash: event.args.updateHash,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+  });
+});
+
+// TimelockController operations for the governance page.
+
+ponder.on("Timelock:CallScheduled", async ({ event, context }) => {
+  await context.db.insert(timelockOperation).values({
+    id: event.args.id,
+    callIndex: event.args.index,
+    target: event.args.target,
+    value: event.args.value,
+    data: event.args.data,
+    predecessor: event.args.predecessor,
+    delay: event.args.delay,
+    scheduledAt: event.block.timestamp,
+    readyAt: event.block.timestamp + event.args.delay,
+    status: "pending",
+    scheduledTxHash: event.transaction.hash,
+  });
+});
+
+ponder.on("Timelock:CallExecuted", async ({ event, context }) => {
+  await context.db
+    .update(timelockOperation, { id: event.args.id, callIndex: event.args.index })
+    .set({ status: "executed", executedTxHash: event.transaction.hash });
+});
+
+ponder.on("Timelock:Cancelled", async ({ event, context }) => {
+  // Cancellation carries only the operation id; ops scheduled via schedule()
+  // (not scheduleBatch) always live at callIndex 0.
+  const row = await context.db.find(timelockOperation, {
+    id: event.args.id,
+    callIndex: 0n,
+  });
+  if (row) {
+    await context.db
+      .update(timelockOperation, { id: event.args.id, callIndex: 0n })
+      .set({ status: "cancelled" });
+  }
 });

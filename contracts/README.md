@@ -17,6 +17,8 @@ version registry, factory-level pause, and two-step ownership.
 | Faucet | https://faucet.testnet.chain.robinhood.com (0.01 ETH + stock tokens / 24h) |
 | ArbOS | 61 (`arbOSVersion()` raw 116 − 55 offset) — Cancun confirmed via PUSH0/MCOPY probes |
 | **TokenFactory v3** (launch fee plumbing) | [`0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5`](https://explorer.testnet.chain.robinhood.com/address/0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5) ✅ verified — block 96208927; owned by the timelock |
+| **MilestoneEscrow** (admin-less singleton) | [`0x90C71DBA8A61Da14CA699f72D311e404094Cf192`](https://explorer.testnet.chain.robinhood.com/address/0x90C71DBA8A61Da14CA699f72D311e404094Cf192) ✅ verified — block 96220433; milestone-dated lockups, no owner/attester/pause |
+| **JourneyUpdates** (admin-less singleton) | [`0x31358209375591b1285EaA437c2c9f189c48D073`](https://explorer.testnet.chain.robinhood.com/address/0x31358209375591b1285EaA437c2c9f189c48D073) ✅ verified — block 96220433; content-addressed milestone progress updates |
 | **TimelockController** (factory owner) | [`0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae`](https://explorer.testnet.chain.robinhood.com/address/0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae) ✅ verified — minDelay 300s (testnet; anything real gets 24h+); proposer = deployer EOA, executor = open, no admin |
 | TokenFactory v2 (**PAUSED**) | [`0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0`](https://explorer.testnet.chain.robinhood.com/address/0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0) ✅ verified — block 95922560; paused after v3 migration; its tokens remain live and indexed |
 | **LaunchVestingWallet impl** | [`0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC`](https://explorer.testnet.chain.robinhood.com/address/0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC) ✅ verified — reused by v2 + v3 factories |
@@ -27,7 +29,7 @@ version registry, factory-level pause, and two-step ownership.
 | Compiler | solc 0.8.28, optimizer 200 runs, `via_ir = true`, `evm_version = cancun` |
 | First launch (smoke test) | token [`0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe`](https://explorer.testnet.chain.robinhood.com/address/0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe) ("CanHav First" / CHF1), tx `0x08aec516d847ababe5b6c39496358fa350fd87f02fa49e59eb342899f3bb8fdc` |
 
-Deployment records: `broadcast/{Deploy,DeployV2,DeployV3}.s.sol/46630/run-latest.json` (committed).
+Deployment records: `broadcast/{Deploy,DeployV2,DeployV3,DeployEscrow}.s.sol/46630/run-latest.json` (committed).
 
 ## Layout
 
