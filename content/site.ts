@@ -5,7 +5,8 @@
 export const SITE = {
   name: "CanHav Research",
   tagline: "Arbitrum ecosystem intelligence for capital markets.",
-  url: "https://canhav.dev",
+  url: "https://canhav.com",
+  docsUrl: "https://docs.canhav.com",
   description:
     "CanHav Research is a financial intelligence terminal for the Arbitrum ecosystem: taxonomy, datasets, and on-chain metrics for stablecoins and beyond.",
   footerBlurb:

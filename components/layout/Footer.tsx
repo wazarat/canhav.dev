@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { SITE } from "@/content/site";
 import { Logo } from "@/components/ui/Logo";
 
@@ -8,6 +10,14 @@ export function Footer() {
         <div className="space-y-2">
           <Logo />
           <p className="max-w-md text-sm text-ink-300">{SITE.footerBlurb}</p>
+          <p className="text-sm">
+            <Link
+              href={SITE.docsUrl}
+              className="font-medium text-ink-300 transition-colors hover:text-ink-50"
+            >
+              Docs
+            </Link>
+          </p>
         </div>
         <div className="text-xs text-ink-400">
           <p>{SITE.footerDataLine}</p>

@@ -1,0 +1,28 @@
+{
+  "name": "indexer-agents",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ponder dev --port 42070",
+    "start": "sh -c 'DATABASE_SCHEMA=\"${DATABASE_SCHEMA:-agents_$(echo \"${RENDER_GIT_COMMIT:-local}\" | cut -c1-8)}\" ponder start'",
+    "db": "ponder db",
+    "codegen": "ponder codegen",
+    "lint": "eslint .",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "ponder": "^0.17.3",
+    "hono": "^4.5.0",
+    "viem": "2.35.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^8.54.0",
+    "eslint-config-ponder": "^0.17.3",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
