@@ -33,13 +33,20 @@ export function Field({
   error,
   hint,
   counter,
+  range,
+  counterMet,
   children,
 }: {
   label: string;
   required?: boolean;
   error?: string;
   hint?: string;
+  /** Live character count, e.g. "123" (or a full "123/500" string). */
   counter?: string;
+  /** Required range shown beside the counter, e.g. "80–2,000". */
+  range?: string;
+  /** When true the counter renders in the signal accent (minimum reached). */
+  counterMet?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -48,7 +55,21 @@ export function Field({
         <span className="text-xs font-medium text-ink-200">
           {label} {required ? <span className="text-rose-400">*</span> : null}
         </span>
-        {counter ? <span className="tabular text-xs text-ink-500">{counter}</span> : null}
+        {counter || range ? (
+          <span className="flex items-baseline gap-1 text-xs">
+            {counter ? (
+              <span
+                className={cn(
+                  "tabular font-medium",
+                  counterMet ? "text-signal-400" : "text-ink-200",
+                )}
+              >
+                {counter}
+              </span>
+            ) : null}
+            {range ? <span className="tabular font-medium text-ink-300">/ {range}</span> : null}
+          </span>
+        ) : null}
       </span>
       {children}
       {error ? (

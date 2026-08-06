@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ConnectButton } from "@/components/agents/ConnectButton";
 import { RegistryStatusCard } from "@/components/agents/RegistryStatusCard";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { AGENT_CHAIN, AGENT_CHAIN_ISSUE, AGENTS_COPY } from "@/content/agents";
 import { getAgents } from "@/lib/agents-indexer";
 import { formatAsOf } from "@/lib/format";
@@ -35,10 +36,10 @@ export default async function AgentsPage() {
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
           {AGENTS_COPY.title}
         </h1>
-        <div className="mt-8 max-w-2xl rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6">
-          <p className="text-sm font-medium text-rose-300">Configuration error</p>
-          <p className="mt-2 text-sm leading-relaxed text-rose-200/90">{AGENT_CHAIN_ISSUE}</p>
-        </div>
+        <StatusChip variant="block" tone="error" className="mt-8 max-w-2xl rounded-2xl p-6 text-sm">
+          <span className="block font-medium text-ink-100">Configuration error</span>
+          <span className="mt-2 block leading-relaxed text-ink-300">{AGENT_CHAIN_ISSUE}</span>
+        </StatusChip>
       </div>
     );
   }

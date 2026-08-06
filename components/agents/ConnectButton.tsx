@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { useConnect, useDisconnect } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { AGENT_CHAIN, AGENTS_UNSUPPORTED_WALLETS } from "@/content/agents";
 
 import { useAgentChain } from "./useAgentChain";
@@ -121,9 +122,9 @@ export function ConnectButton() {
             Check your wallet — the popup may open behind this window.
           </p>
         ) : noWalletDetected ? (
-          <p className="text-xs text-amber-300/90">
+          <StatusChip variant="block" tone="warning" className="max-w-xs">
             No wallet extension detected — install MetaMask or Rabby to register.
-          </p>
+          </StatusChip>
         ) : error ? (
           <p className="max-w-xs truncate text-xs text-rose-400" title={error.message}>
             {error.message.split("\n")[0].slice(0, 120)}
@@ -137,18 +138,11 @@ export function ConnectButton() {
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
       {!onCorrectChain ? (
-        <button
-          type="button"
-          onClick={() => void ensureChain()}
-          className="inline-flex items-center rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-xs text-amber-300 transition-colors hover:bg-amber-500/20"
-        >
+        <StatusChip tone="warning" onClick={() => void ensureChain()}>
           Wrong network — switch to {AGENT_CHAIN.name}
-        </button>
+        </StatusChip>
       ) : (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          {AGENT_CHAIN.name}
-        </span>
+        <StatusChip tone="success">{AGENT_CHAIN.name}</StatusChip>
       )}
       <span className="rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 font-mono text-xs text-ink-200">
         {address ? shortAddress(address) : ""}

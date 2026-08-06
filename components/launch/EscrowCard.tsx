@@ -1,5 +1,6 @@
 import { Milestone } from "lucide-react";
 
+import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedEscrow } from "@/lib/indexer";
@@ -97,11 +98,11 @@ export function EscrowCard({
             <ul className="mt-4 space-y-2">
               {tranches.map((t) => {
                 const m = milestones?.[t.milestoneIndex];
-                const status = t.claimed
-                  ? { label: "Claimed", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" }
+                const status: { label: string; tone: StatusTone } = t.claimed
+                  ? { label: "Claimed", tone: "success" }
                   : t.unlock <= now
-                    ? { label: "Claimable", cls: "border-electric-500/40 bg-electric-500/10 text-electric-200" }
-                    : { label: `Unlocks ${fmtDate(t.unlock)}`, cls: "border-ink-700/70 bg-ink-900/60 text-ink-400" };
+                    ? { label: "Claimable", tone: "info" }
+                    : { label: `Unlocks ${fmtDate(t.unlock)}`, tone: "neutral" };
                 return (
                   <li
                     key={`${e.escrowId}-${t.trancheIndex}`}
@@ -116,9 +117,9 @@ export function EscrowCard({
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="tabular text-ink-200">{fmtTokens(t.amountWei, symbol)}</span>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 ${status.cls}`}>
+                      <StatusChip tone={status.tone} className="px-2 py-0.5">
                         {status.label}
-                      </span>
+                      </StatusChip>
                     </span>
                   </li>
                 );

@@ -1,6 +1,7 @@
 import { Coins } from "lucide-react";
 import { formatEther } from "viem";
 
+import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedPurchase, IndexedSale } from "@/lib/indexer";
@@ -62,12 +63,12 @@ export function SaleCard({
         const end = BigInt(s.endTime);
         const cap = BigInt(s.perWalletCap);
         const pct = allocation === 0n ? 0 : Number((sold * 10_000n) / allocation) / 100;
-        const phase =
+        const phase: { label: string; tone: StatusTone } =
           now < start
-            ? { label: `Starts ${fmtDate(start)}`, cls: "border-ink-700/70 bg-ink-900/60 text-ink-400" }
+            ? { label: `Starts ${fmtDate(start)}`, tone: "neutral" }
             : now < end
-              ? { label: "Live", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" }
-              : { label: "Ended", cls: "border-ink-700/70 bg-ink-900/60 text-ink-400" };
+              ? { label: "Live", tone: "success" }
+              : { label: "Ended", tone: "neutral" };
         const recent = purchases[s.saleId] ?? [];
 
         return (
@@ -77,9 +78,9 @@ export function SaleCard({
                 <span className="tabular font-medium">{formatEther(BigInt(s.price))} ETH</span>
                 <span className="text-ink-500"> per {symbol}</span>
               </p>
-              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs ${phase.cls}`}>
+              <StatusChip tone={phase.tone} className="px-2.5 py-0.5">
                 {phase.label}
-              </span>
+              </StatusChip>
             </div>
 
             <div className="mt-3 h-3 w-full overflow-hidden rounded-full border border-ink-700/60 bg-ink-950/70">
@@ -118,14 +119,14 @@ export function SaleCard({
               {s.tranches.map((t) => {
                 const m = milestones?.[t.milestoneIndex];
                 const unlock = BigInt(t.unlockTime);
-                const status = t.claimed
+                const status: { label: string; tone: StatusTone } = t.claimed
                   ? {
                       label: `Claimed${t.claimedAmount ? ` ${formatEther(BigInt(t.claimedAmount))} ETH` : ""}`,
-                      cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+                      tone: "success",
                     }
                   : now >= end && unlock <= now
-                    ? { label: "Claimable", cls: "border-electric-500/40 bg-electric-500/10 text-electric-200" }
-                    : { label: `Unlocks ${fmtDate(unlock)}`, cls: "border-ink-700/70 bg-ink-900/60 text-ink-400" };
+                    ? { label: "Claimable", tone: "info" }
+                    : { label: `Unlocks ${fmtDate(unlock)}`, tone: "neutral" };
                 return (
                   <li
                     key={`${s.saleId}-${t.trancheIndex}`}
@@ -139,9 +140,9 @@ export function SaleCard({
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="tabular text-ink-200">{t.bps / 100}%</span>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 ${status.cls}`}>
+                      <StatusChip tone={status.tone} className="px-2 py-0.5">
                         {status.label}
-                      </span>
+                      </StatusChip>
                     </span>
                   </li>
                 );

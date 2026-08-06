@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, ShieldCheck } from "lucide-react";
 import { decodeFunctionData, formatEther } from "viem";
 
+import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { feeSplitterAbi } from "@/lib/abi/feeSplitter";
 import { launchAmmAbi } from "@/lib/abi/launchAmm";
@@ -323,10 +324,10 @@ export default async function GovernancePage() {
             label="Factory owner"
             value={
               <span className="inline-flex flex-wrap items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                <ShieldCheck className="h-3.5 w-3.5 text-signal-400" />
                 <span className="font-mono text-xs">{state.owner}</span>
                 {state.owner.toLowerCase() === LAUNCH_CHAIN.timelockAddress.toLowerCase() ? (
-                  <span className="text-emerald-300">(the timelock)</span>
+                  <span className="text-signal-400">(the timelock)</span>
                 ) : null}
               </span>
             }
@@ -356,9 +357,9 @@ export default async function GovernancePage() {
           />
         </div>
       ) : (
-        <p className="mt-8 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <StatusChip variant="block" tone="warning" className="mt-8 rounded-xl px-4 py-3 text-sm">
           Live chain reads are unavailable right now — the RPC could not be reached.
-        </p>
+        </StatusChip>
       )}
 
       {amm ? (
@@ -381,7 +382,7 @@ export default async function GovernancePage() {
                 <span className="inline-flex flex-wrap items-center gap-1.5">
                   <span className="font-mono text-xs">{amm.ammOwner}</span>
                   {amm.ammOwner.toLowerCase() === LAUNCH_CHAIN.timelockAddress.toLowerCase() ? (
-                    <span className="text-emerald-300">(the timelock)</span>
+                    <span className="text-signal-400">(the timelock)</span>
                   ) : null}
                 </span>
               }
@@ -434,14 +435,14 @@ export default async function GovernancePage() {
         <ul className="mt-4 space-y-2">
           {ops.map((op) => {
             const pendingReady = op.status === "pending" && Number(op.readyAt) <= nowSec;
-            const badge =
+            const badge: { label: string; tone: StatusTone } =
               op.status === "executed"
-                ? { label: "Executed", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" }
+                ? { label: "Executed", tone: "success" }
                 : op.status === "cancelled"
-                  ? { label: "Cancelled", cls: "border-ink-700/70 bg-ink-900/60 text-ink-400" }
+                  ? { label: "Cancelled", tone: "neutral" }
                   : pendingReady
-                    ? { label: "Ready to execute", cls: "border-amber-500/40 bg-amber-500/10 text-amber-300" }
-                    : { label: `Executable ${fmtWhen(op.readyAt)} UTC`, cls: "border-electric-500/40 bg-electric-500/10 text-electric-200" };
+                    ? { label: "Ready to execute", tone: "warning" }
+                    : { label: `Executable ${fmtWhen(op.readyAt)} UTC`, tone: "info" };
             return (
               <li
                 key={`${op.id}-${op.callIndex}`}
@@ -461,11 +462,9 @@ export default async function GovernancePage() {
                     </a>
                   </p>
                 </div>
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs ${badge.cls}`}
-                >
+                <StatusChip tone={badge.tone} className="px-2.5 py-0.5">
                   {badge.label}
-                </span>
+                </StatusChip>
               </li>
             );
           })}

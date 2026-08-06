@@ -6,6 +6,7 @@ import { usePublicClient, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
 import { Field, TextArea, inputClasses } from "@/components/ui/Input";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { journeyUpdatesAbi } from "@/lib/abi/journeyUpdates";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import {
@@ -145,14 +146,14 @@ export function MilestoneUpdateComposer({
         ) : null}
       </div>
       {status.kind === "error" ? (
-        <p className="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+        <StatusChip variant="block" tone="error" className="mt-3">
           {status.message}
-        </p>
+        </StatusChip>
       ) : null}
       {status.kind === "done" ? (
-        <p className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+        <StatusChip variant="block" tone="success" className="mt-3">
           Update anchored. Page refreshes in a few seconds.
-        </p>
+        </StatusChip>
       ) : null}
     </div>
   );

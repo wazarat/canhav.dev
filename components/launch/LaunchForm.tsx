@@ -8,6 +8,7 @@ import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { cn } from "@/lib/utils";
 import { tokenFactoryAbi } from "@/lib/abi/tokenFactory";
 import {
@@ -547,9 +548,9 @@ export function LaunchForm() {
             </p>
 
             {status.kind === "error" ? (
-              <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+              <StatusChip variant="block" tone="error">
                 {status.message}
-              </p>
+              </StatusChip>
             ) : null}
 
             <div className="flex items-center justify-between border-t border-ink-800/70 pt-5">

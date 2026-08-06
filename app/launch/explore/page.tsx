@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { StatusChip } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import { formatSupply, getActiveSaleTokens, getTokens } from "@/lib/indexer";
@@ -64,9 +65,9 @@ export default async function ExplorePage() {
                     <p className="font-mono text-xs text-electric-300">${t.symbol}</p>
                   </div>
                   {liveSaleTokens?.has(t.address.toLowerCase()) ? (
-                    <span className="ml-auto inline-flex shrink-0 items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300">
+                    <StatusChip tone="success" className="ml-auto shrink-0 px-2 py-0.5 text-[11px]">
                       Live sale
-                    </span>
+                    </StatusChip>
                   ) : null}
                 </div>
                 <div className="mt-4 flex items-center justify-between text-xs">

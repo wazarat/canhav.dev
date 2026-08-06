@@ -1,5 +1,6 @@
-import { BadgeCheck, ShieldAlert } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 
+import { StatusChip } from "@/components/ui/StatusChip";
 import type { JourneyDoc } from "@/lib/journey";
 
 /** A creator-authored progress update, already verified server-side: the
@@ -34,13 +35,9 @@ export function JourneyCard({
           Journey
         </h2>
         {verified ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-            <BadgeCheck className="h-3.5 w-3.5" /> Hash verified against chain
-          </span>
+          <StatusChip tone="success">Hash verified against chain</StatusChip>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-xs text-rose-300">
-            <ShieldAlert className="h-3.5 w-3.5" /> Hash mismatch — do not trust
-          </span>
+          <StatusChip tone="error">Hash mismatch — do not trust</StatusChip>
         )}
       </div>
 
@@ -88,7 +85,7 @@ export function JourneyCard({
                       {u.body}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-500">
-                      <BadgeCheck className="h-3 w-3 text-emerald-400" />
+                      <BadgeCheck className="h-3 w-3 text-signal-400" />
                       Creator update ·{" "}
                       {new Date(u.postedAt * 1000).toLocaleDateString("en-US", {
                         month: "short",

@@ -32,8 +32,10 @@ export function JourneyFields({
       <Field
         label="Why this token"
         required
-        hint={`What is this token and why does it exist. ${L.why.min}–${L.why.max} characters.`}
-        counter={`${why.length}/${L.why.max}`}
+        hint="What is this token and why does it exist."
+        counter={String(why.length)}
+        range={`${L.why.min}–${L.why.max.toLocaleString("en-US")}`}
+        counterMet={why.length >= L.why.min}
       >
         <TextArea
           value={why}
@@ -48,8 +50,10 @@ export function JourneyFields({
       <Field
         label="Supply rationale"
         required
-        hint={`Why this total supply, and who gets it. ${L.supplyRationale.min}–${L.supplyRationale.max} characters.`}
-        counter={`${supplyRationale.length}/${L.supplyRationale.max}`}
+        hint="Why this total supply, and who gets it."
+        counter={String(supplyRationale.length)}
+        range={`${L.supplyRationale.min}–${L.supplyRationale.max.toLocaleString("en-US")}`}
+        counterMet={supplyRationale.length >= L.supplyRationale.min}
       >
         <TextArea
           value={supplyRationale}
@@ -66,7 +70,7 @@ export function JourneyFields({
           <span className="text-xs font-medium text-ink-200">
             Roadmap milestones <span className="text-rose-400">*</span>
           </span>
-          <span className="text-xs text-ink-500">
+          <span className="tabular text-xs font-medium text-ink-300">
             {L.milestones.min}–{L.milestones.max} dated milestones
           </span>
         </div>
