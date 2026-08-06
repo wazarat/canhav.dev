@@ -1,5 +1,7 @@
 # Registry addresses
 
+**Available now** (public registries). Agent Launch is step 3 / next priority.
+
 Base Sepolia (chain ID `84532`). CanHav does not own these contracts. Confirm on [Blockscout](https://base-sepolia.blockscout.com).
 
 ## Configured testnet registries

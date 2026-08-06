@@ -1,5 +1,7 @@
 # Milestone escrow
 
+**Available now.**
+
 **MilestoneEscrow** is an admin-less singleton on Robinhood Chain Testnet. It holds token lockups that unlock on milestone dates.
 
 ## Properties

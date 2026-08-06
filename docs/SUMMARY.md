@@ -1,10 +1,20 @@
 # Summary
 
-## General
+## Getting started
 
 * [Welcome to CanHav](general/welcome-to-canhav.md)
+* [What CanHav is](general/what-canhav-is.md)
 * [Glossary](general/glossary.md)
 * [Litepaper](general/litepaper.md)
+
+## Projects
+
+* [The two ideation tracks](ideation/two-tracks.md)
+* [The three answer types](ideation/three-answer-types.md)
+* [Product track](ideation/product-track.md)
+* [Token track](ideation/token-track.md)
+* [Computed outputs](ideation/computed-outputs.md)
+* [Public pages](ideation/public-pages.md)
 
 ## Token Launch
 
@@ -17,10 +27,24 @@
 * [Journey updates](token-launch/journey-updates.md)
 * [Allocation sales](token-launch/allocation-sales.md)
 * [AMM and fees](token-launch/amm-and-fees.md)
+* [Fees and economics](token-launch/fees-and-economics.md)
+* [Contract guarantees](token-launch/contract-guarantees.md)
 * [Governance](token-launch/governance.md)
 * [Explore tokens](token-launch/explore-tokens.md)
 * [Contract addresses](token-launch/contract-addresses.md)
 * [FAQ](token-launch/faq.md)
+
+## Accounts
+
+* [Clerk accounts](accounts/clerk-accounts.md)
+
+## AI and IDE
+
+* [Markdown export and MCP](ai/export-and-mcp.md)
+
+## Reference
+
+* [Networks and versions](reference/networks-and-versions.md)
 
 ## Agent Launch
 

@@ -1,5 +1,7 @@
 # Journey and credibility
 
+**Available now.**
+
 A **journey** is the off-chain plan for a token: milestones, narrative, and updates over time. At launch, CanHav commits hashes on-chain so anyone can verify that a published document matches what was launched.
 
 ## Two commitments

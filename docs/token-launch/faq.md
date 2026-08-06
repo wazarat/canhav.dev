@@ -1,5 +1,7 @@
 # Token Launch FAQ
 
+**Available now** (Token Launch FAQ).
+
 ## Why does my wallet show as disabled?
 
 Keplr and HashPack cannot reach Robinhood Chain Testnet (`46630`). Use a wallet that can add custom EVM chains. See [Network setup](network-setup.md).

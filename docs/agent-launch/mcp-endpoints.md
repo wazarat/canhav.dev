@@ -1,5 +1,7 @@
 # MCP endpoints
 
+**Planned** as a registration gate. Agent Launch is step 3 / next priority.
+
 **MCP** (Model Context Protocol) is how CanHav intends agents to expose tools and resources in a machine-checkable way.
 
 ## Why MCP

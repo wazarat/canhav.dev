@@ -1,5 +1,7 @@
 # Journey updates
 
+**Available now.**
+
 **JourneyUpdates** is an admin-less singleton that anchors **content-addressed** progress updates for a launched token.
 
 ## Properties

@@ -1,5 +1,7 @@
 # Governance
 
+**Available now.**
+
 Token Launch separates **immutable after launch** from **timelocked admin**.
 
 ## TimelockController

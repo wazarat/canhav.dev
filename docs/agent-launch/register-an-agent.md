@@ -1,5 +1,7 @@
 # Register an agent
 
+**Available now** on `/agents` (MCP gate not required yet). Agent Launch is step 3 / next priority.
+
 Use the product UI at `/agents` while connected to Base Sepolia.
 
 ## What registration means

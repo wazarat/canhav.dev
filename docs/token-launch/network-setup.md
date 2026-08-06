@@ -1,5 +1,7 @@
 # Network setup
 
+**Available now.**
+
 Connect a wallet to **Robinhood Chain Testnet** before using Token Launch.
 
 ## Chain parameters

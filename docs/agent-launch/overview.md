@@ -1,9 +1,11 @@
 # Agent Launch overview
 
-Agent Launch is CanHav’s second product track: register AI agents as on-chain identities using **ERC-8004** on **Base Sepolia**.
+**Step 3 / next priority** after Token Launch and Projects. Registration and browse on Base Sepolia exist today as a URL-only track. MCP-gated registration is planned, not required yet.
+
+Agent Launch is CanHav’s third sequenced product track: register AI agents as on-chain identities using **ERC-8004** on **Base Sepolia**.
 
 {% hint style="info" %}
-Product sequencing: ship and harden [Token Launch](../token-launch/overview.md) on Robinhood Chain Testnet first. Agent Launch is next.
+Product sequencing: (1) [Token Launch](../token-launch/overview.md), (2) [Projects](../ideation/two-tracks.md), (3) Agent Launch as the next priority after those.
 {% endhint %}
 
 ## Status
@@ -14,6 +16,7 @@ Product sequencing: ship and harden [Token Launch](../token-launch/overview.md) 
 | Registries | Public ERC-8004 singletons. CanHav owns **no** agent contracts. |
 | Product UI | Hidden URL track: `/agents` |
 | Indexer | Separate Ponder app from the launchpad indexer |
+| MCP registration gate | Planned |
 
 ## What you can do today
 

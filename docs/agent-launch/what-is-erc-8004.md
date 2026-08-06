@@ -1,5 +1,7 @@
 # What is ERC-8004
 
+**Available now** as reference. Agent Launch is step 3 / next priority.
+
 ERC-8004 defines on-chain infrastructure for **agent identity** (and related reputation). CanHav Agent Launch uses the public deployments; we do not deploy or own the registries.
 
 ## Identity Registry

@@ -1,5 +1,7 @@
 # Browsing agents
 
+**Available now** on the URL-only `/agents` track. Agent Launch overall is step 3 / next priority.
+
 The `/agents` page lists **recent registrations** from the agents indexer (Ponder), backed by Identity Registry events on Base Sepolia.
 
 ## What you see

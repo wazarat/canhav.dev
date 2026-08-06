@@ -1,5 +1,7 @@
 # Vesting
 
+**Available now.**
+
 Optional vesting can be created in the **same transaction** as the token launch. The factory deploys a vesting wallet clone and funds it with a percent of supply.
 
 ## Parameters (UI constraints)

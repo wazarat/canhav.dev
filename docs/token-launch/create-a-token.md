@@ -1,5 +1,7 @@
 # Create a token
 
+**Available now** on Robinhood Chain Testnet.
+
 Use the product UI at `/launch` on the CanHav site while connected to Robinhood Chain Testnet. Launches go through **TokenFactory v4**.
 
 ## What gets deployed

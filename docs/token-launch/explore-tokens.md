@@ -1,5 +1,7 @@
 # Explore tokens
 
+**Available now.**
+
 Launches are indexed by a dedicated Ponder indexer so you can browse without scanning the explorer manually.
 
 ## Surfaces

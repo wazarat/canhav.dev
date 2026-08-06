@@ -1,5 +1,7 @@
 # Allocation sales
 
+**Available now.**
+
 **AllocationSale** is an admin-less singleton for fixed-price token sales on Robinhood Chain Testnet.
 
 ## Properties

@@ -1,10 +1,13 @@
 # Agent Launch roadmap
 
+**Step 3 / next priority** after Token Launch and Projects.
+
 Sequencing relative to the rest of CanHav:
 
-1. **Now / near term:** [Token Launch](../token-launch/overview.md) on Robinhood Chain Testnet
-2. **Next:** Agent Launch hardening on Base Sepolia
-3. **Later:** Mainnet agent identity only after testnet loops prove out
+1. **Step 1:** [Token Launch](../token-launch/overview.md) on Robinhood Chain Testnet (available now)
+2. **Step 2:** [Projects](../ideation/two-tracks.md) ideation tracks (in development)
+3. **Step 3 / next priority:** Agent Launch hardening on Base Sepolia
+4. **Later:** Mainnet agent identity only after testnet loops prove out
 
 ## Live today
 
@@ -28,7 +31,7 @@ Sequencing relative to the rest of CanHav:
 
 - Custody of agent runtimes
 - Guaranteed economic outcomes for agents
-- Replacing Token Launch priority
+- Jumping ahead of Token Launch or Projects in product priority
 
 ## Related
 

@@ -14,22 +14,32 @@ Manual steps to publish this folder at [docs.canhav.com](https://docs.canhav.com
 2. Set up Git Sync to this GitHub repository.
 3. Prefer **Project directory** = repository root so GitBook reads [`.gitbook.yaml`](../.gitbook.yaml) (`root: ./docs/`, homepage = Welcome, sidebar = `SUMMARY.md`).
 4. Alternatively set Project directory to `docs/` and sync that folder directly.
-5. Confirm `SUMMARY.md` drives the sidebar groups: General, Token Launch, Agent Launch.
-6. Push or sync once and verify pages appear in the GitBook UI. Landing page should be **Welcome to CanHav**.
+5. Confirm `SUMMARY.md` drives the sidebar. Landing page should be **Welcome to CanHav** (see `.gitbook.yaml`).
+6. Push or sync once and verify pages appear in the GitBook UI.
 
-## 3. Theme and branding
+## 3. Theme and branding (light / white background)
 
-Match a clean Kinto-like layout (not the marketing hero on canhav.com):
+Site appearance is controlled only in GitBook **Customization**. It is not set by markdown in this repo. Someone with GitBook access must apply these steps and publish.
+
+1. Open the CanHav Docs site in the GitBook dashboard.
+2. Open the **Customization** tab (site overview).
+3. Choose theme **Clean** (plain page background; avoid Muted or Gradient if you want a white page).
+4. Set **Default mode** to **Light**.
+5. Optionally turn off **Show mode toggle** so visitors only see light mode. Leave it on if you want dark as an opt-in.
+6. Set accent / primary to `#3D7BFF` (electric blue) where GitBook allows.
+7. Site title: **CanHav Docs**. Logo: CanHav mark from the product site. Header link: `https://canhav.com`.
+8. Enable search.
+9. Click **Publish** so the live site picks up the change.
 
 | Setting | Suggested value |
 |---------|-----------------|
-| Theme | Clean / subtle depth |
-| Site title | CanHav Docs |
-| Logo | CanHav mark from the product site |
-| Accent | `#3D7BFF` (electric blue) where GitBook allows |
-| Font | Inter or GitBook default |
+| Theme | Clean |
+| Default mode | Light |
+| Mode toggle | Off (light only) or on with light default |
+| Accent | `#3D7BFF` |
+| Font | GitBook default |
 | Search | Enabled |
-| Header link | `https://canhav.com` (back to product) |
+| Header link | `https://canhav.com` |
 
 Do not use emoji icons in titles, sidebar labels, or callouts.
 
@@ -66,8 +76,9 @@ That matches a sidebar status of **This site is not published.**
 
 - [ ] Site status is published (not "This site is not published")
 - [ ] `https://docs.canhav.com` serves docs without redirecting to `app.gitbook.com`
-- [ ] Sidebar shows General, Token Launch, Agent Launch in that order
-- [ ] Welcome is the default landing page
+- [ ] Sidebar matches `SUMMARY.md` (Getting started, Projects, Token Launch, …)
+- [ ] Welcome is the default landing page (not `README.md`)
+- [ ] Default mode is Light with a white / Clean background
 - [ ] Search works
 - [ ] Link to canhav.com is present
 - [ ] No emojis in published pages

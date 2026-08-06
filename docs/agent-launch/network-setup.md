@@ -1,5 +1,7 @@
 # Network setup
 
+**Available now** for Base Sepolia wallet setup. Agent Launch is step 3 / next priority.
+
 Agent Launch runs on **Base Sepolia**, not Robinhood Chain.
 
 ## Chain parameters

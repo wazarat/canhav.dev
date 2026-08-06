@@ -1,5 +1,7 @@
 # Agent Launch FAQ
 
+**Mixed.** Registration and browse are available on `/agents`. MCP gate is planned. Agent Launch is step 3 / next priority.
+
 ## Why do I see a configuration error about `0x8004A818`?
 
 The Identity Registry address is missing or does not start with the **Base Sepolia** vanity prefix. Mainnet registries start with `0x8004A169`. Fix the env / config and redeploy. See [Registry addresses](registry-addresses.md).
