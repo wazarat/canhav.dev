@@ -1,26 +1,36 @@
 # Markdown export and MCP
 
-**Planned.** Markdown export of the design document, `AGENTS.md`, and a CanHav MCP server are not shipped yet. This page describes the intended surface.
+**In development.** Markdown export and the CanHav MCP server are not finished products yet. Do not describe them as live. Both are intended to be **free** and to require only a CanHav account once accounts ship. See [Accounts](../accounts/clerk-accounts.md).
 
-## What is planned
+## Markdown export (intended)
 
-| Surface | Purpose |
-|---------|---------|
-| Markdown export | Download or copy the Product or Token design as a markdown document |
-| `AGENTS.md` | An agent-oriented summary of the design for IDE / coding agents |
-| MCP server | Tools so an IDE agent can read (and eventually help update) your designs |
+| Artifact | Purpose |
+|----------|---------|
+| `canhav-[slug].md` | Markdown export of the published Product or Token design |
+| `AGENTS.md` | Agent-oriented summary of the design for IDE / coding agents |
 
-## Requirements
+Exact download UX will be documented when the export endpoints ship.
 
-Both export and MCP access are intended to be **free** and to require only a CanHav **account** (Clerk, in development). See [Accounts](../accounts/clerk-accounts.md).
+## MCP server (intended)
+
+A CanHav MCP server will expose tools so an IDE agent can read your designs (and eventually help check them). Intended tools:
+
+| Tool | Purpose |
+|------|---------|
+| `get_my_projects` | List projects you own |
+| `get_my_tokens` | List token designs you own |
+| `get_project` | Fetch one project by id or slug |
+| `get_token` | Fetch one token design by id or slug |
+| `get_design_constraints` | Return limits and option sets the editors enforce |
+| `check_design` | Run validation / warning checks against a design payload |
+
+Until this lands in the repository, treat the tool list as the target surface, not a live API.
 
 ## Status discipline
 
-Until this ships, do not describe export or MCP as available in the present tense. Re-check the product site and this page’s status marker before linking these features from tutorials.
+Re-check this page before writing tutorials that assume export or MCP work today. Prefer future tense until status flips to Available now.
 
 ## Related
 
 - [Accounts](../accounts/clerk-accounts.md)
 - [The two ideation tracks](../ideation/two-tracks.md)
-
-Note: Agent Launch also discusses MCP in a different sense (agent capability endpoints for ERC-8004 registration). That is separate. See [Agent Launch MCP endpoints](../agent-launch/mcp-endpoints.md).

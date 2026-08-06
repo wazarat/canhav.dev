@@ -1,6 +1,6 @@
 # Network setup
 
-**Available now** for Base Sepolia wallet setup. Agent Launch is step 3 / next priority.
+**Not started.** The Agent / ERC-8004 product track is not started. These pages are retained for reference only. Do not treat register/browse copy below as a shipped CanHav product commitment.
 
 Agent Launch runs on **Base Sepolia**, not Robinhood Chain.
 

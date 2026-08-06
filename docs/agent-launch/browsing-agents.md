@@ -1,6 +1,6 @@
 # Browsing agents
 
-**Available now** on the URL-only `/agents` track. Agent Launch overall is step 3 / next priority.
+**Not started.** The Agent / ERC-8004 product track is not started. These pages are retained for reference only. Do not treat register/browse copy below as a shipped CanHav product commitment.
 
 The `/agents` page lists **recent registrations** from the agents indexer (Ponder), backed by Identity Registry events on Base Sepolia.
 

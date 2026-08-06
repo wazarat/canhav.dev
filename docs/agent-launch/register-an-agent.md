@@ -1,8 +1,8 @@
 # Register an agent
 
-**Available now** on `/agents` (MCP gate not required yet). Agent Launch is step 3 / next priority.
+**Not started.** The Agent / ERC-8004 product track is not started. These pages are retained for reference only. Do not treat register/browse copy below as a shipped CanHav product commitment.
 
-Use the product UI at `/agents` while connected to Base Sepolia.
+This page describes an intended registration flow that is not a current product commitment.
 
 ## What registration means
 

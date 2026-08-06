@@ -9,14 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.6.5",
     "@neondatabase/serverless": "^1.1.0",
-    "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.112.1",
     "@tanstack/react-query": "^5.101.4",
     "@vercel/blob": "^2.6.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "next": "^15.1.6",
+    "next": "^15.5.22",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",

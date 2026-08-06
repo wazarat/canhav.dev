@@ -9,27 +9,29 @@ If GitBook still publishes this README as a top-level page, set the site homepag
 | Group | Path | Focus |
 |-------|------|--------|
 | Getting started | `general/` | Welcome, what CanHav is, glossary, litepaper |
-| Projects | `ideation/` | Product and Token tracks, computed outputs, public pages |
-| Token Launch | `token-launch/` | Robinhood Chain Testnet launchpad, fees, guarantees |
+| Projects | `ideation/` | Product and Token tracks, computed outputs, warnings, public pages |
+| Token Launch | `token-launch/` | Launchpad, deploy paths, fees, guarantees |
 | Accounts | `accounts/` | Clerk (in development) |
-| AI and IDE | `ai/` | Export and MCP (planned) |
+| AI and IDE | `ai/` | Export and MCP (in development) |
 | Reference | `reference/` | Networks and factory versions |
-| Agent Launch | `agent-launch/` | ERC-8004 on Base Sepolia (step 3) |
+| Agent Launch | `agent-launch/` | ERC-8004 (not started; pages retained, demoted) |
 
 Sidebar order is defined in [`SUMMARY.md`](SUMMARY.md).
 
-## Product sequencing
+## Product surfaces
 
-1. **Token Launch** on Robinhood Chain Testnet
-2. **Projects** (ideation tracks)
-3. **Agent Launch** on ERC-8004 / Base Sepolia (next priority)
+1. **Token Launch** on Robinhood Chain Testnet (available now)
+2. **Projects** ideation tracks (available now)
+3. **Accounts / AI export** (in development)
+4. **Foundry scaffold generator** (deferred)
+5. **Agent / ERC-8004** (not started)
 
 ## Copy rules
 
 - No emojis
 - No em dashes (use commas, periods, colons, or hyphens)
 - Short pages, one job each
-- Status marker on every page: Available now / In development / Planned
+- Status marker on every page: Available now / In development / Deferred / Not started
 - Tables for addresses and parameters
 - Do not describe in-progress features in the present tense
 

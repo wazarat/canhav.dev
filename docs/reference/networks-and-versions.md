@@ -1,6 +1,10 @@
 # Networks and versions
 
-**Available now** for Token Launch addresses. Agent Launch registries are documented under [Agent Launch](../agent-launch/registry-addresses.md).
+**Available now** for Token Launch addresses.
+
+**Deferred:** Foundry scaffold generator (not a shipped product feature).
+
+**Not started:** Agent / ERC-8004 as a product track. Registry address pages under Agent Launch are historical reference only.
 
 ## Token Launch (Robinhood Chain Testnet)
 
@@ -13,16 +17,8 @@
 
 Full address tables: [Contract addresses](../token-launch/contract-addresses.md).
 
-## Agent Launch (Base Sepolia)
-
-| Item | Value |
-|------|-------|
-| Chain ID | `84532` |
-| Registries | Public ERC-8004 singletons (CanHav owns none) |
-
-See [Registry addresses](../agent-launch/registry-addresses.md).
-
 ## Related
 
 - [Fees and economics](../token-launch/fees-and-economics.md)
 - [Contract guarantees](../token-launch/contract-guarantees.md)
+- [Deploy paths](../token-launch/deploy-paths.md)

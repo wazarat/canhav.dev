@@ -187,12 +187,14 @@ export function TokenDesignEditor({
   initialDoc,
   initialStatus,
   initialSlug,
+  deployedAddress,
   linkPanel,
 }: {
   id: string;
   initialDoc: TokenDesignDoc;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
+  deployedAddress?: string | null;
   linkPanel?: React.ReactNode;
 }) {
   const { doc, patch, patchSection } = useDraftDoc(initialDoc);
@@ -678,6 +680,17 @@ export function TokenDesignEditor({
                 from a published design commits its hash on-chain — the design
                 becomes tamper-evident forever.
               </p>
+              {initialStatus === "published" && !deployedAddress && (
+                <p className="text-sm text-ink-400">
+                  Already deployed this design?{" "}
+                  <a
+                    href={`/launch/attach?design=${id}`}
+                    className="text-electric-300 transition-colors hover:text-electric-200"
+                  >
+                    Attach the contract →
+                  </a>
+                </p>
+              )}
               {overall ? (
                 <StatusChip tone="warning" variant="block">
                   Not ready to publish yet: {overall}

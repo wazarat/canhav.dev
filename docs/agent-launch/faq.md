@@ -1,6 +1,6 @@
 # Agent Launch FAQ
 
-**Mixed.** Registration and browse are available on `/agents`. MCP gate is planned. Agent Launch is step 3 / next priority.
+**Not started.** The Agent / ERC-8004 product track is not started. These pages are retained for reference only. Do not treat register/browse copy below as a shipped CanHav product commitment.
 
 ## Why do I see a configuration error about `0x8004A818`?
 

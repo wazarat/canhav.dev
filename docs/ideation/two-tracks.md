@@ -1,6 +1,6 @@
 # The two ideation tracks
 
-**In development.** Studio, draft editors, and public project/token pages are being built. Do not assume they are live on the product site yet.
+**Available now.** Studio, draft editors, public project/token pages, explore tabs, and optional linking are live on the product site (testnet / URL-only studio).
 
 CanHav Projects has two tracks: **Product** and **Token**. They are independent by design.
 
@@ -24,12 +24,14 @@ See [Product track](product-track.md).
 
 Eight sections: token rationale, supply and allocation, vesting and lockups, distribution, market, governance, legal, and post-launch. The platform computes float, unlock calendars, and warnings from those answers.
 
-See [Token track](token-track.md) and [Computed outputs](computed-outputs.md).
+See [Token track](token-track.md), [Computed outputs](computed-outputs.md), and [Warnings](warnings.md).
 
 ## Three answer types
 
 Both tracks use the same answer model: decisions you make, outputs the platform computes, and status declarations for work that may live elsewhere. See [The three answer types](three-answer-types.md).
 
-## Studio and publish (intended)
+## Studio and publish
 
-When this ships, you will draft in studio (`/studio`), publish snapshots to public pages (`/p/...` for projects, `/t/...` for token designs), and optionally attach a deployed token address to a published design. Details: [Public pages](public-pages.md).
+You draft in studio (`/studio`), publish snapshots to public pages (`/p/...` for projects, `/t/...` for token designs), and optionally attach a deployed token address to a published design. Explore includes tabs for tokens, projects, and designs. Details: [Public pages](public-pages.md) and [Deploy paths](../token-launch/deploy-paths.md).
+
+Studio editing requires an account ([Clerk](../accounts/clerk-accounts.md), in development for production keys). Reading published pages does not.

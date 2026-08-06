@@ -1,6 +1,6 @@
 # Welcome to CanHav
 
-**Available now** for Token Launch on testnet. **In development** for Projects (ideation). **Planned** for Agent Launch as step 3.
+**Available now** for Token Launch and Projects on testnet. **In development** for Clerk accounts and AI/IDE export. **Deferred** for a Foundry scaffold generator. **Not started** for Agent / ERC-8004.
 
 CanHav is a research-led platform for EVM builders and capital-markets practitioners. The product site at [canhav.com](https://canhav.com) focuses on ecosystem intelligence. These docs cover the testnet products that ship alongside that research.
 
@@ -14,19 +14,23 @@ Robinhood Chain does **not** provide distribution to Robinhood brokerage custome
 
 | Section | What it covers | Status |
 |---------|----------------|--------|
-| [Getting started](what-canhav-is.md) | What CanHav is (and is not), ideation tracks, answer types | Mixed |
-| [Projects](../ideation/two-tracks.md) | Product and Token design tracks, computed outputs, public pages | In development |
+| [Getting started](what-canhav-is.md) | What CanHav is (and is not) | Available now |
+| [Projects](../ideation/two-tracks.md) | Product and Token design tracks, computed outputs, public pages | Available now |
 | [Token Launch](../token-launch/overview.md) | Create and operate tokens on Robinhood Chain Testnet | Available now |
+| [Deploy paths](../token-launch/deploy-paths.md) | Quick deploy vs design deploy | Available now |
 | [Fees and guarantees](../token-launch/fees-and-economics.md) | Fee switches, caps, timelock, contract guarantees | Available now |
 | [Accounts](../accounts/clerk-accounts.md) | Clerk-based accounts | In development |
-| [AI and IDE](../ai/export-and-mcp.md) | Markdown export, AGENTS.md, MCP | Planned |
-| [Agent Launch](../agent-launch/overview.md) | ERC-8004 on Base Sepolia | Step 3 / next priority |
+| [AI and IDE](../ai/export-and-mcp.md) | Markdown export, AGENTS.md, MCP | In development |
+| [Agent Launch](../agent-launch/overview.md) | ERC-8004 on Base Sepolia | Not started |
 
-## Product sequencing
+## Product surfaces (today)
 
-1. **Token Launch** on Robinhood Chain Testnet (chain ID `46630`). Available now: factory launches, journeys, vesting, escrow, sales, and AMM.
-2. **Projects** (Product and Token ideation tracks, studio, public pages). In development.
-3. **Agent Launch** on Base Sepolia via the public ERC-8004 Identity Registry. Next priority after Token Launch and Projects.
+1. **Token Launch** on Robinhood Chain Testnet (chain ID `46630`). Factory launches, journeys, vesting, escrow, sales, AMM, hosted indexer, explore.
+2. **Projects** (Product and Token ideation tracks, studio, public pages, design deploy). Available now on testnet.
+
+**Deferred:** Foundry scaffold generator (not a product feature yet).
+
+**Not started:** Agent / ERC-8004 track. Existing pages in that section are retained for history only and are marked Not started.
 
 All product surfaces described here are **testnet only**. Nothing here is financial advice, and nothing here is a mainnet product yet.
 
@@ -39,7 +43,6 @@ The docs site should use a **light** theme with a white background. That is a Gi
 - Protocol engineers and founders launching on testnets
 - Teams that want on-chain commitments (journey hashes, milestone lockups) instead of opaque off-chain claims
 - Teams designing a product, a token, or both before they deploy
-- Builders exploring agent identity standards (ERC-8004) when that track moves forward
 
 ## Where to go next
 

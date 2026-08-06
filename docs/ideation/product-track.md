@@ -1,6 +1,6 @@
 # Product track
 
-**In development.** The sections below match the studio Project editor. They are not live as a public product surface yet.
+**Available now.** The sections below match the studio Project editor.
 
 The Product track is a design document for what you are building. A product with no token is a legitimate published outcome.
 
@@ -66,9 +66,7 @@ Status declarations (same four statuses as elsewhere):
 
 Copy pressure scales with the worst-case answer. That is framing only, not validation.
 
-### Computed / warnings
-
-On the public page (when shipped), “not yet” on high blast-radius answers is meant to read as a live risk the team chose to publish.
+On the public page, “not yet” on high blast-radius answers reads as a live risk the team chose to publish.
 
 ---
 
@@ -85,13 +83,13 @@ Before publish, the editor requires an explicit acknowledgement:
 | Myth acknowledgement | Required checkbox |
 | Where will your first hundred users come from? | Free text |
 
-Optional verify signals (wallet, GitHub repo, testnet contract addresses) may be attached for public credibility checks scoped to the **project**, not to a linked token.
+Optional verify signals (wallet, GitHub repo, testnet contract addresses) attach for public credibility checks scoped to the **project**, not to a linked token. Each signal is omitted silently if it fails to load. See [Public pages](public-pages.md).
 
 ---
 
 ## Review and publish
 
-Publishing (when shipped) snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional. See [Public pages](public-pages.md).
+Publishing snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional.
 
 ---
 
@@ -100,3 +98,4 @@ Publishing (when shipped) snapshots the document and assigns a public slug under
 - [Token track](token-track.md)
 - [The two ideation tracks](two-tracks.md)
 - [The three answer types](three-answer-types.md)
+- [Enforced versus stated](enforced-vs-stated.md)

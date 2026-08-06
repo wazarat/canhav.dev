@@ -1,8 +1,8 @@
 # Token track
 
-**In development.** The eight sections below match the studio Token design editor. They are not live as a public product surface yet.
+**Available now.** The eight sections below match the studio Token design editor.
 
-The Token track is a design document for a token you may or may not deploy. Publishing a design does not deploy a contract. Deploying from a published design (when that flow ships) is a separate step that can commit the design hash on-chain.
+The Token track is a design document for a token you may or may not deploy. Publishing a design does not deploy a contract. Deploying from a published design is a separate step that commits the design snapshot hash on-chain as `journeyHash`. See [Deploy paths](../token-launch/deploy-paths.md).
 
 ## Sections
 
@@ -15,7 +15,7 @@ The Token track is a design document for a token you may or may not deploy. Publ
 7. [Legal](#7-legal)
 8. [Post-launch](#8-post-launch)
 
-Computed panel (float, unlock calendar, warnings) updates as you answer. See [Computed outputs](computed-outputs.md).
+Computed panel (float, unlock calendar, warnings) updates as you answer. See [Computed outputs](computed-outputs.md) and [Warnings](warnings.md).
 
 ---
 
@@ -232,5 +232,8 @@ None.
 ## Related
 
 - [Computed outputs](computed-outputs.md)
+- [Warnings](warnings.md)
+- [Enforced versus stated](enforced-vs-stated.md)
 - [Product track](product-track.md)
 - [The three answer types](three-answer-types.md)
+- [Deploy paths](../token-launch/deploy-paths.md)

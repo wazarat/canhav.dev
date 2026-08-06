@@ -1,6 +1,6 @@
 # MCP endpoints
 
-**Planned** as a registration gate. Agent Launch is step 3 / next priority.
+**Not started.** The Agent / ERC-8004 product track is not started. These pages are retained for reference only. Do not treat register/browse copy below as a shipped CanHav product commitment.
 
 **MCP** (Model Context Protocol) is how CanHav intends agents to expose tools and resources in a machine-checkable way.
 

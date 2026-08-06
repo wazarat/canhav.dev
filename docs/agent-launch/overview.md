@@ -1,35 +1,14 @@
 # Agent Launch overview
 
-**Step 3 / next priority** after Token Launch and Projects. Registration and browse on Base Sepolia exist today as a URL-only track. MCP-gated registration is planned, not required yet.
+**Not started.** The Agent / ERC-8004 product track is not started. This page is retained for reference only.
 
-Agent Launch is CanHav’s third sequenced product track: register AI agents as on-chain identities using **ERC-8004** on **Base Sepolia**.
+CanHav may eventually support registering AI agents as on-chain identities using ERC-8004. That work is out of scope for the current Token Launch and Projects surfaces.
 
-{% hint style="info" %}
-Product sequencing: (1) [Token Launch](../token-launch/overview.md), (2) [Projects](../ideation/two-tracks.md), (3) Agent Launch as the next priority after those.
-{% endhint %}
+Do not treat any `/agents` URL, registry address list, or MCP-gate roadmap notes elsewhere in this section as a commitment that the track is shipping.
 
-## Status
+## Related
 
-| Item | Detail |
-|------|--------|
-| Network | Base Sepolia (chain ID `84532`) |
-| Registries | Public ERC-8004 singletons. CanHav owns **no** agent contracts. |
-| Product UI | Hidden URL track: `/agents` |
-| Indexer | Separate Ponder app from the launchpad indexer |
-| MCP registration gate | Planned |
-
-## What you can do today
-
-- Connect a wallet on Base Sepolia
-- View Identity Registry status and wiring checks against the Reputation Registry
-- Browse recent registrations from the agents indexer
-- Register an agent identity (ERC-721) through the registry flow exposed on `/agents`
-
-## What comes next
-
-Registrations will be limited to **MCP endpoints** so declared capabilities are introspectable. See [MCP endpoints](mcp-endpoints.md) and [Roadmap](roadmap.md).
-
-## Next
-
-- [What is ERC-8004](what-is-erc-8004.md)
-- [Network setup](network-setup.md)
+- [Welcome to CanHav](../general/welcome-to-canhav.md)
+- [Litepaper](../general/litepaper.md)
+- [Token Launch overview](../token-launch/overview.md)
+- [The two ideation tracks](../ideation/two-tracks.md)

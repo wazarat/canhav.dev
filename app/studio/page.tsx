@@ -81,13 +81,7 @@ function EntityList({
   );
 }
 
-export default async function StudioPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ auth_error?: string }>;
-}) {
-  const { auth_error } = await searchParams;
-
+export default async function StudioPage() {
   const header = (
     <div className="max-w-2xl">
       <p className="kicker">{STUDIO_COPY.kicker}</p>
@@ -104,8 +98,8 @@ export default async function StudioPage({
         {header}
         <div className="mt-10 max-w-md">
           <StatusChip tone="warning" variant="block">
-            Sign-in is not configured. Set NEXT_PUBLIC_SUPABASE_URL and
-            NEXT_PUBLIC_SUPABASE_ANON_KEY, then reload.
+            Sign-in is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+            and CLERK_SECRET_KEY, then reload.
           </StatusChip>
         </div>
       </div>
@@ -117,14 +111,7 @@ export default async function StudioPage({
     return (
       <div className="container py-14 md:py-20">
         {header}
-        <div className="mt-10 space-y-4">
-          {auth_error && (
-            <div className="max-w-md">
-              <StatusChip tone="error" variant="block">
-                That sign-in link didn&apos;t work — it may have expired. Request a new one.
-              </StatusChip>
-            </div>
-          )}
+        <div className="mt-10">
           <SignInCard />
         </div>
       </div>

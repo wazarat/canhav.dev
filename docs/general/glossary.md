@@ -7,9 +7,9 @@
 | Term | Meaning |
 |------|---------|
 | CanHav | Research platform and testnet product suite. Product site: [canhav.com](https://canhav.com). |
-| Token Launch | Testnet launchpad on Robinhood Chain Testnet for creating fixed-supply tokens with optional vesting, journeys, sales, and AMM liquidity. Step 1. |
-| Projects | Ideation studio with independent Product and Token design tracks, computed outputs, and public pages. Step 2. In development. |
-| Agent Launch | Testnet track for registering AI agents as ERC-721 identities on the public ERC-8004 Identity Registry (Base Sepolia). Step 3 / next priority. |
+| Token Launch | Testnet launchpad on Robinhood Chain Testnet for creating fixed-supply tokens with optional vesting, journeys, sales, and AMM liquidity. Available now. |
+| Projects | Ideation studio with independent Product and Token design tracks, computed outputs, and public pages. Available now. |
+| Agent Launch | Intended ERC-8004 agent identity track. **Not started.** |
 | Journey | Off-chain document describing a token's plan and milestones. Its hash is committed on-chain at launch. |
 | Research preview | Content and software that is experimental, testnet-only, and not financial advice. |
 | Status declaration | Team-stated status for legal, governance, or security work (already in place, handled by legal/ops, planned before mainnet, not yet). Not enforced by the token contract. |
@@ -53,6 +53,6 @@
 | Reputation Registry | Related ERC-8004 registry. Used for wiring checks; full reputation flows are out of scope for v1. |
 | Vanity prefix | Testnet Identity Registry addresses start with `0x8004A818`. Mainnet starts with `0x8004A169`. Mixing them up fails silently unless checked. |
 | MCP (Agent Launch) | Model Context Protocol as intended agent capability endpoint for registration gating. |
-| MCP (Projects / AI) | Planned CanHav MCP server for reading design documents in an IDE. Separate from Agent Launch MCP. |
+| MCP (Projects / AI) | CanHav MCP server for reading design documents in an IDE (in development). Separate from Agent Launch MCP notes. |
 | Registration file / URI | Metadata URI attached to an agent identity (URL or inline `data:` URI). |
 | Agents indexer | Separate Ponder app for ERC-8004 events (not shared with the launchpad indexer). |

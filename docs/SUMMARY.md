@@ -14,6 +14,8 @@
 * [Product track](ideation/product-track.md)
 * [Token track](ideation/token-track.md)
 * [Computed outputs](ideation/computed-outputs.md)
+* [Warnings](ideation/warnings.md)
+* [Enforced versus stated](ideation/enforced-vs-stated.md)
 * [Public pages](ideation/public-pages.md)
 
 ## Token Launch
@@ -21,6 +23,7 @@
 * [Overview](token-launch/overview.md)
 * [Network setup](token-launch/network-setup.md)
 * [Create a token](token-launch/create-a-token.md)
+* [Deploy paths](token-launch/deploy-paths.md)
 * [Journey and credibility](token-launch/journey-and-credibility.md)
 * [Vesting](token-launch/vesting.md)
 * [Milestone escrow](token-launch/milestone-escrow.md)
@@ -46,7 +49,7 @@
 
 * [Networks and versions](reference/networks-and-versions.md)
 
-## Agent Launch
+## Agent Launch (not started)
 
 * [Overview](agent-launch/overview.md)
 * [What is ERC-8004](agent-launch/what-is-erc-8004.md)

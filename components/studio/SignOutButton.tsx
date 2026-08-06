@@ -1,24 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { SignOutButton as ClerkSignOutButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/Button";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { isAuthConfiguredClient } from "@/components/studio/authConfig";
 
 export function SignOutButton() {
-  const router = useRouter();
-  const supabase = getSupabaseBrowser();
-  if (!supabase) return null;
+  if (!isAuthConfiguredClient()) return null;
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={async () => {
-        await supabase.auth.signOut();
-        router.refresh();
-      }}
-    >
-      Sign out
-    </Button>
+    <ClerkSignOutButton redirectUrl="/studio">
+      <Button variant="ghost" size="sm">
+        Sign out
+      </Button>
+    </ClerkSignOutButton>
   );
 }

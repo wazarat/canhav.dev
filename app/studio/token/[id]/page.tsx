@@ -36,6 +36,7 @@ export default async function TokenDesignEditorPage({
       initialDoc={row.draft_doc}
       initialStatus={row.status}
       initialSlug={row.slug}
+      deployedAddress={row.deployed_token_address}
       linkPanel={
         <LinkPanel
           selfType="token_design"

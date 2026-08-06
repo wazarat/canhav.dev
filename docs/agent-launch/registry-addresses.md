@@ -1,6 +1,6 @@
 # Registry addresses
 
-**Available now** (public registries). Agent Launch is step 3 / next priority.
+**Not started.** The Agent / ERC-8004 product track is not started. These pages are retained for reference only. Do not treat register/browse copy below as a shipped CanHav product commitment.
 
 Base Sepolia (chain ID `84532`). CanHav does not own these contracts. Confirm on [Blockscout](https://base-sepolia.blockscout.com).
 

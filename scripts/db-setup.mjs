@@ -62,16 +62,17 @@ await sql`
 `;
 
 // ---------------------------------------------------------------------------
-// Ideation tracks: mutable drafts owned by a Supabase account (owner_id =
-// Supabase auth.users.id — no FK, auth lives in Supabase, data lives here).
-// slug is assigned at first publish and immutable after (public URL contract).
-// verify_wallet is declared by the team (unproven); deployed_by_wallet is
-// captured from an actual deploy and corroborated by the indexer.
+// Ideation tracks: mutable drafts owned by a Clerk account (owner_id = the
+// Clerk user id, a `user_…` string — no FK, auth lives in Clerk, data lives
+// here). slug is assigned at first publish and immutable after (public URL
+// contract). verify_wallet is declared by the team (unproven);
+// deployed_by_wallet is captured from an actual deploy and corroborated by
+// the indexer.
 
 await sql`
   create table if not exists launchpad.projects (
     id uuid primary key default gen_random_uuid(),
-    owner_id uuid not null,
+    owner_id text not null,
     slug text unique check (slug ~ '^[a-z0-9][a-z0-9-]{2,59}$'),
     status text not null default 'draft' check (status in ('draft','published')),
     draft_doc jsonb not null,
@@ -96,7 +97,7 @@ await sql`
 await sql`
   create table if not exists launchpad.token_designs (
     id uuid primary key default gen_random_uuid(),
-    owner_id uuid not null,
+    owner_id text not null,
     slug text unique check (slug ~ '^[a-z0-9][a-z0-9-]{2,59}$'),
     status text not null default 'draft' check (status in ('draft','published')),
     draft_doc jsonb not null,
@@ -150,7 +151,7 @@ await sql`
     a_id uuid not null,
     b_type text not null,
     b_id uuid not null,
-    created_by uuid not null,
+    created_by text not null,
     created_at timestamptz not null default now(),
     check (a_type < b_type or (a_type = b_type and a_id < b_id)),
     unique (a_type, a_id, b_type, b_id)
@@ -165,6 +166,19 @@ await sql`
 await sql`
   create unique index if not exists links_one_project_per_token
     on launchpad.entity_links (b_id) where a_type = 'project' and b_type = 'token_design'
+`;
+
+// Owner columns were uuid when the tables were first created (Supabase-era
+// scaffolding, never used); Clerk ids are `user_…` strings. Idempotent — a
+// text→text alter is a no-op rewrite of zero rows.
+await sql`
+  alter table launchpad.projects alter column owner_id type text using owner_id::text
+`;
+await sql`
+  alter table launchpad.token_designs alter column owner_id type text using owner_id::text
+`;
+await sql`
+  alter table launchpad.entity_links alter column created_by type text using created_by::text
 `;
 
 const tables = await sql`
