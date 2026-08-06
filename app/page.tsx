@@ -42,7 +42,7 @@ export default function LandingPage() {
               className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink-50 md:text-6xl"
               style={{ textShadow: "0 2px 20px rgba(4,10,20,0.35)" }}
             >
-              Where DeFi research gets{" "}
+              Where token launches get{" "}
               <span
                 className="bg-clip-text text-transparent"
                 style={{
@@ -50,17 +50,16 @@ export default function LandingPage() {
                     "linear-gradient(120deg,#7cb0ff 0%,#b79bff 50%,#4fe3f5 100%)",
                 }}
               >
-                real context
+                real scrutiny
               </span>
-              , beyond on-chain data.
+              , before they get a market.
             </h1>
             <p
               className="max-w-xl text-lg leading-relaxed text-ink-50/90 md:text-xl"
               style={{ textShadow: "0 1px 12px rgba(4,10,20,0.4)" }}
             >
-              Track what is happening on-chain, understand what is happening off-chain, and
-              connect the dots across protocols, narratives, and external terminals from one
-              place.
+              Design your token, publish the evidence, and let anyone verify what is enforced
+              on-chain versus what is merely stated.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
               <WaitlistCta label="Join the waitlist" sourcePage="home-hero" withArrow />
