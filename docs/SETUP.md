@@ -48,8 +48,24 @@ Do not use emoji icons in titles, sidebar labels, or callouts.
 6. Wait for DNS propagation and GitBook SSL (often minutes, up to 48 hours).
 7. Verify `https://docs.canhav.com` loads the Welcome page.
 
-## 5. Publish checklist
+## 5. Publish the site (required)
 
+Domain setup alone is not enough. Until you click **Publish** in GitBook, `https://docs.canhav.com` responds with **307** and redirects visitors to the editor URL:
+
+`https://app.gitbook.com/o/.../sites/.../`
+
+That matches a sidebar status of **This site is not published.**
+
+1. Open the CanHav Docs site in GitBook.
+2. Click **Finish** on the domain success modal if it is still open.
+3. Click **Publish** (top right).
+4. Confirm the preview URL / custom domain, then publish.
+5. Recheck: `curl -sI https://docs.canhav.com` should return **200** (or a path redirect that stays on `docs.canhav.com`), not a redirect to `app.gitbook.com`.
+
+## 6. Publish checklist
+
+- [ ] Site status is published (not "This site is not published")
+- [ ] `https://docs.canhav.com` serves docs without redirecting to `app.gitbook.com`
 - [ ] Sidebar shows General, Token Launch, Agent Launch in that order
 - [ ] Welcome is the default landing page
 - [ ] Search works

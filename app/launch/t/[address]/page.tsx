@@ -13,8 +13,11 @@ import { PoolCard } from "@/components/launch/PoolCard";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
 import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
+import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { getDb } from "@/lib/db";
+import { getSnapshot } from "@/lib/ideation-db";
 import { formatCount } from "@/lib/format";
 import {
   formatSupply,
@@ -178,10 +181,12 @@ export default async function TokenPage({
     getSales(token.address),
     getPool(token.address, token.creator),
   ]);
-  const [liveVesting, updates, swapData, ...purchaseLists] = await Promise.all([
+  const [liveVesting, updates, swapData, designSnapshot, ...purchaseLists] = await Promise.all([
     vesting ? getLiveVesting(vesting) : null,
     getVerifiedUpdates(token.address, token.creator),
     ammPool ? getRecentSwaps(ammPool.poolId) : null,
+    // Only consulted when the hash isn't a v1 journey — the design-deploy path.
+    journey ? null : getSnapshot(token.journeyHash.toLowerCase()),
     ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
   ]);
   const purchases: Record<string, IndexedPurchase[]> = {};
@@ -402,14 +407,41 @@ export default async function TokenPage({
       />
 
       {journey ? (
-        <JourneyCard doc={journey.doc} verified={journey.verified} updates={updates} />
+        // journeyHash resolves in launchpad.journeys ⇒ the quick-deploy path.
+        <>
+          <div className="mt-8">
+            <StatusChip tone="neutral" variant="block">
+              Quick deploy — no design record. This token was launched with a
+              journey document only; there is no published token design behind
+              it.
+            </StatusChip>
+          </div>
+          <JourneyCard doc={journey.doc} verified={journey.verified} updates={updates} />
+        </>
+      ) : designSnapshot && designSnapshot.doc.kind === "token_design" ? (
+        // journeyHash resolves in launchpad.ideation_snapshots ⇒ launched
+        // from a published design; the hash commits the design on-chain.
+        <div className="mt-8 space-y-4">
+          <StatusChip tone="success" variant="block">
+            Design committed on-chain: the launch transaction recorded this
+            token design&apos;s snapshot hash (v{designSnapshot.version}) — the
+            document behind this token is tamper-evident.
+          </StatusChip>
+          <LinkedEntityCard
+            type="token_design"
+            name={designSnapshot.doc.name}
+            slug={designSnapshot.doc.slug}
+            summary={designSnapshot.doc.rationale.beyondDatabaseRow}
+          />
+        </div>
       ) : (
-        <div className="mt-8 rounded-2xl border border-ink-800/70 bg-ink-950/40 p-6">
-          <p className="text-sm text-ink-400">
-            No journey document found for hash{" "}
-            <span className="break-all font-mono text-xs">{token.journeyHash}</span> — this
-            token was launched without publishing its journey to this site.
-          </p>
+        <div className="mt-8 space-y-4">
+          <StatusChip tone="neutral" variant="block">
+            No design record. The committed hash{" "}
+            <span className="break-all font-mono text-[11px]">{token.journeyHash}</span>{" "}
+            resolves to neither a journey document nor a published token design
+            on this site.
+          </StatusChip>
         </div>
       )}
 

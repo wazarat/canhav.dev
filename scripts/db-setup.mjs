@@ -61,6 +61,112 @@ await sql`
     on launchpad.milestone_updates (token_address, milestone_index, created_at)
 `;
 
+// ---------------------------------------------------------------------------
+// Ideation tracks: mutable drafts owned by a Supabase account (owner_id =
+// Supabase auth.users.id — no FK, auth lives in Supabase, data lives here).
+// slug is assigned at first publish and immutable after (public URL contract).
+// verify_wallet is declared by the team (unproven); deployed_by_wallet is
+// captured from an actual deploy and corroborated by the indexer.
+
+await sql`
+  create table if not exists launchpad.projects (
+    id uuid primary key default gen_random_uuid(),
+    owner_id uuid not null,
+    slug text unique check (slug ~ '^[a-z0-9][a-z0-9-]{2,59}$'),
+    status text not null default 'draft' check (status in ('draft','published')),
+    draft_doc jsonb not null,
+    published_hash text check (published_hash ~ '^0x[0-9a-f]{64}$'),
+    verify_wallet text check (verify_wallet ~ '^0x[0-9a-f]{40}$'),
+    github_repo text,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  )
+`;
+
+await sql`
+  create index if not exists projects_owner_idx
+    on launchpad.projects (owner_id, updated_at desc)
+`;
+
+await sql`
+  create index if not exists projects_published_idx
+    on launchpad.projects (updated_at desc) where status = 'published'
+`;
+
+await sql`
+  create table if not exists launchpad.token_designs (
+    id uuid primary key default gen_random_uuid(),
+    owner_id uuid not null,
+    slug text unique check (slug ~ '^[a-z0-9][a-z0-9-]{2,59}$'),
+    status text not null default 'draft' check (status in ('draft','published')),
+    draft_doc jsonb not null,
+    published_hash text check (published_hash ~ '^0x[0-9a-f]{64}$'),
+    verify_wallet text check (verify_wallet ~ '^0x[0-9a-f]{40}$'),
+    deployed_token_address text unique check (deployed_token_address ~ '^0x[0-9a-f]{40}$'),
+    deployed_by_wallet text check (deployed_by_wallet ~ '^0x[0-9a-f]{40}$'),
+    deployed_snapshot_hash text check (deployed_snapshot_hash ~ '^0x[0-9a-f]{64}$'),
+    deployed_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  )
+`;
+
+await sql`
+  create index if not exists token_designs_owner_idx
+    on launchpad.token_designs (owner_id, updated_at desc)
+`;
+
+await sql`
+  create index if not exists token_designs_published_idx
+    on launchpad.token_designs (updated_at desc) where status = 'published'
+`;
+
+// Publish snapshots, content-addressed like journeys: snapshot_hash =
+// keccak256 of the canonical JSON bytes. Docs embed kind + slug +
+// publishVersion, so a hash is globally unique across entity types and
+// versions. Insert-only — a deployed token may have committed a snapshot
+// hash on-chain forever, so rows are never deleted, even on unpublish.
+await sql`
+  create table if not exists launchpad.ideation_snapshots (
+    snapshot_hash text primary key check (snapshot_hash ~ '^0x[0-9a-f]{64}$'),
+    entity_type text not null check (entity_type in ('project','token_design')),
+    entity_id uuid not null,
+    version int not null check (version >= 1),
+    doc jsonb not null,
+    canonical text not null,
+    created_at timestamptz not null default now(),
+    unique (entity_type, entity_id, version)
+  )
+`;
+
+// Type-agnostic link rows (a future Agents track adds a type, not a table).
+// The ordering check gives every pair one canonical row. Today's one-to-one
+// cardinality is enforced by the two partial unique indexes below — relaxing
+// to one-to-many later is `drop index`, not a migration.
+await sql`
+  create table if not exists launchpad.entity_links (
+    id uuid primary key default gen_random_uuid(),
+    a_type text not null,
+    a_id uuid not null,
+    b_type text not null,
+    b_id uuid not null,
+    created_by uuid not null,
+    created_at timestamptz not null default now(),
+    check (a_type < b_type or (a_type = b_type and a_id < b_id)),
+    unique (a_type, a_id, b_type, b_id)
+  )
+`;
+
+await sql`
+  create unique index if not exists links_one_token_per_project
+    on launchpad.entity_links (a_id) where a_type = 'project' and b_type = 'token_design'
+`;
+
+await sql`
+  create unique index if not exists links_one_project_per_token
+    on launchpad.entity_links (b_id) where a_type = 'project' and b_type = 'token_design'
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

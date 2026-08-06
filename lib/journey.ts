@@ -39,8 +39,9 @@ export const JOURNEY_LIMITS = {
   milestones: { min: 2, max: 5, titleMax: 80, descriptionMax: 400 },
 } as const;
 
-/** Deterministic serialization: recursively sorted keys, no whitespace. */
-function sortValue(value: unknown): unknown {
+/** Deterministic serialization: recursively sorted keys, no whitespace.
+ *  Shared with lib/ideation.ts — same consensus rule applies there. */
+export function sortValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortValue);
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(

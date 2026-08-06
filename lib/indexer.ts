@@ -61,6 +61,22 @@ export async function getTokens(): Promise<IndexedToken[] | null> {
   return data?.tokens.items ?? null;
 }
 
+export interface CreatorDeployHistory {
+  totalCount: number;
+  items: Array<Pick<IndexedToken, "address" | "name" | "symbol" | "blockTimestamp">>;
+}
+
+/** Every factory launch by a wallet — the verify-don't-ask deploy record. */
+export async function getTokensByCreator(creator: string): Promise<CreatorDeployHistory | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(creator)) return null;
+  const data = await query<{ tokens: CreatorDeployHistory }>(
+    `{ tokens(where: { creator: "${creator.toLowerCase()}" }, orderBy: "blockNumber", orderDirection: "desc", limit: 10) {
+      totalCount items { address name symbol blockTimestamp }
+    } }`,
+  );
+  return data?.tokens ?? null;
+}
+
 /** Single token by address (lowercase hex), or null if unknown/offline. */
 export async function getToken(address: string): Promise<IndexedToken | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;

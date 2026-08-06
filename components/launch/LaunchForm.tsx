@@ -51,11 +51,38 @@ function randomSalt(): `0x${string}` {
   return `0x${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
-export function LaunchForm() {
+/** Values seeded from a published token design (?design=<id>). */
+export interface LaunchPrefill {
+  name: string;
+  ticker: string;
+  supply: string;
+  vesting?: { percent: string; days: string; cliffDays: string };
+}
+
+/**
+ * A published design to commit on-chain: journeyHash carries the design's
+ * snapshot hash instead of a v1 journey hash, so the launch permanently
+ * commits to the ideation behind it. Which table the hash resolves in
+ * (journeys vs ideation_snapshots) is how the two paths are told apart.
+ */
+export interface DesignCommitment {
+  id: string;
+  slug: string;
+  snapshotHash: `0x${string}`;
+  name: string;
+}
+
+export function LaunchForm({
+  prefill,
+  designCommitment,
+}: {
+  prefill?: LaunchPrefill;
+  designCommitment?: DesignCommitment;
+} = {}) {
   // Step 1 — token details
-  const [name, setName] = useState("");
-  const [ticker, setTicker] = useState("");
-  const [supply, setSupply] = useState("");
+  const [name, setName] = useState(prefill?.name ?? "");
+  const [ticker, setTicker] = useState(prefill?.ticker ?? "");
+  const [supply, setSupply] = useState(prefill?.supply ?? "");
   const [description, setDescription] = useState("");
   const [xHandle, setXHandle] = useState("");
   const [website, setWebsite] = useState("");
@@ -63,10 +90,10 @@ export function LaunchForm() {
   const [image, setImage] = useState<ImageState>(null);
 
   // Step 1 — optional vesting
-  const [vestingOn, setVestingOn] = useState(false);
-  const [vestPercent, setVestPercent] = useState("20");
-  const [vestDays, setVestDays] = useState("180");
-  const [cliffDays, setCliffDays] = useState("30");
+  const [vestingOn, setVestingOn] = useState(Boolean(prefill?.vesting));
+  const [vestPercent, setVestPercent] = useState(prefill?.vesting?.percent ?? "20");
+  const [vestDays, setVestDays] = useState(prefill?.vesting?.days ?? "180");
+  const [cliffDays, setCliffDays] = useState(prefill?.vesting?.cliffDays ?? "30");
 
   // Step 2 — journey
   const [why, setWhy] = useState("");
@@ -156,7 +183,8 @@ export function LaunchForm() {
     supplyRationale: supplyRationale.trim(),
     milestones,
   };
-  const journeyProblem = validateJourney(journeyDoc);
+  // With a design commitment, the published design replaces the journey step.
+  const journeyProblem = designCommitment ? null : validateJourney(journeyDoc);
 
   async function launch() {
     if (status.kind === "working") return;
@@ -181,16 +209,23 @@ export function LaunchForm() {
         imageURI = json.url;
       }
 
-      // 2. Journey → hash client-side, server must agree before storing.
-      setStatus({ kind: "working", label: "Publishing journey…" });
-      const journeyHash = hashJourney(journeyDoc);
-      const res = await fetch("/api/journeys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc: journeyDoc, clientHash: journeyHash, creator: address }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Journey publish failed.");
+      // 2. The on-chain commitment: either the published design's snapshot
+      // hash (already stored server-side at publish), or a v1 journey doc
+      // hashed client-side with the server re-hashing before it stores.
+      let journeyHash: `0x${string}`;
+      if (designCommitment) {
+        journeyHash = designCommitment.snapshotHash;
+      } else {
+        setStatus({ kind: "working", label: "Publishing journey…" });
+        journeyHash = hashJourney(journeyDoc);
+        const res = await fetch("/api/journeys", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ doc: journeyDoc, clientHash: journeyHash, creator: address }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Journey publish failed.");
+      }
 
       // 3. Launch on-chain.
       setStatus({ kind: "working", label: "Confirm in your wallet…" });
@@ -244,6 +279,17 @@ export function LaunchForm() {
       }
       if (!token) throw new Error("Launched, but could not decode the token address.");
 
+      // Attach the deployed address back to the design record. Best-effort:
+      // the on-chain hash commitment already proves the linkage, and the
+      // server re-verifies against the indexer before storing anything.
+      if (designCommitment) {
+        await fetch(`/api/ideation/token-designs/${designCommitment.id}/attach-deploy`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenAddress: token.toLowerCase(), txHash }),
+        }).catch(() => {});
+      }
+
       setStatus({ kind: "success", token, txHash });
     } catch (err) {
       const message =
@@ -264,8 +310,10 @@ export function LaunchForm() {
           {name.trim()} is live
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-300">
-          Deployed on {LAUNCH_CHAIN.name}. The journey document is committed
-          on-chain via its hash.
+          Deployed on {LAUNCH_CHAIN.name}.{" "}
+          {designCommitment
+            ? "The published design is committed on-chain via its snapshot hash."
+            : "The journey document is committed on-chain via its hash."}
         </p>
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -303,7 +351,7 @@ export function LaunchForm() {
                     : "border border-ink-700/70 text-ink-400 hover:text-ink-200",
                 )}
               >
-                {s}. {s === 1 ? "Details" : s === 2 ? "Journey" : "Launch"}
+                {s}. {s === 1 ? "Details" : s === 2 ? (designCommitment ? "Design" : "Journey") : "Launch"}
               </button>
             ))}
           </div>
@@ -478,6 +526,37 @@ export function LaunchForm() {
           </div>
         ) : step === 2 ? (
           <div className="space-y-5">
+            {designCommitment ? (
+              <>
+                <p className="text-sm leading-relaxed text-ink-300">
+                  This launch commits your published token design on-chain: the
+                  factory records the design&apos;s snapshot hash, so the
+                  document behind this token can never be quietly rewritten.
+                </p>
+                <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
+                  <p className="text-sm font-medium text-ink-100">{designCommitment.name}</p>
+                  <p className="mt-1 text-xs text-ink-500">
+                    Published design ·{" "}
+                    <Link
+                      href={`/t/${designCommitment.slug}`}
+                      className="text-electric-300 transition-colors hover:text-electric-200"
+                    >
+                      /t/{designCommitment.slug}
+                    </Link>
+                  </p>
+                  <p className="mt-2 break-all font-mono text-[11px] text-ink-500">
+                    {designCommitment.snapshotHash}
+                  </p>
+                  <p className="mt-3 text-xs leading-relaxed text-ink-400">
+                    Only the supply and the team vesting schedule are enforced
+                    by the contract. Allocations, distribution, and everything
+                    else in the design are published commitments — snapshotted
+                    and tamper-evident, not code.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
             <p className="text-sm leading-relaxed text-ink-300">
               The journey is your public commitment: why this token exists, why
               the supply is what it is, and what happens next. Its hash goes
@@ -492,6 +571,8 @@ export function LaunchForm() {
               onSupplyRationale={setSupplyRationale}
               onMilestones={setMilestones}
             />
+              </>
+            )}
             <div className="flex items-center justify-between border-t border-ink-800/70 pt-5">
               <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
                 Back
@@ -524,8 +605,12 @@ export function LaunchForm() {
                 </span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-ink-500">Journey</span>
-                <span className="text-ink-100">{milestones.length} milestones, hash committed on-chain</span>
+                <span className="text-ink-500">{designCommitment ? "Design" : "Journey"}</span>
+                <span className="text-ink-100">
+                  {designCommitment
+                    ? `/t/${designCommitment.slug}, snapshot hash committed on-chain`
+                    : `${milestones.length} milestones, hash committed on-chain`}
+                </span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Network</span>
@@ -544,7 +629,12 @@ export function LaunchForm() {
             </div>
 
             <p className="break-all font-mono text-xs text-ink-500">
-              journeyHash: {journeyProblem ? "—" : hashJourney(journeyDoc)}
+              journeyHash:{" "}
+              {designCommitment
+                ? designCommitment.snapshotHash
+                : journeyProblem
+                  ? "—"
+                  : hashJourney(journeyDoc)}
             </p>
 
             {status.kind === "error" ? (
