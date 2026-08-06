@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { ExportButtons } from "@/components/ideation/ExportButtons";
 import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import {
@@ -102,6 +103,9 @@ export default async function ProjectPublicPage({
           <StatusChip tone="neutral">
             v{doc.publishVersion} · {new Date(snapshot.created_at).toLocaleDateString("en-US")}
           </StatusChip>
+        </div>
+        <div className="mt-4">
+          <ExportButtons kind="p" slug={slug} />
         </div>
       </div>
 

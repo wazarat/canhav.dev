@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { ExportButtons } from "@/components/ideation/ExportButtons";
 import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { UnlockCalendarChart } from "@/components/ideation/UnlockCalendarChart";
 import { WarningResourceCard } from "@/components/ideation/WarningResourceCard";
@@ -116,6 +117,9 @@ export default async function TokenDesignPublicPage({
               </Link>
             </>
           )}
+        </div>
+        <div className="mt-4">
+          <ExportButtons kind="t" slug={slug} />
         </div>
         {onChainCommitIsOlder && (
           <div className="mt-3 max-w-xl">
