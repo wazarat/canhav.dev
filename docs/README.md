@@ -8,8 +8,10 @@ If GitBook still publishes this README as a top-level page, set the site homepag
 
 | Group | Path | Focus |
 |-------|------|--------|
-| Getting started | `general/` | Welcome, what CanHav is, glossary, litepaper |
-| Projects | `ideation/` | Product and Token tracks, computed outputs, warnings, public pages |
+| Getting started | `general/` + ideation intros | Welcome, two tracks, three answer types |
+| Product track | `ideation/product-track.md` | Project / product design |
+| Token track (ideation) | `ideation/` | Token design, computed outputs, warnings, enforced vs stated |
+| Public pages | `ideation/public-pages.md` | `/p` and `/t` |
 | Token Launch | `token-launch/` | Launchpad, deploy paths, fees, guarantees |
 | Accounts | `accounts/` | Clerk (in development) |
 | AI and IDE | `ai/` | Export and MCP (in development) |

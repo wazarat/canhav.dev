@@ -8,7 +8,7 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 
 ---
 
-## Basics
+## Sector, what it does, users and payers, why this chain, current stage
 
 ### Asked
 
@@ -17,8 +17,7 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 | Project name | Required |
 | Sector | Credit and lending; liquidity infrastructure; underwriting and risk; RWA infrastructure; oracles and data; perps and derivatives; agentic trading; stablecoin and payments; portfolio and vaults; DEX and market structure; other (with free text) |
 | What it does | One paragraph |
-| Who the user is | Free text |
-| Who pays | Free text (often not the same as the user) |
+| Users and payers | Who the user is, and who pays (often not the same answer) |
 | Why this chain specifically | Free text |
 | Current stage | Idea; design doc; prototype; testnet contracts deployed; live elsewhere |
 
@@ -28,16 +27,15 @@ None in this step.
 
 ---
 
-## Architecture (contract architecture)
+## Contract architecture and external dependencies
 
 ### Asked
 
 | Field | Notes |
 |-------|-------|
 | What contracts exist | “None yet” is an honest answer |
-| External dependencies | Protocols your contracts call |
+| External dependencies | Protocols your contracts call (for example Uniswap, Morpho, Chainlink) |
 | Oracles | Free text |
-| Admin functions and why they exist | Free text |
 | Upgradeability | Immutable; upgradeable proxy; partially upgradeable; undecided |
 
 ### Computed / warnings
@@ -46,15 +44,29 @@ None.
 
 ---
 
-## Security
+## Admin functions
 
 ### Asked
 
 | Field | Notes |
 |-------|-------|
-| Worst thing a bug could do | Lose user funds; lock funds; misprice; nothing serious |
+| Admin functions and why they exist | Free text. Explain every privileged path and why it is needed. |
 
-Status declarations (same four statuses as elsewhere):
+### Computed / warnings
+
+None.
+
+---
+
+## Worst-case bug impact and security status declarations
+
+### Asked
+
+| Field | Notes |
+|-------|-------|
+| Worst-case bug impact | Lose user funds; lock funds; misprice; nothing serious |
+
+Security status declarations (same four statuses as elsewhere: already in place; handled by legal/ops; planned before mainnet; not yet):
 
 | Declaration | Covers |
 |-------------|--------|
@@ -89,7 +101,7 @@ Optional verify signals (wallet, GitHub repo, testnet contract addresses) attach
 
 ## Review and publish
 
-Publishing snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional.
+Publishing snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional. See [The two ideation tracks](two-tracks.md).
 
 ---
 
@@ -99,3 +111,4 @@ Publishing snapshots the document and assigns a public slug under `/p/...`. Link
 - [The two ideation tracks](two-tracks.md)
 - [The three answer types](three-answer-types.md)
 - [Enforced versus stated](enforced-vs-stated.md)
+- [Public pages](public-pages.md)

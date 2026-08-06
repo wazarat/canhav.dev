@@ -14,8 +14,12 @@ Robinhood Chain does **not** provide distribution to Robinhood brokerage custome
 
 | Section | What it covers | Status |
 |---------|----------------|--------|
-| [Getting started](what-canhav-is.md) | What CanHav is (and is not) | Available now |
-| [Projects](../ideation/two-tracks.md) | Product and Token design tracks, computed outputs, public pages | Available now |
+| [What CanHav is](what-canhav-is.md) | What CanHav is (and is not) | Available now |
+| [The two ideation tracks](../ideation/two-tracks.md) | Product and Token tracks, linking | Available now |
+| [The three answer types](../ideation/three-answer-types.md) | Decisions, computed outputs, status declarations | Available now |
+| [Product track](../ideation/product-track.md) | Sector, users and payers, architecture, security decls | Available now |
+| [Token track](../ideation/token-track.md) | Eight design sections, computed outputs, warnings | Available now |
+| [Public pages](../ideation/public-pages.md) | Separate `/p` and `/t` pages, scoped signals | Available now |
 | [Token Launch](../token-launch/overview.md) | Create and operate tokens on Robinhood Chain Testnet | Available now |
 | [Deploy paths](../token-launch/deploy-paths.md) | Quick deploy vs design deploy | Available now |
 | [Fees and guarantees](../token-launch/fees-and-economics.md) | Fee switches, caps, timelock, contract guarantees | Available now |
@@ -36,7 +40,7 @@ All product surfaces described here are **testnet only**. Nothing here is financ
 
 ## Site appearance
 
-The docs site should use a **light** theme with a white background. That is a GitBook Customization setting, not a content-file change. See [SETUP.md](../SETUP.md) for the exact steps.
+The docs site should use a **light** theme with a white background. That is a GitBook Customization setting, not a content-file change. You (or anyone with GitBook access) must apply it: dashboard → Customization → theme **Clean** → default mode **Light** → Publish. Full steps: [SETUP.md](../SETUP.md).
 
 ## Who this is for
 
@@ -47,5 +51,6 @@ The docs site should use a **light** theme with a white background. That is a Gi
 ## Where to go next
 
 - New here: [What CanHav is](what-canhav-is.md), then the [litepaper](litepaper.md).
-- Ready to launch a token: [Token Launch overview](../token-launch/overview.md).
-- Designing before deploy: [The two ideation tracks](../ideation/two-tracks.md).
+- Product design: [Product track](../ideation/product-track.md).
+- Token design: [Token track](../ideation/token-track.md).
+- Ready to launch: [Token Launch overview](../token-launch/overview.md).

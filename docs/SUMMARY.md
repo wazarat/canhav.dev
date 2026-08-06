@@ -6,16 +6,22 @@
 * [What CanHav is](general/what-canhav-is.md)
 * [Glossary](general/glossary.md)
 * [Litepaper](general/litepaper.md)
-
-## Projects
-
 * [The two ideation tracks](ideation/two-tracks.md)
 * [The three answer types](ideation/three-answer-types.md)
+
+## Product track
+
 * [Product track](ideation/product-track.md)
+
+## Token track (ideation)
+
 * [Token track](ideation/token-track.md)
 * [Computed outputs](ideation/computed-outputs.md)
 * [Warnings](ideation/warnings.md)
 * [Enforced versus stated](ideation/enforced-vs-stated.md)
+
+## Public pages
+
 * [Public pages](ideation/public-pages.md)
 
 ## Token Launch

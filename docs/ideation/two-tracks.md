@@ -14,6 +14,19 @@ CanHav Projects has two tracks: **Product** and **Token**. They are independent 
 
 The point is to make the design document honest before anyone confuses a plan with a live market.
 
+## How linking works
+
+Linking is optional and owned by you in studio.
+
+1. Open a project or token design editor. The link panel lists entities you own.
+2. Create a link only when you own both sides. v1 linking is **one-to-one** (one project to one token design).
+3. After you link, each public page shows a cross-card to the other entity (`/p/...` ↔ `/t/...`).
+4. Credibility signals stay scoped to the entity they belong to. Linking does **not** copy project verify signals onto the token page, or float/unlock metrics onto the project page.
+
+Unlinking (when available in studio) removes the cross-reference. It does not delete either document.
+
+See [Public pages](public-pages.md).
+
 ## Product track
 
 Captures what you are building: sector, what it does, users and payers, why this chain, stage, contract architecture, worst-case bug impact, and security status declarations.
