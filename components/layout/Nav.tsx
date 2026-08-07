@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/Button";
+import { NavAuthButton } from "@/components/layout/NavAuthButton";
 import { Logo } from "@/components/ui/Logo";
 import { NAV_LINKS } from "@/content/site";
 
@@ -21,9 +21,7 @@ export function Nav() {
               </Link>
             ))}
           </nav>
-          <Button asChild size="sm">
-            <Link href="/studio">Log In</Link>
-          </Button>
+          <NavAuthButton />
         </div>
       </div>
     </header>

@@ -9,7 +9,7 @@ import { deriveTokenomics } from "@/lib/tokenDesign";
 export async function DesignsGrid() {
   const designs = await getPublishedTokenDesigns();
   if (designs === null)
-    return <EmptyCard>Design data is temporarily unavailable — try again shortly.</EmptyCard>;
+    return <EmptyCard>Design data is temporarily unavailable. Try again shortly.</EmptyCard>;
   if (designs.length === 0) return <EmptyCard>No published token designs yet.</EmptyCard>;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

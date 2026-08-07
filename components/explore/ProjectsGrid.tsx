@@ -9,7 +9,7 @@ import { getPublishedProjects } from "@/lib/ideation-db";
 export async function ProjectsGrid() {
   const projects = await getPublishedProjects();
   if (projects === null)
-    return <EmptyCard>Project data is temporarily unavailable — try again shortly.</EmptyCard>;
+    return <EmptyCard>Project data is temporarily unavailable. Try again shortly.</EmptyCard>;
   if (projects.length === 0)
     return <EmptyCard>No published projects yet. A project needs no token to be here.</EmptyCard>;
   return (

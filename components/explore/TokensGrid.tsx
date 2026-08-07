@@ -9,7 +9,7 @@ import { formatSupply, getActiveSaleTokens, getTokens } from "@/lib/indexer";
 export async function TokensGrid() {
   const [tokens, liveSaleTokens] = await Promise.all([getTokens(), getActiveSaleTokens()]);
   if (tokens === null)
-    return <EmptyCard>Token data is temporarily unavailable — try again shortly.</EmptyCard>;
+    return <EmptyCard>Token data is temporarily unavailable. Try again shortly.</EmptyCard>;
   if (tokens.length === 0) return <EmptyCard>No tokens launched yet.</EmptyCard>;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

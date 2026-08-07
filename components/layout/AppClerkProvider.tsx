@@ -3,12 +3,12 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { isAuthConfigured } from "@/lib/auth";
 
 /**
- * ClerkProvider scoped to the studio — the rest of the site (marketing,
- * /launch, /p, /t) never loads Clerk client code. The provider throws
- * without a publishable key, so an unconfigured deploy renders bare
- * children and the page shows its config chip instead.
+ * Site-wide ClerkProvider so the nav can reflect signed-in state everywhere
+ * (client-side session detection; no middleware needed outside the studio).
+ * The provider throws without a publishable key, so an unconfigured deploy
+ * renders bare children and auth-aware UI falls back to its signed-out look.
  */
-export default function StudioLayout({ children }: { children: React.ReactNode }) {
+export function AppClerkProvider({ children }: { children: React.ReactNode }) {
   if (!isAuthConfigured()) return <>{children}</>;
   return (
     <ClerkProvider

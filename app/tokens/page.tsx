@@ -7,7 +7,7 @@ import { LAUNCH_CHAIN } from "@/content/launch";
 export const metadata: Metadata = {
   title: "Tokens",
   description:
-    "Tokens launched through the CanHav factory on Robinhood Chain testnet, and published token designs — the thinking behind them.",
+    "Tokens launched through the CanHav factory on Robinhood Chain testnet, and the published token designs behind them.",
 };
 
 export const dynamic = "force-dynamic";
@@ -21,9 +21,9 @@ export default function TokensPage() {
           Tokens
         </h1>
         <p className="mt-4 text-base leading-relaxed text-ink-300">
-          Every token launched through the factory on {LAUNCH_CHAIN.name}, read
-          from the on-chain event log — and the published designs behind them,
-          which need no deployment to be discoverable.
+          Every token launched through the factory on {LAUNCH_CHAIN.name},
+          read from the on-chain event log, alongside the published designs
+          behind them. A design needs no deployment to be discoverable.
         </p>
       </div>
 
@@ -38,7 +38,7 @@ export default function TokensPage() {
         <h2 className="font-display text-xl font-semibold text-ink-50">Token designs</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-400">
           Published designs: supply, allocations, vesting, and the computed
-          float behind each — with the warnings that fired, in the open.
+          float behind each, with the warnings that fired shown in the open.
         </p>
         <div className="mt-5">
           <DesignsGrid />
