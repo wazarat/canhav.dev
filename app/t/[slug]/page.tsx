@@ -30,9 +30,20 @@ import { isSaleEvent, vestedCohorts } from "@/lib/ideation";
 import { getLinkedProject, getSnapshot, getTokenDesignByAddress, getTokenDesignBySlug } from "@/lib/ideation-db";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  if (/^0x[a-fA-F0-9]{40}$/.test(slug)) return { title: "Token design" };
+  const row = await getTokenDesignBySlug(slug);
+  if (!row) return { title: "Token design" };
+  return {
+    title: `${row.draft_doc.name} ($${row.draft_doc.ticker}) — Token design`,
+    description: row.draft_doc.rationale.beyondDatabaseRow.slice(0, 160),
+  };
+}
 
 export const dynamic = "force-dynamic";
 

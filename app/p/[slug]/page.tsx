@@ -24,9 +24,19 @@ import {
   getWalletTxCount,
 } from "@/lib/verifySignals";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const row = await getProjectBySlug(slug);
+  if (!row) return { title: "Project" };
+  return {
+    title: `${row.draft_doc.name} — Project`,
+    description: row.draft_doc.whatItDoes.slice(0, 160),
+  };
+}
 
 export const dynamic = "force-dynamic";
 

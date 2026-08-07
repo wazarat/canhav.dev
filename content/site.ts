@@ -14,3 +14,10 @@ export const SITE = {
   footerDataLine: "Data: Arbitrum Portal · Alchemy · Dune (free tier).",
   footerLegal: "Research preview, not financial advice.",
 } as const;
+
+/** Primary nav links, rendered right-aligned before the Log In button. */
+export const NAV_LINKS = [
+  { label: "Tokens", href: "/tokens" },
+  { label: "Projects", href: "/projects" },
+  { label: "Docs", href: SITE.docsUrl },
+] as const;
