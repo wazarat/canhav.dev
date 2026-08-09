@@ -33,7 +33,7 @@ export async function generateMetadata({
   const row = await getProjectBySlug(slug);
   if (!row) return { title: "Project" };
   return {
-    title: `${row.draft_doc.name} — Project`,
+    title: `${row.draft_doc.name} · Project`,
     description: row.draft_doc.whatItDoes.slice(0, 160),
   };
 }
@@ -125,7 +125,10 @@ export default async function ProjectPublicPage({
             <Prose label="What it does" text={doc.whatItDoes} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Prose label="Who the user is" text={doc.userIs} />
-              <Prose label="Who pays" text={doc.whoPays} />
+              <Prose
+                label="Who pays"
+                text={doc.payer === "user" ? "The user pays." : doc.whoPays}
+              />
             </div>
             <Prose label="Why this chain" text={doc.whyThisChain} />
           </div>
@@ -141,8 +144,37 @@ export default async function ProjectPublicPage({
         <Section title="Contract architecture">
           <div className="space-y-4">
             <Prose label="Contracts" text={doc.architecture.contracts} />
-            <Prose label="External dependencies" text={doc.architecture.externalDeps} />
-            <Prose label="Oracles" text={doc.architecture.oracles} />
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-ink-500">
+                External dependencies
+              </p>
+              {doc.architecture.externalDepsNone || doc.architecture.externalDeps.length === 0 ? (
+                <p className="mt-1 text-sm leading-relaxed text-ink-200">None</p>
+              ) : (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {doc.architecture.externalDeps.map((dep, i) => (
+                    <StatusChip key={`${dep.name}-${i}`} tone="neutral">
+                      {dep.url ? (
+                        <a
+                          href={dep.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="transition-colors hover:text-ink-50"
+                        >
+                          {dep.name}
+                        </a>
+                      ) : (
+                        dep.name
+                      )}
+                    </StatusChip>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Prose
+              label="Oracles"
+              text={doc.architecture.oracleUse === "none" ? "None" : doc.architecture.oracles}
+            />
             <Prose label="Admin functions" text={doc.architecture.adminFunctions} />
             <div className="flex flex-wrap gap-2">
               <StatusChip
@@ -164,7 +196,7 @@ export default async function ProjectPublicPage({
               return (
                 <StatusChip key={key} tone={declTone(decl, doc.worstCase)}>
                   {label}: {STATUS_DECL_LABELS[decl.status]}
-                  {decl.note ? ` — ${decl.note}` : ""}
+                  {decl.note ? ` (${decl.note})` : ""}
                 </StatusChip>
               );
             })}
@@ -174,14 +206,14 @@ export default async function ProjectPublicPage({
         {(deploys || txCount !== null || github || contractChecks) && (
           <Section title="Verified signals">
             <p className="text-sm text-ink-500">
-              Read from the chain and public sources — not self-reported.
+              Read from the chain and public sources, not self-reported.
               {doc.verifyWallet && " Wallet declared by the team."}
             </p>
             <div className="space-y-3">
               {deploys && (
                 <div>
                   <p className="text-[11px] uppercase tracking-wide text-ink-500">
-                    Factory deploys by {doc.verifyWallet?.slice(0, 10)}… — {deploys.totalCount}
+                    Factory deploys by {doc.verifyWallet?.slice(0, 10)}…: {deploys.totalCount}
                   </p>
                   <ul className="mt-2 space-y-1">
                     {deploys.items.map((t) => (

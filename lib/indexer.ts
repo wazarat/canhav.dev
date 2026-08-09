@@ -77,6 +77,40 @@ export async function getTokensByCreator(creator: string): Promise<CreatorDeploy
   return data?.tokens ?? null;
 }
 
+export type TokenIdentityMatch = Pick<IndexedToken, "address" | "name" | "symbol">;
+
+/**
+ * Exact-match lookup of deployed factory tokens by name and/or symbol, for
+ * the design-form "not found on Robinhood Chain or CanHav" check. Two aliased
+ * filters in one document (no dependency on GraphQL OR support). Null when
+ * the indexer is unreachable.
+ */
+export async function findTokensByNameOrSymbol(
+  name: string,
+  symbol: string,
+): Promise<{ byName: TokenIdentityMatch[]; bySymbol: TokenIdentityMatch[] } | null> {
+  const parts: string[] = [];
+  // JSON.stringify produces a GraphQL-safe quoted string literal.
+  if (name.trim())
+    parts.push(
+      `byName: tokens(where: { name: ${JSON.stringify(name.trim())} }, limit: 5) { items { address name symbol } }`,
+    );
+  if (/^[A-Z0-9]{1,10}$/.test(symbol))
+    parts.push(
+      `bySymbol: tokens(where: { symbol: ${JSON.stringify(symbol)} }, limit: 5) { items { address name symbol } }`,
+    );
+  if (parts.length === 0) return { byName: [], bySymbol: [] };
+  const data = await query<{
+    byName?: { items: TokenIdentityMatch[] };
+    bySymbol?: { items: TokenIdentityMatch[] };
+  }>(`{ ${parts.join(" ")} }`);
+  if (!data) return null;
+  return {
+    byName: data.byName?.items ?? [],
+    bySymbol: data.bySymbol?.items ?? [],
+  };
+}
+
 /** Single token by address (lowercase hex), or null if unknown/offline. */
 export async function getToken(address: string): Promise<IndexedToken | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;

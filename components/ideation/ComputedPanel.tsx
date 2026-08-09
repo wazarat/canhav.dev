@@ -29,12 +29,12 @@ export function ComputedPanel({ doc }: { doc: TokenDesignDoc }) {
   return (
     <div className="space-y-5">
       <div className="glass rounded-2xl border border-ink-800/70 p-5">
-        <h3 className="text-sm font-medium text-ink-200">Computed — not asked</h3>
+        <h3 className="text-sm font-medium text-ink-200">Computed, not asked</h3>
         <div className="mt-4 grid grid-cols-3 gap-3">
           <Stat label="Float at launch" value={fmtPct(d.floatAtLaunchPct)} />
           <Stat
             label="FDV : float"
-            value={d.fdvToFloat ? `${d.fdvToFloat % 1 === 0 ? d.fdvToFloat : d.fdvToFloat.toFixed(1)}×` : "—"}
+            value={d.fdvToFloat ? `${d.fdvToFloat % 1 === 0 ? d.fdvToFloat : d.fdvToFloat.toFixed(1)}×` : "n/a"}
           />
           <Stat label="Treasury" value={fmtPct(d.treasuryPct)} />
         </div>
@@ -45,7 +45,7 @@ export function ComputedPanel({ doc }: { doc: TokenDesignDoc }) {
         {d.milestoneUncertain && (
           <div className="mt-3">
             <StatusChip tone="info" variant="block">
-              Milestone-conditional releases can&apos;t be dated — the calendar
+              Milestone-conditional releases can&apos;t be dated; the calendar
               plots them at the latest possible month.
             </StatusChip>
           </div>

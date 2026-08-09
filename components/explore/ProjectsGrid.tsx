@@ -11,7 +11,17 @@ export async function ProjectsGrid() {
   if (projects === null)
     return <EmptyCard>Project data is temporarily unavailable. Try again shortly.</EmptyCard>;
   if (projects.length === 0)
-    return <EmptyCard>No published projects yet. A project needs no token to be here.</EmptyCard>;
+    return (
+      <EmptyCard>
+        No published projects yet. A project needs no token to be here.{" "}
+        <Link
+          href="/studio"
+          className="text-electric-300 transition-colors hover:text-electric-200"
+        >
+          Start one in the studio →
+        </Link>
+      </EmptyCard>
+    );
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {projects.map((p) => (

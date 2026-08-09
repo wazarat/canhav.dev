@@ -32,7 +32,15 @@ import {
   isSaleEvent,
   vestedCohorts,
 } from "@/lib/ideation";
-import { type DerivedTokenomics, deriveTokenomics } from "@/lib/tokenDesign";
+import {
+  DEPLOYABILITY_COPY,
+  DEPLOYABILITY_TIER_LABELS,
+} from "@/content/ideation-resources";
+import {
+  type DerivedTokenomics,
+  deployabilityFindings,
+  deriveTokenomics,
+} from "@/lib/tokenDesign";
 
 /**
  * Pure markdown builders for the export downloads. Complete by contract:
@@ -43,9 +51,23 @@ import { type DerivedTokenomics, deriveTokenomics } from "@/lib/tokenDesign";
 
 const COHORT_LABELS = { team: "Team", investors: "Investors", advisors: "Advisors" } as const;
 
+function payerLine(doc: ProjectDoc): string {
+  return doc.payer === "user" ? "The user pays." : doc.whoPays;
+}
+
+function externalDepsLine(a: ProjectDoc["architecture"]): string {
+  if (a.externalDepsNone) return "None";
+  if (a.externalDeps.length === 0) return "Not set";
+  return a.externalDeps.map((d) => (d.url ? `[${d.name}](${d.url})` : d.name)).join(", ");
+}
+
+function oraclesLine(a: ProjectDoc["architecture"]): string {
+  return a.oracleUse === "none" ? "None" : a.oracles;
+}
+
 function decl(label: string, d: StatusDecl): string {
-  const status = STATUS_DECL_LABELS[d.status] ?? "—";
-  return `- **${label}:** ${status}${d.note ? ` — ${d.note}` : ""}`;
+  const status = STATUS_DECL_LABELS[d.status] ?? "Not set";
+  return `- **${label}:** ${status}${d.note ? ` (${d.note})` : ""}`;
 }
 
 function fmtPct(n: number): string {
@@ -53,7 +75,7 @@ function fmtPct(n: number): string {
 }
 
 function fmtRatio(n: number | null): string {
-  if (n === null) return "— (zero float)";
+  if (n === null) return "n/a (zero float)";
   return `${n % 1 === 0 ? n : n.toFixed(1)}×`;
 }
 
@@ -80,11 +102,11 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     doc.whatItDoes,
     "",
-    `**Who the user is** — ${doc.userIs}`,
+    `**Who the user is:** ${doc.userIs}`,
     "",
-    `**Who pays** — ${doc.whoPays}`,
+    `**Who pays:** ${payerLine(doc)}`,
     "",
-    `**Why this chain** — ${doc.whyThisChain}`,
+    `**Why this chain:** ${doc.whyThisChain}`,
     "",
     "## Distribution reality",
     "",
@@ -97,8 +119,8 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "## Contract architecture",
     "",
     `- **Contracts:** ${a.contracts}`,
-    `- **External dependencies:** ${a.externalDeps}`,
-    `- **Oracles:** ${a.oracles}`,
+    `- **External dependencies:** ${externalDepsLine(a)}`,
+    `- **Oracles:** ${oraclesLine(a)}`,
     `- **Admin functions:** ${a.adminFunctions}`,
     `- **Upgradeability:** ${optionLabel(UPGRADEABILITY_OPTIONS, a.upgradeability)}`,
     `- **Worst thing a bug could do:** ${optionLabel(WORST_CASE_OPTIONS, doc.worstCase)}`,
@@ -140,12 +162,12 @@ export function buildTokenDesignMarkdown(doc: TokenDesignDoc, publishedAt?: stri
     "## 2. Supply and allocation",
     "",
     `- **Total supply:** ${doc.supply.total.toLocaleString("en-US")}`,
-    `- **Policy:** ${doc.supply.policy === "fixed" ? "Fixed" : "Inflationary"}${doc.supply.inflationNote ? ` — ${doc.supply.inflationNote}` : ""}`,
+    `- **Policy:** ${doc.supply.policy === "fixed" ? "Fixed" : "Inflationary"}${doc.supply.inflationNote ? `. ${doc.supply.inflationNote}` : ""}`,
     "",
     "| Allocation | % of supply |",
     "| --- | ---: |",
     ...ALLOCATION_FIELDS.filter((f) => al[f.key] > 0).map((f) => {
-      const label = f.key === "other" && al.otherLabel ? `Other — ${al.otherLabel}` : f.label;
+      const label = f.key === "other" && al.otherLabel ? `Other: ${al.otherLabel}` : f.label;
       return `| ${label} | ${al[f.key]}% |`;
     }),
     "",
@@ -154,7 +176,7 @@ export function buildTokenDesignMarkdown(doc: TokenDesignDoc, publishedAt?: stri
   ];
 
   if (vestedCohorts(al).length === 0) {
-    lines.push("No team, investor, or advisor allocations — nothing vests.");
+    lines.push("No team, investor, or advisor allocations, so nothing vests.");
   } else {
     lines.push(
       "| Cohort | Cliff | Total duration |",
@@ -194,7 +216,7 @@ export function buildTokenDesignMarkdown(doc: TokenDesignDoc, publishedAt?: stri
   if (doc.market.when === "at_launch" && doc.market.atLaunch) {
     const m = doc.market.atLaunch;
     lines.push(
-      `- **Launch liquidity:** ${m.liquidityEth} ETH — ${m.ethSource}`,
+      `- **Launch liquidity:** ${m.liquidityEth} ETH (${m.ethSource})`,
       `- **LP treatment:** ${m.lp === "locked" && m.lpLockMonths ? `Locked ${m.lpLockMonths} months` : optionLabel(LP_TREATMENT_OPTIONS, m.lp)}`,
       `- **Anti-sniping:** ${optionLabel(ANTI_SNIPING_OPTIONS, m.antiSniping)}`,
     );
@@ -227,15 +249,35 @@ export function buildTokenDesignMarkdown(doc: TokenDesignDoc, publishedAt?: stri
   ].filter((l): l is string => l !== null);
   lines.push(...(plLines.length ? plLines : ["Not answered (all optional)."]));
 
+  lines.push("", ...deployabilitySection(doc));
   lines.push("", ...computedSection(d), "");
   return lines.join("\n");
+}
+
+/** The same three-tier classification the editor and public page show. */
+function deployabilitySection(doc: TokenDesignDoc): string[] {
+  const findings = deployabilityFindings(doc);
+  const lines = ["## Deployability against the CanHav contract suite", ""];
+  if (findings.length === 0) {
+    lines.push("Nothing beyond the factory launch transaction.");
+    return lines;
+  }
+  for (const tier of ["custom", "stated", "canhav"] as const) {
+    const inTier = findings.filter((code) => DEPLOYABILITY_COPY[code].tier === tier);
+    if (inTier.length === 0) continue;
+    lines.push(`### ${DEPLOYABILITY_TIER_LABELS[tier]}`, "");
+    for (const code of inTier) lines.push(`- ${DEPLOYABILITY_COPY[code].text}`);
+    lines.push("");
+  }
+  while (lines[lines.length - 1] === "") lines.pop();
+  return lines;
 }
 
 function computedSection(d: DerivedTokenomics): string[] {
   const lines = [
     "## Computed from the design",
     "",
-    "Derived, never asked — recomputed from the inputs above.",
+    "Derived, never asked; recomputed from the inputs above.",
     "",
     `- **Circulating float at launch:** ${fmtPct(d.floatAtLaunchPct)}`,
     `- **Fully-diluted-to-float ratio:** ${fmtRatio(d.fdvToFloat)}`,
@@ -302,7 +344,7 @@ export function buildAgentsMd(input: {
   const { project, token } = input;
   const name = project?.name ?? token?.name ?? "CanHav record";
   const lines: string[] = [
-    `# AGENTS.md — ${name}`,
+    `# AGENTS.md: ${name}`,
     "",
     "Context for AI coding assistants working on this project. Generated from",
     "the team's published CanHav record(s); constraints below are the team's",
@@ -332,8 +374,8 @@ export function buildAgentsMd(input: {
       "## Contract architecture",
       "",
       `- **Contracts:** ${a.contracts}`,
-      `- **External dependencies:** ${a.externalDeps}`,
-      `- **Oracles:** ${a.oracles}`,
+      `- **External dependencies:** ${externalDepsLine(a)}`,
+      `- **Oracles:** ${oraclesLine(a)}`,
       `- **Admin functions (and why):** ${a.adminFunctions}`,
       `- **Upgradeability:** ${optionLabel(UPGRADEABILITY_OPTIONS, a.upgradeability)}`,
       `- **Worst-case bug impact:** ${optionLabel(WORST_CASE_OPTIONS, project.worstCase)}`,
@@ -358,7 +400,7 @@ export function buildAgentsMd(input: {
       "### Design constraints (testable assertions)",
       "",
       `- totalSupply == ${token.supply.total}`,
-      `- supply policy: ${token.supply.policy === "fixed" ? "fixed (factory mints once; no mint function exists)" : "inflationary per the team's own contracts — the factory token itself cannot mint"}`,
+      `- supply policy: ${token.supply.policy === "fixed" ? "fixed (factory mints once; no mint function exists)" : "inflationary per the team's own contracts; the factory token itself cannot mint"}`,
       ...ALLOCATION_FIELDS.filter((f) => al[f.key] > 0).map(
         (f) => `- allocation.${f.key} == ${al[f.key]}% of total supply`,
       ),
@@ -386,7 +428,7 @@ export function buildAgentsMd(input: {
       ...GOVERNANCE_FACTS.map((f) => `- ${f}`),
       "",
       "Everything else above (allocations, non-team vesting, distribution and",
-      "market plans) is a published commitment — snapshotted and",
+      "market plans) is a published commitment: snapshotted and",
       "tamper-evident on CanHav, but not enforced by the contract.",
     );
   }

@@ -8,6 +8,7 @@ import {
   type TokenDesignDoc,
   canonicalizeIdeationDoc,
   hashIdeationDoc,
+  normalizeProjectDoc,
   validateIdeationDoc,
 } from "@/lib/ideation";
 
@@ -59,6 +60,12 @@ export interface SnapshotRow {
 // ---------------------------------------------------------------------------
 // Projects
 
+/** Read choke point: every project row leaves this module current-shape. */
+function mapProjectRow(row: ProjectRow | undefined): ProjectRow | null {
+  if (!row) return null;
+  return { ...row, draft_doc: normalizeProjectDoc(row.draft_doc) };
+}
+
 export async function createProject(ownerId: string, doc: ProjectDoc): Promise<ProjectRow | null> {
   const sql = getDb();
   if (!sql) return null;
@@ -78,7 +85,7 @@ export async function getMyProjects(ownerId: string): Promise<ProjectRow[] | nul
     where owner_id = ${ownerId}
     order by updated_at desc
   `;
-  return rows as ProjectRow[];
+  return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
 }
 
 export async function getProject(id: string, ownerId: string): Promise<ProjectRow | null> {
@@ -87,7 +94,7 @@ export async function getProject(id: string, ownerId: string): Promise<ProjectRo
   const rows = await sql`
     select * from launchpad.projects where id = ${id} and owner_id = ${ownerId}
   `;
-  return (rows[0] as ProjectRow) ?? null;
+  return mapProjectRow(rows[0] as ProjectRow | undefined);
 }
 
 export async function updateProjectDraft(
@@ -126,7 +133,7 @@ export async function getProjectBySlug(slug: string): Promise<ProjectRow | null>
   const rows = await sql`
     select * from launchpad.projects where slug = ${slug} and status = 'published'
   `;
-  return (rows[0] as ProjectRow) ?? null;
+  return mapProjectRow(rows[0] as ProjectRow | undefined);
 }
 
 export async function getPublishedProjects(limit = 60): Promise<ProjectRow[] | null> {
@@ -138,7 +145,7 @@ export async function getPublishedProjects(limit = 60): Promise<ProjectRow[] | n
     order by updated_at desc
     limit ${limit}
   `;
-  return rows as ProjectRow[];
+  return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +251,37 @@ export async function getPublishedTokenDesigns(limit = 60): Promise<TokenDesignR
     limit ${limit}
   `;
   return rows as TokenDesignRow[];
+}
+
+/**
+ * Published designs sharing a name or ticker, for the design-form identity
+ * check. Published only: matching other users' drafts would leak their
+ * existence. Case-insensitive exact match.
+ */
+export async function findPublishedDesignsByNameOrTicker(
+  name: string,
+  ticker: string,
+  excludeId?: string,
+): Promise<Array<{ slug: string | null; name: string; ticker: string }> | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  const nameNorm = name.trim().toLowerCase();
+  const tickerNorm = ticker.trim().toUpperCase();
+  if (!nameNorm && !tickerNorm) return [];
+  const rows = await sql`
+    select slug,
+           draft_doc->>'name' as name,
+           draft_doc->>'ticker' as ticker
+    from launchpad.token_designs
+    where status = 'published'
+      and id::text <> ${excludeId ?? ""}
+      and (
+        (${nameNorm} <> '' and lower(draft_doc->>'name') = ${nameNorm})
+        or (${tickerNorm} <> '' and upper(draft_doc->>'ticker') = ${tickerNorm})
+      )
+    limit 5
+  `;
+  return rows as Array<{ slug: string | null; name: string; ticker: string }>;
 }
 
 export async function attachDeploy(
@@ -400,7 +438,11 @@ export async function getSnapshot(hash: string): Promise<SnapshotRow | null> {
   const rows = await sql`
     select * from launchpad.ideation_snapshots where snapshot_hash = ${hash}
   `;
-  return (rows[0] as SnapshotRow) ?? null;
+  const snap = (rows[0] as SnapshotRow) ?? null;
+  if (snap && snap.doc.kind === "project") {
+    return { ...snap, doc: normalizeProjectDoc(snap.doc) };
+  }
+  return snap;
 }
 
 export async function getSnapshotHistory(
@@ -499,5 +541,5 @@ export async function getLinkedProject(tokenDesignId: string): Promise<ProjectRo
     join launchpad.projects p on p.id = l.a_id
     where l.b_type = 'token_design' and l.b_id = ${tokenDesignId} and l.a_type = 'project'
   `;
-  return (rows[0] as ProjectRow) ?? null;
+  return mapProjectRow(rows[0] as ProjectRow | undefined);
 }

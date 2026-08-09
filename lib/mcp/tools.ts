@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 import { IDEATION_RESOURCES } from "@/content/ideation";
+import { DEPLOYABILITY_COPY } from "@/content/ideation-resources";
 import {
   type TokenDesignDoc,
   validateTokenDesignDoc,
@@ -16,7 +17,7 @@ import {
   getSnapshot,
   getTokenDesignBySlug,
 } from "@/lib/ideation-db";
-import { deriveTokenomics } from "@/lib/tokenDesign";
+import { deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
 import {
   errorResult,
   jsonResult,
@@ -43,6 +44,25 @@ function designWarnings(doc: TokenDesignDoc) {
   }));
 }
 
+/**
+ * Which parts of the design the CanHav contract suite can produce, tiered:
+ * "canhav" (deployable, possibly a separate contract or second transaction),
+ * "custom" (requires contracts outside CanHav), "stated" (recorded and shown,
+ * never enforced). `deployableAsDesigned` is false when any "custom" finding
+ * exists.
+ */
+function designDeployability(doc: TokenDesignDoc) {
+  const findings = deployabilityFindings(doc).map((code) => ({
+    code,
+    tier: DEPLOYABILITY_COPY[code].tier,
+    text: DEPLOYABILITY_COPY[code].text,
+  }));
+  return {
+    deployableAsDesigned: findings.every((f) => f.tier !== "custom"),
+    findings,
+  };
+}
+
 /** The team's stated design as testable assertions. */
 function designConstraints(doc: TokenDesignDoc, deployedAddress: string | null) {
   const derived = deriveTokenomics(doc);
@@ -52,6 +72,9 @@ function designConstraints(doc: TokenDesignDoc, deployedAddress: string | null) 
     name: doc.name,
     ticker: doc.ticker,
     deployedAddress,
+    // What a CanHav factory deploy enforces. Always fixed-supply: when the
+    // stated policy below is "inflationary", the design as written cannot
+    // deploy through the factory (see deployability.findings).
     enforcedOnChain: {
       totalSupply: doc.supply.total,
       fixedSupply: true,
@@ -60,7 +83,16 @@ function designConstraints(doc: TokenDesignDoc, deployedAddress: string | null) 
       upgradeable: false,
       teamVesting:
         doc.vesting.cohorts.find((c) => c.cohort === "team") ?? null,
+      ...(doc.supply.policy === "inflationary"
+        ? {
+            note:
+              "The design states an inflationary policy, but the factory " +
+              "only deploys fixed-supply tokens; inflation requires custom " +
+              "contracts outside CanHav.",
+          }
+        : {}),
     },
+    deployability: designDeployability(doc),
     statedByTeam: {
       supplyPolicy: doc.supply.policy,
       allocationsPct: {
@@ -224,7 +256,7 @@ export function registerAllTools(server: McpServer): void {
     {
       title: "Check a token design",
       description:
-        "Run CanHav's design warning rules. Pass a published design's slug, or an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check a local draft.",
+        "Run CanHav's design warning rules and deployability classification (deployable through CanHav / needs custom contracts / stated-only). Pass a published design's slug, or an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check a local draft.",
       inputSchema: z.object({
         slug: z.string().min(3).max(60).optional(),
         doc: z.record(z.string(), z.unknown()).optional(),
@@ -251,6 +283,7 @@ export function registerAllTools(server: McpServer): void {
         valid: firstProblem === null,
         firstProblem,
         warnings: designWarnings(design),
+        deployability: designDeployability(design),
       });
     },
   );

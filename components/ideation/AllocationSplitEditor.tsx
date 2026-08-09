@@ -69,7 +69,7 @@ export function AllocationSplitEditor({
       )}
       {!met && (
         <p className="text-xs text-ink-500">
-          {sum < 100 ? `${100 - sum}% unallocated.` : `${sum - 100}% over — trim it back.`}
+          {sum < 100 ? `${100 - sum}% unallocated.` : `${sum - 100}% over. Trim it back.`}
         </p>
       )}
     </div>

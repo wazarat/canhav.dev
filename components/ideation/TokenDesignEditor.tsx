@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { AllocationSplitEditor } from "@/components/ideation/AllocationSplitEditor";
 import { ComputedPanel } from "@/components/ideation/ComputedPanel";
 import { EditorShell } from "@/components/ideation/EditorShell";
+import { NameTickerCheck } from "@/components/ideation/NameTickerCheck";
+import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import { SelectField } from "@/components/ideation/SelectField";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
 import { TextField } from "@/components/ideation/TextField";
@@ -13,8 +15,14 @@ import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
+import {
+  DEPLOYABILITY_COPY,
+  DEPLOYABILITY_TIER_LABELS,
+  type ResourceIntroKey,
+} from "@/content/ideation-resources";
 import { LAUNCH_CHAIN, LAUNCH_FORM } from "@/content/launch";
 import {
+  ALLOCATION_ENFORCEMENT_NOTE,
   ANTI_SNIPING_OPTIONS,
   COUNSEL_OPTIONS,
   DISTRIBUTION_EVENT_OPTIONS,
@@ -44,6 +52,16 @@ import {
   validateTokenDesignDoc,
   vestedCohorts,
 } from "@/lib/ideation";
+import { type DeployabilityTier, deployabilityFindings } from "@/lib/tokenDesign";
+
+const GOVERNANCE_INTROS: Record<string, ResourceIntroKey> = {
+  mechanism: "token.governance.mechanism",
+  adminKeys: "token.governance.adminKeys",
+  treasuryCustody: "token.governance.treasuryCustody",
+};
+
+const TIER_ORDER: DeployabilityTier[] = ["custom", "stated", "canhav"];
+const TIER_TONES = { custom: "warning", stated: "neutral", canhav: "info" } as const;
 
 const STEP_LABELS = [
   "Rationale",
@@ -213,6 +231,7 @@ export function TokenDesignEditor({
   const problems = useMemo(() => stepProblems(doc), [doc]);
   const overall = problems[8];
   const steps = STEP_LABELS.map((label, i) => ({ label, problem: problems[i] }));
+  const findings = useMemo(() => deployabilityFindings(doc), [doc]);
 
   const needed = vestedCohorts(doc.supply.allocations);
 
@@ -267,13 +286,16 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("rationale", { why: v })}
                 options={RATIONALE_WHY_OPTIONS}
               />
+              <OptionResourceCard field="token.rationale.why" value={doc.rationale.why} />
               <SelectField
-                label="Issue now, trade later — or straight to market?"
+                label="Issue now and trade later, or straight to market?"
                 required
                 value={doc.rationale.path}
                 onChange={(v) => patchSection("rationale", { path: v })}
                 options={ISSUANCE_PATH_OPTIONS}
               />
+              <OptionResourceCard field="token.rationale.path" value={doc.rationale.path} />
+              <FieldIntroCard intro="token.rationale.beyondDatabaseRow" />
               <TextField
                 label="What does the token do that a database row couldn't?"
                 required
@@ -292,11 +314,17 @@ export function TokenDesignEditor({
               <TextField
                 label="Token name"
                 required
+                hint="Deploys as-is up to 32 characters (letters, numbers, spaces). Longer names stay design-only."
                 value={doc.name}
                 onChange={(v) => patch({ name: v })}
                 min={TOKEN_DESIGN_LIMITS.name.min}
                 max={TOKEN_DESIGN_LIMITS.name.max}
               />
+              {deployabilityFindings(doc).includes("name_not_deployable") && (
+                <StatusChip tone="warning" variant="block">
+                  {DEPLOYABILITY_COPY.name_not_deployable.text}
+                </StatusChip>
+              )}
               <Field label="Ticker" required hint={LAUNCH_FORM.ticker.hint}>
                 <Input
                   value={doc.ticker}
@@ -309,6 +337,7 @@ export function TokenDesignEditor({
                   placeholder="TOKEN"
                 />
               </Field>
+              <NameTickerCheck designId={id} name={doc.name} ticker={doc.ticker} />
               <NumberField
                 label="Total supply"
                 required
@@ -326,6 +355,7 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("supply", { policy: v })}
                 options={SUPPLY_POLICY_OPTIONS}
               />
+              <OptionResourceCard field="token.supply.policy" value={doc.supply.policy} />
               {doc.supply.policy === "inflationary" && (
                 <TextField
                   label="Inflation schedule"
@@ -333,9 +363,12 @@ export function TokenDesignEditor({
                   onChange={(v) => patchSection("supply", { inflationNote: v || undefined })}
                   max={TOKEN_DESIGN_LIMITS.inflationNote.max}
                   rows={2}
-                  hint="The launch contract mints a fixed supply — inflation would live in your own contracts."
+                  hint="Who mints, how much, on what schedule, and who governs it."
                 />
               )}
+              <StatusChip tone="info" variant="block">
+                {ALLOCATION_ENFORCEMENT_NOTE}
+              </StatusChip>
               <AllocationSplitEditor
                 value={doc.supply.allocations}
                 onChange={(v) => patchSection("supply", { allocations: v })}
@@ -346,7 +379,7 @@ export function TokenDesignEditor({
           {step === 2 &&
             (needed.length === 0 ? (
               <StatusChip tone="info" variant="block">
-                No team, investor, or advisor allocations — nothing to vest.
+                No team, investor, or advisor allocations, so nothing to vest.
                 Set allocations in the Supply step if that&apos;s not right.
               </StatusChip>
             ) : (
@@ -359,8 +392,7 @@ export function TokenDesignEditor({
                       className="glass rounded-xl border border-ink-800/70 p-4"
                     >
                       <p className="text-sm font-medium text-ink-100">
-                        {COHORT_LABELS[cohort]} —{" "}
-                        {doc.supply.allocations[cohort]}% of supply
+                        {COHORT_LABELS[cohort]}: {doc.supply.allocations[cohort]}% of supply
                       </p>
                       <div className="mt-3 grid grid-cols-2 gap-3">
                         <NumberField
@@ -392,12 +424,17 @@ export function TokenDesignEditor({
                   onChange={(v) => patchSection("vesting", { release: v })}
                   options={RELEASE_TYPE_OPTIONS}
                 />
+                <OptionResourceCard field="token.vesting.release" value={doc.vesting.release} />
                 <SelectField
                   label="If a founder leaves early"
                   required
                   value={doc.vesting.founderLeaves}
                   onChange={(v) => patchSection("vesting", { founderLeaves: v })}
                   options={FOUNDER_LEAVES_OPTIONS}
+                />
+                <OptionResourceCard
+                  field="token.vesting.founderLeaves"
+                  value={doc.vesting.founderLeaves}
                 />
               </>
             ))}
@@ -417,6 +454,10 @@ export function TokenDesignEditor({
                   })
                 }
                 options={DISTRIBUTION_EVENT_OPTIONS}
+              />
+              <OptionResourceCard
+                field="token.distribution.event"
+                value={doc.distribution.event}
               />
               {isSaleEvent(doc.distribution.event) && (
                 <>
@@ -463,6 +504,9 @@ export function TokenDesignEditor({
                       suffix="ETH"
                     />
                   </div>
+                  {sale.softCap > 0 && (
+                    <FieldIntroCard intro="token.distribution.softCap" />
+                  )}
                   <SelectField
                     label="Allowlist or open"
                     required
@@ -473,6 +517,7 @@ export function TokenDesignEditor({
                       { value: "open", label: "Open" },
                     ]}
                   />
+                  <OptionResourceCard field="token.distribution.access" value={sale.access} />
                   <SelectField
                     label="If the sale undersubscribes"
                     required
@@ -482,6 +527,10 @@ export function TokenDesignEditor({
                     }
                     options={UNDERSUBSCRIPTION_OPTIONS}
                   />
+                  <OptionResourceCard
+                    field="token.distribution.undersubscription"
+                    value={sale.undersubscription}
+                  />
                 </>
               )}
             </>
@@ -489,6 +538,7 @@ export function TokenDesignEditor({
 
           {step === 4 && (
             <>
+              <FieldIntroCard intro="token.market.when" />
               <SelectField
                 label="Does a market exist at launch?"
                 required
@@ -536,6 +586,7 @@ export function TokenDesignEditor({
                     }
                     options={LP_TREATMENT_OPTIONS}
                   />
+                  <OptionResourceCard field="token.market.lp" value={atLaunch.lp} />
                   {atLaunch.lp === "locked" && (
                     <NumberField
                       label="Lock duration"
@@ -561,6 +612,10 @@ export function TokenDesignEditor({
                     }
                     options={ANTI_SNIPING_OPTIONS}
                   />
+                  <OptionResourceCard
+                    field="token.market.antiSniping"
+                    value={atLaunch.antiSniping}
+                  />
                 </>
               )}
               <StatusChip tone="info" variant="block">
@@ -579,17 +634,19 @@ export function TokenDesignEditor({
               <p className="text-sm leading-relaxed text-ink-400">{GOVERNANCE_FRAMING}</p>
               <div className="space-y-5">
                 {GOVERNANCE_FIELDS.map(({ key, label }) => (
-                  <StatusDeclarationField
-                    key={key}
-                    label={label}
-                    value={doc.governance[key]}
-                    onChange={(v) => patchSection("governance", { [key]: v })}
-                  />
+                  <div key={key} className="space-y-3">
+                    <FieldIntroCard intro={GOVERNANCE_INTROS[key]} />
+                    <StatusDeclarationField
+                      label={label}
+                      value={doc.governance[key]}
+                      onChange={(v) => patchSection("governance", { [key]: v })}
+                    />
+                  </div>
                 ))}
               </div>
               <StatusChip tone="success" variant="block">
                 <span className="block font-medium text-ink-100">
-                  Guaranteed by the contract — not a promise
+                  Guaranteed by the contract, not a promise
                 </span>
                 {GOVERNANCE_FACTS.map((fact) => (
                   <span key={fact} className="mt-1 block">
@@ -634,9 +691,10 @@ export function TokenDesignEditor({
           {step === 7 && (
             <>
               <p className="text-sm leading-relaxed text-ink-400">
-                All optional — but the teams that can answer these tend to
+                All optional, but the teams that can answer these tend to
                 still be here in two years.
               </p>
+              <FieldIntroCard intro="token.postLaunch.runwayMonths" />
               <NumberField
                 label="Treasury runway"
                 value={doc.postLaunch.runwayMonths}
@@ -650,12 +708,14 @@ export function TokenDesignEditor({
                 zeroAsEmpty
                 suffix="months"
               />
+              <FieldIntroCard intro="token.postLaunch.reporting" />
               <SelectField
                 label="Reporting cadence"
                 value={doc.postLaunch.reporting ?? ""}
                 onChange={(v) => patchSection("postLaunch", { reporting: v || undefined })}
                 options={REPORTING_OPTIONS}
               />
+              <FieldIntroCard intro="token.postLaunch.priceCollapsePlan" />
               <TextField
                 label="If the price collapses, what do you do?"
                 value={doc.postLaunch.priceCollapsePlan ?? ""}
@@ -663,6 +723,7 @@ export function TokenDesignEditor({
                 max={TOKEN_DESIGN_LIMITS.priceCollapsePlan.max}
                 rows={3}
               />
+              <FieldIntroCard intro="token.postLaunch.failureCriteria" />
               <TextField
                 label="What would make you call this a failure?"
                 value={doc.postLaunch.failureCriteria ?? ""}
@@ -677,9 +738,27 @@ export function TokenDesignEditor({
             <div className="space-y-5">
               <p className="text-sm leading-relaxed text-ink-400">
                 Publishing makes this design public and snapshots it. Deploying
-                from a published design commits its hash on-chain — the design
-                becomes tamper-evident forever.
+                from a published design commits its hash on-chain, making the
+                design tamper-evident forever.
               </p>
+              {TIER_ORDER.map((tier) => {
+                const inTier = findings.filter(
+                  (code) => DEPLOYABILITY_COPY[code].tier === tier,
+                );
+                if (inTier.length === 0) return null;
+                return (
+                  <StatusChip key={tier} tone={TIER_TONES[tier]} variant="block">
+                    <span className="block font-medium text-ink-100">
+                      {DEPLOYABILITY_TIER_LABELS[tier]}
+                    </span>
+                    {inTier.map((code) => (
+                      <span key={code} className="mt-1 block">
+                        {DEPLOYABILITY_COPY[code].text}
+                      </span>
+                    ))}
+                  </StatusChip>
+                );
+              })}
               {initialStatus === "published" && !deployedAddress && (
                 <p className="text-sm text-ink-400">
                   Already deployed this design?{" "}
@@ -697,7 +776,7 @@ export function TokenDesignEditor({
                 </StatusChip>
               ) : (
                 <StatusChip tone="success" variant="block">
-                  Everything checks out. Publish from the button above — the
+                  Everything checks out. Publish from the button above. The
                   computed panel on the right is what readers will see first.
                 </StatusChip>
               )}

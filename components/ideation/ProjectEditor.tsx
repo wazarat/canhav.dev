@@ -11,7 +11,10 @@ import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import {
+  ORACLE_USE_OPTIONS,
+  PAYER_OPTIONS,
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
   SECTOR_OPTIONS,
@@ -20,6 +23,7 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   WORST_CASE_PRESSURE,
+  optionLabel,
 } from "@/content/ideation";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
 
@@ -35,7 +39,8 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
     (doc.sector === "other" && !doc.sectorOther?.trim()) ||
     short(doc.whatItDoes, L.whatItDoes.min) ||
     short(doc.userIs, L.userIs.min) ||
-    short(doc.whoPays, L.whoPays.min) ||
+    !doc.payer ||
+    (doc.payer === "third_party" && short(doc.whoPays, L.whoPays.min)) ||
     short(doc.whyThisChain, L.whyThisChain.min) ||
     !doc.stage
       ? "Basics incomplete"
@@ -44,8 +49,11 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
   const a = doc.architecture;
   const architecture =
     short(a.contracts, L.architectureField.min) ||
-    short(a.externalDeps, L.architectureField.min) ||
-    short(a.oracles, L.architectureField.min) ||
+    (!a.externalDepsNone &&
+      (a.externalDeps.length === 0 ||
+        a.externalDeps.some((d) => short(d.name, L.externalDepName.min)))) ||
+    !a.oracleUse ||
+    (a.oracleUse === "uses" && short(a.oracles, L.architectureField.min)) ||
     short(a.adminFunctions, L.architectureField.min) ||
     !a.upgradeability
       ? "Architecture incomplete"
@@ -160,16 +168,26 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.userIs.max}
               rows={2}
             />
-            <TextField
+            <SelectField
               label="Who pays"
               required
-              hint="Often not the same answer."
-              value={doc.whoPays}
-              onChange={(v) => patch({ whoPays: v })}
-              min={PROJECT_LIMITS.whoPays.min}
-              max={PROJECT_LIMITS.whoPays.max}
-              rows={2}
+              hint="Often not the same answer as who the user is."
+              value={doc.payer}
+              onChange={(v) => patch({ payer: v })}
+              options={PAYER_OPTIONS}
             />
+            {doc.payer === "third_party" && (
+              <TextField
+                label="Who pays, exactly?"
+                required
+                value={doc.whoPays}
+                onChange={(v) => patch({ whoPays: v })}
+                min={PROJECT_LIMITS.whoPays.min}
+                max={PROJECT_LIMITS.whoPays.max}
+                rows={2}
+                placeholder="The counterparty, protocol, or business that actually pays."
+              />
+            )}
             <TextField
               label="Why this chain specifically"
               required
@@ -201,28 +219,36 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.architectureField.max}
               rows={3}
             />
-            <TextField
-              label="External dependencies"
-              required
-              hint="Uniswap, Morpho, Chainlink — anything your contracts call."
-              value={doc.architecture.externalDeps}
-              onChange={(v) => patchSection("architecture", { externalDeps: v })}
-              min={PROJECT_LIMITS.architectureField.min}
-              max={PROJECT_LIMITS.architectureField.max}
-              rows={2}
+            <ExternalDepsEditor
+              deps={doc.architecture.externalDeps}
+              none={doc.architecture.externalDepsNone}
+              onChange={(deps, none) =>
+                patchSection("architecture", { externalDeps: deps, externalDepsNone: none })
+              }
             />
-            <TextField
+            <SelectField
               label="Oracles"
               required
-              value={doc.architecture.oracles}
-              onChange={(v) => patchSection("architecture", { oracles: v })}
-              min={PROJECT_LIMITS.architectureField.min}
-              max={PROJECT_LIMITS.architectureField.max}
-              rows={2}
+              hint="Anything that feeds prices or data into your contracts."
+              value={doc.architecture.oracleUse}
+              onChange={(v) => patchSection("architecture", { oracleUse: v })}
+              options={ORACLE_USE_OPTIONS}
             />
+            {doc.architecture.oracleUse === "uses" && (
+              <TextField
+                label="Which oracles, and for what?"
+                required
+                value={doc.architecture.oracles}
+                onChange={(v) => patchSection("architecture", { oracles: v })}
+                min={PROJECT_LIMITS.architectureField.min}
+                max={PROJECT_LIMITS.architectureField.max}
+                rows={2}
+              />
+            )}
             <TextField
-              label="Admin functions — and why they exist"
+              label="Admin functions, and why they exist"
               required
+              hint='"None" is a valid and strong answer for immutable contracts. Say so explicitly.'
               value={doc.architecture.adminFunctions}
               onChange={(v) => patchSection("architecture", { adminFunctions: v })}
               min={PROJECT_LIMITS.architectureField.min}
@@ -292,7 +318,7 @@ export function ProjectEditor({
               min={PROJECT_LIMITS.firstHundredUsers.min}
               max={PROJECT_LIMITS.firstHundredUsers.max}
               rows={3}
-              placeholder="Names of communities, channels, waitlists — the concrete plan."
+              placeholder="Names of communities, channels, waitlists. The concrete plan."
             />
             <Field
               label="GitHub repo"
@@ -306,7 +332,7 @@ export function ProjectEditor({
             </Field>
             <Field
               label="Testnet contract addresses"
-              hint="One 0x address per line. We read deploy history from the chain — the addresses are the claim, the chain is the evidence."
+              hint="One 0x address per line. We read deploy history from the chain: the addresses are the claim, the chain is the evidence."
             >
               <textarea
                 value={(doc.testnetContracts ?? []).join("\n")}
@@ -324,7 +350,7 @@ export function ProjectEditor({
             </Field>
             <Field
               label="Team wallet"
-              hint='Shown as "declared by team" — deploy history for this wallet renders on your public page.'
+              hint='Shown as "declared by team". Deploy history for this wallet renders on your public page.'
             >
               <Input
                 value={doc.verifyWallet ?? ""}
@@ -341,27 +367,51 @@ export function ProjectEditor({
         {step === 4 && (
           <div className="space-y-5">
             <p className="text-sm leading-relaxed text-ink-400">
-              Publishing makes this page public and snapshots it — every
+              Publishing makes this page public and snapshots it. Every
               version is kept, and the latest renders at your public URL.
             </p>
             <dl className="space-y-3 text-sm">
+              <ReviewRow term="Sector" detail={optionLabel(SECTOR_OPTIONS, doc.sector)} />
+              <ReviewRow term="Stage" detail={optionLabel(STAGE_OPTIONS, doc.stage)} />
               <ReviewRow
-                term="Sector"
-                detail={SECTOR_OPTIONS.find((s) => s.value === doc.sector)?.label ?? "—"}
+                term="Who pays"
+                detail={
+                  doc.payer === "user"
+                    ? "The user pays"
+                    : doc.payer === "third_party"
+                      ? doc.whoPays.trim() || "Someone else pays"
+                      : "Not set"
+                }
               />
               <ReviewRow
-                term="Stage"
-                detail={STAGE_OPTIONS.find((s) => s.value === doc.stage)?.label ?? "—"}
+                term="Dependencies"
+                detail={
+                  doc.architecture.externalDepsNone
+                    ? "None"
+                    : doc.architecture.externalDeps.length
+                      ? doc.architecture.externalDeps.map((d) => d.name).join(" · ")
+                      : "Not set"
+                }
+              />
+              <ReviewRow
+                term="Oracles"
+                detail={
+                  doc.architecture.oracleUse === "none"
+                    ? "None"
+                    : doc.architecture.oracleUse === "uses"
+                      ? doc.architecture.oracles.trim() || "Uses oracles"
+                      : "Not set"
+                }
               />
               <ReviewRow
                 term="Worst case"
-                detail={WORST_CASE_OPTIONS.find((w) => w.value === doc.worstCase)?.label ?? "—"}
+                detail={optionLabel(WORST_CASE_OPTIONS, doc.worstCase)}
               />
               <ReviewRow
                 term="Security"
                 detail={PROJECT_SECURITY_FIELDS.map(
                   ({ key, label }) =>
-                    `${label}: ${doc.security[key].status ? STATUS_DECL_LABELS[doc.security[key].status] : "—"}`,
+                    `${label}: ${doc.security[key].status ? STATUS_DECL_LABELS[doc.security[key].status] : "Not set"}`,
                 ).join(" · ")}
               />
             </dl>

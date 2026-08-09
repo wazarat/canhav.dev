@@ -58,6 +58,16 @@ export type Upgradeability = "immutable" | "upgradeable_proxy" | "partially" | "
 
 export type WorstCase = "lose_funds" | "lock_funds" | "misprice" | "nothing_serious";
 
+export type Payer = "user" | "third_party";
+
+export type OracleUse = "none" | "uses";
+
+/** One external dependency, optionally linked per contract/protocol. */
+export interface ExternalDep {
+  name: string;
+  url?: string;
+}
+
 export interface ProjectDoc {
   kind: "project";
   version: 1;
@@ -70,18 +80,24 @@ export interface ProjectDoc {
   sectorOther?: string;
   /** What it does, one paragraph. */
   whatItDoes: string;
-  /** Who the user is — and separately, who pays. */
+  /** Who the user is. Payment is asked separately, gated on `payer`. */
   userIs: string;
+  /** Gate: whoPays text is required only when someone other than the user pays. */
+  payer: Payer | "";
   whoPays: string;
   whyThisChain: string;
   stage: ProjectStage | "";
   architecture: {
     /** What contracts exist (or "None yet"). */
     contracts: string;
-    /** External dependencies: Uniswap, Morpho, Chainlink, … */
-    externalDeps: string;
+    /** External dependencies, one entry per contract/protocol, each linkable. */
+    externalDeps: ExternalDep[];
+    /** Explicit "no external dependencies" is a first-class answer. */
+    externalDepsNone: boolean;
+    /** Gate: oracles text is required only when "uses". Optional field. */
+    oracleUse: OracleUse | "";
     oracles: string;
-    /** Admin functions and why they exist. */
+    /** Admin functions and why they exist. "None" is a valid answer. */
     adminFunctions: string;
     upgradeability: Upgradeability | "";
   };
@@ -117,9 +133,68 @@ export const PROJECT_LIMITS = {
   whoPays: { min: 20, max: 400 },
   whyThisChain: { min: 40, max: 800 },
   architectureField: { min: 4, max: 800 },
+  externalDeps: { max: 12 },
+  externalDepName: { min: 2, max: 80 },
+  externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
   testnetContracts: { max: 10 },
 } as const;
+
+/**
+ * Bring a stored ProjectDoc (possibly written by an older client) up to the
+ * current shape. Idempotent; applied at every read choke point in
+ * lib/ideation-db.ts and before publish stamping.
+ */
+export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
+  const doc = raw as ProjectDoc & {
+    architecture: ProjectDoc["architecture"] & { externalDeps: ExternalDep[] | string };
+  };
+  const a = doc.architecture ?? ({} as (typeof doc)["architecture"]);
+
+  let externalDeps: ExternalDep[];
+  const rawDeps = a.externalDeps;
+  if (typeof rawDeps === "string") {
+    externalDeps = rawDeps
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, PROJECT_LIMITS.externalDeps.max)
+      .map((name) => ({ name: name.slice(0, PROJECT_LIMITS.externalDepName.max) }));
+  } else if (Array.isArray(rawDeps)) {
+    externalDeps = rawDeps;
+  } else {
+    externalDeps = [];
+  }
+
+  const oracles = typeof a.oracles === "string" ? a.oracles : "";
+  const oracleUse: OracleUse | "" =
+    a.oracleUse === "none" || a.oracleUse === "uses"
+      ? a.oracleUse
+      : oracles.trim()
+        ? "uses"
+        : "";
+
+  const whoPays = typeof doc.whoPays === "string" ? doc.whoPays : "";
+  const payer: Payer | "" =
+    doc.payer === "user" || doc.payer === "third_party"
+      ? doc.payer
+      : whoPays.trim()
+        ? "third_party"
+        : "";
+
+  return {
+    ...doc,
+    payer,
+    whoPays,
+    architecture: {
+      ...a,
+      externalDeps,
+      externalDepsNone: a.externalDepsNone === true,
+      oracleUse,
+      oracles,
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Token track (v2 question spec, sections 1–8)
@@ -319,18 +394,39 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   }
   p =
     checkText("What it does", doc.whatItDoes, L.whatItDoes) ??
-    checkText("Who the user is", doc.userIs, L.userIs) ??
-    checkText("Who pays", doc.whoPays, L.whoPays) ??
-    checkText("Why this chain", doc.whyThisChain, L.whyThisChain);
+    checkText("Who the user is", doc.userIs, L.userIs);
+  if (p) return p;
+  if (!doc.payer) return "Answer who pays.";
+  if (doc.payer === "third_party") {
+    p = checkText("Who pays", doc.whoPays, L.whoPays);
+    if (p) return p;
+  }
+  p = checkText("Why this chain", doc.whyThisChain, L.whyThisChain);
   if (p) return p;
   if (!doc.stage) return "Pick a current stage.";
 
   const a = doc.architecture;
-  p =
-    checkText("Contracts", a.contracts, L.architectureField) ??
-    checkText("External dependencies", a.externalDeps, L.architectureField) ??
-    checkText("Oracles", a.oracles, L.architectureField) ??
-    checkText("Admin functions", a.adminFunctions, L.architectureField);
+  p = checkText("Contracts", a.contracts, L.architectureField);
+  if (p) return p;
+  if (!a.externalDepsNone && a.externalDeps.length === 0)
+    return "List external dependencies, or mark that there are none.";
+  if (a.externalDeps.length > L.externalDeps.max)
+    return `At most ${L.externalDeps.max} external dependencies.`;
+  for (const dep of a.externalDeps) {
+    p = checkText("Dependency name", dep.name, L.externalDepName);
+    if (p) return p;
+    if (dep.url) {
+      if (!/^https?:\/\/\S+$/.test(dep.url)) return "Dependency links must be http(s) URLs.";
+      if (dep.url.length > L.externalDepUrl.max)
+        return `Dependency link is over ${L.externalDepUrl.max} characters.`;
+    }
+  }
+  if (!a.oracleUse) return "Answer the oracle question, or pick none.";
+  if (a.oracleUse === "uses") {
+    p = checkText("Oracles", a.oracles, L.architectureField);
+    if (p) return p;
+  }
+  p = checkText("Admin functions", a.adminFunctions, L.architectureField);
   if (p) return p;
   if (!a.upgradeability) return "Pick an upgradeability answer.";
   if (!doc.worstCase) return "Answer the worst-case question.";
@@ -517,12 +613,15 @@ export function emptyProjectDoc(name = ""): ProjectDoc {
     sector: "",
     whatItDoes: "",
     userIs: "",
+    payer: "",
     whoPays: "",
     whyThisChain: "",
     stage: "",
     architecture: {
       contracts: "",
-      externalDeps: "",
+      externalDeps: [],
+      externalDepsNone: false,
+      oracleUse: "",
       oracles: "",
       adminFunctions: "",
       upgradeability: "",

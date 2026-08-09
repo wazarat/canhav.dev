@@ -136,7 +136,7 @@ export default async function StudioPage() {
       {projects === null || designs === null ? (
         <div className="mt-10 max-w-md">
           <StatusChip tone="warning" variant="block">
-            Storage is not configured — drafts can&apos;t be loaded right now.
+            Storage is not configured, so drafts can&apos;t be loaded right now.
           </StatusChip>
         </div>
       ) : (
@@ -148,14 +148,14 @@ export default async function StudioPage() {
               rows={projects}
               hrefBase="/studio/project"
               publicBase="/p"
-              empty="No projects yet. A project is what you're building — token optional."
+              empty="No projects yet. A project is what you're building; token optional."
             />
             <EntityList
               title="Token designs"
               rows={designs}
               hrefBase="/studio/token"
               publicBase="/t"
-              empty="No token designs yet. A design is what you're issuing — product optional."
+              empty="No token designs yet. A design is what you're issuing; product optional."
             />
           </div>
         </div>

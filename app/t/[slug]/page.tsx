@@ -24,11 +24,15 @@ import {
   UNDERSUBSCRIPTION_OPTIONS,
   optionLabel,
 } from "@/content/ideation";
+import {
+  DEPLOYABILITY_COPY,
+  DEPLOYABILITY_TIER_LABELS,
+} from "@/content/ideation-resources";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { isSaleEvent, vestedCohorts } from "@/lib/ideation";
 import { getLinkedProject, getSnapshot, getTokenDesignByAddress, getTokenDesignBySlug } from "@/lib/ideation-db";
-import { deriveTokenomics } from "@/lib/tokenDesign";
+import { deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
 
 export async function generateMetadata({
   params,
@@ -40,7 +44,7 @@ export async function generateMetadata({
   const row = await getTokenDesignBySlug(slug);
   if (!row) return { title: "Token design" };
   return {
-    title: `${row.draft_doc.name} ($${row.draft_doc.ticker}) — Token design`,
+    title: `${row.draft_doc.name} ($${row.draft_doc.ticker}) · Token design`,
     description: row.draft_doc.rationale.beyondDatabaseRow.slice(0, 160),
   };
 }
@@ -171,7 +175,7 @@ export default async function TokenDesignPublicPage({
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-ink-500">FDV : float</p>
                 <p className="mt-0.5 font-display text-xl font-semibold text-ink-50">
-                  {d.fdvToFloat ? `${d.fdvToFloat % 1 === 0 ? d.fdvToFloat : d.fdvToFloat.toFixed(1)}×` : "—"}
+                  {d.fdvToFloat ? `${d.fdvToFloat % 1 === 0 ? d.fdvToFloat : d.fdvToFloat.toFixed(1)}×` : "n/a"}
                 </p>
               </div>
               <div>
@@ -209,7 +213,7 @@ export default async function TokenDesignPublicPage({
               if (!v) return null;
               const label =
                 f.key === "other" && doc.supply.allocations.otherLabel
-                  ? `Other — ${doc.supply.allocations.otherLabel}`
+                  ? `Other: ${doc.supply.allocations.otherLabel}`
                   : f.label;
               return <Row key={f.key} term={label} detail={`${v}%`} />;
             })}
@@ -271,7 +275,7 @@ export default async function TokenDesignPublicPage({
               <>
                 <Row
                   term="Launch liquidity"
-                  detail={`${doc.market.atLaunch.liquidityEth} ETH — ${doc.market.atLaunch.ethSource}`}
+                  detail={`${doc.market.atLaunch.liquidityEth} ETH (${doc.market.atLaunch.ethSource})`}
                 />
                 <Row
                   term="LP treatment"
@@ -286,19 +290,29 @@ export default async function TokenDesignPublicPage({
           </div>
         </Section>
 
-        <Section title="What's enforced — and what's stated">
+        <Section title="What's enforced, and what's stated">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="glass rounded-2xl border border-ink-800/70 p-5">
               <p className="text-sm font-medium text-ink-100">Enforced on-chain</p>
               <p className="mt-1 text-xs text-ink-500">
-                Written into the contract at deployment — nobody can change these.
+                Written into the contract at deployment. Nobody can change these.
               </p>
               <ul className="mt-3 space-y-2">
-                <li>
-                  <StatusChip tone="success">
-                    Fixed supply: {doc.supply.total.toLocaleString("en-US")}
-                  </StatusChip>
-                </li>
+                {doc.supply.policy === "fixed" ? (
+                  <li>
+                    <StatusChip tone="success">
+                      Fixed supply: {doc.supply.total.toLocaleString("en-US")}
+                    </StatusChip>
+                  </li>
+                ) : (
+                  <li>
+                    <StatusChip tone="warning">
+                      Stated policy is inflationary; a factory deploy would
+                      still enforce a fixed supply of{" "}
+                      {doc.supply.total.toLocaleString("en-US")}
+                    </StatusChip>
+                  </li>
+                )}
                 {GOVERNANCE_FACTS.map((fact) => (
                   <li key={fact}>
                     <StatusChip tone="success">{fact}</StatusChip>
@@ -320,7 +334,7 @@ export default async function TokenDesignPublicPage({
             <div className="glass rounded-2xl border border-ink-800/70 p-5">
               <p className="text-sm font-medium text-ink-100">Stated by the team</p>
               <p className="mt-1 text-xs text-ink-500">
-                Published commitments — snapshotted and tamper-evident, but not
+                Published commitments: snapshotted and tamper-evident, but not
                 enforced by the contract.
               </p>
               <ul className="mt-3 space-y-2">
@@ -334,7 +348,7 @@ export default async function TokenDesignPublicPage({
                   <li key={key}>
                     <StatusChip tone="neutral">
                       {label}: {STATUS_DECL_LABELS[doc.governance[key].status]}
-                      {doc.governance[key].note ? ` — ${doc.governance[key].note}` : ""}
+                      {doc.governance[key].note ? ` (${doc.governance[key].note})` : ""}
                     </StatusChip>
                   </li>
                 ))}
@@ -346,6 +360,28 @@ export default async function TokenDesignPublicPage({
               </ul>
             </div>
           </div>
+          {(["custom", "stated", "canhav"] as const).map((tier) => {
+            const inTier = deployabilityFindings(doc).filter(
+              (code) => DEPLOYABILITY_COPY[code].tier === tier,
+            );
+            if (inTier.length === 0) return null;
+            return (
+              <StatusChip
+                key={tier}
+                tone={tier === "custom" ? "warning" : tier === "stated" ? "neutral" : "info"}
+                variant="block"
+              >
+                <span className="block font-medium text-ink-100">
+                  {DEPLOYABILITY_TIER_LABELS[tier]}
+                </span>
+                {inTier.map((code) => (
+                  <span key={code} className="mt-1 block">
+                    {DEPLOYABILITY_COPY[code].text}
+                  </span>
+                ))}
+              </StatusChip>
+            );
+          })}
         </Section>
 
         {(doc.postLaunch.runwayMonths !== undefined ||

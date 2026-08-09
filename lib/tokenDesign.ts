@@ -1,3 +1,4 @@
+import { LAUNCH_FORM } from "@/content/launch";
 import {
   type CohortVesting,
   type TokenDesignDoc,
@@ -195,4 +196,103 @@ export function deriveTokenomics(doc: TokenDesignDoc): DerivedTokenomics {
     milestoneUncertain,
     warnings,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Deployability: which parts of a design the CanHav contract suite can
+// actually produce. Same pattern as DesignWarning — codes here, copy in
+// content (DEPLOYABILITY_COPY in content/ideation-resources.ts). Audited
+// against contracts/src on 2026-08-09; three tiers:
+//   "canhav" — deployable through CanHav today (often a separate contract or
+//              a second transaction after launch)
+//   "custom" — requires a custom contract outside CanHav
+//   "stated" — recordable in the design and shown publicly, never enforced
+//              on-chain
+
+export type DeployabilityTier = "canhav" | "custom" | "stated";
+
+export type DeployabilityCode =
+  // canhav
+  | "sale_second_tx"
+  | "pool_second_tx"
+  | "escrow_release"
+  | "cliff_then_linear_start"
+  | "airdrop_manual"
+  // custom
+  | "inflationary_supply"
+  | "distribution_auction"
+  | "distribution_lbp"
+  | "sale_soft_cap"
+  | "sale_allowlist"
+  | "sale_refund"
+  | "anti_sniping"
+  | "lp_locked"
+  | "lp_burned"
+  | "points_first"
+  | "name_not_deployable"
+  // stated
+  | "allocations_stated"
+  | "multi_cohort_vesting"
+  | "founder_clawback"
+  | "sale_postpone";
+
+/**
+ * Everything in the design that is not simply "the factory launch
+ * transaction", classified. Order is stable; consumers group by the tier
+ * recorded next to the copy.
+ */
+export function deployabilityFindings(doc: TokenDesignDoc): DeployabilityCode[] {
+  const out: DeployabilityCode[] = [];
+  const { allocations } = doc.supply;
+  const sale = doc.distribution.sale;
+  const atLaunch = doc.market.atLaunch;
+
+  // --- custom: no CanHav contract can produce this --------------------------
+  if (doc.supply.policy === "inflationary") out.push("inflationary_supply");
+  if (
+    doc.name.trim().length > 0 &&
+    (doc.name.length > LAUNCH_FORM.name.max || !LAUNCH_FORM.name.pattern.test(doc.name))
+  )
+    out.push("name_not_deployable");
+  if (doc.rationale.path === "points_first") out.push("points_first");
+  if (doc.distribution.event === "auction") out.push("distribution_auction");
+  if (doc.distribution.event === "lbp") out.push("distribution_lbp");
+  if (isSaleEvent(doc.distribution.event) && sale) {
+    if (sale.softCap > 0) out.push("sale_soft_cap");
+    if (sale.access === "allowlist") out.push("sale_allowlist");
+    if (sale.undersubscription === "refund") out.push("sale_refund");
+    if (sale.undersubscription === "postpone") out.push("sale_postpone");
+  }
+  if (doc.market.when === "at_launch" && atLaunch) {
+    if (atLaunch.lp === "locked") out.push("lp_locked");
+    if (atLaunch.lp === "burned") out.push("lp_burned");
+    if (atLaunch.antiSniping && atLaunch.antiSniping !== "none") out.push("anti_sniping");
+  }
+
+  // --- canhav: deployable, with a second contract or transaction ------------
+  if (doc.distribution.event === "airdrop") out.push("airdrop_manual");
+  if (doc.distribution.event === "fixed_price_sale") out.push("sale_second_tx");
+  if (doc.market.when === "at_launch") out.push("pool_second_tx");
+  if (doc.vesting.release === "milestone_conditional") out.push("escrow_release");
+  if (doc.vesting.release === "cliff_then_linear") out.push("cliff_then_linear_start");
+
+  // --- stated: recorded and shown, never enforced ---------------------------
+  const allocated = [
+    allocations.team,
+    allocations.investors,
+    allocations.treasuryEcosystem,
+    allocations.public,
+    allocations.liquidity,
+    allocations.advisors,
+    allocations.other,
+  ].some((v) => v > 0);
+  if (allocated) out.push("allocations_stated");
+  if (allocations.investors > 0 || allocations.advisors > 0) out.push("multi_cohort_vesting");
+  if (
+    doc.vesting.founderLeaves === "returns_to_treasury" ||
+    doc.vesting.founderLeaves === "returns_to_team"
+  )
+    out.push("founder_clawback");
+
+  return out;
 }

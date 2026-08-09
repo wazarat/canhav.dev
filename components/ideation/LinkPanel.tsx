@@ -28,11 +28,14 @@ export interface LinkedSummary {
 export function LinkPanel({
   selfType,
   selfId,
+  selfName,
   linked,
   candidates,
 }: {
   selfType: "project" | "token_design";
   selfId: string;
+  /** Prefills the name when creating the other record inline. */
+  selfName?: string;
   linked: LinkedSummary | null;
   candidates: LinkCandidate[];
 }) {
@@ -66,6 +69,49 @@ export function LinkPanel({
     }
   }
 
+  /** Create a blank draft on the other track, link it, then open it. */
+  async function createAndLink() {
+    setWorking(true);
+    setError(null);
+    const createPath =
+      selfType === "project" ? "/api/ideation/token-designs" : "/api/ideation/projects";
+    let newId: string | null = null;
+    try {
+      const res = await fetch(createPath, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(selfName?.trim() ? { name: selfName.trim() } : {}),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.id) throw new Error(json.error ?? "Create failed.");
+      newId = json.id as string;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Create failed.");
+      setWorking(false);
+      return;
+    }
+    const body =
+      selfType === "project"
+        ? { projectId: selfId, tokenDesignId: newId }
+        : { projectId: newId, tokenDesignId: selfId };
+    try {
+      const res = await fetch("/api/ideation/links", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Link failed.");
+    } catch {
+      setError(`Created the ${otherLabel}, but linking failed. Pick it from the list to link.`);
+      setWorking(false);
+      router.refresh();
+      return;
+    }
+    const editorBase = selfType === "project" ? "/studio/token" : "/studio/project";
+    router.push(`${editorBase}/${newId}`);
+  }
+
   return (
     <div className="glass mt-10 max-w-2xl rounded-2xl border border-ink-800/70 p-5">
       <h3 className="text-sm font-medium text-ink-100">
@@ -73,7 +119,7 @@ export function LinkPanel({
       </h3>
       <p className="mt-1 text-xs text-ink-500">
         Neither track needs the other. Linked records reference each other on
-        their public pages — a card each way, no merged evidence.
+        their public pages: a card each way, no merged evidence.
       </p>
       <div className="mt-4">
         {linked ? (
@@ -91,9 +137,12 @@ export function LinkPanel({
             </Button>
           </div>
         ) : candidates.length === 0 ? (
-          <p className="text-xs text-ink-500">
-            No {otherLabel}s in your studio yet — create one and link it here.
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-xs text-ink-500">No {otherLabel}s in your studio yet.</p>
+            <Button size="sm" variant="outline" disabled={working} onClick={createAndLink}>
+              {working ? "Creating…" : `New ${otherLabel}, linked`}
+            </Button>
+          </div>
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             <select
@@ -117,6 +166,9 @@ export function LinkPanel({
               onClick={() => mutate("POST", choice)}
             >
               {working ? "Linking…" : "Link"}
+            </Button>
+            <Button size="sm" variant="ghost" disabled={working} onClick={createAndLink}>
+              or create new
             </Button>
           </div>
         )}

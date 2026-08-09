@@ -7,7 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 
 export const metadata: Metadata = {
-  title: "Project — Studio",
+  title: "Project · Studio",
   robots: { index: false, follow: false },
 };
 
@@ -40,6 +40,7 @@ export default async function ProjectEditorPage({
         <LinkPanel
           selfType="project"
           selfId={row.id}
+          selfName={row.draft_doc.name}
           linked={
             linked
               ? { id: linked.id, name: linked.draft_doc.name, status: linked.status, slug: linked.slug }

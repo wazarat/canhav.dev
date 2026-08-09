@@ -15,7 +15,7 @@ export function ExportButtons({ kind, slug }: { kind: "p" | "t"; slug: string })
       <a href={`${base}?file=agents`} className={cls} download>
         Export AGENTS.md
       </a>
-      <span className="text-[11px] text-ink-600">Free — sign-in required</span>
+      <span className="text-[11px] text-ink-600">Free, sign-in required</span>
     </div>
   );
 }

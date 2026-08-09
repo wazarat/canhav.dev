@@ -6,6 +6,8 @@ import type {
   IssuancePath,
   LpTreatment,
   MarketTiming,
+  OracleUse,
+  Payer,
   ProjectStage,
   RationaleWhy,
   ReleaseType,
@@ -26,12 +28,12 @@ import type { DesignWarning } from "@/lib/tokenDesign";
 // ---------------------------------------------------------------------------
 // Shared
 
-/** Display label for a select value, or an em dash when unset/unknown. */
+/** Display label for a select value, or "Not set" when unset/unknown. */
 export function optionLabel<V extends string>(
   options: ReadonlyArray<{ value: V; label: string }>,
   value: V | "" | undefined,
 ): string {
-  return options.find((o) => o.value === value)?.label ?? "—";
+  return options.find((o) => o.value === value)?.label ?? "Not set";
 }
 
 export const STATUS_DECL_OPTIONS: Array<{ value: StatusDecl["status"]; label: string }> = [
@@ -73,6 +75,16 @@ export const STAGE_OPTIONS: Array<{ value: ProjectStage; label: string }> = [
   { value: "live_elsewhere", label: "Live elsewhere" },
 ];
 
+export const PAYER_OPTIONS: Array<{ value: Payer; label: string }> = [
+  { value: "user", label: "The user pays" },
+  { value: "third_party", label: "Someone else pays" },
+];
+
+export const ORACLE_USE_OPTIONS: Array<{ value: OracleUse; label: string }> = [
+  { value: "none", label: "No oracles" },
+  { value: "uses", label: "Uses oracles" },
+];
+
 export const UPGRADEABILITY_OPTIONS: Array<{ value: Upgradeability; label: string }> = [
   { value: "immutable", label: "Immutable" },
   { value: "upgradeable_proxy", label: "Upgradeable proxy" },
@@ -92,16 +104,16 @@ export const WORST_CASE_OPTIONS: Array<{ value: WorstCase; label: string }> = [
 export const WORST_CASE_PRESSURE: Record<WorstCase, string> = {
   lose_funds:
     "A bug can lose user funds. Read the declarations below with that " +
-    "sentence in mind — every \"not yet\" is a live risk you're choosing to " +
+    "sentence in mind: every \"not yet\" is a live risk you're choosing to " +
     "publish, and readers will weigh it exactly that way.",
   lock_funds:
     "A bug can lock funds. Recovery plans and monitoring matter more than " +
-    "usual — say honestly where they stand.",
+    "usual. Say honestly where they stand.",
   misprice:
-    "A bug can misprice. Oracles and monitoring are your blast radius — " +
-    "declare where they stand.",
+    "A bug can misprice. Oracles and monitoring are your blast radius. " +
+    "Declare where they stand.",
   nothing_serious:
-    "Low blast radius is a fine answer — declare the basics and move on.",
+    "Low blast radius is a fine answer. Declare the basics and move on.",
 };
 
 export const PROJECT_SECURITY_FIELDS = [
@@ -119,7 +131,7 @@ export const ROBINHOOD_MYTH = {
     "Robinhood Chain does not provide distribution to Robinhood brokerage " +
     "customers. Deploying here puts your app in front of nobody by default. " +
     "CanHav is an independent project with no affiliation with Robinhood " +
-    "Markets, Inc. — listing here is not a channel to its users either.",
+    "Markets, Inc.; listing here is not a channel to its users either.",
   ack: "I understand: no built-in distribution, no Robinhood affiliation.",
   followUp: "So where will your first hundred users actually come from?",
 } as const;
@@ -172,7 +184,7 @@ export const FOUNDER_LEAVES_OPTIONS: Array<{ value: FounderLeavesPolicy; label: 
 ];
 
 export const DISTRIBUTION_EVENT_OPTIONS: Array<{ value: DistributionEvent; label: string }> = [
-  { value: "none", label: "No distribution — creator holds supply" },
+  { value: "none", label: "No distribution: creator holds supply" },
   { value: "airdrop", label: "Airdrop" },
   { value: "fixed_price_sale", label: "Fixed-price sale" },
   { value: "auction", label: "Auction / batch" },
@@ -229,7 +241,7 @@ export const LEGAL_TOPICS = [
 
 export const LEGAL_DISCLAIMER =
   "CanHav does not give legal advice. This section records where your legal " +
-  "work stands — nothing more is stored.";
+  "work stands; nothing more is stored.";
 
 export const REPORTING_OPTIONS = [
   { value: "monthly", label: "Monthly" },
@@ -260,7 +272,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
     example:
       "Worked example: 3% float at a $10M FDV means $300k of real tokens set " +
       "the price for the other $9.7M. When the month-6 cliff releases 15%, " +
-      "supply grows 6× at once — the chart does the rest. Compare: a 15% " +
+      "supply grows 6× at once. The chart does the rest. Compare: a 15% " +
       "float absorbs the same unlock as a 2× change.",
   },
   team_cliff_short: {
@@ -272,7 +284,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
       "at least as long as investor terms.",
     example:
       "Worked example: team 6-month cliff / 24-month vest vs investors " +
-      "12-month cliff / 24-month vest — the team can sell for six months " +
+      "12-month cliff / 24-month vest: the team can sell for six months " +
       "while investors are still locked. Flip the cliffs (team 12, investors " +
       "6–12) and the signal reverses.",
   },
@@ -292,7 +304,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
   sale_no_undersub_plan: {
     title: "Sale with no undersubscription plan",
     body:
-      "If the sale doesn't fill, something happens by default — and default " +
+      "If the sale doesn't fill, something happens by default, and default " +
       "outcomes are the worst ones: a half-funded treasury, an accidental " +
       "low-float launch, or a quiet cancellation that burns trust. Decide " +
       "now: proceed, refund, or postpone.",
@@ -307,14 +319,14 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
     body:
       "The honest fit test: if a database row, a Stripe account, or a " +
       "points table would do the same job, the token adds regulatory " +
-      "surface, sell pressure, and a second product to run — and removes " +
+      "surface, sell pressure, and a second product to run, and removes " +
       "nothing. Loyalty-style rewards are the classic false positive. " +
       "There is a respectable exit here: build the product, list it on " +
       "CanHav as a project, and skip the token until it earns its place.",
     example:
       "Worked example: \"users earn tokens for referrals\" is a points " +
       "column. \"LPs stake the token to underwrite risk and get slashed on " +
-      "bad debt\" cannot be a database row — the token is doing economic " +
+      "bad debt\" cannot be a database row; the token is doing economic " +
       "work a ledger entry can't.",
   },
 };
@@ -325,7 +337,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
 export const GOVERNANCE_FACTS = [
   "Cannot be minted after deployment",
   "Cannot be paused, frozen, or blacklisted",
-  "Cannot be upgraded — no proxy, no owner",
+  "Cannot be upgraded: no proxy, no owner",
   "Source pre-verified: the factory clones a verified implementation",
 ] as const;
 
@@ -343,14 +355,20 @@ export const STUDIO_COPY = {
   title: "Ideation",
   subtitle:
     "Two tracks, independent by design. Define the product you're building, " +
-    "design the token you're issuing — either, both, or linked.",
+    "design the token you're issuing; either, both, or linked.",
   newProject: "New project",
   newTokenDesign: "New token design",
 } as const;
 
 export const ENFORCEMENT_COPY = {
   enforced: "Enforced on-chain",
-  enforcedHint: "Written into the contract at deployment — cannot be changed by anyone.",
+  enforcedHint: "Written into the contract at deployment. Cannot be changed by anyone.",
   stated: "Stated by team",
   statedHint: "Published commitments. Not enforced by the contract.",
 } as const;
+
+/** Shown where allocations are entered (P4: stated vs enforced, in the form). */
+export const ALLOCATION_ENFORCEMENT_NOTE =
+  "Allocations are recorded in the design and shown on your public page. " +
+  "On-chain, the factory sends the entire supply to the deployer minus the " +
+  "optional vesting slice; only vesting parameters are enforced by contract.";
