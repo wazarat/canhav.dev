@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { NewEntityButtons } from "@/components/studio/NewEntityButtons";
+import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -141,21 +141,21 @@ export default async function StudioPage() {
         </div>
       ) : (
         <div className="mt-10 space-y-10">
-          <NewEntityButtons />
+          <StudioTrackCards />
           <div className="grid gap-10 md:grid-cols-2">
-            <EntityList
-              title="Projects"
-              rows={projects}
-              hrefBase="/studio/project"
-              publicBase="/p"
-              empty="No projects yet. A project is what you're building; token optional."
-            />
             <EntityList
               title="Token designs"
               rows={designs}
               hrefBase="/studio/token"
               publicBase="/t"
               empty="No token designs yet. A design is what you're issuing; product optional."
+            />
+            <EntityList
+              title="Projects"
+              rows={projects}
+              hrefBase="/studio/project"
+              publicBase="/p"
+              empty="No projects yet. A project is what you're building; token optional."
             />
           </div>
         </div>

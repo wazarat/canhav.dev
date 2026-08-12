@@ -354,10 +354,29 @@ export const STUDIO_COPY = {
   kicker: "Studio",
   title: "Ideation",
   subtitle:
-    "Two tracks, independent by design. Define the product you're building, " +
-    "design the token you're issuing; either, both, or linked.",
-  newProject: "New project",
-  newTokenDesign: "New token design",
+    "Ship a DeFi product that is researched before it is launched. Start " +
+    "with a token design grounded in real constraints and published " +
+    "tradeoffs; project records and agent launches follow on the same rails.",
+} as const;
+
+/** The three launch tracks, in launch order: tokens, then projects, then agents. */
+export const STUDIO_TRACKS = {
+  token: {
+    title: "Token Design",
+    description: "Design, sanity-check, and launch a token backed by research.",
+    cta: "Start a token design",
+    ctaWorking: "Creating a draft...",
+  },
+  projects: {
+    title: "Projects",
+    description: "A published record of what you are building, token optional.",
+    note: "Coming soon. You can already ideate a project through Token Design.",
+  },
+  agents: {
+    title: "Agents Launch",
+    description: "Register and verify onchain agents for your product.",
+    note: "Coming soon. Opens after Projects.",
+  },
 } as const;
 
 export const ENFORCEMENT_COPY = {
