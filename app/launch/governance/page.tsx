@@ -248,7 +248,7 @@ export default async function GovernancePage() {
         Economic terms
       </h2>
       <p className="mt-1 text-sm text-ink-400">
-        Everything the platform charges — current value, ceiling, and what
+        Everything the platform charges: current value, ceiling, and what
         enforces it.
       </p>
       <ul className="mt-4 space-y-2">
@@ -259,14 +259,14 @@ export default async function GovernancePage() {
               ? state.launchFee === 0n
                 ? "Free"
                 : `${formatEther(state.launchFee)} ETH`
-              : "—"
+              : "n/a"
           }
           ceiling={state ? `${formatEther(state.maxLaunchFee)} ETH` : "0.05 ETH"}
           enforced="MAX_LAUNCH_FEE constant; any change waits out the timelock"
         />
         <Term
           label="Token supply taken at launch"
-          value="0 — 100% to the creator"
+          value="0, so 100% to the creator"
           ceiling="0, always"
           enforced="LaunchToken has no mint function after its locked initializer; the factory allocates everything to the creator (± their own vesting)"
         />
@@ -280,28 +280,28 @@ export default async function GovernancePage() {
           label="LP swap fee (all pools)"
           value="0.30%"
           ceiling="fixed"
-          enforced="LP_FEE_BPS constant — goes to liquidity providers, never the platform"
+          enforced="LP_FEE_BPS constant; goes to liquidity providers, never the platform"
         />
         <Term
           label="Protocol swap fee (opt-in pools only)"
           value={
             amm
-              ? `${(amm.defaultProtocolFeeBps / 100).toFixed(2)}% of each swap total — of which ${((amm.defaultProtocolFeeBps * 0.7) / 100).toFixed(2)}% to the project, ${((amm.defaultProtocolFeeBps * 0.3) / 100).toFixed(2)}% to the platform`
-              : "—"
+              ? `${(amm.defaultProtocolFeeBps / 100).toFixed(2)}% of each swap total, of which ${((amm.defaultProtocolFeeBps * 0.7) / 100).toFixed(2)}% to the project, ${((amm.defaultProtocolFeeBps * 0.3) / 100).toFixed(2)}% to the platform`
+              : "n/a"
           }
           ceiling={amm ? `${(amm.maxProtocolFeeBps / 100).toFixed(2)}% total` : "0.50% total"}
           enforced="MAX_PROTOCOL_FEE_BPS and the 70/30 PROJECT_SHARE_BPS split are constants"
         />
         <Term
           label="Changing an existing pool's fee"
-          value="Never — frozen at pool creation"
-          ceiling="—"
+          value="Never; frozen at pool creation"
+          ceiling="n/a"
           enforced="the rate is written once into pool storage; the settable default applies only to pools created later"
         />
         <Term
           label="Any admin change"
-          value={state ? `${fmtDelay(state.minDelay)} public delay` : "—"}
-          ceiling="—"
+          value={state ? `${fmtDelay(state.minDelay)} public delay` : "n/a"}
+          ceiling="n/a"
           enforced="a TimelockController owns every knob (testnet delay; anything real gets 24h+)"
         />
       </ul>
@@ -314,7 +314,7 @@ export default async function GovernancePage() {
           />
           <Stat
             label="Hard fee ceiling (immutable)"
-            value={`${formatEther(state.maxLaunchFee)} ETH — MAX_LAUNCH_FEE constant`}
+            value={`${formatEther(state.maxLaunchFee)} ETH (MAX_LAUNCH_FEE constant)`}
           />
           <Stat label="Timelock delay on every change" value={fmtDelay(state.minDelay)} />
           <Stat label="Launches paused" value={state.paused ? "Yes" : "No"} />
@@ -358,7 +358,7 @@ export default async function GovernancePage() {
         </div>
       ) : (
         <StatusChip variant="block" tone="warning" className="mt-8 rounded-xl px-4 py-3 text-sm">
-          Live chain reads are unavailable right now — the RPC could not be reached.
+          Live chain reads are unavailable right now; the RPC could not be reached.
         </StatusChip>
       )}
 
@@ -370,7 +370,7 @@ export default async function GovernancePage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Stat
               label="Protocol fee for new opted-in pools"
-              value={`${(amm.defaultProtocolFeeBps / 100).toFixed(2)}% — hard cap ${(amm.maxProtocolFeeBps / 100).toFixed(2)}% (constant)`}
+              value={`${(amm.defaultProtocolFeeBps / 100).toFixed(2)}, hard cap ${(amm.maxProtocolFeeBps / 100).toFixed(2)}% (constant)`}
             />
             <Stat
               label="Protocol fee split (constant)"
@@ -410,7 +410,7 @@ export default async function GovernancePage() {
           </div>
           <p className="mt-3 text-xs text-ink-500">
             LP fee is 0.30% on every pool. Protocol fees accrue only from real
-            swap volume — nothing pays per-launch. Pool rates are frozen at
+            swap volume; nothing pays per-launch. Pool rates are frozen at
             creation; only the default for future pools can change, behind the
             timelock, never above the cap.
           </p>
@@ -427,7 +427,7 @@ export default async function GovernancePage() {
 
       {ops === null ? (
         <p className="mt-4 text-sm text-ink-500">
-          Indexer offline — operations can&apos;t be listed right now.
+          Indexer offline; operations can&apos;t be listed right now.
         </p>
       ) : ops.length === 0 ? (
         <p className="mt-4 text-sm text-ink-500">No operations scheduled yet.</p>
@@ -473,7 +473,7 @@ export default async function GovernancePage() {
 
       <p className="mt-10 border-t border-ink-800/70 pt-6 text-xs leading-relaxed text-ink-500">
         The milestone escrow and journey updates contracts have no admin surface
-        at all — no owner, no attester, no pause. There is nothing about them to
+        at all: no owner, no attester, no pause. There is nothing about them to
         govern, which is the point.
       </p>
     </div>

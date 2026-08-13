@@ -754,6 +754,11 @@ export function TokenDesignEditor({
                     {inTier.map((code) => (
                       <span key={code} className="mt-1 block">
                         {DEPLOYABILITY_COPY[code].text}
+                        {DEPLOYABILITY_COPY[code].fix && (
+                          <span className="block font-medium text-ink-100">
+                            {DEPLOYABILITY_COPY[code].fix}
+                          </span>
+                        )}
                       </span>
                     ))}
                   </StatusChip>

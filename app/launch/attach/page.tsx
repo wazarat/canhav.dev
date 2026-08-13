@@ -29,7 +29,7 @@ export default async function AttachPage({
         <p className="mt-4 text-sm leading-relaxed text-ink-400">
           Link a contract that already committed your published design&apos;s
           hash on-chain to its design record. Proof of ownership comes from
-          the deployer wallet&apos;s signature — not from trust.
+          the deployer wallet&apos;s signature, not from trust.
         </p>
       </div>
       <div className="mt-10">

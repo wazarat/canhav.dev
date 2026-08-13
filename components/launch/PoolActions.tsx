@@ -157,7 +157,7 @@ export function PoolActions({
         args: [tokenAddress as `0x${string}`, optIn],
       });
       setStatus({ kind: "working", label: "Waiting for confirmation…" });
-      await waitAndRefresh(hash, "Pool created — add the first liquidity to open trading.");
+      await waitAndRefresh(hash, "Pool created. Add the first liquidity to open trading.");
     });
   }
 
@@ -222,7 +222,7 @@ export function PoolActions({
         tokenMax = (ethIn * tokenReserve + ethReserve - 1n) / ethReserve;
       } else {
         if (!/^[0-9]+$/.test(lpTokens) || lpTokens === "0")
-          throw new Error("First add sets the price — enter the token amount too.");
+          throw new Error("First add sets the price; enter the token amount too.");
         tokenMax = BigInt(lpTokens) * 10n ** 18n;
       }
 
@@ -317,8 +317,8 @@ export function PoolActions({
             />
             <span>
               {defaultFeeBps !== undefined
-                ? `Opt in to the protocol fee: ${(Number(defaultFeeBps) / 100).toFixed(2)}% of each swap in total — ${((Number(defaultFeeBps) * 0.7) / 100).toFixed(2)}% to you, ${((Number(defaultFeeBps) * 0.3) / 100).toFixed(2)}% to the platform. The 70/30 split is fixed in bytecode, the total is hard-capped at 0.50%, and your pool's rate is frozen at creation forever.`
-                : "Opt in to the protocol fee — split 70/30 in your favour (bytecode constant), total hard-capped at 0.50%, and frozen at creation forever."}
+                ? `Opt in to the protocol fee: ${(Number(defaultFeeBps) / 100).toFixed(2)}% of each swap in total, of which ${((Number(defaultFeeBps) * 0.7) / 100).toFixed(2)}% to you and ${((Number(defaultFeeBps) * 0.3) / 100).toFixed(2)}% to the platform. The 70/30 split is fixed in bytecode, the total is hard-capped at 0.50%, and your pool's rate is frozen at creation forever.`
+                : "Opt in to the protocol fee: split 70/30 in your favour (bytecode constant), total hard-capped at 0.50%, and frozen at creation forever."}
             </span>
           </label>
           <Button size="sm" disabled={status.kind === "working"} onClick={createPool}>

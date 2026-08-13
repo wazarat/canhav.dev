@@ -115,7 +115,7 @@ export function EscrowActions({
         args: [BigInt(t.escrowId), BigInt(t.trancheIndex)],
       });
       setStatus({ kind: "working", label: "Waiting for confirmation…" });
-      await waitAndRefresh(hash, "Tranche claimed — released to the creator.");
+      await waitAndRefresh(hash, "Tranche claimed and released to the creator.");
     });
   }
 
@@ -167,7 +167,7 @@ export function EscrowActions({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-300">
           {isCreator
-            ? "You created this token — lock supply against your milestones as a public commitment."
+            ? "You created this token: lock supply against your milestones as a public commitment."
             : claimable.length > 0
               ? "Unlocked tranches can be claimed by anyone; tokens always go to the creator."
               : "Escrow actions"}

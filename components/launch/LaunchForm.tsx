@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Check, ExternalLink } from "lucide-react";
-import { decodeEventLog, formatEther } from "viem";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  decodeEventLog,
+  formatEther,
+} from "viem";
 import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
@@ -49,6 +54,46 @@ const SUPPLY_MAX = 1_000_000_000_000; // 1T whole tokens
 function randomSalt(): `0x${string}` {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return `0x${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Rough gas allowance on top of the launch fee for the preflight check. */
+const GAS_BUFFER_WEI = 500_000_000_000_000n; // 0.0005 ETH
+
+const fmtEth = (wei: bigint) =>
+  `${Number(formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 })} ETH`;
+
+/** Factory custom errors and common wallet failures, in plain language. */
+const KNOWN_FACTORY_ERRORS: Record<string, string> = {
+  WrongLaunchFee:
+    "The transaction sent the wrong launch fee. The fee may have changed since the page loaded; reload so it re-reads from the factory, then retry.",
+  EnforcedPause:
+    "This factory is currently paused. Reload the page to pick up the active factory, or try again later.",
+  VestingAmountExceedsSupply:
+    "The vesting amount exceeds the total supply. Lower the vested percent.",
+  VestingDurationZero:
+    "Vesting is on but the duration is zero. Set a duration or turn vesting off.",
+  ZeroSupply: "Total supply must be at least 1.",
+  EmptyName: "The token name is empty.",
+  EmptySymbol: "The ticker is empty.",
+};
+
+function friendlyLaunchError(err: unknown): string {
+  if (err instanceof BaseError) {
+    const revert = err.walk((e) => e instanceof ContractFunctionRevertedError);
+    if (revert instanceof ContractFunctionRevertedError) {
+      const errorName = revert.data?.errorName;
+      if (errorName && KNOWN_FACTORY_ERRORS[errorName]) return KNOWN_FACTORY_ERRORS[errorName];
+      if (revert.reason) return `The factory rejected the launch: ${revert.reason}`;
+      if (errorName) return `The factory rejected the launch (${errorName}).`;
+    }
+    const msg = err.shortMessage.toLowerCase();
+    if (msg.includes("insufficient funds") || msg.includes("exceeds the balance"))
+      return `Not enough ETH in this wallet to cover the launch fee plus gas. Fund it on ${LAUNCH_CHAIN.name} and retry.`;
+    if (msg.includes("user rejected") || msg.includes("denied"))
+      return "The wallet rejected the request. Nothing was sent.";
+    return err.shortMessage.slice(0, 200);
+  }
+  return err instanceof Error ? err.message.split("\n")[0].slice(0, 220) : "Something went wrong.";
 }
 
 /** Values seeded from a published token design (?design=<id>). */
@@ -197,6 +242,24 @@ export function LaunchForm({
         throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
       }
 
+      // Preflight: fail fast on missing fee data or an underfunded wallet,
+      // before any upload or journey publish happens.
+      if (launchFee === undefined) {
+        throw new Error(
+          "The launch fee could not be read from the factory. Check your connection, reload, and retry.",
+        );
+      }
+      if (publicClient) {
+        setStatus({ kind: "working", label: "Checking wallet balance…" });
+        const balance = await publicClient.getBalance({ address });
+        const needed = launchFee + GAS_BUFFER_WEI;
+        if (balance < needed) {
+          throw new Error(
+            `Not enough ETH to launch. This wallet holds ${fmtEth(balance)}, but launching needs the ${fmtEth(launchFee)} launch fee plus gas (about ${fmtEth(needed)} total). Fund the wallet on ${LAUNCH_CHAIN.name} and retry.`,
+          );
+        }
+      }
+
       // 1. Image → content-addressed blob (optional field).
       let imageURI = "";
       if (image) {
@@ -292,11 +355,7 @@ export function LaunchForm({
 
       setStatus({ kind: "success", token, txHash });
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message.split("\n")[0].slice(0, 200)
-          : "Something went wrong.";
-      setStatus({ kind: "error", message });
+      setStatus({ kind: "error", message: friendlyLaunchError(err) });
     }
   }
 
@@ -550,7 +609,7 @@ export function LaunchForm({
                   <p className="mt-3 text-xs leading-relaxed text-ink-400">
                     Only the supply and the team vesting schedule are enforced
                     by the contract. Allocations, distribution, and everything
-                    else in the design are published commitments — snapshotted
+                    else in the design are published commitments: snapshotted
                     and tamper-evident, not code.
                   </p>
                 </div>
@@ -560,7 +619,7 @@ export function LaunchForm({
             <p className="text-sm leading-relaxed text-ink-300">
               The journey is your public commitment: why this token exists, why
               the supply is what it is, and what happens next. Its hash goes
-              on-chain with the launch — the document can never be quietly
+              on-chain with the launch, so the document can never be quietly
               rewritten.
             </p>
             <JourneyFields
@@ -600,7 +659,7 @@ export function LaunchForm({
                 <span className="text-ink-500">Supply</span>
                 <span className="tabular text-ink-100">
                   {vestingOn
-                    ? `${Number(supply || 0).toLocaleString("en-US")} — ${vestingNums.percent}% vested over ${vestingNums.durationDays}d (${vestingNums.cliffDays}d cliff), rest to your wallet`
+                    ? `${Number(supply || 0).toLocaleString("en-US")}, ${vestingNums.percent}% vested over ${vestingNums.durationDays}d (${vestingNums.cliffDays}d cliff), rest to your wallet`
                     : `${Number(supply || 0).toLocaleString("en-US")} → your wallet`}
                 </span>
               </div>
@@ -620,7 +679,7 @@ export function LaunchForm({
                 <span className="text-ink-500">Launch fee</span>
                 <span className="text-ink-100">
                   {launchFee === undefined
-                    ? "—"
+                    ? "Reading fee…"
                     : launchFee === 0n
                       ? "Free"
                       : `${formatEther(launchFee)} ETH`}
@@ -633,7 +692,7 @@ export function LaunchForm({
               {designCommitment
                 ? designCommitment.snapshotHash
                 : journeyProblem
-                  ? "—"
+                  ? "pending (complete the journey)"
                   : hashJourney(journeyDoc)}
             </p>
 

@@ -51,7 +51,7 @@ export function AttachDeployFlow({ designId }: { designId: string }) {
       });
       const json = await res.json();
       if (res.status === 401)
-        throw new Error("Sign in at /studio first — the design record belongs to your account.");
+        throw new Error("Sign in at /studio first; the design record belongs to your account.");
       if (!res.ok) throw new Error(json.error ?? "Attach failed.");
       setStatus({ kind: "success" });
     } catch (err) {
@@ -64,7 +64,7 @@ export function AttachDeployFlow({ designId }: { designId: string }) {
   if (status.kind === "success") {
     return (
       <StatusChip tone="success" variant="block">
-        Attached. The design record now points at the deployed contract —{" "}
+        Attached. The design record now points at the deployed contract:{" "}
         <Link
           href={`/studio/token/${designId}`}
           className="text-electric-300 transition-colors hover:text-electric-200"

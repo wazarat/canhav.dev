@@ -26,6 +26,8 @@ import type { DeployabilityCode, DeployabilityTier } from "@/lib/tokenDesign";
 export interface DeployabilityNote {
   tier: DeployabilityTier;
   text: string;
+  /** Editor-only nudge: the closest choice that deploys through CanHav as-is. */
+  fix?: string;
 }
 
 export interface OptionResource {
@@ -93,18 +95,27 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
       "The CanHav factory deploys fixed-supply tokens only: the entire " +
       "supply is minted once at launch and no mint function exists. An " +
       "inflationary token requires a custom contract outside CanHav.",
+    fix:
+      'To deploy through CanHav, pick "Fixed" and describe any future ' +
+      "emissions as a stated policy for your own contracts.",
   },
   distribution_auction: {
     tier: "custom",
     text:
       "No auction contract exists on CanHav. Batch or Dutch auctions " +
       "require a custom contract or an external protocol.",
+    fix:
+      'To deploy through CanHav, pick "Fixed-price sale" or "No ' +
+      'distribution".',
   },
   distribution_lbp: {
     tier: "custom",
     text:
       "No LBP contract exists on CanHav. Liquidity bootstrapping pools " +
       "require weighted-pool infrastructure from an external protocol.",
+    fix:
+      'To deploy through CanHav, pick "Fixed-price sale" or "No ' +
+      'distribution".',
   },
   sale_soft_cap: {
     tier: "custom",
@@ -112,12 +123,16 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
       "The CanHav sale contract has no soft cap and no refund path, so a " +
       "minimum-raise threshold cannot unwind on-chain. Enforcing one " +
       "requires a custom sale contract.",
+    fix: "To deploy through CanHav, leave the soft cap at 0.",
   },
   sale_allowlist: {
     tier: "custom",
     text:
       "The CanHav sale contract is open to any buyer; no allowlist exists. " +
       "Gating buyers requires a custom sale contract.",
+    fix:
+      'To deploy through CanHav, pick "Open" and use the per-wallet limit ' +
+      "as the fairness control.",
   },
   sale_refund: {
     tier: "custom",
@@ -125,12 +140,18 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
       "The CanHav sale contract has no refund path: payments are exact and " +
       "final. Refunding an undersubscribed sale requires a custom contract " +
       "or an off-chain, trust-based process.",
+    fix:
+      'To deploy through CanHav, pick "Proceed anyway" and publish what a ' +
+      "partial raise does to the plan.",
   },
   anti_sniping: {
     tier: "custom",
     text:
       "The CanHav AMM has no launch window, early-sell tax, or trading " +
       "delay. Any anti-sniping mechanism requires custom market contracts.",
+    fix:
+      'To deploy through CanHav, pick "None" and size the liquidity ' +
+      "assuming bots arrive first.",
   },
   lp_locked: {
     tier: "custom",
@@ -138,6 +159,9 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
       "LP positions in the CanHav AMM can be withdrawn at any time and " +
       "shares cannot be transferred to a locker. A dated LP lock requires " +
       "custom infrastructure outside CanHav.",
+    fix:
+      'To deploy through CanHav, pick "Unlocked" and make not removing the ' +
+      "position a published commitment.",
   },
   lp_burned: {
     tier: "custom",
@@ -145,12 +169,18 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
       "LP positions in the CanHav AMM are internal shares that cannot be " +
       "transferred or burned. The honest CanHav equivalent is declaring the " +
       "position unlocked and simply never removing it.",
+    fix:
+      'To deploy through CanHav, pick "Unlocked" and make not removing the ' +
+      "position a published commitment.",
   },
   points_first: {
     tier: "custom",
     text:
       "CanHav has no non-transferable token variant. A points phase runs as " +
       "an off-chain ledger, or a custom soulbound contract, until conversion.",
+    fix:
+      'To deploy through CanHav, pick "Straight to market" or "Issue and ' +
+      'lock, no market yet"; run any points phase off-chain first.',
   },
   name_not_deployable: {
     tier: "custom",

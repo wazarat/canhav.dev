@@ -40,7 +40,7 @@ export function PoolCard({
         </h2>
         <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 text-xs text-ink-300">
           {pool.protocolFeeBps > 0
-            ? `${(pool.protocolFeeBps / 100).toFixed(2)}% protocol fee total — ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator`
+            ? `${(pool.protocolFeeBps / 100).toFixed(2)}% protocol fee total, of which ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator`
             : "No protocol fee"}
         </span>
       </div>
@@ -49,7 +49,7 @@ export function PoolCard({
         <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
           <p className="text-xs text-ink-500">Price</p>
           <p className="tabular mt-1 text-sm text-ink-100">
-            {tokenReserve === 0n ? "—" : `${formatEther(priceWei)} ETH`}
+            {tokenReserve === 0n ? "n/a" : `${formatEther(priceWei)} ETH`}
           </p>
         </div>
         <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
@@ -61,7 +61,7 @@ export function PoolCard({
         <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
           <p className="text-xs text-ink-500">Volume (ETH side)</p>
           <p className="tabular mt-1 text-sm text-ink-100">
-            {swapData ? `${formatEther(swapData.ethVolume)} ETH · ${swapData.count} swaps` : "—"}
+            {swapData ? `${formatEther(swapData.ethVolume)} ETH · ${swapData.count} swaps` : "n/a"}
           </p>
         </div>
       </div>
@@ -96,8 +96,8 @@ export function PoolCard({
       <p className="mt-4 text-xs text-ink-500">
         0.30% of every swap stays in the pool for liquidity providers.
         {pool.protocolFeeBps > 0
-          ? ` The protocol fee is ${(pool.protocolFeeBps / 100).toFixed(2)}% of each swap in total — ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator and ${((pool.protocolFeeBps * 0.3) / 100).toFixed(2)}% to the platform's auditable FeeSplitter. The 70/30 split is a bytecode constant, and this pool's rate is frozen forever at its creation value.`
-          : " This pool opted out of the protocol fee — its rate is frozen at zero forever."}
+          ? ` The protocol fee is ${(pool.protocolFeeBps / 100).toFixed(2)}% of each swap in total, of which ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator and ${((pool.protocolFeeBps * 0.3) / 100).toFixed(2)}% to the platform's auditable FeeSplitter. The 70/30 split is a bytecode constant, and this pool's rate is frozen forever at its creation value.`
+          : " This pool opted out of the protocol fee; its rate is frozen at zero forever."}
       </p>
     </div>
   );

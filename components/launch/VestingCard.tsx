@@ -95,7 +95,7 @@ export function VestingCard({
         </>
       ) : (
         <p className="mt-4 text-xs text-ink-500">
-          Live progress unavailable (RPC unreachable) — schedule below is from the
+          Live progress unavailable (RPC unreachable); schedule below is from the
           launch event.
         </p>
       )}

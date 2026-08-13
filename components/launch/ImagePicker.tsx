@@ -58,7 +58,7 @@ export function ImagePicker({
           />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm text-ink-100">{fileName}</p>
-            <p className="text-xs text-ink-500">Preview only — not uploaded.</p>
+            <p className="text-xs text-ink-500">Preview only, not uploaded.</p>
           </div>
           <button
             type="button"

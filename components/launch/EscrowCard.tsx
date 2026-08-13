@@ -45,7 +45,7 @@ export function EscrowCard({
           <Milestone className="h-4 w-4 text-electric-300" /> Milestone escrow
         </h2>
         <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 text-xs text-ink-300">
-          No admin — time-locked on-chain
+          No admin: time-locked on-chain
         </span>
       </div>
 

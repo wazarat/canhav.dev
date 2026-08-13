@@ -37,7 +37,7 @@ export function JourneyCard({
         {verified ? (
           <StatusChip tone="success">Hash verified against chain</StatusChip>
         ) : (
-          <StatusChip tone="error">Hash mismatch — do not trust</StatusChip>
+          <StatusChip tone="error">Hash mismatch: do not trust</StatusChip>
         )}
       </div>
 

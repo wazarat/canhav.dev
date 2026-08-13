@@ -117,11 +117,11 @@ export function ConnectButton() {
 
         {isPending ? (
           <p className="text-xs text-ink-500">
-            Check your wallet — the popup may open behind this window.
+            Check your wallet; the popup may open behind this window.
           </p>
         ) : noWalletDetected ? (
           <StatusChip variant="block" tone="warning" className="max-w-xs">
-            No wallet extension detected — install MetaMask or Rabby to launch.
+            No wallet extension detected. Install MetaMask or Rabby to launch.
           </StatusChip>
         ) : error ? (
           <p className="max-w-xs truncate text-xs text-rose-400" title={error.message}>
@@ -137,7 +137,7 @@ export function ConnectButton() {
       <div className="flex flex-wrap items-center gap-2">
       {!onCorrectChain ? (
         <StatusChip tone="warning" onClick={() => void ensureChain()}>
-          Wrong network — switch to {LAUNCH_CHAIN.name}
+          Wrong network: switch to {LAUNCH_CHAIN.name}
         </StatusChip>
       ) : (
         <StatusChip tone="success">{LAUNCH_CHAIN.name}</StatusChip>

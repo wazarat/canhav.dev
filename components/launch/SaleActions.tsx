@@ -260,7 +260,7 @@ export function SaleActions({
     <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
       {liveSale ? (
         <div className="flex flex-wrap items-end gap-3">
-          <Field label={`Buy ${symbol}`} error={undefined} hint="Whole tokens — payment is exact">
+          <Field label={`Buy ${symbol}`} error={undefined} hint="Whole tokens; payment is exact">
             <Input
               inputMode="numeric"
               value={buyAmount}
@@ -344,7 +344,7 @@ export function SaleActions({
                   <Input
                     inputMode="numeric"
                     value={walletCap}
-                    placeholder="—"
+                    placeholder="0"
                     className="tabular"
                     onChange={(e) => setWalletCap(e.target.value.replace(/[^0-9]/g, ""))}
                   />
@@ -352,7 +352,7 @@ export function SaleActions({
               </div>
 
               <p className="text-xs text-ink-500">
-                Proceeds schedule — shares must sum to 100%; each unlocks on its
+                Proceeds schedule: shares must sum to 100%; each unlocks on its
                 date, after the sale ends. You cannot withdraw outside this
                 schedule.
               </p>

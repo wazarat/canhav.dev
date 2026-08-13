@@ -299,7 +299,7 @@ export default async function TokenPage({
                 {token.website}
               </a>
             ) : (
-              <span className="text-ink-500">—</span>
+              <span className="text-ink-500">n/a</span>
             )
           }
         />
@@ -411,7 +411,7 @@ export default async function TokenPage({
         <>
           <div className="mt-8">
             <StatusChip tone="neutral" variant="block">
-              Quick deploy — no design record. This token was launched with a
+              Quick deploy, no design record. This token was launched with a
               journey document only; there is no published token design behind
               it.
             </StatusChip>
@@ -424,7 +424,7 @@ export default async function TokenPage({
         <div className="mt-8 space-y-4">
           <StatusChip tone="success" variant="block">
             Design committed on-chain: the launch transaction recorded this
-            token design&apos;s snapshot hash (v{designSnapshot.version}) — the
+            token design&apos;s snapshot hash (v{designSnapshot.version}); the
             document behind this token is tamper-evident.
           </StatusChip>
           <LinkedEntityCard

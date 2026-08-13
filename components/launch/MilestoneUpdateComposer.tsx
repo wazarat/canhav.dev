@@ -106,7 +106,7 @@ export function MilestoneUpdateComposer({
   return (
     <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
       <p className="text-sm text-ink-300">
-        Post a progress update — stored content-addressed, hash anchored on-chain.
+        Post a progress update: stored content-addressed, hash anchored on-chain.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-[220px_1fr]">
         <Field label="Milestone" error={undefined}>
@@ -117,7 +117,7 @@ export function MilestoneUpdateComposer({
           >
             {milestoneTitles.map((t, i) => (
               <option key={i} value={i}>
-                M{i + 1} — {t}
+                M{i + 1}: {t}
               </option>
             ))}
           </select>

@@ -175,7 +175,7 @@ export function SaleCard({
             ) : null}
 
             <p className="mt-3 text-xs text-ink-500">
-              100% of proceeds go to the creator&apos;s milestone-locked schedule —
+              100% of proceeds go to the creator&apos;s milestone-locked schedule;
               the platform takes nothing.{" "}
               <a
                 href={`${LAUNCH_CHAIN.explorerUrl}/tx/${s.txHash}`}
