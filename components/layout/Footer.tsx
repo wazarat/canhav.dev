@@ -20,8 +20,7 @@ export function Footer() {
           </p>
         </div>
         <div className="text-xs text-ink-400">
-          <p>{SITE.footerDataLine}</p>
-          <p className="mt-1">
+          <p>
             © {new Date().getFullYear()} CanHav. {SITE.footerLegal}
           </p>
         </div>

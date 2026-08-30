@@ -148,7 +148,6 @@ async function getVerifiedUpdates(
 }
 
 export const metadata: Metadata = {
-  title: "Token",
   robots: { index: false, follow: false },
 };
 

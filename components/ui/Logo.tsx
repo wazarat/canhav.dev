@@ -4,7 +4,14 @@ import Link from "next/link";
 import { SITE } from "@/content/site";
 import { cn } from "@/lib/utils";
 
-export function Logo({ className }: { className?: string }) {
+export function Logo({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  /** Hide the wordmark on narrow screens (used by the cramped mobile nav). */
+  compact?: boolean;
+}) {
   return (
     <Link href="/" className={cn("group inline-flex items-center gap-2", className)}>
       <span className="relative inline-block h-7 w-7">
@@ -18,7 +25,12 @@ export function Logo({ className }: { className?: string }) {
         />
         <span className="absolute -inset-1 -z-10 rounded-lg bg-electric-500/20 blur-md" />
       </span>
-      <span className="font-display text-base font-semibold tracking-tight text-ink-50">
+      <span
+        className={cn(
+          "whitespace-nowrap font-display text-base font-semibold tracking-tight text-ink-50",
+          compact && "hidden min-[480px]:inline",
+        )}
+      >
         {SITE.name}
       </span>
     </Link>

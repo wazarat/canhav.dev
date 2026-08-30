@@ -31,13 +31,22 @@ const SHARE_TITLE = `${SITE.name} · ${SITE.tagline}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  title: {
-    default: SHARE_TITLE,
-    template: `%s · ${SITE.name}`,
-  },
+  // Browser tabs show only the site name; share cards keep the descriptive title.
+  title: SITE.name,
   description: SITE.description,
+  openGraph: {
+    title: SHARE_TITLE,
+    description: SITE.description,
+    url: SITE.url,
+    siteName: SITE.name,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SHARE_TITLE,
+    description: SITE.description,
+  },
   keywords: [
-    "arbitrum",
+    "tokenization",
     "stablecoins",
     "defi",
     "crypto research",

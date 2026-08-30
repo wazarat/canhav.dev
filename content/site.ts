@@ -4,14 +4,13 @@
  */
 export const SITE = {
   name: "CanHav Research",
-  tagline: "Arbitrum ecosystem intelligence for capital markets.",
+  tagline: "DeFi ecosystem solutions for capital markets.",
   url: "https://canhav.com",
   docsUrl: "https://docs.canhav.com",
   description:
-    "CanHav Research is a financial intelligence terminal for the Arbitrum ecosystem: taxonomy, datasets, and on-chain metrics for stablecoins and beyond.",
+    "CanHav Research builds DeFi ecosystem solutions. Token design, testnet deployment, MCP data connectors, and market validation for teams and independent builders.",
   footerBlurb:
-    "Arbitrum ecosystem intelligence. Research-grade datasets, curated from the Arbitrum Portal and refreshed daily.",
-  footerDataLine: "Data: Arbitrum Portal · Alchemy · Dune (free tier).",
+    "DeFi ecosystem solutions. Research grade datasets and launch tooling, curated and refreshed daily.",
   footerLegal: "Research preview, not financial advice.",
 } as const;
 

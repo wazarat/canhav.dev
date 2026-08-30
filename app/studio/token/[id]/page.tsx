@@ -7,7 +7,6 @@ import { getSessionUser } from "@/lib/auth";
 import { getLinkedProject, getMyProjects, getTokenDesign } from "@/lib/ideation-db";
 
 export const metadata: Metadata = {
-  title: "Token design · Studio",
   robots: { index: false, follow: false },
 };
 

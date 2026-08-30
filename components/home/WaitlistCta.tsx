@@ -1,5 +1,7 @@
 "use client";
 
+// Unused since the hero moved to a direct studio CTA; kept for a future waitlist relaunch.
+
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";

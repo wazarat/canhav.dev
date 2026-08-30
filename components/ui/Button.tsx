@@ -21,7 +21,7 @@ const sizeClasses: Record<Size, string> = {
 };
 
 const baseClasses =
-  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 " +
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all duration-200 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 " +
   "disabled:pointer-events-none disabled:opacity-60";
 

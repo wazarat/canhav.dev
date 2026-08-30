@@ -31,9 +31,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const row = await getProjectBySlug(slug);
-  if (!row) return { title: "Project" };
+  if (!row) return {};
   return {
-    title: `${row.draft_doc.name} · Project`,
     description: row.draft_doc.whatItDoes.slice(0, 160),
   };
 }

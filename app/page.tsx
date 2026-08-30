@@ -1,14 +1,16 @@
+import Link from "next/link";
+
 import { AnalyticsSection } from "@/components/home/AnalyticsSection";
 import { BuiltForBuilders } from "@/components/home/BuiltForBuilders";
 import { ContactCta } from "@/components/home/ContactCta";
 import { HeroVideo } from "@/components/home/HeroVideo";
-import { WaitlistCta } from "@/components/home/WaitlistCta";
+import { Button } from "@/components/ui/Button";
 
 export default function LandingPage() {
   return (
     <div>
       {/* Hero: full-bleed muted background video */}
-      <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-[#3c72ab]">
+      <section className="relative min-h-[calc(100svh-4rem)] overflow-hidden bg-[#3c72ab]">
         <HeroVideo src="/hero-video.mp4" />
 
         {/* scrims: darken top (for nav edge) + left (for hero copy) + fade into page bg */}
@@ -36,7 +38,7 @@ export default function LandingPage() {
           }}
         />
 
-        <div className="container relative z-[2] flex min-h-[calc(100vh-4rem)] items-center py-16">
+        <div className="container relative z-[2] flex min-h-[calc(100svh-4rem)] items-center py-16">
           <div className="max-w-2xl space-y-7 animate-fade-in-up">
             <h1
               className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink-50 md:text-6xl"
@@ -52,7 +54,7 @@ export default function LandingPage() {
               >
                 real scrutiny
               </span>
-              , before they get a market.
+              {" "}before they get a market.
             </h1>
             <p
               className="max-w-xl text-lg leading-relaxed text-ink-50/90 md:text-xl"
@@ -62,7 +64,24 @@ export default function LandingPage() {
               on-chain versus what is merely stated.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <WaitlistCta label="Join the waitlist" sourcePage="home-hero" withArrow />
+              <Button asChild>
+                <Link href="/studio">
+                  Join the waitlist
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </Link>
+              </Button>
               <ContactCta variant="secondary" sourcePage="home-hero" />
             </div>
           </div>

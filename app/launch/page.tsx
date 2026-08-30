@@ -12,7 +12,6 @@ import { getPublishedTokenDesignById } from "@/lib/ideation-db";
 // Intentionally unlinked from navigation: URL-only access while the
 // launchpad is developed incrementally.
 export const metadata: Metadata = {
-  title: LAUNCH_COPY.title,
   robots: { index: false, follow: false },
 };
 

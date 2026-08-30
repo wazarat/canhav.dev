@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Check, X } from "lucide-react";
 
@@ -46,7 +47,9 @@ export function WaitlistModal({
     setStatus("success");
   }
 
-  return (
+  // Portal to <body>: trigger containers may carry a transform (animate-fade-in-up
+  // keeps one via fill forwards), which would otherwise trap position: fixed.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -157,6 +160,7 @@ export function WaitlistModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

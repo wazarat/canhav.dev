@@ -41,11 +41,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  if (/^0x[a-fA-F0-9]{40}$/.test(slug)) return { title: "Token design" };
+  if (/^0x[a-fA-F0-9]{40}$/.test(slug)) return {};
   const row = await getTokenDesignBySlug(slug);
-  if (!row) return { title: "Token design" };
+  if (!row) return {};
   return {
-    title: `${row.draft_doc.name} ($${row.draft_doc.ticker}) · Token design`,
     description: row.draft_doc.rationale.beyondDatabaseRow.slice(0, 160),
   };
 }

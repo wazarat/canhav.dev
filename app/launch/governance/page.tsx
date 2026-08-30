@@ -12,7 +12,6 @@ import { getTimelockOperations, type IndexedTimelockOperation } from "@/lib/inde
 import { publicClient } from "@/lib/publicClient";
 
 export const metadata: Metadata = {
-  title: "Launchpad governance",
   robots: { index: false, follow: false },
 };
 

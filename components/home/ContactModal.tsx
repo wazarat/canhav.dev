@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Check, X } from "lucide-react";
 
@@ -24,7 +25,7 @@ export function ContactModal({
 }) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [leadType, setLeadType] = useState<LeadType>("individual");
+  const [leadType, setLeadType] = useState<LeadType>("team");
   const [comments, setComments] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — humans never see it
   const [status, setStatus] = useState<Status>("idle");
@@ -35,7 +36,7 @@ export function ContactModal({
     // Fresh form every time the modal opens.
     setFullName("");
     setEmail("");
-    setLeadType("individual");
+    setLeadType("team");
     setComments("");
     setWebsite("");
     setStatus("idle");
@@ -55,7 +56,9 @@ export function ContactModal({
     setStatus("success");
   }
 
-  return (
+  // Portal to <body>: trigger containers may carry a transform (animate-fade-in-up
+  // keeps one via fill forwards), which would otherwise trap position: fixed.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -97,14 +100,15 @@ export function ContactModal({
             ) : (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-electric-400">
-                  Contact
+                  For Teams
                 </p>
                 <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink-50">
-                  Get in touch
+                  Explore solutions with us
                 </h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-300">
-                  Questions about the data, access or partnerships? Send us a note and
-                  we&apos;ll reply.
+                  We help small businesses put tokenization and agentic solutions to
+                  work. Tell us what you are exploring and we will map the right
+                  approach together.
                 </p>
 
                 <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
@@ -218,6 +222,7 @@ export function ContactModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -5,7 +5,6 @@ import { StatusChip } from "@/components/ui/StatusChip";
 
 // URL-only like the rest of /launch; reached from the token design editor.
 export const metadata: Metadata = {
-  title: "Attach a deployed token",
   robots: { index: false, follow: false },
 };
 

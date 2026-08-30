@@ -6,7 +6,7 @@
 
 CanHav is a research-led platform for EVM builders and capital-markets practitioners.
 
-- **Research** on [canhav.com](https://canhav.com): ecosystem intelligence and sector context.
+- **Research** on [canhav.com](https://canhav.com): DeFi ecosystem solutions and sector context.
 - **Token Launch**: a testnet launchpad on Robinhood Chain Testnet for fixed-supply tokens, journeys, vesting, escrow, sales, and a minimal AMM.
 - **Projects**: two independent ideation tracks (Product and Token) so teams can design, publish, and optionally link before or instead of deploying.
 

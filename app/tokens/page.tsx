@@ -1,49 +1,48 @@
 import type { Metadata } from "next";
 
-import { DesignsGrid } from "@/components/explore/DesignsGrid";
-import { TokensGrid } from "@/components/explore/TokensGrid";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { FeatureCard, FeatureSectionHeader } from "@/components/home/FeatureCard";
+import { SITE } from "@/content/site";
+import { Cable, FlaskConical, Radar } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Tokens",
   description:
-    "Tokens launched through the CanHav factory on Robinhood Chain testnet, and the published token designs behind them.",
+    "Token design, testnet deployment, MCP connectors, and market validation through CanHav Research.",
 };
 
-export const dynamic = "force-dynamic";
-
+// The explore grids (components/explore/TokensGrid.tsx, DesignsGrid.tsx) return
+// here when the launch track reopens; both are kept on disk for that relaunch.
 export default function TokensPage() {
   return (
     <div className="container py-14 md:py-20">
-      <div className="max-w-2xl">
-        <p className="kicker">Launchpad</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
-          Tokens
-        </h1>
-        <p className="mt-4 text-base leading-relaxed text-ink-300">
-          Every token launched through the factory on {LAUNCH_CHAIN.name},
-          read from the on-chain event log, alongside the published designs
-          behind them. A design needs no deployment to be discoverable.
-        </p>
+      <FeatureSectionHeader
+        kicker="Launchpad"
+        title="Everything a token needs before a market"
+        lead="Design in the open, validate with evidence, and connect your launch data to the tools your team already uses."
+      />
+
+      <div className="mt-10 grid gap-5 md:mt-14 lg:grid-cols-3">
+        <FeatureCard
+          icon={FlaskConical}
+          title="Testnet Design"
+          description="Design your token in the studio and deploy it to testnet in minutes. Supply, allocations, and vesting captured as a verifiable record."
+          href="/studio"
+          ctaLabel="Open the studio"
+        />
+        <FeatureCard
+          icon={Cable}
+          title="MCP Connectors"
+          description="Bring CanHav data into your AI tools through MCP. Query tokens, designs, and market context from the agents you already work with."
+          href={SITE.docsUrl}
+          ctaLabel="Read the docs"
+        />
+        <FeatureCard
+          icon={Radar}
+          title="Market Validation"
+          description="Publish the evidence behind your launch and gather real market feedback before a market exists. Scrutiny first, speculation later."
+          href="/studio"
+          ctaLabel="Start validating"
+        />
       </div>
-
-      <section className="mt-10 md:mt-12">
-        <h2 className="font-display text-xl font-semibold text-ink-50">Deployed tokens</h2>
-        <div className="mt-5">
-          <TokensGrid />
-        </div>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="font-display text-xl font-semibold text-ink-50">Token designs</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-400">
-          Published designs: supply, allocations, vesting, and the computed
-          float behind each, with the warnings that fired shown in the open.
-        </p>
-        <div className="mt-5">
-          <DesignsGrid />
-        </div>
-      </section>
     </div>
   );
 }

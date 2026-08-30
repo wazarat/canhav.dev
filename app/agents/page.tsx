@@ -9,7 +9,6 @@ import { formatAsOf } from "@/lib/format";
 
 // Hidden like /launch: URL-only access, no nav links.
 export const metadata: Metadata = {
-  title: AGENTS_COPY.title,
   robots: { index: false, follow: false },
 };
 

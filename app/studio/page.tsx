@@ -17,7 +17,6 @@ import { STUDIO_COPY } from "@/content/ideation";
 // Intentionally unlinked from navigation while the ideation tracks are
 // developed incrementally — URL-only, like /launch.
 export const metadata: Metadata = {
-  title: STUDIO_COPY.title,
   robots: { index: false, follow: false },
 };
 

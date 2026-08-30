@@ -2,7 +2,7 @@
 
 **Available now** for Token Launch and Projects on testnet. **In development** for Clerk accounts and AI/IDE export. **Deferred** for a Foundry scaffold generator. **Not started** for Agent / ERC-8004.
 
-CanHav is a research-led platform for EVM builders and capital-markets practitioners. The product site at [canhav.com](https://canhav.com) focuses on ecosystem intelligence. These docs cover the testnet products that ship alongside that research.
+CanHav is a research-led platform for EVM builders and capital-markets practitioners. The product site at [canhav.com](https://canhav.com) focuses on DeFi ecosystem solutions. These docs cover the testnet products that ship alongside that research.
 
 ## Important: Robinhood
 
