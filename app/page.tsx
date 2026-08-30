@@ -66,7 +66,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap gap-3 pt-1">
               <Button asChild>
                 <Link href="/studio">
-                  Join the waitlist
+                  Log in
                   <svg
                     aria-hidden="true"
                     viewBox="0 0 24 24"
