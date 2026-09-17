@@ -16,7 +16,7 @@ export function ContactCta({
   variant?: "primary" | "secondary" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
   className?: string;
-  /** Kept for lead attribution once the form is wired to a backend. */
+  /** Lead attribution, stored as `source_page` on the lead row. */
   sourcePage: string;
 }) {
   const [open, setOpen] = useState(false);

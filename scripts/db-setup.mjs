@@ -168,6 +168,31 @@ await sql`
     on launchpad.entity_links (b_id) where a_type = 'project' and b_type = 'token_design'
 `;
 
+// Marketing leads (For Teams contact form + waitlist). Anonymous,
+// insert-only, one table discriminated by `kind`. No IP address on purpose
+// (no consent/retention story for it); user_agent is kept, coarse, for
+// spotting bot bursts. Repeat contacts from one email are legitimate, so
+// there is no unique constraint on email.
+await sql`
+  create table if not exists launchpad.leads (
+    id uuid primary key default gen_random_uuid(),
+    kind text not null check (kind in ('contact','waitlist')),
+    full_name text check (char_length(full_name) between 1 and 120),
+    email text not null check (email = lower(email) and char_length(email) <= 254),
+    lead_type text check (lead_type in ('individual','team')),
+    comments text check (char_length(comments) <= 2000),
+    source_page text check (char_length(source_page) <= 64),
+    user_agent text check (char_length(user_agent) <= 512),
+    created_at timestamptz not null default now(),
+    check (kind <> 'contact' or (full_name is not null and lead_type is not null))
+  )
+`;
+
+await sql`
+  create index if not exists leads_created_idx
+    on launchpad.leads (created_at desc)
+`;
+
 // Owner columns were uuid when the tables were first created (Supabase-era
 // scaffolding, never used); Clerk ids are `user_…` strings. Idempotent — a
 // text→text alter is a no-op rewrite of zero rows.

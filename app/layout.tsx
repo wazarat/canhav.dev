@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 
 import { AppClerkProvider } from "@/components/layout/AppClerkProvider";
 import { Background } from "@/components/layout/Background";
@@ -82,6 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Footer />
           </div>
         </AppClerkProvider>
+        <Analytics />
       </body>
     </html>
   );

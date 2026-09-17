@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Check, X } from "lucide-react";
+import { track } from "@vercel/analytics";
 
 import { Button } from "@/components/ui/Button";
 import { inputClasses } from "@/components/ui/Input";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 
-type Status = "idle" | "submitting" | "success";
+type Status = "idle" | "submitting" | "success" | "error";
 
 export function WaitlistModal({
   open,
@@ -18,12 +20,13 @@ export function WaitlistModal({
 }: {
   open: boolean;
   onClose: () => void;
-  /** Kept for lead attribution once the form is wired to a backend. */
+  /** Lead attribution, stored as `source_page` on the lead row. */
   sourcePage: string;
 }) {
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — humans never see it
   const [status, setStatus] = useState<Status>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,6 +35,7 @@ export function WaitlistModal({
     setEmail("");
     setWebsite("");
     setStatus("idle");
+    setErrorMessage(null);
   }, [open]);
 
   useModalBehavior({ onClose, containerRef, active: open });
@@ -42,9 +46,23 @@ export function WaitlistModal({
     e.preventDefault();
     if (status === "submitting") return;
     setStatus("submitting");
-    // TODO: wire to backend — POST { email, sourcePage, website } to a leads endpoint.
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setStatus("success");
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "waitlist", email, sourcePage, website }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Request failed.");
+      }
+      track("lead_submitted", { kind: "waitlist", sourcePage });
+      setStatus("success");
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+      setStatus("error");
+    }
   }
 
   // Portal to <body>: trigger containers may carry a transform (animate-fade-in-up
@@ -127,6 +145,12 @@ export function WaitlistModal({
                     aria-hidden="true"
                     className="absolute -left-[9999px] h-0 w-0 opacity-0"
                   />
+
+                  {status === "error" && (
+                    <StatusChip tone="error" variant="block" role="alert">
+                      {errorMessage} Your email is still here — try again.
+                    </StatusChip>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-3 pt-1">
                     <Button type="submit" disabled={status === "submitting"}>
