@@ -57,3 +57,33 @@ Clerk user id — no FK, no user data mirrored). One-time dashboard steps:
 Push to a Git repo and import into Vercel, or run `vercel` from this
 directory. The site builds and runs with no environment variables — features
 light up as their variables are added.
+
+## Arbitrum Open House Singapore Buildathon Work
+
+CanHav is entered in the Arbitrum Open House Singapore online buildathon (event start
+Sept 14, 2026). An earlier version of this repo placed second at the Arbitrum Open House
+London founder house. This section separates pre-event work from work done during the
+event window so judges can verify it.
+
+- The baseline is tagged `pre-buildathon`, the last pre-event commit (3fa1183, Aug 30, 2026).
+- All buildathon work lives on the `singapore-buildathon` branch. Nothing is merged to
+  `main` until the event ends.
+- Judges can see exactly what was built during the event at
+  https://github.com/wazarat/canhav.dev/compare/pre-buildathon...singapore-buildathon
+
+### What existed before the event
+
+- The deployed Foundry contract suite on Robinhood Chain Testnet (chain 46630), with
+  deployment records under `contracts/broadcast`. TokenFactory v1 to v4, LaunchToken,
+  LaunchVestingWallet, MilestoneEscrow, JourneyUpdates, AllocationSale, LaunchAMM,
+  FeeSplitter and TimelockController.
+- The Next.js app (marketing site, launchpad, ideation studio, MCP server), the Ponder
+  indexer, and the work shown at the London founder house.
+
+### Built during the buildathon
+
+- Sept 17, 2026 (22e2294). Lead gen and tracking updates. A public `/api/leads` endpoint
+  that stores leads in Neon and notifies by Resend email, the For Teams and waitlist
+  forms wired to it, and Vercel Web Analytics with a `lead_submitted` event.
+
+This list grows as work lands on the branch.
