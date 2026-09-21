@@ -23,7 +23,7 @@ CanHav combines research on [canhav.com](https://canhav.com) with testnet produc
 |-------|---------|------|--------|
 | Token Launch | Robinhood Chain Testnet (`46630`) | Factory tokens, journey hashes, vesting, milestone escrow, allocation sales, AMM, timelocked admin, hosted indexer. | Available now |
 | Projects | Same product site | Independent Product and Token design tracks, computed tokenomics, optional link, public pages, design deploy. | Available now |
-| Accounts / AI export | Same product site | Clerk accounts; markdown export and MCP for designs. | In development |
+| Accounts / AI export | Same product site | Clerk accounts, markdown export, MCP server for designs and deployed launches. | Available now |
 | Foundry scaffold generator | N/A | Generate a Foundry project from a design. | Deferred |
 | Agent / ERC-8004 | Base Sepolia (`84532`) | Agent identity track. | Not started |
 

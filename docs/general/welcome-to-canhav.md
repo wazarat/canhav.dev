@@ -24,7 +24,7 @@ Robinhood Chain does **not** provide distribution to Robinhood brokerage custome
 | [Deploy paths](../token-launch/deploy-paths.md) | Quick deploy vs design deploy | Available now |
 | [Fees and guarantees](../token-launch/fees-and-economics.md) | Fee switches, caps, timelock, contract guarantees | Available now |
 | [Accounts](../accounts/clerk-accounts.md) | Clerk-based accounts | In development |
-| [AI and IDE](../ai/export-and-mcp.md) | Markdown export, AGENTS.md, MCP | In development |
+| [AI and IDE](../ai/export-and-mcp.md) | Markdown export, AGENTS.md, MCP server for designs and launches | Available now |
 | [Agent Launch](../agent-launch/overview.md) | ERC-8004 on Base Sepolia | Not started |
 
 ## Product surfaces (today)

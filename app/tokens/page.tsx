@@ -112,7 +112,7 @@ export default function TokensPage() {
           tint="neon"
           graphic={<ConnectorGraphic />}
           title="MCP Connectors"
-          description="Bring CanHav data into your AI tools through MCP. Query tokens, designs, and market context from the agents you already work with."
+          description="Bring CanHav data into your AI tools through MCP. Query published designs, deployed launches, verified journeys, sales and pools from the agents you already work with."
           href={SITE.docsUrl}
           ctaLabel="Read the docs"
         />

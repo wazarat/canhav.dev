@@ -53,6 +53,6 @@
 | Reputation Registry | Related ERC-8004 registry. Used for wiring checks; full reputation flows are out of scope for v1. |
 | Vanity prefix | Testnet Identity Registry addresses start with `0x8004A818`. Mainnet starts with `0x8004A169`. Mixing them up fails silently unless checked. |
 | MCP (Agent Launch) | Model Context Protocol as intended agent capability endpoint for registration gating. |
-| MCP (Projects / AI) | CanHav MCP server for reading design documents in an IDE (in development). Separate from Agent Launch MCP notes. |
+| MCP (Projects / AI) | CanHav MCP server at `www.canhav.com/mcp` for reading design documents and deployed launches from an IDE or chat agent. Separate from Agent Launch MCP notes. |
 | Registration file / URI | Metadata URI attached to an agent identity (URL or inline `data:` URI). |
 | Agents indexer | Separate Ponder app for ERC-8004 events (not shared with the launchpad indexer). |

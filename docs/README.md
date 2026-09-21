@@ -14,7 +14,7 @@ If GitBook still publishes this README as a top-level page, set the site homepag
 | Public pages | `ideation/public-pages.md` | `/p` and `/t` |
 | Token Launch | `token-launch/` | Launchpad, deploy paths, fees, guarantees |
 | Accounts | `accounts/` | Clerk (in development) |
-| AI and IDE | `ai/` | Export and MCP (in development) |
+| AI and IDE | `ai/` | Markdown export and the MCP server (design and launch tools) |
 | Reference | `reference/` | Networks and factory versions |
 | Agent Launch | `agent-launch/` | ERC-8004 (not started; pages retained, demoted) |
 

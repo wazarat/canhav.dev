@@ -85,5 +85,10 @@ event window so judges can verify it.
 - Sept 17, 2026 (22e2294). Lead gen and tracking updates. A public `/api/leads` endpoint
   that stores leads in Neon and notifies by Resend email, the For Teams and waitlist
   forms wired to it, and Vercel Web Analytics with a `lead_submitted` event.
+- Sept 21, 2026. Launch MCP tools. Eight read-only tools on the `/mcp` server that
+  expose every deployed launch to agents, including `get_launch`, the hash-verified
+  journey, milestone updates, sale and pool status, governance, and the signed-in
+  user's own launches. Shared `lib/journey-db.ts` so the launch page and the tools
+  use one verification rule. Docs and the Tokens page copy updated to match.
 
 This list grows as work lands on the branch.

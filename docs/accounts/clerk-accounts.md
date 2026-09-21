@@ -7,7 +7,7 @@
 - Creating and editing Project and Token design drafts in studio (`/studio`)
 - Publishing and unpublishing those drafts
 - Linking a project to a token design
-- Markdown export and MCP access for design documents, once those ship (see [AI and IDE](../ai/export-and-mcp.md))
+- Markdown export and the `get_my_` MCP tools for your own designs and launches (see [AI and IDE](../ai/export-and-mcp.md))
 
 ## What does not require an account
 
