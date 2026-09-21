@@ -6,7 +6,7 @@ import { formatEther } from "viem";
 
 import { EscrowActions, type EscrowActionTranche } from "@/components/launch/EscrowActions";
 import { EscrowCard } from "@/components/launch/EscrowCard";
-import { JourneyCard, type VerifiedUpdate } from "@/components/launch/JourneyCard";
+import { JourneyCard } from "@/components/launch/JourneyCard";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
 import { PoolActions, type PoolActionPool } from "@/components/launch/PoolActions";
 import { PoolCard } from "@/components/launch/PoolCard";
@@ -16,13 +16,11 @@ import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
-import { getDb } from "@/lib/db";
 import { getSnapshot } from "@/lib/ideation-db";
 import { formatCount } from "@/lib/format";
 import {
   formatSupply,
   getEscrows,
-  getMilestoneUpdates,
   getPool,
   getRecentPurchases,
   getRecentSwaps,
@@ -32,12 +30,7 @@ import {
   type IndexedPurchase,
   type IndexedVesting,
 } from "@/lib/indexer";
-import {
-  hashJourney,
-  hashMilestoneUpdate,
-  type JourneyDoc,
-  type MilestoneUpdateDoc,
-} from "@/lib/journey";
+import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
 import { publicClient } from "@/lib/publicClient";
 
 const vestingWalletAbi = [
@@ -83,67 +76,6 @@ async function getLiveVesting(v: IndexedVesting): Promise<LiveVesting | null> {
     return { releasable, released, owner };
   } catch {
     return null;
-  }
-}
-
-/** Fetch the stored journey doc and verify it against the on-chain hash. */
-async function getVerifiedJourney(
-  journeyHash: string,
-): Promise<{ doc: JourneyDoc; verified: boolean } | null> {
-  const db = getDb();
-  if (!db) return null;
-  try {
-    const rows = await db`
-      select doc from launchpad.journeys where journey_hash = ${journeyHash.toLowerCase()}
-    `;
-    if (rows.length === 0) return null;
-    const doc = rows[0].doc as JourneyDoc;
-    return { doc, verified: hashJourney(doc).toLowerCase() === journeyHash.toLowerCase() };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Resolve on-chain update anchors to verified update threads per milestone:
- * keep only anchors authored by the token's creator whose stored body's
- * recomputed hash matches the anchor.
- */
-async function getVerifiedUpdates(
-  tokenAddress: string,
-  creator: string,
-): Promise<Record<number, VerifiedUpdate[]>> {
-  const anchors = await getMilestoneUpdates(tokenAddress);
-  const db = getDb();
-  if (!anchors || anchors.length === 0 || !db) return {};
-
-  const fromCreator = anchors.filter(
-    (a) => a.author.toLowerCase() === creator.toLowerCase(),
-  );
-  if (fromCreator.length === 0) return {};
-
-  try {
-    const hashes = fromCreator.map((a) => a.updateHash.toLowerCase());
-    const rows = await db`
-      select update_hash, doc from launchpad.milestone_updates
-      where update_hash = any(${hashes})
-    `;
-    const docs = new Map(rows.map((r) => [r.update_hash as string, r.doc as MilestoneUpdateDoc]));
-
-    const grouped: Record<number, VerifiedUpdate[]> = {};
-    for (const a of fromCreator) {
-      const doc = docs.get(a.updateHash.toLowerCase());
-      if (!doc) continue;
-      if (hashMilestoneUpdate(doc).toLowerCase() !== a.updateHash.toLowerCase()) continue;
-      (grouped[a.milestoneIndex] ??= []).push({
-        body: doc.body,
-        postedAt: Number(a.blockTimestamp),
-        txHash: a.txHash,
-      });
-    }
-    return grouped;
-  } catch {
-    return {};
   }
 }
 
