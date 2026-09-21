@@ -4,7 +4,22 @@
     {
       "name": "canhav-landing",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "canhav-hosted-indexer",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "INDEXER_URL=https://canhav-indexer.onrender.com",
+        "npm",
+        "run",
+        "dev"
+      ],
       "port": 3000,
       "autoPort": true
     }
