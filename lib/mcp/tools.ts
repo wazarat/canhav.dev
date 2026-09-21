@@ -17,6 +17,7 @@ import {
   getSnapshot,
   getTokenDesignBySlug,
 } from "@/lib/ideation-db";
+import { registerLaunchTools } from "@/lib/mcp/launch-tools";
 import { deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
 import {
   errorResult,
@@ -122,6 +123,7 @@ function designConstraints(doc: TokenDesignDoc, deployedAddress: string | null) 
 }
 
 export function registerAllTools(server: McpServer): void {
+  registerLaunchTools(server);
   registerMeteredTool(
     server,
     "get_my_projects",

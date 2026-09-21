@@ -6,8 +6,8 @@ import type { z } from "zod";
 /**
  * The metering seam: every MCP tool registers through registerMeteredTool,
  * so per-tool call counting can be added later in exactly one place without
- * touching any tool. No metering today — free, gated only by a Clerk
- * account.
+ * touching any tool. Today it only logs one line per call. Access is free,
+ * gated only by a Clerk account.
  */
 
 export interface ToolResult {
@@ -45,7 +45,26 @@ export function registerMeteredTool<Schema extends z.ZodType>(
     config: unknown,
     cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
   ) => void)(name, config, async (args, ctx) => {
-    // Metering hook: when counting lands, record (name, mcpUserId(ctx)) here.
-    return cb(args, ctx);
+    // Metering hook. One structured log line per call so tool usage and
+    // failure rates are visible in Vercel runtime logs. Counting lands here.
+    const startedAt = Date.now();
+    let result: ToolResult;
+    try {
+      result = await cb(args, ctx);
+    } catch (err) {
+      console.info(
+        JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: Date.now() - startedAt, threw: true }),
+      );
+      throw err;
+    }
+    console.info(
+      JSON.stringify({
+        mcpTool: name,
+        userId: mcpUserId(ctx),
+        ms: Date.now() - startedAt,
+        isError: result.isError === true,
+      }),
+    );
+    return result;
   });
 }
