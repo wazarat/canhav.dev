@@ -130,6 +130,9 @@ export const LAUNCH_COPY = {
   subtitleDetail:
     "Name it and launch. Add a commitment if you want one, and its hash goes on-chain with the token. Any agent can read the launch over MCP.",
   previewTitle: "Your token",
+  exploreTitle: "Recent launches",
+  exploreLead:
+    "Every token launched through the CanHav factory, newest first. Open one to see its commitment, sales and pool, or read it from your agent.",
 } as const;
 
 /**

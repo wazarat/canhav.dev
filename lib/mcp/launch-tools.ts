@@ -4,7 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 import { LAUNCH_CHAIN } from "@/content/launch";
-import { getMyTokenDesigns, getTokenDesignByAddress } from "@/lib/ideation-db";
+import { getTokenDesignByAddress } from "@/lib/ideation-db";
 import {
   formatSupply,
   getActiveSaleTokens,
@@ -24,7 +24,7 @@ import {
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
-import { getLaunchesByOwner } from "@/lib/launches-db";
+import { getMyLaunches } from "@/lib/my-launches";
 import {
   errorResult,
   jsonResult,
@@ -472,62 +472,18 @@ export function registerLaunchTools(server: McpServer): void {
     async (_args, ctx) => {
       const userId = mcpUserId(ctx);
       if (!userId) return errorResult(AUTH_HINT);
-      const [designs, recorded] = await Promise.all([
-        getMyTokenDesigns(userId),
-        getLaunchesByOwner(userId),
-      ]);
-      if (designs === null || recorded === null) return errorResult(DB_HINT);
-
-      type Entry = {
-        address: string;
-        source: "launch" | "design" | "both";
-        launchedAt: string | null;
-        creatorWallet: string | null;
-        launchTxHash: string | null;
-        design: { id: string; slug: string | null; status: string; name: string } | null;
-      };
-      const byAddress = new Map<string, Entry>();
-      for (const r of recorded) {
-        byAddress.set(r.token_address, {
-          address: r.token_address,
-          source: "launch",
-          launchedAt: r.created_at,
-          creatorWallet: r.creator_address,
-          launchTxHash: r.tx_hash,
-          design: null,
-        });
-      }
-      for (const r of designs) {
-        if (!r.deployed_token_address) continue;
-        const address = r.deployed_token_address.toLowerCase();
-        const design = { id: r.id, slug: r.slug, status: r.status, name: r.draft_doc.name };
-        const existing = byAddress.get(address);
-        if (existing) {
-          existing.source = "both";
-          existing.design = design;
-        } else {
-          byAddress.set(address, {
-            address,
-            source: "design",
-            launchedAt: r.deployed_at,
-            creatorWallet: r.deployed_by_wallet,
-            launchTxHash: null,
-            design,
-          });
-        }
-      }
-
-      const launches = await Promise.all(
-        [...byAddress.values()].map(async (entry) => {
-          const token = await getToken(entry.address);
-          return {
-            ...entry,
-            launchUrl: launchUrl(entry.address),
-            launch: token ? summarizeToken(token) : null,
-          };
-        }),
-      );
-      launches.sort((a, b) => (b.launchedAt ?? "").localeCompare(a.launchedAt ?? ""));
+      const mine = await getMyLaunches(userId);
+      if (mine === null) return errorResult(DB_HINT);
+      const launches = mine.map((entry) => ({
+        address: entry.address,
+        source: entry.source,
+        launchedAt: entry.launchedAt,
+        creatorWallet: entry.creatorWallet,
+        launchTxHash: entry.launchTxHash,
+        design: entry.design,
+        launchUrl: launchUrl(entry.address),
+        launch: entry.launch ? summarizeToken(entry.launch) : null,
+      }));
       return jsonResult({ count: launches.length, launches });
     },
   );

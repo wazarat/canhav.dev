@@ -49,7 +49,13 @@ function Linker({ tokenAddress, txHash }: { tokenAddress: string; txHash: string
       <div className="mt-3">
         <StatusChip tone="success" variant="pill">
           Linked to your CanHav account. get_my_launches will list it.
-        </StatusChip>
+        </StatusChip>{" "}
+        <Link
+          href="/studio"
+          className="text-xs text-electric-300 transition-colors hover:text-electric-200"
+        >
+          See it in the studio →
+        </Link>
       </div>
     );
   if (state === "failed")

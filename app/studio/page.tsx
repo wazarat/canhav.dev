@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { LaunchList } from "@/components/studio/LaunchList";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
@@ -12,6 +13,7 @@ import {
   getMyProjects,
   getMyTokenDesigns,
 } from "@/lib/ideation-db";
+import { getMyLaunches } from "@/lib/my-launches";
 import { STUDIO_COPY } from "@/content/ideation";
 
 // Intentionally unlinked from navigation while the ideation tracks are
@@ -117,9 +119,10 @@ export default async function StudioPage() {
     );
   }
 
-  const [projects, designs] = await Promise.all([
+  const [projects, designs, launches] = await Promise.all([
     getMyProjects(user.id),
     getMyTokenDesigns(user.id),
+    getMyLaunches(user.id),
   ]);
 
   return (
@@ -140,6 +143,7 @@ export default async function StudioPage() {
         </div>
       ) : (
         <div className="mt-10 space-y-10">
+          <LaunchList launches={launches} />
           <StudioTrackCards />
           <div className="grid gap-10 md:grid-cols-2">
             <EntityList
