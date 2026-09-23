@@ -387,7 +387,7 @@ export default async function TokenPage({
         </div>
       )}
 
-      <McpConnectCard address={token.address.toLowerCase()} className="mt-8" />
+      <McpConnectCard address={token.address.toLowerCase()} committed={committed} className="mt-8" />
 
       <p className="mt-4 text-xs text-ink-500">
         Token fields are read from the on-chain TokenLaunched event via the

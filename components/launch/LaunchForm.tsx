@@ -387,7 +387,11 @@ export function LaunchForm({
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
         <AccountLink tokenAddress={status.token.toLowerCase()} txHash={status.txHash} />
         <div className="mt-6 text-left">
-          <McpConnectCard address={status.token.toLowerCase()} compact />
+          <McpConnectCard
+            address={status.token.toLowerCase()}
+            committed={Boolean(designCommitment) || commitmentOn}
+            compact
+          />
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="sm">

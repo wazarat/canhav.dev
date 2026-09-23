@@ -74,16 +74,19 @@ function CopyLine({ label, text, mono = true }: { label: string; text: string; m
 
 export function McpConnectCard({
   address,
+  committed = true,
   compact = false,
   className,
 }: {
   /** Lowercase token address. Omit for a generic card. */
   address?: string;
+  /** False for a launch that recorded the zero journey hash. */
+  committed?: boolean;
   /** Only the add command and the prompt, for the launch success screen. */
   compact?: boolean;
   className?: string;
 }) {
-  const prompt = address ? MCP_CONNECT.promptFor(address) : MCP_CONNECT.promptAny;
+  const prompt = address ? MCP_CONNECT.promptFor(address, committed) : MCP_CONNECT.promptAny;
   const askLabel = address ? MCP_CONNECT.steps.ask : MCP_CONNECT.steps.askAny;
 
   return (

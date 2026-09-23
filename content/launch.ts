@@ -112,8 +112,10 @@ export const MCP_CONNECT = {
     ask: "Ask about this launch",
     askAny: "Ask about launches",
   },
-  promptFor: (address: string) =>
-    `Use the canhav get_launch tool for ${address} and summarize the commitment and its milestones.`,
+  promptFor: (address: string, committed: boolean) =>
+    committed
+      ? `Use the canhav get_launch tool for ${address} and summarize the commitment and its milestones.`
+      : `Use the canhav get_launch tool for ${address} and summarize the token, its vesting, sales and pool.`,
   promptAny: "Use the canhav list_launches tool and show the newest launches.",
   desktopNote:
     "The Claude desktop app can add the same server URL as a custom connector.",
@@ -124,9 +126,9 @@ export const MCP_CONNECT = {
 export const LAUNCH_COPY = {
   kicker: "Launchpad",
   title: "Launch a token",
-  subtitleLead: "Create a token on Robinhood Chain Testnet in three steps.",
+  subtitleLead: "Create a token on Robinhood Chain Testnet in two steps.",
   subtitleDetail:
-    "Name it, write the commitment, and launch. The commitment's hash goes on-chain with the token, and any agent can read the launch over MCP.",
+    "Name it and launch. Add a commitment if you want one, and its hash goes on-chain with the token. Any agent can read the launch over MCP.",
   previewTitle: "Your token",
 } as const;
 
