@@ -1,25 +1,23 @@
 "use client";
 
-// Unused since the hero moved to a direct studio CTA; kept for a future waitlist relaunch.
-
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { WaitlistModal } from "@/components/home/WaitlistModal";
 
 export function WaitlistCta({
-  label = "Join the waitlist",
+  label = "Join waitlist",
   variant = "primary",
   size = "md",
   className,
   sourcePage,
   withArrow = false,
 }: {
-  label?: string;
+  label?: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
   className?: string;
-  /** Kept for lead attribution once the form is wired to a backend. */
+  /** Lead attribution, stored as `source_page` on the lead row. */
   sourcePage: string;
   withArrow?: boolean;
 }) {

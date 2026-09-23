@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { Check, X } from "lucide-react";
-import { track } from "@vercel/analytics";
+import { X } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
-import { inputClasses } from "@/components/ui/Input";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
+import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
+import { WAITLIST_COPY } from "@/content/waitlist";
 
-type Status = "idle" | "submitting" | "success" | "error";
-
+/**
+ * Modal shell around WaitlistForm. Opened from the nav, the hero and the
+ * sign-in page. The form itself is shared with the /waitlist page.
+ */
 export function WaitlistModal({
   open,
   onClose,
@@ -23,47 +23,10 @@ export function WaitlistModal({
   /** Lead attribution, stored as `source_page` on the lead row. */
   sourcePage: string;
 }) {
-  const [email, setEmail] = useState("");
-  const [website, setWebsite] = useState(""); // honeypot — humans never see it
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    // Fresh form every time the modal opens.
-    setEmail("");
-    setWebsite("");
-    setStatus("idle");
-    setErrorMessage(null);
-  }, [open]);
-
   useModalBehavior({ onClose, containerRef, active: open });
 
   if (!open) return null;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (status === "submitting") return;
-    setStatus("submitting");
-    setErrorMessage(null);
-    try {
-      const res = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "waitlist", email, sourcePage, website }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Request failed.");
-      }
-      track("lead_submitted", { kind: "waitlist", sourcePage });
-      setStatus("success");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
-      setStatus("error");
-    }
-  }
 
   // Portal to <body>: trigger containers may carry a transform (animate-fade-in-up
   // keeps one via fill forwards), which would otherwise trap position: fixed.
@@ -91,78 +54,18 @@ export function WaitlistModal({
 
         <div className="grid md:grid-cols-[1fr_240px]">
           <div className="p-6 md:p-7">
-            {status === "success" ? (
-              <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-300">
-                  <Check className="h-7 w-7" />
-                </div>
-                <h3 className="font-display text-xl font-semibold tracking-tight text-ink-50">
-                  You&apos;re on the list
-                </h3>
-                <p className="max-w-xs text-sm leading-relaxed text-ink-300">
-                  Thanks for signing up. We&apos;ll reach out as soon as early access opens.
-                </p>
-                <Button variant="secondary" size="sm" onClick={onClose}>
-                  Close
-                </Button>
-              </div>
-            ) : (
-              <>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-electric-400">
-                  Early access
-                </p>
-                <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink-50">
-                  Join the waitlist
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-300">
-                  Be first in line when the platform opens up. Drop your email and
-                  we&apos;ll let you know.
-                </p>
-
-                <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
-                  <label className="block space-y-1.5">
-                    <span className="text-xs font-medium text-ink-200">
-                      Email <span className="text-rose-400">*</span>
-                    </span>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@email.com"
-                      className={inputClasses}
-                    />
-                  </label>
-
-                  {/* Honeypot: hidden from humans, tempting to bots. */}
-                  <input
-                    type="text"
-                    name="website"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    className="absolute -left-[9999px] h-0 w-0 opacity-0"
-                  />
-
-                  {status === "error" && (
-                    <StatusChip tone="error" variant="block" role="alert">
-                      {errorMessage} Your email is still here — try again.
-                    </StatusChip>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
-                    <Button type="submit" disabled={status === "submitting"}>
-                      {status === "submitting" ? "Joining…" : "Join waitlist"}
-                    </Button>
-                    <p className="text-xs text-ink-500">
-                      No spam. We only use this to reach out.
-                    </p>
-                  </div>
-                </form>
-              </>
-            )}
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-electric-400">
+              {WAITLIST_COPY.kicker}
+            </p>
+            <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink-50">
+              {WAITLIST_COPY.title}
+            </h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-300">
+              {WAITLIST_COPY.modalIntro}
+            </p>
+            <div className="mt-5">
+              <WaitlistForm sourcePage={sourcePage} onClose={onClose} />
+            </div>
           </div>
 
           {/* Mascot pane (decorative) */}

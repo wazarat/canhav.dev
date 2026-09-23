@@ -15,9 +15,16 @@ export const SITE = {
 } as const;
 
 /** Primary nav links, rendered right-aligned before the Log In button. */
-export const NAV_LINKS: ReadonlyArray<{ label: string; href: string; soon?: boolean }> = [
+export const NAV_LINKS: ReadonlyArray<{
+  label: string;
+  href: string;
+  soon?: boolean;
+  /** Hidden below the sm breakpoint; the header has no menu, so phones get the essentials only. */
+  hideOnMobile?: boolean;
+}> = [
   { label: "Launch", href: "/launch" },
   { label: "Tokens", href: "/tokens" },
   { label: "Projects", href: "/projects" },
   { label: "Docs", href: SITE.docsUrl },
+  { label: "Waitlist", href: "/waitlist", hideOnMobile: true },
 ];

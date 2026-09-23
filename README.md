@@ -50,7 +50,7 @@ Clerk user id — no FK, no user data mirrored). One-time dashboard steps:
 - **Hero headline & subline**: `app/page.tsx`
 - **Section copy**: `components/home/ProductLines.tsx`, `components/home/BuiltForBuilders.tsx`
 - **Launchpad + ideation copy/limits**: `content/launch.ts`, `content/ideation.ts` (limits live in `lib/journey.ts` / `lib/ideation.ts`)
-- **Modals** (waitlist / contact): `components/home/WaitlistModal.tsx`, `components/home/ContactModal.tsx` — submissions are stubbed (`// TODO: wire to backend`)
+- **Waitlist and contact forms**: `content/waitlist.ts`, `components/waitlist/WaitlistForm.tsx`, `components/home/ContactModal.tsx`. Both post to `/api/leads` (Neon + Resend); waitlist leads are also mirrored into Clerk's waitlist for approval
 
 ## Deploy
 

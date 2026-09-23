@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AnalyticsSection } from "@/components/home/AnalyticsSection";
 import { BuiltForBuilders } from "@/components/home/BuiltForBuilders";
 import { ContactCta } from "@/components/home/ContactCta";
+import { WaitlistCta } from "@/components/home/WaitlistCta";
 import { HeroVideo } from "@/components/home/HeroVideo";
 import { Button } from "@/components/ui/Button";
 
@@ -64,24 +65,7 @@ export default function LandingPage() {
               on-chain versus what is merely stated.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <Button asChild>
-                <Link href="/studio">
-                  Log in
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </Link>
-              </Button>
+              <WaitlistCta sourcePage="home-hero" withArrow />
               <ContactCta variant="secondary" sourcePage="home-hero" />
             </div>
           </div>

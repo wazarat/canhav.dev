@@ -2,6 +2,10 @@
 
 **In development.** CanHav accounts use **Clerk**. Studio is wired for Clerk in the product codebase. Do not assume production keys and sign-in are configured for every environment yet.
 
+## Access is by waitlist
+
+Sign-up is not open. Join the waitlist at [canhav.com/waitlist](https://canhav.com/waitlist) (or the Join waitlist button on the homepage or sign-in page). Each request is reviewed and approved accounts receive an invitation email from Clerk with a link to create the account. Existing accounts sign in at `/studio` as before.
+
 ## What requires an account
 
 - Creating and editing Project and Token design drafts in studio (`/studio`)
