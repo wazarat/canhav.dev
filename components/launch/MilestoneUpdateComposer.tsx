@@ -51,6 +51,8 @@ export function MilestoneUpdateComposer({
   // Connect state (incl. the button) lives in EscrowActions right above this
   // component — the composer only appears once the creator is connected.
   if (!address || address.toLowerCase() !== creator.toLowerCase()) return null;
+  // No commitment means no milestones to post against.
+  if (milestoneTitles.length === 0) return null;
 
   async function post() {
     if (status.kind === "working") return;

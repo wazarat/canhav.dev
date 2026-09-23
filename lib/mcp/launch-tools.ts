@@ -22,6 +22,7 @@ import {
   type IndexedSale,
   type IndexedToken,
 } from "@/lib/indexer";
+import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
 import {
   errorResult,
@@ -140,12 +141,24 @@ async function linkedDesign(address: string) {
 }
 
 async function journeyBlock(token: IndexedToken) {
+  if (!hasCommitment(token.journeyHash)) {
+    return {
+      onChainHash: token.journeyHash,
+      committed: false,
+      stored: false,
+      verified: false,
+      doc: null,
+      milestoneUpdates: [],
+      note: "Launched without a commitment. No journey document, no milestones.",
+    };
+  }
   const [journey, updates] = await Promise.all([
     getVerifiedJourney(token.journeyHash),
     getVerifiedUpdates(token.address, token.creator),
   ]);
   return {
     onChainHash: token.journeyHash,
+    committed: true,
     stored: journey !== null,
     verified: journey?.verified ?? false,
     doc: journey?.doc ?? null,
@@ -268,11 +281,23 @@ export function registerLaunchTools(server: McpServer): void {
     async ({ address }) => {
       const token = await getToken(address);
       if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
+      if (!hasCommitment(token.journeyHash)) {
+        return jsonResult({
+          address: token.address,
+          onChainHash: token.journeyHash,
+          committed: false,
+          stored: false,
+          verified: false,
+          doc: null,
+          note: "This token was launched without a commitment.",
+        });
+      }
       const journey = await getVerifiedJourney(token.journeyHash);
       if (!journey) {
         return jsonResult({
           address: token.address,
           onChainHash: token.journeyHash,
+          committed: true,
           stored: false,
           verified: false,
           doc: null,
@@ -282,6 +307,7 @@ export function registerLaunchTools(server: McpServer): void {
       return jsonResult({
         address: token.address,
         onChainHash: token.journeyHash,
+        committed: true,
         stored: true,
         verified: journey.verified,
         doc: journey.doc,

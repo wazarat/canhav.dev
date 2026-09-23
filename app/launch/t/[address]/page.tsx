@@ -31,6 +31,7 @@ import {
   type IndexedPurchase,
   type IndexedVesting,
 } from "@/lib/indexer";
+import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
 import { publicClient } from "@/lib/publicClient";
 
@@ -106,8 +107,9 @@ export default async function TokenPage({
   const token = await getToken(address);
   if (!token) notFound();
 
+  const committed = hasCommitment(token.journeyHash);
   const [journey, vesting, escrows, sales, ammPool] = await Promise.all([
-    getVerifiedJourney(token.journeyHash),
+    committed ? getVerifiedJourney(token.journeyHash) : null,
     getVesting(token.address),
     getEscrows(token.address),
     getSales(token.address),
@@ -118,7 +120,7 @@ export default async function TokenPage({
     getVerifiedUpdates(token.address, token.creator),
     ammPool ? getRecentSwaps(ammPool.poolId) : null,
     // Only consulted when the hash isn't a v1 journey — the design-deploy path.
-    journey ? null : getSnapshot(token.journeyHash.toLowerCase()),
+    journey || !committed ? null : getSnapshot(token.journeyHash.toLowerCase()),
     ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
   ]);
   const purchases: Record<string, IndexedPurchase[]> = {};
@@ -365,6 +367,14 @@ export default async function TokenPage({
             slug={designSnapshot.doc.slug}
             summary={designSnapshot.doc.rationale.beyondDatabaseRow}
           />
+        </div>
+      ) : !committed ? (
+        <div className="mt-8">
+          <StatusChip tone="neutral" variant="block">
+            Launched without a commitment. This token recorded no journey
+            document, so there are no milestones to lock supply or schedule
+            sale proceeds against.
+          </StatusChip>
         </div>
       ) : (
         <div className="mt-8 space-y-4">

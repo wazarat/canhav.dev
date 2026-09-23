@@ -53,6 +53,15 @@ export function sortValue(value: unknown): unknown {
   return value;
 }
 
+/** The journeyHash a token records when it is launched without a commitment. */
+export const ZERO_JOURNEY_HASH =
+  "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
+
+/** False when the on-chain journeyHash is the zero hash (no commitment). */
+export function hasCommitment(journeyHash: string): boolean {
+  return /^0x[0-9a-fA-F]{64}$/.test(journeyHash) && journeyHash.toLowerCase() !== ZERO_JOURNEY_HASH;
+}
+
 export function canonicalizeJourney(doc: JourneyDoc): string {
   return JSON.stringify(sortValue(doc));
 }

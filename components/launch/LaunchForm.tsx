@@ -20,6 +20,7 @@ import {
   hashDescription,
   hashJourney,
   validateJourney,
+  ZERO_JOURNEY_HASH,
   type JourneyDoc,
   type JourneyMilestone,
 } from "@/lib/journey";
@@ -42,7 +43,7 @@ import { TokenPreviewCard } from "./TokenPreviewCard";
 import { useLaunchChain } from "./useLaunchChain";
 
 type ImageState = { file: File; previewUrl: string } | null;
-type Step = 1 | 2 | 3;
+type Step = 1 | 2;
 
 type FlowStatus =
   | { kind: "idle" }
@@ -152,6 +153,7 @@ export function LaunchForm({
   // Flow
   const [step, setStep] = useState<Step>(1);
   const [showOptional, setShowOptional] = useState(false);
+  const [commitmentOn, setCommitmentOn] = useState(false);
   const [status, setStatus] = useState<FlowStatus>({ kind: "idle" });
 
   const { isConnected, address, ensureChain } = useLaunchChain();
@@ -230,8 +232,10 @@ export function LaunchForm({
     supplyRationale: supplyRationale.trim(),
     milestones,
   };
-  // With a design commitment, the published design replaces the journey step.
-  const journeyProblem = designCommitment ? null : validateJourney(journeyDoc);
+  // A design commitment replaces the journey; without either, the launch
+  // records the zero hash and nothing is validated.
+  const journeyProblem =
+    designCommitment || !commitmentOn ? null : validateJourney(journeyDoc);
 
   async function launch() {
     if (status.kind === "working") return;
@@ -280,6 +284,8 @@ export function LaunchForm({
       let journeyHash: `0x${string}`;
       if (designCommitment) {
         journeyHash = designCommitment.snapshotHash;
+      } else if (!commitmentOn) {
+        journeyHash = ZERO_JOURNEY_HASH;
       } else {
         setStatus({ kind: "working", label: "Publishing journey…" });
         journeyHash = hashJourney(journeyDoc);
@@ -373,7 +379,9 @@ export function LaunchForm({
         <p className="mt-2 text-sm leading-relaxed text-ink-300">
           {designCommitment
             ? "The published design is committed on-chain via its snapshot hash."
-            : "The journey document is committed on-chain via its hash."}
+            : commitmentOn
+              ? "The journey document is committed on-chain via its hash."
+              : "Launched without a commitment."}
         </p>
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
         <div className="mt-6 text-left">
@@ -401,11 +409,11 @@ export function LaunchForm({
       <div className="glass rounded-2xl border border-ink-700/70 p-6 md:p-7">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {([1, 2, 3] as const).map((s) => (
+            {([1, 2] as const).map((s) => (
               <button
                 key={s}
                 type="button"
-                disabled={s === 2 && !step1Valid ? true : s === 3 && (!step1Valid || !!journeyProblem)}
+                disabled={s === 2 && (!step1Valid || !!journeyProblem)}
                 onClick={() => setStep(s)}
                 className={cn(
                   "rounded-full px-3 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40",
@@ -414,7 +422,7 @@ export function LaunchForm({
                     : "border border-ink-700/70 text-ink-400 hover:text-ink-200",
                 )}
               >
-                {s}. {s === 1 ? "Token" : s === 2 ? (designCommitment ? "Design" : "Commitment") : "Launch"}
+                {s}. {s === 1 ? "Token" : "Launch"}
               </button>
             ))}
           </div>
@@ -604,16 +612,59 @@ export function LaunchForm({
               ) : null}
             </div>
 
-            <div className="flex items-center justify-end border-t border-ink-800/70 pt-5">
-              <Button size="sm" disabled={!step1Valid} onClick={() => setStep(2)}>
-                Continue to {designCommitment ? "design" : "commitment"}
+            {!designCommitment ? (
+              <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
+                <label className="flex cursor-pointer items-center justify-between gap-3">
+                  <span>
+                    <span className="block text-sm font-medium text-ink-100">
+                      Add a commitment
+                    </span>
+                    <span className="mt-0.5 block text-xs text-ink-500">
+                      Why this token exists, the supply rationale and dated
+                      milestones. The hash goes on-chain with the token and can
+                      never be changed. Optional now, and needed later for
+                      milestone escrow and sale proceeds schedules.
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={commitmentOn}
+                    onChange={(e) => setCommitmentOn(e.target.checked)}
+                    className="h-4 w-4 accent-electric-500"
+                  />
+                </label>
+                {commitmentOn ? (
+                  <div className="mt-4">
+                    <JourneyFields
+                      why={why}
+                      supplyRationale={supplyRationale}
+                      milestones={milestones}
+                      onWhy={setWhy}
+                      onSupplyRationale={setSupplyRationale}
+                      onMilestones={setMilestones}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="flex items-center justify-between gap-3 border-t border-ink-800/70 pt-5">
+              <span className="text-xs text-ink-500">
+                {journeyProblem && (why || supplyRationale) ? journeyProblem : ""}
+              </span>
+              <Button
+                size="sm"
+                disabled={!step1Valid || !!journeyProblem}
+                onClick={() => setStep(2)}
+              >
+                Continue to launch
               </Button>
             </div>
           </div>
-        ) : step === 2 ? (
+        ) : (
           <div className="space-y-5">
             {designCommitment ? (
-              <>
+              <div className="space-y-4">
                 <p className="text-sm leading-relaxed text-ink-300">
                   This launch commits your published token design on-chain: the
                   factory records the design&apos;s snapshot hash, so the
@@ -640,41 +691,8 @@ export function LaunchForm({
                     and tamper-evident, not code.
                   </p>
                 </div>
-              </>
-            ) : (
-              <>
-            <p className="text-sm leading-relaxed text-ink-300">
-              The journey is your public commitment: why this token exists, why
-              the supply is what it is, and what happens next. Its hash goes
-              on-chain with the launch, so the document can never be quietly
-              rewritten.
-            </p>
-            <JourneyFields
-              why={why}
-              supplyRationale={supplyRationale}
-              milestones={milestones}
-              onWhy={setWhy}
-              onSupplyRationale={setSupplyRationale}
-              onMilestones={setMilestones}
-            />
-              </>
-            )}
-            <div className="flex items-center justify-between border-t border-ink-800/70 pt-5">
-              <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
-                Back
-              </Button>
-              <div className="flex items-center gap-3">
-                {journeyProblem && (why || supplyRationale) ? (
-                  <span className="text-xs text-ink-500">{journeyProblem}</span>
-                ) : null}
-                <Button size="sm" disabled={!!journeyProblem} onClick={() => setStep(3)}>
-                  Continue to launch
-                </Button>
               </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-5">
+            ) : null}
             <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4 text-sm">
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Token</span>
@@ -695,7 +713,9 @@ export function LaunchForm({
                 <span className="text-ink-100">
                   {designCommitment
                     ? `/t/${designCommitment.slug}, snapshot hash committed on-chain`
-                    : `${milestones.length} milestones, hash committed on-chain`}
+                    : commitmentOn
+                      ? `${milestones.length} milestones, hash committed on-chain`
+                      : "None"}
                 </span>
               </div>
               <div className="flex justify-between py-1">
@@ -718,9 +738,11 @@ export function LaunchForm({
               journeyHash:{" "}
               {designCommitment
                 ? designCommitment.snapshotHash
-                : journeyProblem
-                  ? "pending (complete the commitment)"
-                  : hashJourney(journeyDoc)}
+                : !commitmentOn
+                  ? "none (launched without a commitment)"
+                  : journeyProblem
+                    ? "pending (complete the commitment)"
+                    : hashJourney(journeyDoc)}
             </p>
 
             {status.kind === "error" ? (
@@ -730,7 +752,7 @@ export function LaunchForm({
             ) : null}
 
             <div className="flex items-center justify-between border-t border-ink-800/70 pt-5">
-              <Button variant="ghost" size="sm" onClick={() => setStep(2)}>
+              <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
                 Back
               </Button>
               <div className="flex items-center gap-3">
