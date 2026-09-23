@@ -102,5 +102,8 @@ event window so judges can verify it.
 - Sept 23, 2026. Own launches over MCP. Launching while signed in records the
   token against your account, so the `get_my_launches` tool lists it for your
   agent alongside any design-attached deploys.
+- Sept 23, 2026. Recent launches and My launches. A Recent launches page lists
+  every factory launch, and the signed-in studio lists your own launches with a
+  link to each token page.
 
 This list grows as work lands on the branch.
