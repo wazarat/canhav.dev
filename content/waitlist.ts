@@ -26,7 +26,6 @@ export const WAITLIST_COPY = {
     "We approve accounts in batches. Watch your inbox for a confirmation now and the invitation when your spot is ready.",
   errorSuffix: "Your details are still here, try again.",
   signInPrompt: "No account yet?",
-  navLogIn: "Log in",
   navButton: "Join waitlist",
   navButtonShort: "Waitlist",
 } as const;

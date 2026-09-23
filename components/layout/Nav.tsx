@@ -4,7 +4,6 @@ import { NavAuthButton } from "@/components/layout/NavAuthButton";
 import { Logo } from "@/components/ui/Logo";
 import { SoonBadge } from "@/components/ui/SoonBadge";
 import { NAV_LINKS } from "@/content/site";
-import { cn } from "@/lib/utils";
 
 export function Nav() {
   return (
@@ -17,10 +16,7 @@ export function Nav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={cn(
-                  "inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink-300 transition-colors hover:text-ink-50",
-                  link.hideOnMobile && "hidden sm:inline-flex",
-                )}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink-300 transition-colors hover:text-ink-50"
               >
                 {link.label}
                 {link.soon && <SoonBadge label="Soon" />}
