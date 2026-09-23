@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Check, ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import {
   BaseError,
   ContractFunctionRevertedError,
@@ -150,6 +150,7 @@ export function LaunchForm({
 
   // Flow
   const [step, setStep] = useState<Step>(1);
+  const [showOptional, setShowOptional] = useState(false);
   const [status, setStatus] = useState<FlowStatus>({ kind: "idle" });
 
   const { isConnected, address, ensureChain } = useLaunchChain();
@@ -362,14 +363,13 @@ export function LaunchForm({
   if (status.kind === "success") {
     return (
       <div className="glass mx-auto max-w-xl rounded-2xl border border-ink-700/70 p-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-300">
-          <Check className="h-7 w-7" />
-        </div>
+        <StatusChip tone="success" variant="pill">
+          Deployed on {LAUNCH_CHAIN.name}
+        </StatusChip>
         <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-ink-50">
           {name.trim()} is live
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-300">
-          Deployed on {LAUNCH_CHAIN.name}.{" "}
           {designCommitment
             ? "The published design is committed on-chain via its snapshot hash."
             : "The journey document is committed on-chain via its hash."}
@@ -410,7 +410,7 @@ export function LaunchForm({
                     : "border border-ink-700/70 text-ink-400 hover:text-ink-200",
                 )}
               >
-                {s}. {s === 1 ? "Details" : s === 2 ? (designCommitment ? "Design" : "Journey") : "Launch"}
+                {s}. {s === 1 ? "Token" : s === 2 ? (designCommitment ? "Design" : "Commitment") : "Launch"}
               </button>
             ))}
           </div>
@@ -469,29 +469,6 @@ export function LaunchForm({
               />
             </Field>
 
-            <Field
-              label="Description"
-              error={descriptionError}
-              hint={LAUNCH_FORM.description.hint}
-              counter={`${description.length}/${LAUNCH_FORM.description.max}`}
-            >
-              <TextArea
-                value={description}
-                maxLength={LAUNCH_FORM.description.max}
-                rows={3}
-                placeholder="A short description of the token"
-                className="resize-none"
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </Field>
-
-            <ImagePicker
-              previewUrl={image?.previewUrl ?? null}
-              fileName={image?.file.name ?? null}
-              onSelect={selectImage}
-              onClear={clearImage}
-            />
-
             <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
               <label className="flex cursor-pointer items-center justify-between gap-3">
                 <span>
@@ -544,6 +521,48 @@ export function LaunchForm({
               ) : null}
             </div>
 
+            <div className="rounded-xl border border-ink-700/60 bg-ink-950/50">
+              <button
+                type="button"
+                onClick={() => setShowOptional((v) => !v)}
+                aria-expanded={showOptional}
+                className="flex w-full items-center justify-between gap-3 p-4 text-left"
+              >
+                <span>
+                  <span className="block text-sm font-medium text-ink-100">Optional details</span>
+                  <span className="mt-0.5 block text-xs text-ink-500">
+                    Description, image, X profile and website. None of these are required to launch.
+                  </span>
+                </span>
+                <ChevronDown
+                  className={cn("h-4 w-4 shrink-0 text-ink-400 transition-transform", showOptional && "rotate-180")}
+                />
+              </button>
+              {showOptional ? (
+                <div className="space-y-5 border-t border-ink-800/70 p-4">
+            <Field
+              label="Description"
+              error={descriptionError}
+              hint={LAUNCH_FORM.description.hint}
+              counter={`${description.length}/${LAUNCH_FORM.description.max}`}
+            >
+              <TextArea
+                value={description}
+                maxLength={LAUNCH_FORM.description.max}
+                rows={3}
+                placeholder="A short description of the token"
+                className="resize-none"
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </Field>
+
+            <ImagePicker
+              previewUrl={image?.previewUrl ?? null}
+              fileName={image?.file.name ?? null}
+              onSelect={selectImage}
+              onClear={clearImage}
+            />
+
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="X profile" error={xHandleError}>
                 <div
@@ -577,9 +596,13 @@ export function LaunchForm({
               </Field>
             </div>
 
+                </div>
+              ) : null}
+            </div>
+
             <div className="flex items-center justify-end border-t border-ink-800/70 pt-5">
               <Button size="sm" disabled={!step1Valid} onClick={() => setStep(2)}>
-                Next: Journey
+                Continue to {designCommitment ? "design" : "commitment"}
               </Button>
             </div>
           </div>
@@ -641,7 +664,7 @@ export function LaunchForm({
                   <span className="text-xs text-ink-500">{journeyProblem}</span>
                 ) : null}
                 <Button size="sm" disabled={!!journeyProblem} onClick={() => setStep(3)}>
-                  Next: Launch
+                  Continue to launch
                 </Button>
               </div>
             </div>
@@ -664,7 +687,7 @@ export function LaunchForm({
                 </span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-ink-500">{designCommitment ? "Design" : "Journey"}</span>
+                <span className="text-ink-500">{designCommitment ? "Design" : "Commitment"}</span>
                 <span className="text-ink-100">
                   {designCommitment
                     ? `/t/${designCommitment.slug}, snapshot hash committed on-chain`
@@ -692,7 +715,7 @@ export function LaunchForm({
               {designCommitment
                 ? designCommitment.snapshotHash
                 : journeyProblem
-                  ? "pending (complete the journey)"
+                  ? "pending (complete the commitment)"
                   : hashJourney(journeyDoc)}
             </p>
 

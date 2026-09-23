@@ -37,4 +37,5 @@ field. Limits come from their single source of truth (e.g. `JOURNEY_LIMITS` in
 
 - `CHANGELOG.local.md` (gitignored, repo root): append an entry for completed
   plan work; read it at session start for current state. Newest entries first.
-- `/launch` and `/agents` are URL-only pages — intentionally unlinked from nav.
+- `/agents` is a URL-only page — intentionally unlinked from nav. `/launch` is the
+  Launch tab since 2026-09-23 (Singapore buildathon M6).

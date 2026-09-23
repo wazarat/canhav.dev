@@ -1,7 +1,6 @@
 /**
- * Config and validators for the hidden /launch page (testnet token launchpad).
- * The page is intentionally unlinked from navigation — URL-only access while
- * the launchpad is developed incrementally. Nothing here touches a network.
+ * Config and validators for the /launch page (testnet token launchpad), the
+ * Launch tab in the primary nav. Nothing here touches a network.
  */
 
 /** Chain metadata — single source for the hidden launchpad pages and the
@@ -95,10 +94,10 @@ export const LAUNCH_FORM = {
 
 export const LAUNCH_COPY = {
   kicker: "Launchpad",
-  title: "Ideate Token Launch",
-  subtitleLead: "Create a test token on Robinhood Chain testnet.",
+  title: "Launch a token",
+  subtitleLead: "Create a token on Robinhood Chain Testnet in three steps.",
   subtitleDetail:
-    "Fill in the details, write the journey, and launch. The journey's hash will build credibility as it is committed on-chain with the token.",
+    "Name it, write the commitment, and launch. The commitment's hash goes on-chain with the token, and any agent can read the launch over MCP.",
   previewTitle: "Your token",
 } as const;
 

@@ -6,10 +6,11 @@ import { ImagePlus, X } from "lucide-react";
 import { LAUNCH_FORM, validateImageFile } from "@/content/launch";
 
 /**
- * Local-only image picker: validates type/size and hands the parent an object
- * URL for preview. The file never leaves the browser — no upload, no IPFS yet.
- * The parent owns the object URL lifecycle (creation happens here, revocation
- * in the parent's cleanup) so the preview survives this component unmounting.
+ * Image picker for the launch form. Validates type and size and hands the
+ * parent an object URL for the preview. The file stays in the browser until
+ * the launch runs, when LaunchForm uploads it to /api/upload-image. The parent
+ * owns the object URL lifecycle (creation happens here, revocation in the
+ * parent's cleanup) so the preview survives this component unmounting.
  */
 export function ImagePicker({
   previewUrl,
@@ -58,7 +59,7 @@ export function ImagePicker({
           />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm text-ink-100">{fileName}</p>
-            <p className="text-xs text-ink-500">Preview only, not uploaded.</p>
+            <p className="text-xs text-ink-500">Uploaded when you launch.</p>
           </div>
           <button
             type="button"

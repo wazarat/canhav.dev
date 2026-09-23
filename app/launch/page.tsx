@@ -9,10 +9,10 @@ import {
 import { LAUNCH_COPY, LAUNCH_FORM } from "@/content/launch";
 import { getPublishedTokenDesignById } from "@/lib/ideation-db";
 
-// Intentionally unlinked from navigation: URL-only access while the
-// launchpad is developed incrementally.
 export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+  title: "Launch a token",
+  description:
+    "Launch a token on Robinhood Chain Testnet with an on-chain commitment that any agent can read over MCP.",
 };
 
 export const dynamic = "force-dynamic";

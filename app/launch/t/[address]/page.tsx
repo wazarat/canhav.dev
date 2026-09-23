@@ -80,7 +80,7 @@ async function getLiveVesting(v: IndexedVesting): Promise<LiveVesting | null> {
 }
 
 export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+  title: "Token launch",
 };
 
 export const dynamic = "force-dynamic";

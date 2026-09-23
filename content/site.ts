@@ -16,6 +16,7 @@ export const SITE = {
 
 /** Primary nav links, rendered right-aligned before the Log In button. */
 export const NAV_LINKS: ReadonlyArray<{ label: string; href: string; soon?: boolean }> = [
+  { label: "Launch", href: "/launch" },
   { label: "Tokens", href: "/tokens" },
   { label: "Projects", href: "/projects" },
   { label: "Docs", href: SITE.docsUrl },
