@@ -35,6 +35,7 @@ import {
   validateXHandle,
 } from "@/content/launch";
 
+import { AccountLink } from "./AccountLink";
 import { ConnectButton } from "./ConnectButton";
 import { ImagePicker } from "./ImagePicker";
 import { JourneyFields } from "./JourneyFields";
@@ -384,6 +385,7 @@ export function LaunchForm({
               : "Launched without a commitment."}
         </p>
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
+        <AccountLink tokenAddress={status.token.toLowerCase()} txHash={status.txHash} />
         <div className="mt-6 text-left">
           <McpConnectCard address={status.token.toLowerCase()} compact />
         </div>

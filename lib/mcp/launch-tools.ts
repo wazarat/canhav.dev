@@ -24,6 +24,7 @@ import {
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getLaunchesByOwner } from "@/lib/launches-db";
 import {
   errorResult,
   jsonResult,
@@ -465,29 +466,68 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "My launches",
       description:
-        "Deployed tokens attached to the authenticated user's CanHav token designs, each joined with its live launch record.",
+        "The authenticated user's own launches. Tokens launched while signed in to CanHav plus tokens attached to the user's token designs, each joined with its live launch record.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
       const userId = mcpUserId(ctx);
       if (!userId) return errorResult(AUTH_HINT);
-      const rows = await getMyTokenDesigns(userId);
-      if (rows === null) return errorResult(DB_HINT);
-      const deployed = rows.filter((r) => r.deployed_token_address);
-      const launches = await Promise.all(
-        deployed.map(async (r) => {
-          const address = r.deployed_token_address as string;
-          const token = await getToken(address);
-          return {
-            design: { id: r.id, slug: r.slug, status: r.status, name: r.draft_doc.name },
+      const [designs, recorded] = await Promise.all([
+        getMyTokenDesigns(userId),
+        getLaunchesByOwner(userId),
+      ]);
+      if (designs === null || recorded === null) return errorResult(DB_HINT);
+
+      type Entry = {
+        address: string;
+        source: "launch" | "design" | "both";
+        launchedAt: string | null;
+        creatorWallet: string | null;
+        launchTxHash: string | null;
+        design: { id: string; slug: string | null; status: string; name: string } | null;
+      };
+      const byAddress = new Map<string, Entry>();
+      for (const r of recorded) {
+        byAddress.set(r.token_address, {
+          address: r.token_address,
+          source: "launch",
+          launchedAt: r.created_at,
+          creatorWallet: r.creator_address,
+          launchTxHash: r.tx_hash,
+          design: null,
+        });
+      }
+      for (const r of designs) {
+        if (!r.deployed_token_address) continue;
+        const address = r.deployed_token_address.toLowerCase();
+        const design = { id: r.id, slug: r.slug, status: r.status, name: r.draft_doc.name };
+        const existing = byAddress.get(address);
+        if (existing) {
+          existing.source = "both";
+          existing.design = design;
+        } else {
+          byAddress.set(address, {
             address,
-            deployedAt: r.deployed_at,
-            deployedByWallet: r.deployed_by_wallet,
-            launchUrl: launchUrl(address),
+            source: "design",
+            launchedAt: r.deployed_at,
+            creatorWallet: r.deployed_by_wallet,
+            launchTxHash: null,
+            design,
+          });
+        }
+      }
+
+      const launches = await Promise.all(
+        [...byAddress.values()].map(async (entry) => {
+          const token = await getToken(entry.address);
+          return {
+            ...entry,
+            launchUrl: launchUrl(entry.address),
             launch: token ? summarizeToken(token) : null,
           };
         }),
       );
+      launches.sort((a, b) => (b.launchedAt ?? "").localeCompare(a.launchedAt ?? ""));
       return jsonResult({ count: launches.length, launches });
     },
   );

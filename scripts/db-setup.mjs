@@ -206,6 +206,25 @@ await sql`
   alter table launchpad.entity_links alter column created_by type text using created_by::text
 `;
 
+// Quick-launch ownership: links a deployed token to the Clerk account that
+// was signed in at launch time, so the MCP get_my_launches tool can list
+// launches that have no design record. creator_address is always the indexed
+// TokenLaunched creator (server-verified), never a client value.
+await sql`
+  create table if not exists launchpad.launches (
+    token_address text primary key check (token_address = lower(token_address)),
+    owner_id text not null,
+    creator_address text not null check (creator_address = lower(creator_address)),
+    tx_hash text check (tx_hash is null or char_length(tx_hash) = 66),
+    created_at timestamptz not null default now()
+  )
+`;
+
+await sql`
+  create index if not exists launches_owner_idx
+    on launchpad.launches (owner_id, created_at desc)
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

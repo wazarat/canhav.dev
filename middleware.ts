@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Clerk session detection, scoped to the routes that actually call auth():
- * the studio, the ideation/export APIs, and the MCP endpoint. Marketing,
+ * the studio, the ideation/export/launches APIs, and the MCP endpoint. Marketing,
  * /launch, /p, /t, /agents, the legacy APIs, and /.well-known/* stay
  * untouched. clerkMiddleware throws at request time without keys, so an
  * unconfigured deploy degrades to pass-through (pages show the config chip,
@@ -20,6 +20,7 @@ export const config = {
     "/studio/:path*",
     "/api/ideation/:path*",
     "/api/export/:path*",
+    "/api/launches/:path*",
     "/mcp/:path*",
   ],
 };
