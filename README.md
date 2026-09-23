@@ -96,5 +96,8 @@ event window so judges can verify it.
 - Sept 23, 2026. MCP connection card. Every token page and the launch success
   screen now show the exact commands to connect Claude Code to the CanHav MCP
   server and a ready-made prompt that reads that launch.
+- Sept 23, 2026. Optional commitment. The launch form is two steps. The journey
+  commitment is an opt-in box on the first step, and launches without one record
+  a zero hash that the token page and the MCP tools report honestly.
 
 This list grows as work lands on the branch.
