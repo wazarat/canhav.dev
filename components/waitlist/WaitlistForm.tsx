@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
 import { track } from "@vercel/analytics";
 
 import { Button } from "@/components/ui/Button";
@@ -70,7 +69,7 @@ export function WaitlistForm({
     return (
       <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 text-center">
         <StatusChip tone="success" variant="pill">
-          <Check className="h-3.5 w-3.5" aria-hidden /> Request received
+          Request received
         </StatusChip>
         <h3 className="font-display text-xl font-semibold tracking-tight text-ink-50">
           {WAITLIST_COPY.successTitle}
