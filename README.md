@@ -93,5 +93,8 @@ event window so judges can verify it.
 - Sept 23, 2026. Launch tab. The token launch flow is now the first tab in the
   nav instead of a hidden URL, with the required fields first and the optional
   details folded away. No launch questions were added or removed.
+- Sept 23, 2026. MCP connection card. Every token page and the launch success
+  screen now show the exact commands to connect Claude Code to the CanHav MCP
+  server and a ready-made prompt that reads that launch.
 
 This list grows as work lands on the branch.
