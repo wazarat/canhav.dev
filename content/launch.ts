@@ -92,6 +92,35 @@ export const LAUNCH_FORM = {
   },
 } as const;
 
+/**
+ * Copy and commands for the MCP connection card shown on launch surfaces.
+ * Every deployed launch is readable through the eight launch tools on the
+ * CanHav MCP server (lib/mcp/launch-tools.ts). URLs and shell commands are
+ * exact strings and must stay copy-paste safe.
+ */
+export const MCP_CONNECT = {
+  serverUrl: "https://www.canhav.com/mcp",
+  docsUrl: "https://docs.canhav.com/ai-and-ide/export-and-mcp",
+  installCommand: "curl -fsSL https://claude.ai/install.sh | bash",
+  addCommand: "claude mcp add --transport http canhav https://www.canhav.com/mcp",
+  title: "Read this launch from your agent",
+  intro:
+    "Every CanHav launch is readable over MCP. Connect once and ask your agent about the token, its commitment, sales and pools.",
+  steps: {
+    install: "Install Claude Code",
+    add: "Add the CanHav server",
+    ask: "Ask about this launch",
+    askAny: "Ask about launches",
+  },
+  promptFor: (address: string) =>
+    `Use the canhav get_launch tool for ${address} and summarize the commitment and its milestones.`,
+  promptAny: "Use the canhav list_launches tool and show the newest launches.",
+  desktopNote:
+    "The Claude desktop app can add the same server URL as a custom connector.",
+  docsLabel: "All fourteen tools in the docs",
+  landingPointer: "Every launch is readable over MCP.",
+} as const;
+
 export const LAUNCH_COPY = {
   kicker: "Launchpad",
   title: "Launch a token",

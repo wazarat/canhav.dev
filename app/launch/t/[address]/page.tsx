@@ -7,6 +7,7 @@ import { formatEther } from "viem";
 import { EscrowActions, type EscrowActionTranche } from "@/components/launch/EscrowActions";
 import { EscrowCard } from "@/components/launch/EscrowCard";
 import { JourneyCard } from "@/components/launch/JourneyCard";
+import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
 import { PoolActions, type PoolActionPool } from "@/components/launch/PoolActions";
 import { PoolCard } from "@/components/launch/PoolCard";
@@ -375,6 +376,8 @@ export default async function TokenPage({
           </StatusChip>
         </div>
       )}
+
+      <McpConnectCard address={token.address.toLowerCase()} className="mt-8" />
 
       <p className="mt-4 text-xs text-ink-500">
         Token fields are read from the on-chain TokenLaunched event via the

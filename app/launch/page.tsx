@@ -6,7 +6,7 @@ import {
   type LaunchPrefill,
   LaunchForm,
 } from "@/components/launch/LaunchForm";
-import { LAUNCH_COPY, LAUNCH_FORM } from "@/content/launch";
+import { LAUNCH_COPY, LAUNCH_FORM, MCP_CONNECT } from "@/content/launch";
 import { getPublishedTokenDesignById } from "@/lib/ideation-db";
 
 export const metadata: Metadata = {
@@ -78,6 +78,17 @@ export default async function LaunchPage({
           >
             Fees &amp; governance →
           </Link>
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-400">
+          {MCP_CONNECT.landingPointer}{" "}
+          <a
+            href={MCP_CONNECT.docsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-electric-300 transition-colors hover:text-electric-200"
+          >
+            How to connect →
+          </a>
         </p>
       </div>
 

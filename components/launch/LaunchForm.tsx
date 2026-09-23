@@ -37,6 +37,7 @@ import {
 import { ConnectButton } from "./ConnectButton";
 import { ImagePicker } from "./ImagePicker";
 import { JourneyFields } from "./JourneyFields";
+import { McpConnectCard } from "./McpConnectCard";
 import { TokenPreviewCard } from "./TokenPreviewCard";
 import { useLaunchChain } from "./useLaunchChain";
 
@@ -375,6 +376,9 @@ export function LaunchForm({
             : "The journey document is committed on-chain via its hash."}
         </p>
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
+        <div className="mt-6 text-left">
+          <McpConnectCard address={status.token.toLowerCase()} compact />
+        </div>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="sm">
             <Link href={`/launch/t/${status.token.toLowerCase()}`}>View token page</Link>
