@@ -90,5 +90,8 @@ event window so judges can verify it.
   journey, milestone updates, sale and pool status, governance, and the signed-in
   user's own launches. Shared `lib/journey-db.ts` so the launch page and the tools
   use one verification rule. Docs and the Tokens page copy updated to match.
+- Sept 23, 2026. Launch tab. The token launch flow is now the first tab in the
+  nav instead of a hidden URL, with the required fields first and the optional
+  details folded away. No launch questions were added or removed.
 
 This list grows as work lands on the branch.
