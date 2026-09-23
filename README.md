@@ -105,5 +105,9 @@ event window so judges can verify it.
 - Sept 23, 2026. Recent launches and My launches. A Recent launches page lists
   every factory launch, and the signed-in studio lists your own launches with a
   link to each token page.
+- Sept 23, 2026. Waitlist. Sign-up moves to admin approval. A waitlist form
+  (modal from the nav, hero and sign-in page, plus `/waitlist`) stores requests
+  beside For Teams leads and mirrors them into Clerk's waitlist for one-click
+  invitations.
 
 This list grows as work lands on the branch.
