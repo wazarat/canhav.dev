@@ -99,5 +99,8 @@ event window so judges can verify it.
 - Sept 23, 2026. Optional commitment. The launch form is two steps. The journey
   commitment is an opt-in box on the first step, and launches without one record
   a zero hash that the token page and the MCP tools report honestly.
+- Sept 23, 2026. Own launches over MCP. Launching while signed in records the
+  token against your account, so the `get_my_launches` tool lists it for your
+  agent alongside any design-attached deploys.
 
 This list grows as work lands on the branch.
