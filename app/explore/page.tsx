@@ -1,26 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
+import { BuildWithUsCards } from "@/components/home/BuildWithUsCards";
 import { TokensGrid } from "@/components/explore/TokensGrid";
 import { LAUNCH_COPY } from "@/content/launch";
 
 export const metadata: Metadata = {
-  title: "Recent launches",
-  description: "Every token launched through the CanHav factory on Robinhood Chain Testnet, newest first.",
+  title: "Explore launches",
+  description:
+    "Every token launched through the CanHav factory on Robinhood Chain Testnet, newest first.",
 };
 
 export const dynamic = "force-dynamic";
 
-/** Recent launches. Old `?view=projects` links still forward to /projects. */
-export default async function ExplorePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>;
-}) {
-  const { view } = await searchParams;
-  if (view === "projects") redirect("/projects");
-
+/** The launch board. Replaced /projects in the nav, and absorbed it below. */
+export default function ExplorePage() {
   return (
     <div className="container py-14 md:py-20">
       <div className="max-w-2xl">
@@ -41,6 +35,10 @@ export default async function ExplorePage({
 
       <div className="mt-10 md:mt-12">
         <TokensGrid />
+      </div>
+
+      <div className="mt-20 border-t border-ink-800/70 pt-16 md:mt-24 md:pt-20">
+        <BuildWithUsCards />
       </div>
     </div>
   );

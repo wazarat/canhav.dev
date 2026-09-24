@@ -8,10 +8,10 @@ Launches are indexed by a dedicated Ponder indexer so you can browse without sca
 
 | Path | Purpose |
 |------|---------|
-| `/launch/explore` | Indexed list of launched tokens |
+| `/explore` | Indexed list of launched tokens, with price and pool depth when a pool exists. The Explore tab in the nav |
 | `/launch/t/[address]` | Token detail: vesting, escrow, sales, AMM, journey updates |
 
-These routes are URL-only on the product site (not linked from main marketing nav). Docs are the public entry path.
+`/explore` is the Explore tab in the nav. `/launch/t/[address]` is reached from a card there or from a launch. `/projects` and the old `/launch/explore` both redirect to `/explore`.
 
 ## What the indexer sees
 

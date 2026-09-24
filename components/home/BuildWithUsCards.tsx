@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { Building2, Code2 } from "lucide-react";
 
 import { ContactCta } from "@/components/home/ContactCta";
 import { FeatureCard, FeatureSectionHeader } from "@/components/home/FeatureCard";
 import { Button } from "@/components/ui/Button";
-import { Building2, Code2 } from "lucide-react";
 
-export const metadata: Metadata = {
-  description:
-    "CanHav Research serves independent developers and enterprise teams building tokenization and agentic solutions.",
-};
+/**
+ * The two audience callouts that used to be the whole /projects page. They now
+ * close the Explore page, under the launch board. Kept as one component so the
+ * pair moves together if it is reused elsewhere.
+ */
 
 /** A build taking shape: indented code-like skeleton lines. */
 function DeveloperGraphic() {
@@ -61,12 +61,11 @@ function EnterpriseGraphic() {
   );
 }
 
-// The explore grid (components/explore/ProjectsGrid.tsx) returns here when
-// the Projects track opens; the component is kept on disk for that relaunch.
-export default function ProjectsPage() {
+export function BuildWithUsCards({ sourcePage = "explore-enterprise" }: { sourcePage?: string }) {
   return (
-    <div className="container py-14 md:py-20">
+    <div>
       <FeatureSectionHeader
+        as="h2"
         kicker="Who we build for"
         title="Two ways to build with CanHav"
         lead="Whether you ship alone or with a team, the path to a credible launch starts here."
@@ -91,7 +90,7 @@ export default function ProjectsPage() {
           graphic={<EnterpriseGraphic />}
           title="Enterprise Solutions"
           description="Tokenization and agentic solutions scoped to your business. Talk to us about your use case and we will explore it with you."
-          action={<ContactCta label="Contact us" sourcePage="projects-enterprise" />}
+          action={<ContactCta label="Contact us" sourcePage={sourcePage} />}
         />
       </div>
     </div>

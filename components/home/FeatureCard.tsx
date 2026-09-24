@@ -5,23 +5,27 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Centered section header for the marketing feature pages (/tokens, /projects).
+ * Centered section header for the marketing feature pages (/tokens) and for
+ * the closing section of /explore. Pass as="h2" when the page already has an
+ * h1 above it, which /explore does.
  */
 export function FeatureSectionHeader({
   kicker,
   title,
   lead,
+  as: Heading = "h1",
 }: {
   kicker: string;
   title: string;
   lead: string;
+  as?: "h1" | "h2";
 }) {
   return (
     <div className="text-center">
       <p className="kicker">{kicker}</p>
-      <h1 className="mx-auto mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.08] tracking-tight text-ink-50 md:text-5xl">
+      <Heading className="mx-auto mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.08] tracking-tight text-ink-50 md:text-5xl">
         {title}
-      </h1>
+      </Heading>
       <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-ink-300 md:text-lg">
         {lead}
       </p>

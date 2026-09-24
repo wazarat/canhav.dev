@@ -73,7 +73,7 @@ export default async function LaunchPage({
             Fees &amp; governance →
           </Link>{" "}
           <Link
-            href="/launch/explore"
+            href="/explore"
             className="text-electric-300 transition-colors hover:text-electric-200"
           >
             Recent launches →

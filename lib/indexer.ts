@@ -353,6 +353,27 @@ export async function getPool(
   return data?.pools.items[0] ?? null;
 }
 
+/**
+ * Every creator-authored pool, keyed by lowercase token address. One query for
+ * a whole board, where getPool would be one round trip per card. The caller
+ * supplies each token's creator so the same authorship filter applies.
+ */
+export async function getPools(): Promise<Map<string, IndexedPool> | null> {
+  const data = await query<{ pools: { items: IndexedPool[] } }>(
+    `{ pools(limit: 100) { items {
+      poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
+    } } }`,
+  );
+  if (!data) return null;
+  const byToken = new Map<string, IndexedPool>();
+  for (const pool of data.pools.items) {
+    // Keyed by token alone; the creator match happens at the call site, which
+    // is the only place that knows who launched the token.
+    byToken.set(`${pool.tokenAddress.toLowerCase()}:${pool.creator.toLowerCase()}`, pool);
+  }
+  return byToken;
+}
+
 export interface IndexedSwap {
   trader: string;
   ethToToken: boolean;

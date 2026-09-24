@@ -120,5 +120,8 @@ event window so judges can verify it.
   has its own endpoint at /mcp/p/<project id> whose seven tools are bound to
   that project and take no slug or address, with the connect command on the
   project's own page.
+- Sept 24, 2026. Explore tab. The launch board moves from an unlinked URL to the
+  Explore tab, replacing Projects in the nav. Cards gain price and pool depth in
+  ETH, and the two audience callouts from the old Projects page close the page.
 
 This list grows as work lands on the branch.

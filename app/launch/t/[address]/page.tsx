@@ -158,10 +158,10 @@ export default async function TokenPage({
   return (
     <div className="container max-w-3xl py-14 md:py-20">
       <Link
-        href="/tokens"
+        href="/explore"
         className="inline-flex items-center gap-1.5 text-sm text-ink-400 transition-colors hover:text-ink-100"
       >
-        <ArrowLeft className="h-4 w-4" /> All tokens
+        <ArrowLeft className="h-4 w-4" /> All launches
       </Link>
 
       <div className="mt-6 flex items-center gap-4">

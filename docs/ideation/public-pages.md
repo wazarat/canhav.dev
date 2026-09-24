@@ -1,6 +1,6 @@
 # Public pages
 
-**Available now.** Project pages live at `/p/[slug]`. Token design pages live at `/t/[slug]`. Explore under `/launch/explore` includes tabs for tokens, projects, and designs.
+**Available now.** Project pages live at `/p/[slug]`. Token design pages live at `/t/[slug]`. Launches are listed at `/explore`.
 
 ## Separate entities
 
