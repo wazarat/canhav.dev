@@ -370,7 +370,8 @@ export const STUDIO_TRACKS = {
   projects: {
     title: "Projects",
     description: "A published record of what you are building, token optional.",
-    note: "Coming soon. You can already ideate a project through Token Design.",
+    cta: "Start a project",
+    ctaWorking: "Creating a draft...",
   },
   agents: {
     title: "Agents Launch",

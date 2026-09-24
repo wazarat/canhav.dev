@@ -8,8 +8,10 @@ import { SignOutButton } from "@/components/studio/SignOutButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import {
+  type EntityLinkSummary,
   type ProjectRow,
   type TokenDesignRow,
+  getEntityLinks,
   getMyProjects,
   getMyTokenDesigns,
 } from "@/lib/ideation-db";
@@ -24,18 +26,52 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The link line under a row. A project shows the token design it is attached
+ * to, a design shows its project, and either shows the deployed token once one
+ * exists — that is what an agent pointed at the row can read.
+ */
+function LinkLine({ link, side }: { link: EntityLinkSummary; side: "project" | "design" }) {
+  const other = side === "project" ? link.designName : link.projectName;
+  const href =
+    side === "project" ? `/studio/token/${link.designId}` : `/studio/project/${link.projectId}`;
+  return (
+    <span>
+      {" · "}
+      <Link href={href} className="text-electric-300 transition-colors hover:text-electric-200">
+        {other}
+      </Link>
+      {link.deployedTokenAddress && (
+        <>
+          {" · "}
+          <Link
+            href={`/launch/t/${link.deployedTokenAddress}`}
+            className="text-electric-300 transition-colors hover:text-electric-200"
+          >
+            Token deployed
+          </Link>
+        </>
+      )}
+    </span>
+  );
+}
+
 function EntityList({
   title,
   rows,
   hrefBase,
   publicBase,
   empty,
+  links,
+  side,
 }: {
   title: string;
   rows: Array<ProjectRow | TokenDesignRow>;
   hrefBase: string;
   publicBase: string;
   empty: string;
+  links: Map<string, EntityLinkSummary>;
+  side: "project" | "design";
 }) {
   return (
     <section className="space-y-3">
@@ -44,38 +80,42 @@ function EntityList({
         <p className="text-sm text-ink-400">{empty}</p>
       ) : (
         <ul className="space-y-2">
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="glass flex items-center justify-between gap-3 rounded-xl border border-ink-800/70 px-4 py-3"
-            >
-              <div className="min-w-0">
-                <Link
-                  href={`${hrefBase}/${row.id}`}
-                  className="block truncate text-sm font-medium text-ink-50 transition-colors hover:text-electric-200"
-                >
-                  {row.draft_doc.name || "Untitled"}
-                </Link>
-                <p className="mt-0.5 text-xs text-ink-500">
-                  Updated {new Date(row.updated_at).toLocaleDateString("en-US")}
-                  {row.slug && row.status === "published" && (
-                    <>
-                      {" · "}
-                      <Link
-                        href={`${publicBase}/${row.slug}`}
-                        className="text-electric-300 transition-colors hover:text-electric-200"
-                      >
-                        {publicBase}/{row.slug}
-                      </Link>
-                    </>
-                  )}
-                </p>
-              </div>
-              <StatusChip tone={row.status === "published" ? "success" : "neutral"}>
-                {row.status === "published" ? "Published" : "Draft"}
-              </StatusChip>
-            </li>
-          ))}
+          {rows.map((row) => {
+            const link = links.get(row.id);
+            return (
+              <li
+                key={row.id}
+                className="glass flex items-center justify-between gap-3 rounded-xl border border-ink-800/70 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <Link
+                    href={`${hrefBase}/${row.id}`}
+                    className="block truncate text-sm font-medium text-ink-50 transition-colors hover:text-electric-200"
+                  >
+                    {row.draft_doc.name || "Untitled"}
+                  </Link>
+                  <p className="mt-0.5 text-xs text-ink-500">
+                    Updated {new Date(row.updated_at).toLocaleDateString("en-US")}
+                    {row.slug && row.status === "published" && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`${publicBase}/${row.slug}`}
+                          className="text-electric-300 transition-colors hover:text-electric-200"
+                        >
+                          {publicBase}/{row.slug}
+                        </Link>
+                      </>
+                    )}
+                    {link && <LinkLine link={link} side={side} />}
+                  </p>
+                </div>
+                <StatusChip tone={row.status === "published" ? "success" : "neutral"}>
+                  {row.status === "published" ? "Published" : "Draft"}
+                </StatusChip>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -119,10 +159,11 @@ export default async function StudioPage() {
     );
   }
 
-  const [projects, designs, launches] = await Promise.all([
+  const [projects, designs, launches, links] = await Promise.all([
     getMyProjects(user.id),
     getMyTokenDesigns(user.id),
     getMyLaunches(user.id),
+    getEntityLinks(user.id),
   ]);
 
   return (
@@ -152,6 +193,8 @@ export default async function StudioPage() {
               hrefBase="/studio/token"
               publicBase="/t"
               empty="No token designs yet. A design is what you're issuing; product optional."
+              links={links.byDesign}
+              side="design"
             />
             <EntityList
               title="Projects"
@@ -159,6 +202,8 @@ export default async function StudioPage() {
               hrefBase="/studio/project"
               publicBase="/p"
               empty="No projects yet. A project is what you're building; token optional."
+              links={links.byProject}
+              side="project"
             />
           </div>
         </div>

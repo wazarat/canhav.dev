@@ -113,5 +113,8 @@ event window so judges can verify it.
   total supply, and the card beside it lists the supply, the live launch fee, the
   paired asset and the trade fee, with launch window, graduation and liquidity
   marked soon because no contract backs them yet.
+- Sept 24, 2026. Projects in the studio. The Projects track card creates a draft
+  and opens its editor, the same way Token Design already did, and every studio
+  row now shows what it is linked to and whether a token has been deployed.
 
 This list grows as work lands on the branch.

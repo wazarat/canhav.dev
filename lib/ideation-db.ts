@@ -533,6 +533,62 @@ export async function getLinkedTokenDesign(projectId: string): Promise<TokenDesi
   return (rows[0] as TokenDesignRow) ?? null;
 }
 
+/**
+ * Every project ↔ token-design link an owner has, in one query, keyed both
+ * ways. The studio lists both tracks on one page, so per-row lookups would be
+ * an N+1 against a table that is one-to-one anyway.
+ */
+export interface EntityLinkSummary {
+  projectId: string;
+  projectName: string;
+  designId: string;
+  designName: string;
+  deployedTokenAddress: string | null;
+}
+
+export async function getEntityLinks(ownerId: string): Promise<{
+  byProject: Map<string, EntityLinkSummary>;
+  byDesign: Map<string, EntityLinkSummary>;
+}> {
+  const empty = { byProject: new Map(), byDesign: new Map() };
+  const sql = getDb();
+  if (!sql) return empty;
+  const rows = (await sql`
+    select
+      l.a_id as project_id,
+      l.b_id as design_id,
+      p.draft_doc->>'name' as project_name,
+      t.draft_doc->>'name' as design_name,
+      t.deployed_token_address
+    from launchpad.entity_links l
+    join launchpad.projects p on p.id = l.a_id
+    join launchpad.token_designs t on t.id = l.b_id
+    where l.a_type = 'project' and l.b_type = 'token_design'
+      and p.owner_id = ${ownerId}
+  `) as Array<{
+    project_id: string;
+    design_id: string;
+    project_name: string | null;
+    design_name: string | null;
+    deployed_token_address: string | null;
+  }>;
+
+  const byProject = new Map<string, EntityLinkSummary>();
+  const byDesign = new Map<string, EntityLinkSummary>();
+  for (const r of rows) {
+    const summary: EntityLinkSummary = {
+      projectId: r.project_id,
+      projectName: r.project_name || "Untitled",
+      designId: r.design_id,
+      designName: r.design_name || "Untitled",
+      deployedTokenAddress: r.deployed_token_address,
+    };
+    byProject.set(r.project_id, summary);
+    byDesign.set(r.design_id, summary);
+  }
+  return { byProject, byDesign };
+}
+
 export async function getLinkedProject(tokenDesignId: string): Promise<ProjectRow | null> {
   const sql = getDb();
   if (!sql) return null;

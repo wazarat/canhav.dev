@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The studio's three launch tracks as product cards, in launch order:
- * Token Design (live) → Projects → Agents Launch (both coming soon).
+ * Token Design and Projects (both live) → Agents Launch (coming soon).
  * Card shell follows the ProductLines conventions (glass, tinted visual
  * area, floating panel, bottom fade); graphics are purpose-built minis.
  */
@@ -160,26 +160,35 @@ function CardShell({
   );
 }
 
+/** Both live tracks create a blank draft the same way, then open its editor. */
+const TRACK_ROUTES = {
+  token: { api: "/api/ideation/token-designs", editor: "/studio/token" },
+  project: { api: "/api/ideation/projects", editor: "/studio/project" },
+} as const;
+
+type TrackKind = keyof typeof TRACK_ROUTES;
+
 export function StudioTrackCards() {
   const router = useRouter();
-  const [working, setWorking] = useState(false);
+  const [working, setWorking] = useState<TrackKind | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function createToken() {
-    setWorking(true);
+  async function createDraft(kind: TrackKind) {
+    setWorking(kind);
     setError(null);
     try {
-      const res = await fetch("/api/ideation/token-designs", {
+      const routes = TRACK_ROUTES[kind];
+      const res = await fetch(routes.api, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: "{}",
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Could not create a draft.");
-      router.push(`/studio/token/${body.id}`);
+      router.push(`${routes.editor}/${body.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create a draft.");
-      setWorking(false);
+      setWorking(null);
     }
   }
 
@@ -188,9 +197,9 @@ export function StudioTrackCards() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <button
           type="button"
-          onClick={createToken}
-          disabled={working}
-          aria-busy={working}
+          onClick={() => void createDraft("token")}
+          disabled={working !== null}
+          aria-busy={working === "token"}
           className="group glass w-full overflow-hidden rounded-2xl border border-ink-700/60 text-left transition-all duration-300 hover:-translate-y-1 hover:border-electric-500/50 hover:shadow-[0_30px_70px_-34px_rgba(61,123,255,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/70 disabled:cursor-wait disabled:opacity-80"
         >
           <CardShell
@@ -201,29 +210,38 @@ export function StudioTrackCards() {
             description={STUDIO_TRACKS.token.description}
             footer={
               <span className="inline-flex items-center gap-1 pt-1 text-sm font-medium text-electric-400 transition-colors group-hover:text-ink-50">
-                {working ? STUDIO_TRACKS.token.ctaWorking : STUDIO_TRACKS.token.cta}
+                {working === "token"
+                  ? STUDIO_TRACKS.token.ctaWorking
+                  : STUDIO_TRACKS.token.cta}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </span>
             }
           />
         </button>
 
-        <div className="glass overflow-hidden rounded-2xl border border-ink-800/70">
+        <button
+          type="button"
+          onClick={() => void createDraft("project")}
+          disabled={working !== null}
+          aria-busy={working === "project"}
+          className="group glass w-full overflow-hidden rounded-2xl border border-ink-700/60 text-left transition-all duration-300 hover:-translate-y-1 hover:border-neon-500/50 hover:shadow-[0_30px_70px_-34px_rgba(139,92,246,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-500/70 disabled:cursor-wait disabled:opacity-80"
+        >
           <CardShell
-            muted
             tint="neon"
-            icon={<FolderKanban className="h-4 w-4 text-ink-500" />}
-            badge={<SoonBadge accent="neon" />}
+            icon={<FolderKanban className="h-4 w-4 text-neon-400" />}
             graphic={<ProjectsGraphic />}
             title={STUDIO_TRACKS.projects.title}
             description={STUDIO_TRACKS.projects.description}
             footer={
-              <p className="pt-1 text-sm leading-relaxed text-ink-500">
-                {STUDIO_TRACKS.projects.note}
-              </p>
+              <span className="inline-flex items-center gap-1 pt-1 text-sm font-medium text-neon-400 transition-colors group-hover:text-ink-50">
+                {working === "project"
+                  ? STUDIO_TRACKS.projects.ctaWorking
+                  : STUDIO_TRACKS.projects.cta}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </span>
             }
           />
-        </div>
+        </button>
 
         <div className="glass overflow-hidden rounded-2xl border border-ink-800/70">
           <CardShell
