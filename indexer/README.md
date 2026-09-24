@@ -28,21 +28,52 @@ database costs a resync and nothing else.
 
 ### First deploy
 
+Run these one at a time, from `indexer/`. No trailing `#` comments on a command
+line: zsh does not treat those as comments, and flyctl receives them as extra
+arguments.
+
+Create the app first. `fly.toml` here already names it, and both `attach` and
+`deploy` read that name, so they fail with "app not found" if it does not exist.
+
 ```sh
-cd indexer
-fly launch --no-deploy            # or `fly apps create canhav-indexer`
+fly apps create canhav-indexer
+```
+
+Create the database. Choose `shared-cpu-1x` with **1GB**, not 256MB: Ponder
+opens a pool of up to 30 connections, and 30 Postgres backends will not fit in
+256MB. Take a **10GB** volume; the `ponder_sync` RPC cache is most of it.
+
+```sh
 fly postgres create --name canhav-indexer-db --initial-cluster-size 1
-fly postgres attach canhav-indexer-db   # sets DATABASE_URL as a secret
-fly secrets set PONDER_RPC_URL_46630="https://<your dedicated endpoint>"
+```
+
+Attach it. This creates a dedicated database user for the app and sets
+`DATABASE_URL` as a secret, which is what switches Ponder off PGlite. The
+superuser password printed by `create` is not needed after this.
+
+```sh
+fly postgres attach canhav-indexer-db
+```
+
+Set the RPC endpoint. A dedicated one is better, but the public default
+completed a full backfill fine (see the sync note below).
+
+```sh
+fly secrets set PONDER_RPC_URL_46630="https://rpc.testnet.chain.robinhood.com"
+```
+
+```sh
 fly deploy
 ```
 
-Then point the site at it and redeploy Vercel:
+`fly postgres create` prints a warning that unmanaged Postgres is unsupported
+and points at Managed Postgres. That is the $38/month product; declining it is
+deliberate here, for the reason above.
 
-```sh
-# Vercel project settings, Production and Preview
-INDEXER_URL=https://canhav-indexer.fly.dev
-```
+Then set this in the Vercel project's environment variables, for **Production
+and Preview**, and redeploy. It is a dashboard setting, not a shell command.
+
+    INDEXER_URL = https://canhav-indexer.fly.dev
 
 ### What is deliberate
 
