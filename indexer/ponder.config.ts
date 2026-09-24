@@ -17,11 +17,33 @@ import { TokenFactoryV3Abi } from "./abis/TokenFactoryV3Abi";
 // v3 (launch fee plumbing, 2026-08-02) is a SEPARATE contract entry: its
 // TokenLaunched gained launchFee/treasury params, which changes the event
 // signature (topic0), so v1/v2 and v3 cannot share one ABI's TokenLaunched.
+const PUBLIC_RPC = "https://rpc.testnet.chain.robinhood.com";
+
+/**
+ * `??` only falls back on null/undefined, so a secret that is set but empty
+ * (or whitespace) reaches ponder as "" and surfaces as a bare
+ * `BuildError: Invalid URL` at the config stage, with nothing naming the
+ * variable. Treat blank as unset and say so.
+ */
+function rpcUrl(): string {
+  const raw = process.env.PONDER_RPC_URL_46630?.trim();
+  if (!raw) return PUBLIC_RPC;
+  try {
+    new URL(raw);
+  } catch {
+    throw new Error(
+      `PONDER_RPC_URL_46630 is not a valid URL (received ${JSON.stringify(raw)}). ` +
+        `Unset it to fall back to ${PUBLIC_RPC}.`,
+    );
+  }
+  return raw;
+}
+
 export default createConfig({
   chains: {
     robinhoodTestnet: {
       id: 46630,
-      rpc: process.env.PONDER_RPC_URL_46630 ?? "https://rpc.testnet.chain.robinhood.com",
+      rpc: rpcUrl(),
     },
   },
   contracts: {
