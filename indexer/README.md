@@ -62,8 +62,19 @@ completed a full backfill fine (see the sync note below).
 fly secrets set PONDER_RPC_URL_46630="https://rpc.testnet.chain.robinhood.com"
 ```
 
+Deploy with HA off. `fly deploy` defaults to two machines for zero-downtime
+rollouts, which is wrong here: both would run `ponder start` against the same
+schema, Ponder gives schema ownership to one instance, and the other exits 1 and
+crash-loops. One machine is correct for a singleton indexer.
+
 ```sh
-fly deploy
+fly deploy --ha=false
+```
+
+If a deploy has already created two, drop back to one:
+
+```sh
+fly scale count 1 -a canhav-indexer
 ```
 
 `fly postgres create` prints a warning that unmanaged Postgres is unsupported
@@ -79,6 +90,9 @@ and Preview**, and redeploy. It is a dashboard setting, not a shell command.
 
 - **`auto_stop_machines = false`.** This is a continuous chain sync, not a
   request handler. Scaling to zero stops indexing.
+- **Exactly one machine.** Machine count is not expressible in `fly.toml`, so it
+  has to come from `--ha=false` at deploy time or `fly scale count 1`. Two
+  instances against one schema is a crash loop, not redundancy.
 - **The health check hits `/health`, never `/ready`.** `/health` returns 200 as
   soon as the server is up. `/ready` returns 503 until historical indexing
   finishes (`ponder/src/server/index.ts`), and a full backfill takes hours, so a
