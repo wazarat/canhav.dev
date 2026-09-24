@@ -23,7 +23,7 @@ Vercel values with `npx vercel env pull .env.local --environment=preview`.
 | Variable | Powers |
 | --- | --- |
 | `DATABASE_URL` | Neon Postgres — journeys + ideation records (`launchpad` schema only; one-time setup `node --env-file=.env.local scripts/db-setup.mjs`) |
-| `INDEXER_URL` | Launch indexer (Ponder, `indexer/`; hosted at canhav-indexer.onrender.com) |
+| `INDEXER_URL` | Launch indexer (Ponder, `indexer/`; deploy config in `indexer/fly.toml`) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Clerk accounts for `/studio`, export downloads, and the MCP server |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token images |
 | `DUNE_API_KEY` | Landing-page protocol analytics |
@@ -127,5 +127,8 @@ event window so judges can verify it.
   when the indexer is unreachable or has not caught up yet. It explains which of
   the two happened, keeps the nav, and offers the explorer. The chain name is
   gone from beside the connected wallet.
+- Sept 24, 2026. Indexer deploy config in the repo. The Ponder indexer ships
+  with a Dockerfile, a fly.toml and a documented env contract, so the host can
+  be rebuilt from the repository instead of from a dashboard.
 
 This list grows as work lands on the branch.

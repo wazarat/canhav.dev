@@ -13,12 +13,10 @@
     },
     {
       "name": "canhav-hosted-indexer",
-      "runtimeExecutable": "env",
+      "runtimeExecutable": "sh",
       "runtimeArgs": [
-        "INDEXER_URL=https://canhav-indexer.onrender.com",
-        "npm",
-        "run",
-        "dev"
+        "-c",
+        "INDEXER_URL=\"${INDEXER_URL:-https://canhav-indexer.fly.dev}\" npm run dev"
       ],
       "port": 3000,
       "autoPort": true
