@@ -27,10 +27,10 @@ import {
 import {
   LAUNCH_CHAIN,
   LAUNCH_FORM,
+  LAUNCH_SUPPLY,
   validateDescription,
   validateName,
   validateTicker,
-  validateVesting,
   validateWebsite,
   validateXHandle,
 } from "@/content/launch";
@@ -51,8 +51,6 @@ type FlowStatus =
   | { kind: "working"; label: string }
   | { kind: "error"; message: string }
   | { kind: "success"; token: string; txHash: string };
-
-const SUPPLY_MAX = 1_000_000_000_000; // 1T whole tokens
 
 function randomSalt(): `0x${string}` {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -103,8 +101,10 @@ function friendlyLaunchError(err: unknown): string {
 export interface LaunchPrefill {
   name: string;
   ticker: string;
-  supply: string;
-  vesting?: { percent: string; days: string; cliffDays: string };
+  /** The design document's committed total. Absent for a ground-up launch. */
+  supply?: string;
+  /** True when the design declares vesting cohorts the launch cannot apply. */
+  designVesting?: boolean;
 }
 
 /**
@@ -130,18 +130,11 @@ export function LaunchForm({
   // Step 1 — token details
   const [name, setName] = useState(prefill?.name ?? "");
   const [ticker, setTicker] = useState(prefill?.ticker ?? "");
-  const [supply, setSupply] = useState(prefill?.supply ?? "");
   const [description, setDescription] = useState("");
   const [xHandle, setXHandle] = useState("");
   const [website, setWebsite] = useState("");
   const [websiteError, setWebsiteError] = useState<string | undefined>(undefined);
   const [image, setImage] = useState<ImageState>(null);
-
-  // Step 1 — optional vesting
-  const [vestingOn, setVestingOn] = useState(Boolean(prefill?.vesting));
-  const [vestPercent, setVestPercent] = useState(prefill?.vesting?.percent ?? "20");
-  const [vestDays, setVestDays] = useState(prefill?.vesting?.days ?? "180");
-  const [cliffDays, setCliffDays] = useState(prefill?.vesting?.cliffDays ?? "30");
 
   // Step 2 — journey
   const [why, setWhy] = useState("");
@@ -198,31 +191,18 @@ export function LaunchForm({
   const tickerError = validateTicker(ticker);
   const descriptionError = validateDescription(description);
   const xHandleError = validateXHandle(xHandle);
-  const supplyNum = /^[0-9]+$/.test(supply) ? Number(supply) : NaN;
-  const supplyError =
-    supply === ""
-      ? undefined
-      : !Number.isInteger(supplyNum) || supplyNum < 1 || supplyNum > SUPPLY_MAX
-        ? `Whole number between 1 and ${SUPPLY_MAX.toLocaleString("en-US")}.`
-        : undefined;
-
-  const vestingNums = {
-    percent: Number(vestPercent),
-    durationDays: Number(vestDays),
-    cliffDays: Number(cliffDays),
-  };
-  const vestingError = vestingOn ? validateVesting(vestingNums) : undefined;
+  // Supply is not asked for. A ground-up launch mints LAUNCH_SUPPLY; a launch
+  // started from a published design keeps that document's total, because the
+  // number sits inside the snapshot hash going on-chain.
+  const totalSupply = prefill?.supply ? Number(prefill.supply) : LAUNCH_SUPPLY;
 
   const step1Valid =
     name.trim().length > 0 &&
     ticker.length > 0 &&
-    /^[0-9]+$/.test(supply) &&
     !nameError &&
     !tickerError &&
-    !supplyError &&
     !descriptionError &&
     !xHandleError &&
-    !vestingError &&
     !validateWebsite(website.trim());
 
   const journeyDoc: JourneyDoc = {
@@ -301,15 +281,16 @@ export function LaunchForm({
 
       // 3. Launch on-chain.
       setStatus({ kind: "working", label: "Confirm in your wallet…" });
-      const totalSupplyWei = BigInt(supply) * 10n ** 18n;
-      const vestingParams = vestingOn
-        ? {
-            amount: (totalSupplyWei * BigInt(vestingNums.percent)) / 100n,
-            startTimestamp: 0n, // factory resolves 0 → block.timestamp
-            durationSeconds: BigInt(vestingNums.durationDays) * 86400n,
-            cliffSeconds: BigInt(vestingNums.cliffDays) * 86400n,
-          }
-        : { amount: 0n, startTimestamp: 0n, durationSeconds: 0n, cliffSeconds: 0n };
+      const totalSupplyWei = BigInt(totalSupply) * 10n ** 18n;
+      // Vesting is not offered on the form, so every launch mints the whole
+      // supply to the creator. content/launch.ts keeps the validator for the
+      // day the control comes back.
+      const vestingParams = {
+        amount: 0n,
+        startTimestamp: 0n,
+        durationSeconds: 0n,
+        cliffSeconds: 0n,
+      };
       const txHash = await writeContractAsync({
         abi: tokenFactoryAbi,
         address: LAUNCH_CHAIN.factoryAddress,
@@ -472,73 +453,6 @@ export function LaunchForm({
               </Field>
             </div>
 
-            <Field
-              label="Total supply"
-              required
-              error={supplyError}
-              hint="Whole tokens, minted to you at launch. 18 decimals on-chain."
-            >
-              <Input
-                inputMode="numeric"
-                value={supply}
-                placeholder="1000000"
-                className="tabular"
-                onChange={(e) => setSupply(e.target.value.replace(/[^0-9]/g, ""))}
-              />
-            </Field>
-
-            <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
-              <label className="flex cursor-pointer items-center justify-between gap-3">
-                <span>
-                  <span className="block text-sm font-medium text-ink-100">
-                    Vest part of the supply
-                  </span>
-                  <span className="mt-0.5 block text-xs text-ink-500">
-                    Locks a share in an on-chain vesting wallet, released
-                    linearly to you after an optional cliff.
-                  </span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={vestingOn}
-                  onChange={(e) => setVestingOn(e.target.checked)}
-                  className="h-4 w-4 accent-electric-500"
-                />
-              </label>
-
-              {vestingOn ? (
-                <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                  <Field label="Vested share" error={undefined} hint="% of supply">
-                    <Input
-                      inputMode="numeric"
-                      value={vestPercent}
-                      className="tabular"
-                      onChange={(e) => setVestPercent(e.target.value.replace(/[^0-9]/g, ""))}
-                    />
-                  </Field>
-                  <Field label="Duration" error={undefined} hint="days">
-                    <Input
-                      inputMode="numeric"
-                      value={vestDays}
-                      className="tabular"
-                      onChange={(e) => setVestDays(e.target.value.replace(/[^0-9]/g, ""))}
-                    />
-                  </Field>
-                  <Field label="Cliff" error={undefined} hint="days (0 = none)">
-                    <Input
-                      inputMode="numeric"
-                      value={cliffDays}
-                      className="tabular"
-                      onChange={(e) => setCliffDays(e.target.value.replace(/[^0-9]/g, ""))}
-                    />
-                  </Field>
-                  {vestingError ? (
-                    <p className="text-xs text-rose-400 sm:col-span-3">{vestingError}</p>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
             <div className="rounded-xl border border-ink-700/60 bg-ink-950/50">
               <button
                 type="button"
@@ -691,12 +605,19 @@ export function LaunchForm({
                     {designCommitment.snapshotHash}
                   </p>
                   <p className="mt-3 text-xs leading-relaxed text-ink-400">
-                    Only the supply and the team vesting schedule are enforced
-                    by the contract. Allocations, distribution, and everything
-                    else in the design are published commitments: snapshotted
-                    and tamper-evident, not code.
+                    Only the supply is enforced by the contract. Allocations,
+                    vesting, distribution and everything else in the design are
+                    published commitments, snapshotted and tamper-evident, not
+                    code.
                   </p>
                 </div>
+                {prefill?.designVesting ? (
+                  <StatusChip tone="neutral" variant="block">
+                    This design sets a team vesting schedule. Vesting is not
+                    applied at launch, so the whole supply mints to your wallet
+                    and the schedule stays a published commitment.
+                  </StatusChip>
+                ) : null}
               </div>
             ) : null}
             <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4 text-sm">
@@ -709,9 +630,7 @@ export function LaunchForm({
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Supply</span>
                 <span className="tabular text-ink-100">
-                  {vestingOn
-                    ? `${Number(supply || 0).toLocaleString("en-US")}, ${vestingNums.percent}% vested over ${vestingNums.durationDays}d (${vestingNums.cliffDays}d cliff), rest to your wallet`
-                    : `${Number(supply || 0).toLocaleString("en-US")} → your wallet`}
+                  {totalSupply.toLocaleString("en-US")} to your wallet
                 </span>
               </div>
               <div className="flex justify-between py-1">
@@ -788,6 +707,8 @@ export function LaunchForm({
           imageUrl={image?.previewUrl ?? null}
           xHandle={xHandle}
           website={websiteError ? "" : website.trim()}
+          totalSupply={totalSupply}
+          launchFeeWei={launchFee}
         />
       </div>
     </div>

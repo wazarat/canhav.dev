@@ -1,12 +1,34 @@
-import { Globe, ImageIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
-import { LAUNCH_COPY, LAUNCH_FORM } from "@/content/launch";
+import { Globe, ImageIcon } from "lucide-react";
+import { formatEther } from "viem";
+
+import { SoonBadge } from "@/components/ui/SoonBadge";
+import { LAUNCH_COPY, LAUNCH_FORM, LAUNCH_PARAMS } from "@/content/launch";
 
 /**
- * Live preview of the token being drafted. Pure props — parent owns state.
+ * Live preview of the token being drafted, plus the launch parameters that
+ * apply to every launch. Pure props — parent owns state, and the launch fee is
+ * read once by the form rather than twice.
+ *
  * Uses a plain <img>: the preview is a blob: object URL, which next/image
  * cannot optimize or render.
  */
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-ink-500">{label}</span>
+      <span className="text-ink-200">{children}</span>
+    </div>
+  );
+}
+
+function feeValue(launchFeeWei: bigint | undefined) {
+  if (launchFeeWei === undefined) return LAUNCH_PARAMS.feeLoading;
+  if (launchFeeWei === 0n) return LAUNCH_PARAMS.feeFree;
+  return `${formatEther(launchFeeWei)} ETH`;
+}
+
 export function TokenPreviewCard({
   name,
   ticker,
@@ -14,6 +36,8 @@ export function TokenPreviewCard({
   imageUrl,
   xHandle,
   website,
+  totalSupply,
+  launchFeeWei,
 }: {
   name: string;
   ticker: string;
@@ -21,8 +45,11 @@ export function TokenPreviewCard({
   imageUrl: string | null;
   xHandle: string;
   website: string;
+  totalSupply: number;
+  launchFeeWei: bigint | undefined;
 }) {
   const initial = name.trim().charAt(0).toUpperCase();
+  const L = LAUNCH_PARAMS.labels;
 
   return (
     <div className="card-surface glow-ring rounded-2xl border border-ink-700/70 p-6">
@@ -69,15 +96,26 @@ export function TokenPreviewCard({
         <p className="mt-3 text-sm text-ink-600">A short description of the token.</p>
       )}
 
-      <div className="mt-5 space-y-2 border-t border-ink-800/70 pt-4 text-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-ink-500">Network</span>
-          <span className="text-ink-200">Robinhood Chain testnet</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-ink-500">Deployment</span>
-          <span className="text-ink-200">Coming soon</span>
-        </div>
+      <div className="mt-5 space-y-2.5 border-t border-ink-800/70 pt-4 text-xs">
+        <Row label={L.totalSupply}>
+          <span className="tabular">{totalSupply.toLocaleString("en-US")}</span>
+        </Row>
+        <Row label={L.launchFee}>
+          <span className="tabular">{feeValue(launchFeeWei)}</span>
+        </Row>
+        <Row label={L.pairedWith}>{LAUNCH_PARAMS.pairedWith}</Row>
+        <Row label={L.tradeFee}>
+          <span className="tabular">{LAUNCH_PARAMS.tradeFee}</span>
+        </Row>
+        <Row label={L.launchWindow}>
+          <SoonBadge label={LAUNCH_PARAMS.soonLabel} />
+        </Row>
+        <Row label={L.graduation}>
+          <SoonBadge label={LAUNCH_PARAMS.soonLabel} />
+        </Row>
+        <Row label={L.liquidity}>
+          <SoonBadge label={LAUNCH_PARAMS.soonLabel} />
+        </Row>
       </div>
     </div>
   );

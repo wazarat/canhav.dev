@@ -32,16 +32,10 @@ async function loadDesign(designId: string | undefined): Promise<{
       name: doc.name.replace(LAUNCH_FORM.name.strip, "").slice(0, LAUNCH_FORM.name.max),
       ticker: doc.ticker,
       supply: String(Math.floor(doc.supply.total)),
-      // The factory vests one share to the creator — the design's team cohort
-      // maps onto it (months → days); other cohorts stay off-chain commitments.
-      vesting:
-        team && doc.supply.allocations.team > 0
-          ? {
-              percent: String(doc.supply.allocations.team),
-              days: String(Math.max(team.durationMonths * 30, 1)),
-              cliffDays: String(team.cliffMonths * 30),
-            }
-          : undefined,
+      // The form no longer offers vesting, so the whole supply mints to the
+      // creator. A design that declares a team cohort gets a notice on the
+      // Launch step rather than a silent on-chain schedule.
+      designVesting: Boolean(team && doc.supply.allocations.team > 0),
     },
     designCommitment: {
       id: row.id,

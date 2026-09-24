@@ -109,5 +109,9 @@ event window so judges can verify it.
   (modal from the nav, hero and sign-in page, plus `/waitlist`) stores requests
   beside For Teams leads and mirrors them into Clerk's waitlist for one-click
   invitations.
+- Sept 24, 2026. Launch parameters card. The form no longer asks for vesting or a
+  total supply, and the card beside it lists the supply, the live launch fee, the
+  paired asset and the trade fee, with launch window, graduation and liquidity
+  marked soon because no contract backs them yet.
 
 This list grows as work lands on the branch.

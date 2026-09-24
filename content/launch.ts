@@ -30,6 +30,47 @@ export const LAUNCH_CHAIN = {
   splitterAddress: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
 } as const;
 
+/**
+ * Supply the factory mints when the launcher does not bring their own number.
+ * Ground-up launches are fixed at this; a launch started from a published token
+ * design keeps that document's total, because the number is inside the snapshot
+ * hash committed on-chain.
+ */
+export const LAUNCH_SUPPLY = 1_000_000_000;
+
+/** Hard ceiling the factory tolerates, in whole tokens (1T). */
+export const LAUNCH_SUPPLY_MAX = 1_000_000_000_000;
+
+/**
+ * The launch parameters shown beside the form. Only rows backed by deployed
+ * code carry a value; the rest are marked soon rather than given a number the
+ * contracts would not honour.
+ *
+ * pairedWith  LaunchAMM pools are token/native-ETH. There is no WETH anywhere.
+ * tradeFee    LP_FEE_BPS = 30 in contracts/src/LaunchAMM.sol. A further 20 bps
+ *             protocol fee exists but is opt-in at pool creation, so it is not
+ *             part of the number every launch pays.
+ * launchWindow, graduation, liquidity  no snipe tax, no bonding curve and no
+ *             liquidity lock exist in contracts/src today.
+ */
+export const LAUNCH_PARAMS = {
+  pairedWith: "ETH",
+  tradeFee: "0.30%",
+  soon: ["launchWindow", "graduation", "liquidity"],
+  labels: {
+    totalSupply: "Total supply",
+    launchFee: "Launch fee",
+    pairedWith: "Paired with",
+    tradeFee: "Trade fee",
+    launchWindow: "Launch window",
+    graduation: "Graduation",
+    liquidity: "Liquidity",
+  },
+  feeLoading: "Reading fee",
+  feeFree: "Free",
+  soonLabel: "Soon",
+} as const;
+
 /** Vesting form constraints (client-side mirror of factory validation). */
 export const LAUNCH_VESTING = {
   percent: { min: 1, max: 100 },
