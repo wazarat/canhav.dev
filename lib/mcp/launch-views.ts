@@ -7,8 +7,7 @@ import {
   getEscrows,
   getPool,
   getSales,
-  getToken,
-  getTokens,
+  getTokenRead,
   getVesting,
   type IndexedEscrow,
   type IndexedSale,
@@ -158,14 +157,13 @@ export async function journeyBlock(token: IndexedToken) {
  * and a project-scoped server bound to that token both return exactly this.
  */
 export async function launchView(address: string): Promise<View<unknown>> {
-  const token = await getToken(address);
-  if (token === null) {
-    const probe = await getTokens();
-    return {
-      ok: false,
-      message: probe === null ? INDEXER_HINT : `No CanHav launch at ${address}.`,
-    };
-  }
+  // getTokenRead keeps "indexer down" apart from "no such token", so this no
+  // longer needs a second getTokens() call purely as an offline probe.
+  const read = await getTokenRead(address);
+  if (read.status === "unavailable") return { ok: false, message: INDEXER_HINT };
+  if (read.status === "empty")
+    return { ok: false, message: `No CanHav launch at ${address}.` };
+  const token = read.value;
   const now = Math.floor(Date.now() / 1000);
   const [journey, vesting, escrows, sales, pool, design] = await Promise.all([
     journeyBlock(token),

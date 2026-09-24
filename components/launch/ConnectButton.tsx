@@ -135,13 +135,15 @@ export function ConnectButton() {
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
+      {/* Only the wrong-network state earns a chip here, and it is the
+          affordance that switches. On the right network the chain name is
+          redundant beside the address; the review step and the token page
+          both state it where it is actually needed. */}
       {!onCorrectChain ? (
         <StatusChip tone="warning" onClick={() => void ensureChain()}>
           Wrong network: switch to {LAUNCH_CHAIN.name}
         </StatusChip>
-      ) : (
-        <StatusChip tone="success">{LAUNCH_CHAIN.name}</StatusChip>
-      )}
+      ) : null}
       <span className="rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 font-mono text-xs text-ink-200">
         {address ? shortAddress(address) : ""}
       </span>

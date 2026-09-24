@@ -36,6 +36,17 @@ const TOKEN_FIELDS =
   "descriptionHash journeyHash salt version launchFee treasury " +
   "blockNumber blockTimestamp txHash";
 
+/**
+ * A read that keeps the three outcomes apart. Most callers only need "did I
+ * get something", and `query` collapsing everything to null is fine for them.
+ * A page that would otherwise render a 404 needs to know whether the indexer
+ * was unreachable or genuinely had no row.
+ */
+export type IndexerRead<T> =
+  | { status: "ok"; value: T }
+  | { status: "empty" }
+  | { status: "unavailable" };
+
 async function query<T>(gql: string): Promise<T | null> {
   try {
     const res = await fetch(`${INDEXER_URL}/graphql`, {
@@ -111,13 +122,25 @@ export async function findTokensByNameOrSymbol(
   };
 }
 
-/** Single token by address (lowercase hex), or null if unknown/offline. */
-export async function getToken(address: string): Promise<IndexedToken | null> {
-  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;
+/**
+ * Single token by address, keeping "the indexer is down" apart from "there is
+ * no such token". A launch that just landed reads as empty for a few seconds
+ * while the indexer catches up, which is not the same as a bad address.
+ * A malformed address is "empty", never "unavailable".
+ */
+export async function getTokenRead(address: string): Promise<IndexerRead<IndexedToken>> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return { status: "empty" };
   const data = await query<{ token: IndexedToken | null }>(
     `{ token(address: "${address.toLowerCase()}") { ${TOKEN_FIELDS} } }`,
   );
-  return data?.token ?? null;
+  if (data === null) return { status: "unavailable" };
+  return data.token ? { status: "ok", value: data.token } : { status: "empty" };
+}
+
+/** Single token by address (lowercase hex), or null if unknown/offline. */
+export async function getToken(address: string): Promise<IndexedToken | null> {
+  const read = await getTokenRead(address);
+  return read.status === "ok" ? read.value : null;
 }
 
 export interface IndexedVesting {

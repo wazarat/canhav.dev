@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,7 +27,7 @@ import {
   getRecentPurchases,
   getRecentSwaps,
   getSales,
-  getToken,
+  getTokenRead,
   getVesting,
   type IndexedPurchase,
   type IndexedVesting,
@@ -81,11 +82,83 @@ async function getLiveVesting(v: IndexedVesting): Promise<LiveVesting | null> {
   }
 }
 
-export const metadata: Metadata = {
-  title: "Token launch",
-};
-
 export const dynamic = "force-dynamic";
+
+const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+/** Deduped so generateMetadata and the page share one indexer round trip. */
+const readToken = cache((address: string) => getTokenRead(address));
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ address: string }>;
+}): Promise<Metadata> {
+  const { address } = await params;
+  if (!ADDRESS_RE.test(address)) return { title: "Token launch" };
+  const read = await readToken(address);
+  // An address we cannot resolve still returns 200 so the page can explain
+  // itself, so keep those responses out of the index.
+  if (read.status !== "ok")
+    return { title: "Token launch", robots: { index: false, follow: false } };
+  return { title: `${read.value.name} (${read.value.symbol})` };
+}
+
+/**
+ * The page shell for a launch we cannot show yet. A bare 404 was wrong for
+ * both cases it used to cover: the indexer being unreachable, and a launch
+ * that landed seconds ago and has not been indexed. Keeping the shell means
+ * the nav, the back link and the address survive.
+ */
+function UnresolvedLaunch({
+  address,
+  tone,
+  message,
+}: {
+  address: string;
+  tone: "warning" | "info";
+  message: string;
+}) {
+  return (
+    <div className="container max-w-3xl py-14 md:py-20">
+      <Link
+        href="/explore"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-400 transition-colors hover:text-ink-100"
+      >
+        <ArrowLeft className="h-4 w-4" /> All launches
+      </Link>
+
+      <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-ink-50">
+        Token launch
+      </h1>
+
+      <div className="mt-5 max-w-xl">
+        <StatusChip tone={tone} variant="block">
+          {message}
+        </StatusChip>
+      </div>
+
+      <p className="mt-5 break-all font-mono text-xs text-ink-400">{address}</p>
+
+      <div className="mt-5 flex flex-wrap items-center gap-4 text-sm">
+        <Link
+          href={`/launch/t/${address}`}
+          className="text-electric-300 transition-colors hover:text-electric-200"
+        >
+          Refresh
+        </Link>
+        <a
+          href={`${LAUNCH_CHAIN.explorerUrl}/address/${address}`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-electric-300 transition-colors hover:text-electric-200"
+        >
+          View on the explorer <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function Row({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
@@ -104,8 +177,27 @@ export default async function TokenPage({
   params: Promise<{ address: string }>;
 }) {
   const { address } = await params;
-  const token = await getToken(address);
-  if (!token) notFound();
+  // A malformed address is the only genuine 404 here. Everything else is a
+  // state the page can explain.
+  if (!ADDRESS_RE.test(address)) notFound();
+  const read = await readToken(address);
+  if (read.status === "unavailable")
+    return (
+      <UnresolvedLaunch
+        address={address}
+        tone="warning"
+        message="The launch indexer is unreachable right now, so this token's details cannot be loaded. The token itself is unaffected. Try again shortly or open it on the explorer."
+      />
+    );
+  if (read.status === "empty")
+    return (
+      <UnresolvedLaunch
+        address={address}
+        tone="info"
+        message="This launch is not indexed yet. A token that just launched takes a moment to appear. Refresh in a few seconds, or open it on the explorer to confirm it is on-chain."
+      />
+    );
+  const token = read.value;
 
   const committed = hasCommitment(token.journeyHash);
   const [journey, vesting, escrows, sales, ammPool] = await Promise.all([

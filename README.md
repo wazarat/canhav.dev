@@ -123,5 +123,9 @@ event window so judges can verify it.
 - Sept 24, 2026. Explore tab. The launch board moves from an unlinked URL to the
   Explore tab, replacing Projects in the nav. Cards gain price and pool depth in
   ETH, and the two audience callouts from the old Projects page close the page.
+- Sept 24, 2026. Honest launch states. A token page no longer shows a bare 404
+  when the indexer is unreachable or has not caught up yet. It explains which of
+  the two happened, keeps the nav, and offers the explorer. The chain name is
+  gone from beside the connected wallet.
 
 This list grows as work lands on the branch.

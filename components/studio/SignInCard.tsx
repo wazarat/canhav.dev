@@ -10,9 +10,12 @@ import { WAITLIST_COPY } from "@/content/waitlist";
 /**
  * Clerk sign-in, hash-routed so no catch-all route is needed. Clerk reads
  * ?redirect_url= from the page URL automatically — this powers the export
- * download round-trip. Email-first by design: no wallet anywhere in the
- * studio. Accounts open in approved batches, so the card also offers the
- * waitlist to visitors without an invitation.
+ * download round-trip, and it still wins over the fallback below.
+ * fallbackRedirectUrl keeps everyone else on /studio; Clerk's own default is
+ * "/", and the nav has no Studio link until the session hydrates, so a
+ * successful sign-in used to look like a failure. Email-first by design: no
+ * wallet anywhere in the studio. Accounts open in approved batches, so the
+ * card also offers the waitlist to visitors without an invitation.
  */
 export function SignInCard() {
   if (!isAuthConfiguredClient()) {
@@ -25,7 +28,7 @@ export function SignInCard() {
   }
   return (
     <div className="max-w-md">
-      <SignIn routing="hash" />
+      <SignIn routing="hash" fallbackRedirectUrl="/studio" />
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <span className="text-sm text-ink-400">{WAITLIST_COPY.signInPrompt}</span>
         <WaitlistCta variant="outline" size="sm" sourcePage="sign-in" />
