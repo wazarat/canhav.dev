@@ -90,6 +90,13 @@ and Preview**, and redeploy. It is a dashboard setting, not a shell command.
 
 - **`auto_stop_machines = false`.** This is a continuous chain sync, not a
   request handler. Scaling to zero stops indexing.
+- **Size for the backfill, not just steady state.** A cold sync is CPU-bound:
+  on `shared-cpu-1x` (one shared vCPU) the load average sat above 2.0, the
+  event loop starved, the health check flapped and progress froze at 3.5% while
+  the RPC was still answering in ~250ms from that same machine. Burst with
+  `fly scale vm shared-cpu-4x --memory 2048` for a resync and drop back
+  afterwards; Fly bills per second, so an hour of the larger machine is cents.
+  Realtime indexing needs almost nothing (~3.5 blocks/sec on this chain).
 - **Exactly one machine.** Machine count is not expressible in `fly.toml`, so it
   has to come from `--ha=false` at deploy time or `fly scale count 1`. Two
   instances against one schema is a crash loop, not redundancy.
