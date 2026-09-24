@@ -72,45 +72,76 @@ function CopyLine({ label, text, mono = true }: { label: string; text: string; m
   );
 }
 
+/**
+ * What the card connects to. "any" is the generic launch card, "launch" binds
+ * the shared server's prompt to one token, "project" points at that project's
+ * own server at /mcp/p/<id>.
+ */
+export type McpTarget =
+  | { kind: "any" }
+  | { kind: "launch"; address: string; committed: boolean }
+  | { kind: "project"; id: string; name: string };
+
+function lines(target: McpTarget) {
+  if (target.kind === "project")
+    return {
+      title: MCP_CONNECT.projectTitle,
+      intro: MCP_CONNECT.projectIntro,
+      addLabel: MCP_CONNECT.steps.addProject,
+      addCommand: MCP_CONNECT.projectAddCommand(target.id, target.name),
+      askLabel: MCP_CONNECT.steps.askProject,
+      prompt: MCP_CONNECT.projectPrompt(target.id, target.name),
+      note: MCP_CONNECT.projectNote,
+    };
+  return {
+    title: MCP_CONNECT.title,
+    intro: MCP_CONNECT.intro,
+    addLabel: MCP_CONNECT.steps.add,
+    addCommand: MCP_CONNECT.addCommand,
+    askLabel: target.kind === "launch" ? MCP_CONNECT.steps.ask : MCP_CONNECT.steps.askAny,
+    prompt:
+      target.kind === "launch"
+        ? MCP_CONNECT.promptFor(target.address, target.committed)
+        : MCP_CONNECT.promptAny,
+    note: MCP_CONNECT.desktopNote,
+  };
+}
+
 export function McpConnectCard({
-  address,
-  committed = true,
+  target = { kind: "any" },
   compact = false,
   className,
 }: {
-  /** Lowercase token address. Omit for a generic card. */
-  address?: string;
-  /** False for a launch that recorded the zero journey hash. */
-  committed?: boolean;
+  /** Which server and which prompt. Defaults to the generic launch card. */
+  target?: McpTarget;
   /** Only the add command and the prompt, for the launch success screen. */
   compact?: boolean;
   className?: string;
 }) {
-  const prompt = address ? MCP_CONNECT.promptFor(address, committed) : MCP_CONNECT.promptAny;
-  const askLabel = address ? MCP_CONNECT.steps.ask : MCP_CONNECT.steps.askAny;
+  const l = lines(target);
 
   return (
     <div className={cn("glass rounded-2xl border border-ink-700/70 p-5 md:p-6", className)}>
       <div className="flex items-center gap-2">
         <Cable className="h-4 w-4 text-neon-300" aria-hidden />
         <h3 className="font-display text-base font-semibold tracking-tight text-ink-50">
-          {MCP_CONNECT.title}
+          {l.title}
         </h3>
       </div>
       {!compact ? (
-        <p className="mt-2 text-sm leading-relaxed text-ink-300">{MCP_CONNECT.intro}</p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-300">{l.intro}</p>
       ) : null}
 
       <div className="mt-4 space-y-4">
         {!compact ? (
           <CopyLine label={MCP_CONNECT.steps.install} text={MCP_CONNECT.installCommand} />
         ) : null}
-        <CopyLine label={MCP_CONNECT.steps.add} text={MCP_CONNECT.addCommand} />
-        <CopyLine label={askLabel} text={prompt} mono={false} />
+        <CopyLine label={l.addLabel} text={l.addCommand} />
+        <CopyLine label={l.askLabel} text={l.prompt} mono={false} />
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-ink-500">
-        {MCP_CONNECT.desktopNote}{" "}
+        {l.note}{" "}
         <a
           href={MCP_CONNECT.docsUrl}
           target="_blank"

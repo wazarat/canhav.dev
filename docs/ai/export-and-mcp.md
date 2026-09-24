@@ -51,6 +51,28 @@ These read the same launch indexer and journey tables as the launch pages, so an
 
 Every launch tool returns an error result with a retry hint when the indexer is unreachable, and a validation error for a malformed address.
 
+## Project-scoped servers
+
+Every project in the studio also has its own MCP server at `https://www.canhav.com/mcp/p/<project id>`. Its tools are bound to that one project, so none of them takes a slug or an address. Open the project in the studio and copy the `claude mcp add` command from the connect card, which names the server after the project so several can be added side by side.
+
+```bash
+claude mcp add --transport http canhav-<project> https://www.canhav.com/mcp/p/<project id>
+```
+
+Unlike the shared server, a scoped server is owner-only and requires OAuth on every request. The first call returns 401 with a `WWW-Authenticate` header, which is what makes the client open the browser flow.
+
+| Tool | Purpose |
+|------|---------|
+| `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
+| `get_project_status` | What is left before the project can publish and launch, ending in one next action |
+| `get_linked_token_design` | The token design linked to this project, with derived tokenomics and the deployed address when it has one |
+| `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
+| `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
+| `check_project` | Validate the project draft against the project rules and report the first problem |
+| `get_launch` | The token deployed from this project's design, in the same shape the shared server returns |
+
+Two notes on what the URL is and is not. Clerk issues access tokens for the origin rather than for a path, so a token minted at `/mcp` is accepted at `/mcp/p/<id>` as well. The scoped URL is a tool surface, not a secret and not a capability: ownership is checked on every call against the signed-in account. And because the URL keys on the project id rather than its slug, a brand-new draft is connectable before it is ever published.
+
 ## Status discipline
 
 This page reflects the tools registered in the repository. When a tool is added or its input changes, update the matching table in the same change.

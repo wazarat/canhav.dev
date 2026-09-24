@@ -116,5 +116,9 @@ event window so judges can verify it.
 - Sept 24, 2026. Projects in the studio. The Projects track card creates a draft
   and opens its editor, the same way Token Design already did, and every studio
   row now shows what it is linked to and whether a token has been deployed.
+- Sept 24, 2026. A separate MCP server per project. Every project in the studio
+  has its own endpoint at /mcp/p/<project id> whose seven tools are bound to
+  that project and take no slug or address, with the connect command on the
+  project's own page.
 
 This list grows as work lands on the branch.

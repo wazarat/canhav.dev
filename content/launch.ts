@@ -134,16 +134,36 @@ export const LAUNCH_FORM = {
 } as const;
 
 /**
- * Copy and commands for the MCP connection card shown on launch surfaces.
- * Every deployed launch is readable through the eight launch tools on the
- * CanHav MCP server (lib/mcp/launch-tools.ts). URLs and shell commands are
- * exact strings and must stay copy-paste safe.
+ * Copy and commands for the MCP connection card. Two mounts exist. The shared
+ * server at /mcp carries the launch and design tools; a project-scoped server
+ * at /mcp/p/<project id> carries tools bound to one project. URLs and shell
+ * commands are exact strings and must stay copy-paste safe.
+ *
+ * The base stays on www. SITE.url is the apex, and an apex to www redirect
+ * would break MCP clients that do not re-POST.
  */
+const MCP_BASE = "https://www.canhav.com";
+
+/**
+ * A Claude Code server name for one project. Must be unique on the user's
+ * machine and legal as a CLI argument, and drafts start with an empty name.
+ */
+export function mcpAlias(name: string, projectId: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24)
+    .replace(/-+$/, "");
+  return slug ? `canhav-${slug}` : `canhav-${projectId.slice(0, 8)}`;
+}
+
 export const MCP_CONNECT = {
-  serverUrl: "https://www.canhav.com/mcp",
+  baseUrl: MCP_BASE,
+  serverUrl: `${MCP_BASE}/mcp`,
   docsUrl: "https://docs.canhav.com/ai-and-ide/export-and-mcp",
   installCommand: "curl -fsSL https://claude.ai/install.sh | bash",
-  addCommand: "claude mcp add --transport http canhav https://www.canhav.com/mcp",
+  addCommand: `claude mcp add --transport http canhav ${MCP_BASE}/mcp`,
   title: "Read this launch from your agent",
   intro:
     "Every CanHav launch is readable over MCP. Connect once and ask your agent about the token, its commitment, sales and pools.",
@@ -152,15 +172,27 @@ export const MCP_CONNECT = {
     add: "Add the CanHav server",
     ask: "Ask about this launch",
     askAny: "Ask about launches",
+    addProject: "Add this project's server",
+    askProject: "Ask about this project",
   },
   promptFor: (address: string, committed: boolean) =>
     committed
       ? `Use the canhav get_launch tool for ${address} and summarize the commitment and its milestones.`
       : `Use the canhav get_launch tool for ${address} and summarize the token, its vesting, sales and pool.`,
   promptAny: "Use the canhav list_launches tool and show the newest launches.",
+  projectServerUrl: (projectId: string) => `${MCP_BASE}/mcp/p/${projectId}`,
+  projectAddCommand: (projectId: string, name: string) =>
+    `claude mcp add --transport http ${mcpAlias(name, projectId)} ${MCP_BASE}/mcp/p/${projectId}`,
+  projectPrompt: (projectId: string, name: string) =>
+    `Use the ${mcpAlias(name, projectId)} get_project_status tool and tell me what is left before this project can launch.`,
+  projectTitle: "Read this project from your agent",
+  projectIntro:
+    "This project has its own MCP server. Add it and your agent sees this project, the token design linked to it and the token it deployed. Nothing else.",
+  projectNote:
+    "The server is yours alone. Every tool checks that the project belongs to the signed-in account.",
   desktopNote:
     "The Claude desktop app can add the same server URL as a custom connector.",
-  docsLabel: "All fourteen tools in the docs",
+  docsLabel: "Every tool in the docs",
   landingPointer: "Every launch is readable over MCP.",
 } as const;
 

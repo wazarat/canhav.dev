@@ -4,7 +4,6 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 import { LAUNCH_CHAIN } from "@/content/launch";
-import { getTokenDesignByAddress } from "@/lib/ideation-db";
 import {
   formatSupply,
   getActiveSaleTokens,
@@ -17,14 +16,21 @@ import {
   getToken,
   getTokens,
   getTokensByCreator,
-  getVesting,
-  type IndexedEscrow,
-  type IndexedSale,
-  type IndexedToken,
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
-import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getVerifiedJourney } from "@/lib/journey-db";
 import { getMyLaunches } from "@/lib/my-launches";
+import {
+  INDEXER_HINT,
+  isoTime,
+  journeyBlock,
+  launchUrl,
+  launchView,
+  salePhase,
+  summarizeEscrow,
+  summarizeSale,
+  summarizeToken,
+} from "@/lib/mcp/launch-views";
 import {
   errorResult,
   jsonResult,
@@ -40,8 +46,6 @@ import {
  * only. Nothing here signs, submits, or stores anything.
  */
 
-const INDEXER_HINT =
-  "The launch indexer is unreachable right now. Retry in a moment, or open the launch page on canhav.com.";
 const AUTH_HINT =
   "Authorize this MCP server via OAuth (a free CanHav account) to list your own launches.";
 const DB_HINT = "Storage not configured.";
@@ -50,129 +54,6 @@ const ADDRESS = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}$/, "Expected a 0x address with 40 hex characters")
   .transform((v) => v.toLowerCase());
-
-function isoTime(unixSeconds: string | number): string {
-  return new Date(Number(unixSeconds) * 1000).toISOString();
-}
-
-function launchUrl(address: string): string {
-  return `https://www.canhav.com/launch/t/${address}`;
-}
-
-function explorerAddress(address: string): string {
-  return `${LAUNCH_CHAIN.explorerUrl}/address/${address}`;
-}
-
-function summarizeToken(t: IndexedToken) {
-  return {
-    address: t.address,
-    name: t.name,
-    symbol: t.symbol,
-    creator: t.creator,
-    totalSupply: formatSupply(t.totalSupply),
-    totalSupplyWei: t.totalSupply,
-    imageURI: t.imageURI || null,
-    xHandle: t.xHandle || null,
-    website: t.website || null,
-    journeyHash: t.journeyHash,
-    factoryVersion: t.version,
-    launchedAt: isoTime(t.blockTimestamp),
-    launchTxHash: t.txHash,
-    chainId: LAUNCH_CHAIN.chainId,
-    launchUrl: launchUrl(t.address),
-    explorerUrl: explorerAddress(t.address),
-  };
-}
-
-type SalePhase = "upcoming" | "open" | "closed" | "reclaimed";
-
-function salePhase(s: IndexedSale, now: number): SalePhase {
-  if (s.unsoldReclaimed) return "reclaimed";
-  if (now < Number(s.startTime)) return "upcoming";
-  if (now <= Number(s.endTime)) return "open";
-  return "closed";
-}
-
-function summarizeSale(s: IndexedSale, now: number) {
-  return {
-    saleId: s.saleId,
-    phase: salePhase(s, now),
-    priceWeiPerToken: s.price,
-    allocationWei: s.allocation,
-    soldWei: s.sold,
-    raisedWei: s.raised,
-    perWalletCapWei: s.perWalletCap,
-    startsAt: isoTime(s.startTime),
-    endsAt: isoTime(s.endTime),
-    unsoldReclaimed: s.unsoldReclaimed,
-    createdTxHash: s.txHash,
-    proceedsTranches: s.tranches.map((t) => ({
-      trancheIndex: t.trancheIndex,
-      milestoneIndex: t.milestoneIndex,
-      claimedAmountWei: t.claimedAmount,
-      claimedTxHash: t.claimedTxHash,
-    })),
-  };
-}
-
-function summarizeEscrow(e: IndexedEscrow) {
-  return {
-    escrowId: e.escrowId,
-    creator: e.creator,
-    tranches: e.tranches.map((t) => ({
-      trancheIndex: t.trancheIndex,
-      milestoneIndex: t.milestoneIndex,
-      amountWei: t.amount,
-      unlocksAt: isoTime(t.unlockTime),
-      claimed: t.claimed,
-      claimedAt: t.claimedAt ? isoTime(t.claimedAt) : null,
-      claimedTxHash: t.claimedTxHash,
-    })),
-  };
-}
-
-async function linkedDesign(address: string) {
-  const row = await getTokenDesignByAddress(address);
-  if (!row || row.status !== "published" || !row.slug) return null;
-  return {
-    slug: row.slug,
-    designUrl: `https://www.canhav.com/t/${row.slug}`,
-    snapshotHash: row.deployed_snapshot_hash,
-  };
-}
-
-async function journeyBlock(token: IndexedToken) {
-  if (!hasCommitment(token.journeyHash)) {
-    return {
-      onChainHash: token.journeyHash,
-      committed: false,
-      stored: false,
-      verified: false,
-      doc: null,
-      milestoneUpdates: [],
-      note: "Launched without a commitment. No journey document, no milestones.",
-    };
-  }
-  const [journey, updates] = await Promise.all([
-    getVerifiedJourney(token.journeyHash),
-    getVerifiedUpdates(token.address, token.creator),
-  ]);
-  return {
-    onChainHash: token.journeyHash,
-    committed: true,
-    stored: journey !== null,
-    verified: journey?.verified ?? false,
-    doc: journey?.doc ?? null,
-    milestoneUpdates: Object.entries(updates).map(([milestoneIndex, list]) => ({
-      milestoneIndex: Number(milestoneIndex),
-      updates: list.map((u) => ({
-        body: u.body,
-        postedAt: isoTime(u.postedAt),
-        txHash: u.txHash,
-      })),
-    })),
-  };
-}
 
 export function registerLaunchTools(server: McpServer): void {
   registerMeteredTool(
@@ -226,47 +107,8 @@ export function registerLaunchTools(server: McpServer): void {
       inputSchema: z.object({ address: ADDRESS }),
     },
     async ({ address }) => {
-      const token = await getToken(address);
-      if (token === null) {
-        const probe = await getTokens();
-        return errorResult(probe === null ? INDEXER_HINT : `No CanHav launch at ${address}.`);
-      }
-      const now = Math.floor(Date.now() / 1000);
-      const [journey, vesting, escrows, sales, pool, design] = await Promise.all([
-        journeyBlock(token),
-        getVesting(token.address),
-        getEscrows(token.address),
-        getSales(token.address),
-        getPool(token.address, token.creator),
-        linkedDesign(token.address),
-      ]);
-      return jsonResult({
-        token: summarizeToken(token),
-        journey,
-        vesting: vesting
-          ? {
-              walletAddress: vesting.walletAddress,
-              amountWei: vesting.amount,
-              startsAt: isoTime(vesting.startTimestamp),
-              cliffSeconds: Number(vesting.cliffSeconds),
-              durationSeconds: Number(vesting.durationSeconds),
-              txHash: vesting.txHash,
-            }
-          : null,
-        escrows: (escrows ?? []).map(summarizeEscrow),
-        sales: (sales ?? []).map((s) => summarizeSale(s, now)),
-        pool: pool
-          ? {
-              poolId: pool.poolId,
-              ethReserveWei: pool.ethReserve,
-              tokenReserveWei: pool.tokenReserve,
-              totalShares: pool.totalShares,
-              protocolFeeBps: pool.protocolFeeBps,
-              txHash: pool.txHash,
-            }
-          : null,
-        design,
-      });
+      const view = await launchView(address);
+      return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
   );
 

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { ProjectEditor } from "@/components/ideation/ProjectEditor";
+import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { getSessionUser } from "@/lib/auth";
 import { getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 
@@ -36,17 +37,23 @@ export default async function ProjectEditorPage({
       initialStatus={row.status}
       initialSlug={row.slug}
       linkPanel={
-        <LinkPanel
-          selfType="project"
-          selfId={row.id}
-          selfName={row.draft_doc.name}
-          linked={
-            linked
-              ? { id: linked.id, name: linked.draft_doc.name, status: linked.status, slug: linked.slug }
-              : null
-          }
-          candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
-        />
+        <>
+          <LinkPanel
+            selfType="project"
+            selfId={row.id}
+            selfName={row.draft_doc.name}
+            linked={
+              linked
+                ? { id: linked.id, name: linked.draft_doc.name, status: linked.status, slug: linked.slug }
+                : null
+            }
+            candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
+          />
+          <McpConnectCard
+            target={{ kind: "project", id: row.id, name: row.draft_doc.name }}
+            className="mt-6"
+          />
+        </>
       }
     />
   );

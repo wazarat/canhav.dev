@@ -369,8 +369,11 @@ export function LaunchForm({
         <AccountLink tokenAddress={status.token.toLowerCase()} txHash={status.txHash} />
         <div className="mt-6 text-left">
           <McpConnectCard
-            address={status.token.toLowerCase()}
-            committed={Boolean(designCommitment) || commitmentOn}
+            target={{
+              kind: "launch",
+              address: status.token.toLowerCase(),
+              committed: Boolean(designCommitment) || commitmentOn,
+            }}
             compact
           />
         </div>

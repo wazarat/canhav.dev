@@ -37,6 +37,8 @@ export function registerMeteredTool<Schema extends z.ZodType>(
   name: string,
   config: { title: string; description: string; inputSchema?: Schema },
   cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
+  /** scope names the mount, so a project-scoped server's calls are countable. */
+  opts?: { scope?: string },
 ): void {
   // The SDK's registerTool generics are stricter than we need; the runtime
   // contract (zod schema in, {content} out) is exactly what we pass.
@@ -53,7 +55,13 @@ export function registerMeteredTool<Schema extends z.ZodType>(
       result = await cb(args, ctx);
     } catch (err) {
       console.info(
-        JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: Date.now() - startedAt, threw: true }),
+        JSON.stringify({
+          mcpTool: name,
+          userId: mcpUserId(ctx),
+          ms: Date.now() - startedAt,
+          threw: true,
+          ...(opts?.scope ? { scope: opts.scope } : {}),
+        }),
       );
       throw err;
     }
@@ -63,6 +71,7 @@ export function registerMeteredTool<Schema extends z.ZodType>(
         userId: mcpUserId(ctx),
         ms: Date.now() - startedAt,
         isError: result.isError === true,
+        ...(opts?.scope ? { scope: opts.scope } : {}),
       }),
     );
     return result;
