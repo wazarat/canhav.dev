@@ -18,13 +18,27 @@ Predicted addresses must use the factory's own views. LibClone bytecode is not b
 
 | Field | Rules |
 |-------|--------|
-| Name | Letters, numbers, spaces. Max 32 characters. |
-| Ticker | Uppercase letters and numbers. Max 10 characters. |
-| Description | Max 256 characters. No links (`http`, `www.`, or bare domain paths). |
-| Image | PNG, JPG, WEBP, or GIF. Max 4 MB. Optional if blob upload is unavailable. |
-| X handle | Letters, numbers, underscores. Max 15 characters. Optional. |
+| Name | Letters, numbers, spaces. Max 32 characters. Required. |
+| Ticker | Uppercase letters and numbers. Max 10 characters. Required. |
+| Description | Max 256 characters. No links (`http`, `www.`, or bare domain paths). Required. |
+| Image | PNG, JPG, WEBP, or GIF. Max 4 MB. Required. |
+| X handle | Letters, numbers, underscores. Max 15 characters. A pasted `x.com/` link or `@handle` is reduced to the handle. Optional. |
+| Telegram | Letters, numbers, underscores. 5 to 32 characters. A pasted `t.me/` link or `@handle` is reduced to the username. Optional. Not committed on-chain. |
 | Website | Full `http(s)` URL. Optional. |
+| Developer buy | Optional ETH amount, 0.0001 to 10. Creates and seeds the creator's LaunchAMM pool right after launch. See [Developer buy](#developer-buy). |
 | Journey | Off-chain document whose hash is committed on-chain. See [Journey and credibility](journey-and-credibility.md). |
+
+## What is stored where
+
+The `TokenLaunched` event carries the name, ticker, supply, image URL, X handle, website and two hashes. The description **text** and the Telegram handle are stored in CanHav's database before the launch transaction is signed, keyed by `descriptionHash` and the creator address. The token page and the `get_launch` MCP tool show the description only when its recomputed keccak256 equals the hash in the event, so the text is tamper-evident even though it lives off-chain. Telegram has no on-chain hash and is shown as stored. The store is insert-only: the first write for a given hash and creator wins, so a public description cannot be used to overwrite a creator's Telegram link.
+
+## Developer buy
+
+There is no bonding curve, so nothing is bought from a curve. The ETH in the Developer buy field becomes the first liquidity of the creator's own LaunchAMM pool, paired with 80% of the supply from the creator's wallet. The creator holds the resulting liquidity shares and can withdraw them at any time; they are not locked.
+
+After the launch transaction confirms, the form runs three more transactions on LaunchAMM: `createPool` (opted in to the protocol fee), an ERC-20 `approve`, then `addLiquidity` with the ETH. The working label counts the confirmations, one of four to four of four. The opening price is the ETH amount divided by the tokens in the pool, and it is what Explore shows as Price once the indexer sees the deposit.
+
+If a pool step fails or is rejected in the wallet, the token is still live. The success screen says which step stopped and the token page's Trading pool card lets the creator create the pool or add liquidity from there.
 
 ## Fees and salts
 

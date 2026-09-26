@@ -15,11 +15,14 @@ import { LAUNCH_FORM, validateImageFile } from "@/content/launch";
 export function ImagePicker({
   previewUrl,
   fileName,
+  required,
   onSelect,
   onClear,
 }: {
   previewUrl: string | null;
   fileName: string | null;
+  /** Renders the same asterisk Field does. The parent enforces it. */
+  required?: boolean;
   onSelect: (file: File) => void;
   onClear: () => void;
 }) {
@@ -35,7 +38,9 @@ export function ImagePicker({
 
   return (
     <div className="space-y-1.5">
-      <span className="text-xs font-medium text-ink-200">Token image</span>
+      <span className="text-xs font-medium text-ink-200">
+        Token image {required ? <span className="text-rose-400">*</span> : null}
+      </span>
 
       <input
         ref={inputRef}

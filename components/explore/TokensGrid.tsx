@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { EmptyCard } from "@/components/explore/EmptyCard";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { formatCount } from "@/lib/format";
+import { formatCount, formatPriceEth } from "@/lib/format";
 import {
   formatSupply,
   getActiveSaleTokens,
@@ -22,12 +22,7 @@ function launchedOn(blockTimestamp: string): string {
 
 /** ETH per whole token, derived from reserves the same way PoolCard does. */
 function priceEth(pool: IndexedPool): string {
-  const tokenReserve = BigInt(pool.tokenReserve);
-  if (tokenReserve === 0n) return "n/a";
-  const wei = (BigInt(pool.ethReserve) * 10n ** 18n) / tokenReserve;
-  const eth = Number(wei) / 1e18;
-  if (eth === 0) return "n/a";
-  return eth < 0.000001 ? eth.toExponential(2) : eth.toPrecision(3);
+  return formatPriceEth(BigInt(pool.ethReserve), BigInt(pool.tokenReserve));
 }
 
 /** Pool depth in ETH. No USD anywhere: this chain has no price feed. */

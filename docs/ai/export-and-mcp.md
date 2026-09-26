@@ -41,7 +41,7 @@ These read the same launch indexer and journey tables as the launch pages, so an
 | Tool | Purpose |
 |------|---------|
 | `list_launches` | Newest-first tokens launched through the CanHav factory, with a flag for launches that have a sale open right now. Pass `creator` for one wallet |
-| `get_launch` | Everything about one deployed token by address. Metadata, verified journey, milestone updates, vesting, escrow tranches, sales, the creator's pool, and the linked design |
+| `get_launch` | Everything about one deployed token by address. Metadata, the description text and Telegram handle verified against the on-chain description hash, verified journey, milestone updates, vesting, escrow tranches, sales, the creator's pool, and the linked design |
 | `get_launch_journey` | The journey document with the on-chain hash, the recomputed hash, and whether they match |
 | `get_milestone_updates` | Creator-authored progress updates whose stored body matches the anchored hash, grouped by milestone |
 | `get_sale_status` | Allocation sales with phase (upcoming, open, closed, reclaimed), amounts, proceeds tranches, and recent purchases |

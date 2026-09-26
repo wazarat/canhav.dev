@@ -2,29 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatEther, parseEther } from "viem";
+import { erc20Abi, formatEther, parseEther } from "viem";
 import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { launchAmmAbi } from "@/lib/abi/launchAmm";
+import { describeTxError, writeWithGas } from "@/lib/tx";
 import { LAUNCH_CHAIN } from "@/content/launch";
 
 import { useLaunchChain } from "./useLaunchChain";
-
-const erc20ApproveAbi = [
-  {
-    type: "function",
-    name: "approve",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ type: "bool" }],
-  },
-] as const;
 
 export interface PoolActionPool {
   poolId: string;
@@ -42,6 +30,37 @@ type Status =
 
 const BPS = 10_000n;
 const LP_FEE_BPS = 30n;
+
+/** The pool contract's custom errors in plain language. */
+const KNOWN_AMM_ERRORS: Record<string, string> = {
+  PoolExists: "A pool for this token already exists.",
+  InsufficientInitialLiquidity: "The deposit is too small to open the pool.",
+  ZeroAmount: "The amount was zero.",
+  UnknownPool: "The pool could not be found.",
+  SlippageExceeded: "The price moved past the 1% slippage floor. Retry.",
+  InsufficientShares: "You do not hold that many liquidity shares.",
+  NothingAccrued: "There are no fees to claim.",
+  SafeERC20FailedOperation: "The token transfer failed. Check the approval and balance.",
+};
+
+function friendlyPoolError(err: unknown): string {
+  const d = describeTxError(err);
+  switch (d.kind) {
+    case "revert": {
+      if (d.errorName && KNOWN_AMM_ERRORS[d.errorName]) return KNOWN_AMM_ERRORS[d.errorName];
+      const what = d.errorName ?? d.reason;
+      return what ? `The pool contract rejected this (${what}).` : "The pool contract rejected this.";
+    }
+    case "rejected":
+      return "The wallet rejected the request. Nothing was sent.";
+    case "insufficientFunds":
+      return "Not enough ETH in this wallet for this transaction plus gas.";
+    case "walletInternal":
+      return `Your wallet could not prepare the transaction. ${d.detail.replace(/\.$/, "")}. Retry, and if it repeats update the wallet extension.`;
+    case "other":
+      return d.detail;
+  }
+}
 
 /**
  * Wallet side of the trading pool: swap in both directions (quotes mirror the
@@ -121,9 +140,8 @@ export function PoolActions({
       setStatus({ kind: "working", label });
       await fn();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message.split("\n")[0].slice(0, 200) : "Something went wrong.";
-      setStatus({ kind: "error", message });
+      console.error("pool action failed", err);
+      setStatus({ kind: "error", message: friendlyPoolError(err) });
     }
   }
 
@@ -135,14 +153,20 @@ export function PoolActions({
     setTimeout(() => router.refresh(), 4000);
   }
 
+  /** The wallet gets a gas limit estimated on our own RPC (see lib/tx.ts). */
+  function gasClient() {
+    if (!publicClient || !address) throw new Error("No RPC client.");
+    return { publicClient, account: address };
+  }
+
   async function approveIfNeeded(amount: bigint) {
-    const hash = await writeContractAsync({
-      abi: erc20ApproveAbi,
+    const { publicClient, account } = gasClient();
+    const hash = await writeWithGas(publicClient, account, writeContractAsync, {
+      abi: erc20Abi,
       address: tokenAddress as `0x${string}`,
       functionName: "approve",
       args: [LAUNCH_CHAIN.ammAddress, amount],
     });
-    if (!publicClient) throw new Error("No RPC client.");
     setStatus({ kind: "working", label: "Waiting for the approval…" });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     if (receipt.status !== "success") throw new Error("Approval reverted.");
@@ -150,7 +174,8 @@ export function PoolActions({
 
   function createPool() {
     void run("Confirm pool creation in your wallet…", async () => {
-      const hash = await writeContractAsync({
+      const { publicClient, account } = gasClient();
+      const hash = await writeWithGas(publicClient, account, writeContractAsync, {
         abi: launchAmmAbi,
         address: LAUNCH_CHAIN.ammAddress,
         functionName: "createPool",
@@ -228,7 +253,8 @@ export function PoolActions({
 
       await approveIfNeeded(tokenMax);
       setStatus({ kind: "working", label: "Confirm the deposit in your wallet…" });
-      const hash = await writeContractAsync({
+      const { publicClient, account } = gasClient();
+      const hash = await writeWithGas(publicClient, account, writeContractAsync, {
         abi: launchAmmAbi,
         address: LAUNCH_CHAIN.ammAddress,
         functionName: "addLiquidity",

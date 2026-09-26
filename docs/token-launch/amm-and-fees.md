@@ -16,6 +16,8 @@ For the full fee table (launch fee, caps, freeze-at-creation, zero supply take),
 | Protocol split | 70% project / 30% platform (`PROJECT_SHARE_BPS = 7000`), enforced in bytecode |
 | Fee destination | [FeeSplitter](contract-addresses.md) (never an EOA as the platform sink) |
 | Existing pools | Protocol fee rate **frozen at pool creation**; changing the default does not rewrite old pools |
+| First liquidity | The first `addLiquidity` sets the price and is open to anyone holding the token. Between `createPool` and that deposit, another holder could set the opening price. Accepted on testnet because a fresh launch has no holders but the creator, and the launch form runs the two calls back to back. |
+| Liquidity lock | None. Shares are withdrawable at any time; only `MINIMUM_LIQUIDITY` (1e3 shares) burns forever. |
 
 ## FeeSplitter
 

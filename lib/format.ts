@@ -61,3 +61,16 @@ export function formatAsOf(iso: string): string {
 export function formatUnit(value: number, unit: "usd" | "count"): string {
   return unit === "usd" ? formatUsdCompact(value) : formatCount(value);
 }
+
+/**
+ * ETH per whole token from pool reserves, or "n/a" when either side is empty.
+ * Shared by the explore board, the token page and the launch form's opening
+ * price so the number a launcher sees equals what the board shows later.
+ */
+export function formatPriceEth(ethReserveWei: bigint, tokenReserveWei: bigint): string {
+  if (tokenReserveWei === 0n) return "n/a";
+  const wei = (ethReserveWei * 10n ** 18n) / tokenReserveWei;
+  const eth = Number(wei) / 1e18;
+  if (eth === 0) return "n/a";
+  return eth < 0.000001 ? eth.toExponential(2) : eth.toPrecision(3);
+}

@@ -33,7 +33,7 @@
 | Launch fee | ETH paid to the factory on launch. Hard-capped in bytecode (`MAX_LAUNCH_FEE`); current documented testnet value 0.0002 ETH. |
 | userSalt | Creator-chosen salt. Combined with `msg.sender` so predicted addresses cannot be front-run by others. |
 | journeyHash | On-chain commitment to the full journey document. |
-| descriptionHash | On-chain commitment to the short form description field. |
+| descriptionHash | On-chain commitment to the short form description field. The text itself is stored off-chain and displayed only when it re-hashes to this value. |
 | Vesting wallet | Clone that locks a percent of supply for a beneficiary with duration and optional cliff. |
 | MilestoneEscrow | Admin-less singleton for milestone-dated token lockups. |
 | JourneyUpdates | Admin-less singleton that anchors content-addressed progress updates. |

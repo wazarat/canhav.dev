@@ -35,6 +35,7 @@ import {
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
 import { publicClient } from "@/lib/publicClient";
+import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
 const vestingWalletAbi = [
   {
@@ -207,9 +208,11 @@ export default async function TokenPage({
     getSales(token.address),
     getPool(token.address, token.creator),
   ]);
-  const [liveVesting, updates, swapData, designSnapshot, ...purchaseLists] = await Promise.all([
+  const [liveVesting, updates, metadata, swapData, designSnapshot, ...purchaseLists] = await Promise.all([
     vesting ? getLiveVesting(vesting) : null,
     getVerifiedUpdates(token.address, token.creator),
+    // The description text, only when it re-hashes to the on-chain value.
+    getVerifiedTokenMetadata(token.descriptionHash, token.creator),
     ammPool ? getRecentSwaps(ammPool.poolId) : null,
     // Only consulted when the hash isn't a v1 journey — the design-deploy path.
     journey || !committed ? null : getSnapshot(token.journeyHash.toLowerCase()),
@@ -257,10 +260,15 @@ export default async function TokenPage({
       </Link>
 
       <div className="mt-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-ink-700/60 bg-ink-900/80">
-          <span className="text-gradient-brand font-display text-2xl font-semibold">
-            {token.name.charAt(0).toUpperCase()}
-          </span>
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-ink-700/60 bg-ink-900/80">
+          {token.imageURI ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={token.imageURI} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-gradient-brand font-display text-2xl font-semibold">
+              {token.name.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight text-ink-50">
@@ -274,9 +282,24 @@ export default async function TokenPage({
               template v{token.version}
             </span>
             {token.xHandle ? (
-              <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300">
+              <a
+                href={`https://x.com/${token.xHandle}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300 transition-colors hover:text-ink-100"
+              >
                 x.com/{token.xHandle}
-              </span>
+              </a>
+            ) : null}
+            {metadata?.telegram ? (
+              <a
+                href={`https://t.me/${metadata.telegram}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300 transition-colors hover:text-ink-100"
+              >
+                t.me/{metadata.telegram}
+              </a>
             ) : null}
           </div>
         </div>
@@ -329,6 +352,7 @@ export default async function TokenPage({
             )
           }
         />
+        {metadata ? <Row label="Description" value={metadata.description} /> : null}
         <Row label="Description hash" mono value={token.descriptionHash} />
         <Row label="Journey hash" mono value={token.journeyHash} />
         <Row label="Salt" mono value={token.salt} />
@@ -486,8 +510,10 @@ export default async function TokenPage({
 
       <p className="mt-4 text-xs text-ink-500">
         Token fields are read from the on-chain TokenLaunched event via the
-        indexer. The journey document is stored off-chain; its keccak256 hash is
-        recomputed on every page load and compared to the hash in the event.
+        indexer. The description text and the journey document are stored
+        off-chain; each keccak256 hash is recomputed on every page load and
+        compared to the hash in the event. The Telegram link is stored with the
+        description and is not committed on-chain.
       </p>
     </div>
   );

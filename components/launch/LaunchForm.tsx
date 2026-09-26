@@ -2,20 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ExternalLink } from "lucide-react";
-import {
-  BaseError,
-  ContractFunctionRevertedError,
-  decodeEventLog,
-  formatEther,
-} from "viem";
-import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { ExternalLink } from "lucide-react";
+import { decodeEventLog, erc20Abi, formatEther, parseEther } from "viem";
+import { useAccount, useBalance, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { cn } from "@/lib/utils";
+import { launchAmmAbi } from "@/lib/abi/launchAmm";
 import { tokenFactoryAbi } from "@/lib/abi/tokenFactory";
+import { formatPriceEth } from "@/lib/format";
 import {
   hashDescription,
   hashJourney,
@@ -24,12 +21,20 @@ import {
   type JourneyDoc,
   type JourneyMilestone,
 } from "@/lib/journey";
+import { describeTxError, preflightWrite, writeWithGas, type TxParams } from "@/lib/tx";
 import {
   LAUNCH_CHAIN,
+  LAUNCH_DEV_BUY,
   LAUNCH_FORM,
+  LAUNCH_POOL,
+  LAUNCH_POOL_SHARE_PCT,
   LAUNCH_SUPPLY,
+  normalizeTelegram,
+  normalizeXHandle,
   validateDescription,
+  validateDevBuy,
   validateName,
+  validateTelegram,
   validateTicker,
   validateWebsite,
   validateXHandle,
@@ -46,24 +51,43 @@ import { useLaunchChain } from "./useLaunchChain";
 type ImageState = { file: File; previewUrl: string } | null;
 type Step = 1 | 2;
 
+type PoolStep = "createPool" | "approve" | "addLiquidity";
+
+/**
+ * What happened to the pool after the token launched. The token is live
+ * before any of this runs, so a pool failure is reported beside the token
+ * address, never instead of it.
+ */
+type PoolOutcome =
+  | { kind: "skipped" }
+  | { kind: "seeded"; poolId: bigint; ethWei: bigint; tokensWei: bigint; txHash: string }
+  | {
+      kind: "failed";
+      failedAt: PoolStep;
+      cause: "rejected" | "failed";
+      message: string;
+      /** Known once createPool confirmed; the token page can finish from here. */
+      poolId?: bigint;
+    };
+
 type FlowStatus =
   | { kind: "idle" }
-  | { kind: "working"; label: string }
+  | { kind: "working"; label: string; step?: number; total?: number }
   | { kind: "error"; message: string }
-  | { kind: "success"; token: string; txHash: string };
+  | { kind: "success"; token: string; txHash: string; pool: PoolOutcome };
 
 function randomSalt(): `0x${string}` {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return `0x${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Rough gas allowance on top of the launch fee for the preflight check. */
+/** Rough gas allowance per transaction on top of the launch fee for the preflight check. */
 const GAS_BUFFER_WEI = 500_000_000_000_000n; // 0.0005 ETH
 
 const fmtEth = (wei: bigint) =>
   `${Number(formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 })} ETH`;
 
-/** Factory custom errors and common wallet failures, in plain language. */
+/** Factory custom errors in plain language. */
 const KNOWN_FACTORY_ERRORS: Record<string, string> = {
   WrongLaunchFee:
     "The transaction sent the wrong launch fee. The fee may have changed since the page loaded; reload so it re-reads from the factory, then retry.",
@@ -78,23 +102,57 @@ const KNOWN_FACTORY_ERRORS: Record<string, string> = {
   EmptySymbol: "The ticker is empty.",
 };
 
+/** LaunchAMM custom errors the seeding steps can hit, in plain language. */
+const KNOWN_AMM_ERRORS: Record<string, string> = {
+  PoolExists: "A pool for this token already exists.",
+  InsufficientInitialLiquidity: "The developer buy is too small to open the pool.",
+  ZeroAmount: "The pool deposit amount was zero.",
+  UnknownPool: "The pool could not be found after it was created.",
+  SafeERC20FailedOperation: "The token transfer into the pool failed.",
+};
+
+const REJECTED_COPY = "The wallet rejected the request. Nothing was sent.";
+
+function walletInternalCopy(detail: string): string {
+  return `Your wallet could not prepare the transaction. ${detail.replace(/\.$/, "")}. Retry, and if it repeats update the wallet extension.`;
+}
+
 function friendlyLaunchError(err: unknown): string {
-  if (err instanceof BaseError) {
-    const revert = err.walk((e) => e instanceof ContractFunctionRevertedError);
-    if (revert instanceof ContractFunctionRevertedError) {
-      const errorName = revert.data?.errorName;
-      if (errorName && KNOWN_FACTORY_ERRORS[errorName]) return KNOWN_FACTORY_ERRORS[errorName];
-      if (revert.reason) return `The factory rejected the launch: ${revert.reason}`;
-      if (errorName) return `The factory rejected the launch (${errorName}).`;
+  const d = describeTxError(err);
+  switch (d.kind) {
+    case "revert": {
+      if (d.errorName && KNOWN_FACTORY_ERRORS[d.errorName]) return KNOWN_FACTORY_ERRORS[d.errorName];
+      const what = d.errorName ?? d.reason;
+      return what ? `The factory rejected the launch (${what}).` : "The factory rejected the launch.";
     }
-    const msg = err.shortMessage.toLowerCase();
-    if (msg.includes("insufficient funds") || msg.includes("exceeds the balance"))
+    case "rejected":
+      return REJECTED_COPY;
+    case "insufficientFunds":
       return `Not enough ETH in this wallet to cover the launch fee plus gas. Fund it on ${LAUNCH_CHAIN.name} and retry.`;
-    if (msg.includes("user rejected") || msg.includes("denied"))
-      return "The wallet rejected the request. Nothing was sent.";
-    return err.shortMessage.slice(0, 200);
+    case "walletInternal":
+      return walletInternalCopy(d.detail);
+    case "other":
+      return d.detail;
   }
-  return err instanceof Error ? err.message.split("\n")[0].slice(0, 220) : "Something went wrong.";
+}
+
+function friendlyPoolError(err: unknown): string {
+  const d = describeTxError(err);
+  switch (d.kind) {
+    case "revert": {
+      if (d.errorName && KNOWN_AMM_ERRORS[d.errorName]) return KNOWN_AMM_ERRORS[d.errorName];
+      const what = d.errorName ?? d.reason;
+      return what ? `The pool contract rejected the step (${what}).` : "The pool contract rejected the step.";
+    }
+    case "rejected":
+      return REJECTED_COPY;
+    case "insufficientFunds":
+      return "Not enough ETH left in this wallet for the pool deposit plus gas.";
+    case "walletInternal":
+      return walletInternalCopy(d.detail);
+    case "other":
+      return d.detail;
+  }
 }
 
 /** Values seeded from a published token design (?design=<id>). */
@@ -132,9 +190,11 @@ export function LaunchForm({
   const [ticker, setTicker] = useState(prefill?.ticker ?? "");
   const [description, setDescription] = useState("");
   const [xHandle, setXHandle] = useState("");
+  const [telegram, setTelegram] = useState("");
   const [website, setWebsite] = useState("");
   const [websiteError, setWebsiteError] = useState<string | undefined>(undefined);
   const [image, setImage] = useState<ImageState>(null);
+  const [devBuyEth, setDevBuyEth] = useState("");
 
   // Step 2 — journey
   const [why, setWhy] = useState("");
@@ -146,11 +206,11 @@ export function LaunchForm({
 
   // Flow
   const [step, setStep] = useState<Step>(1);
-  const [showOptional, setShowOptional] = useState(false);
   const [commitmentOn, setCommitmentOn] = useState(false);
   const [status, setStatus] = useState<FlowStatus>({ kind: "idle" });
 
   const { isConnected, address, ensureChain } = useLaunchChain();
+  const { connector } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
 
@@ -161,6 +221,11 @@ export function LaunchForm({
     abi: tokenFactoryAbi,
     address: LAUNCH_CHAIN.factoryAddress,
     functionName: "launchFee",
+  });
+  const { data: balance } = useBalance({
+    address,
+    chainId: LAUNCH_CHAIN.chainId,
+    query: { enabled: Boolean(address) },
   });
 
   const previewUrlRef = useRef<string | null>(null);
@@ -191,19 +256,45 @@ export function LaunchForm({
   const tickerError = validateTicker(ticker);
   const descriptionError = validateDescription(description);
   const xHandleError = validateXHandle(xHandle);
+  const telegramError = validateTelegram(telegram);
   // Supply is not asked for. A ground-up launch mints LAUNCH_SUPPLY; a launch
   // started from a published design keeps that document's total, because the
   // number sits inside the snapshot hash going on-chain.
   const totalSupply = prefill?.supply ? Number(prefill.supply) : LAUNCH_SUPPLY;
+  const totalSupplyWei = BigInt(totalSupply) * 10n ** 18n;
+
+  // Developer buy. The ETH seeds the creator's pool right after launch,
+  // paired with a fixed share of the supply. 0n means no pool step.
+  const devBuyFormatError = validateDevBuy(devBuyEth);
+  const devBuyWei = !devBuyEth || devBuyFormatError ? 0n : parseEther(devBuyEth);
+  const tokensForPool = (totalSupplyWei * BigInt(LAUNCH_POOL.supplyShareBps)) / 10_000n;
+  const txCount = devBuyWei > 0n ? BigInt(LAUNCH_POOL.steps.length) : 1n;
+  const neededWei =
+    launchFee === undefined ? undefined : launchFee + devBuyWei + GAS_BUFFER_WEI * txCount;
+  // Only once both the balance and the fee are known, so the Continue button
+  // does not flicker disabled on first paint.
+  const devBuyBalanceError =
+    !devBuyFormatError && devBuyWei > 0n && balance && neededWei !== undefined && balance.value < neededWei
+      ? "More than this wallet can cover after the launch fee and gas."
+      : undefined;
+  const devBuyError = devBuyFormatError ?? devBuyBalanceError;
+  const openingPrice = devBuyWei > 0n ? formatPriceEth(devBuyWei, tokensForPool) : null;
+  const balanceLine = balance
+    ? `${LAUNCH_DEV_BUY.balanceLabel} ${fmtEth(balance.value)}`
+    : LAUNCH_DEV_BUY.balanceUnavailable;
 
   const step1Valid =
     name.trim().length > 0 &&
     ticker.length > 0 &&
+    description.trim().length > 0 &&
+    image !== null &&
     !nameError &&
     !tickerError &&
     !descriptionError &&
     !xHandleError &&
-    !validateWebsite(website.trim());
+    !telegramError &&
+    !validateWebsite(website.trim()) &&
+    !devBuyError;
 
   const journeyDoc: JourneyDoc = {
     version: 1,
@@ -218,70 +309,137 @@ export function LaunchForm({
   const journeyProblem =
     designCommitment || !commitmentOn ? null : validateJourney(journeyDoc);
 
+  const seeding = devBuyWei > 0n;
+  const total = seeding ? LAUNCH_POOL.steps.length : undefined;
+  function working(label: string, step?: number) {
+    setStatus({ kind: "working", label, step: seeding ? step : undefined, total });
+  }
+
+  async function waitOk(hash: `0x${string}`, step?: number) {
+    if (!publicClient) throw new Error("No RPC client.");
+    working("Waiting for confirmation…", step);
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") throw new Error("Transaction reverted.");
+    return receipt;
+  }
+
+  /**
+   * createPool, approve, addLiquidity on the fresh token. Never throws: by
+   * now the token is live, so a failure here is reported beside the token
+   * address and the token page can finish the job from whichever step failed.
+   */
+  async function seedPool(token: `0x${string}`): Promise<PoolOutcome> {
+    let stepName: PoolStep = "createPool";
+    let poolId: bigint | undefined;
+    try {
+      if (!publicClient || !address) throw new Error("No RPC client.");
+      working(LAUNCH_POOL.labels.createPool, 2);
+      const createHash = await writeWithGas(publicClient, address, writeContractAsync, {
+        abi: launchAmmAbi,
+        address: LAUNCH_CHAIN.ammAddress,
+        functionName: "createPool",
+        args: [token, LAUNCH_POOL.optInProtocolFee],
+      });
+      const createReceipt = await waitOk(createHash, 2);
+      for (const log of createReceipt.logs) {
+        if (log.address.toLowerCase() !== LAUNCH_CHAIN.ammAddress.toLowerCase()) continue;
+        try {
+          const decoded = decodeEventLog({ abi: launchAmmAbi, ...log });
+          if (decoded.eventName === "PoolCreated") {
+            poolId = (decoded.args as { poolId: bigint }).poolId;
+            break;
+          }
+        } catch {
+          // not our event
+        }
+      }
+      if (poolId === undefined) {
+        // poolOf stores poolId + 1 so that 0 can mean "no pool".
+        const stored = await publicClient.readContract({
+          abi: launchAmmAbi,
+          address: LAUNCH_CHAIN.ammAddress,
+          functionName: "poolOf",
+          args: [token, address],
+        });
+        if (stored === 0n) throw new Error("The pool could not be found after it was created.");
+        poolId = stored - 1n;
+      }
+
+      stepName = "approve";
+      working(LAUNCH_POOL.labels.approve, 3);
+      const approveHash = await writeWithGas(publicClient, address, writeContractAsync, {
+        abi: erc20Abi,
+        address: token,
+        functionName: "approve",
+        args: [LAUNCH_CHAIN.ammAddress, tokensForPool],
+      });
+      await waitOk(approveHash, 3);
+
+      stepName = "addLiquidity";
+      working(LAUNCH_POOL.labels.addLiquidity, 4);
+      const addHash = await writeWithGas(publicClient, address, writeContractAsync, {
+        abi: launchAmmAbi,
+        address: LAUNCH_CHAIN.ammAddress,
+        functionName: "addLiquidity",
+        args: [poolId, tokensForPool],
+        value: devBuyWei,
+      });
+      await waitOk(addHash, 4);
+      return { kind: "seeded", poolId, ethWei: devBuyWei, tokensWei: tokensForPool, txHash: addHash };
+    } catch (err) {
+      console.error("pool seeding failed", stepName, err, connector?.id);
+      return {
+        kind: "failed",
+        failedAt: stepName,
+        poolId,
+        cause: describeTxError(err).kind === "rejected" ? "rejected" : "failed",
+        message: friendlyPoolError(err),
+      };
+    }
+  }
+
   async function launch() {
     if (status.kind === "working") return;
     try {
       if (!isConnected || !address) throw new Error("Connect a wallet first.");
+      if (!publicClient) throw new Error("No RPC client.");
 
       // Hard network guard — never sign on any chain but 46630.
-      setStatus({ kind: "working", label: "Checking network…" });
+      working("Checking network…");
       if (!(await ensureChain())) {
         throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
       }
 
       // Preflight: fail fast on missing fee data or an underfunded wallet,
-      // before any upload or journey publish happens.
-      if (launchFee === undefined) {
+      // before any upload or publish happens.
+      if (launchFee === undefined || neededWei === undefined) {
         throw new Error(
           "The launch fee could not be read from the factory. Check your connection, reload, and retry.",
         );
       }
-      if (publicClient) {
-        setStatus({ kind: "working", label: "Checking wallet balance…" });
-        const balance = await publicClient.getBalance({ address });
-        const needed = launchFee + GAS_BUFFER_WEI;
-        if (balance < needed) {
-          throw new Error(
-            `Not enough ETH to launch. This wallet holds ${fmtEth(balance)}, but launching needs the ${fmtEth(launchFee)} launch fee plus gas (about ${fmtEth(needed)} total). Fund the wallet on ${LAUNCH_CHAIN.name} and retry.`,
-          );
-        }
+      working("Checking wallet balance…");
+      const liveBalance = await publicClient.getBalance({ address });
+      if (liveBalance < neededWei) {
+        throw new Error(
+          seeding
+            ? `Not enough ETH to launch. This wallet holds ${fmtEth(liveBalance)}, but launching needs the ${fmtEth(launchFee)} launch fee, your ${fmtEth(devBuyWei)} developer buy and gas for ${LAUNCH_POOL.steps.length} transactions (about ${fmtEth(neededWei)} total). Fund the wallet on ${LAUNCH_CHAIN.name} and retry.`
+            : `Not enough ETH to launch. This wallet holds ${fmtEth(liveBalance)}, but launching needs the ${fmtEth(launchFee)} launch fee plus gas (about ${fmtEth(neededWei)} total). Fund the wallet on ${LAUNCH_CHAIN.name} and retry.`,
+        );
       }
 
-      // 1. Image → content-addressed blob (optional field).
-      let imageURI = "";
-      if (image) {
-        setStatus({ kind: "working", label: "Uploading image…" });
-        const fd = new FormData();
-        fd.append("file", image.file);
-        const res = await fetch("/api/upload-image", { method: "POST", body: fd });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Image upload failed.");
-        imageURI = json.url;
-      }
-
-      // 2. The on-chain commitment: either the published design's snapshot
-      // hash (already stored server-side at publish), or a v1 journey doc
-      // hashed client-side with the server re-hashing before it stores.
-      let journeyHash: `0x${string}`;
-      if (designCommitment) {
-        journeyHash = designCommitment.snapshotHash;
-      } else if (!commitmentOn) {
-        journeyHash = ZERO_JOURNEY_HASH;
-      } else {
-        setStatus({ kind: "working", label: "Publishing journey…" });
-        journeyHash = hashJourney(journeyDoc);
-        const res = await fetch("/api/journeys", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ doc: journeyDoc, clientHash: journeyHash, creator: address }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Journey publish failed.");
-      }
-
-      // 3. Launch on-chain.
-      setStatus({ kind: "working", label: "Confirm in your wallet…" });
-      const totalSupplyWei = BigInt(totalSupply) * 10n ** 18n;
+      // Everything the factory call needs except the image URL is known now,
+      // so it can be simulated before a blob or a database row is written.
+      const salt = randomSalt();
+      const descriptionText = description.trim();
+      const descriptionHash = hashDescription(descriptionText);
+      // The on-chain commitment: either the published design's snapshot hash
+      // (already stored server-side at publish), or a v1 journey doc hashed
+      // client-side with the server re-hashing before it stores.
+      const journeyHash: `0x${string}` = designCommitment
+        ? designCommitment.snapshotHash
+        : commitmentOn
+          ? hashJourney(journeyDoc)
+          : ZERO_JOURNEY_HASH;
       // Vesting is not offered on the form, so every launch mints the whole
       // supply to the creator. content/launch.ts keeps the validator for the
       // day the control comes back.
@@ -291,7 +449,7 @@ export function LaunchForm({
         durationSeconds: 0n,
         cliffSeconds: 0n,
       };
-      const txHash = await writeContractAsync({
+      const launchTx = (imageURI: string): TxParams<typeof tokenFactoryAbi, "launchToken"> => ({
         abi: tokenFactoryAbi,
         address: LAUNCH_CHAIN.factoryAddress,
         functionName: "launchToken",
@@ -303,27 +461,73 @@ export function LaunchForm({
             imageURI,
             xHandle,
             website: website.trim(),
-            descriptionHash: hashDescription(description.trim()),
+            descriptionHash,
             journeyHash,
           },
           vestingParams,
-          randomSalt(),
+          salt,
         ],
-        value: launchFee ?? 0n,
+        value: launchFee,
       });
 
-      setStatus({ kind: "working", label: "Waiting for confirmation…" });
-      if (!publicClient) throw new Error("No RPC client.");
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      if (receipt.status !== "success") throw new Error("Transaction reverted.");
+      // 0. Simulate on our own RPC. A paused factory, a changed fee or an
+      // empty name surfaces here, decoded, before anything is uploaded.
+      working("Checking with the factory…");
+      await preflightWrite(publicClient, address, launchTx(""));
 
-      let token: string | null = null;
+      // 1. Image → content-addressed blob. Required, and step1Valid enforces
+      // it; the guard keeps the type narrow.
+      if (!image) throw new Error("Choose a token image first.");
+      working("Uploading image…");
+      const fd = new FormData();
+      fd.append("file", image.file);
+      const uploadRes = await fetch("/api/upload-image", { method: "POST", body: fd });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadJson.error ?? "Image upload failed.");
+      const imageURI: string = uploadJson.url;
+
+      // 2. The description text and Telegram handle. Only the description's
+      // keccak256 goes on-chain, so the text is stored first, keyed by the
+      // hash the tx will carry, and the token page re-verifies it on load.
+      working("Saving description…");
+      const metaRes = await fetch("/api/token-metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: descriptionText,
+          telegram: telegram || null,
+          clientHash: descriptionHash,
+          creator: address,
+        }),
+      });
+      const metaJson = await metaRes.json();
+      if (!metaRes.ok) throw new Error(metaJson.error ?? "Saving the description failed.");
+
+      // 3. The journey document, when there is one.
+      if (!designCommitment && commitmentOn) {
+        working("Publishing journey…");
+        const res = await fetch("/api/journeys", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ doc: journeyDoc, clientHash: journeyHash, creator: address }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Journey publish failed.");
+      }
+
+      // 4. Launch on-chain, with the gas limit estimated on our RPC so the
+      // wallet does not have to.
+      working("Confirm the launch in your wallet…", 1);
+      const txHash = await writeWithGas(publicClient, address, writeContractAsync, launchTx(imageURI));
+      const receipt = await waitOk(txHash, 1);
+
+      let token: `0x${string}` | null = null;
       for (const log of receipt.logs) {
         if (log.address.toLowerCase() !== LAUNCH_CHAIN.factoryAddress.toLowerCase()) continue;
         try {
           const decoded = decodeEventLog({ abi: tokenFactoryAbi, ...log });
           if (decoded.eventName === "TokenLaunched") {
-            token = (decoded.args as { token: string }).token;
+            token = (decoded.args as { token: `0x${string}` }).token;
             break;
           }
         } catch {
@@ -331,6 +535,10 @@ export function LaunchForm({
         }
       }
       if (!token) throw new Error("Launched, but could not decode the token address.");
+
+      // 5. The developer buy seeds the creator's pool. The token is live
+      // whatever happens here.
+      const pool: PoolOutcome = seeding ? await seedPool(token) : { kind: "skipped" };
 
       // Attach the deployed address back to the design record. Best-effort:
       // the on-chain hash commitment already proves the linkage, and the
@@ -343,13 +551,15 @@ export function LaunchForm({
         }).catch(() => {});
       }
 
-      setStatus({ kind: "success", token, txHash });
+      setStatus({ kind: "success", token, txHash, pool });
     } catch (err) {
+      console.error("launch failed", err, connector?.id);
       setStatus({ kind: "error", message: friendlyLaunchError(err) });
     }
   }
 
   if (status.kind === "success") {
+    const pool = status.pool;
     return (
       <div className="glass mx-auto max-w-xl rounded-2xl border border-ink-700/70 p-8 text-center">
         <StatusChip tone="success" variant="pill">
@@ -367,6 +577,25 @@ export function LaunchForm({
         </p>
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
         <AccountLink tokenAddress={status.token.toLowerCase()} txHash={status.txHash} />
+        {pool.kind === "seeded" ? (
+          <div className="mt-4 space-y-2">
+            <StatusChip tone="success" variant="pill">
+              Pool seeded with {fmtEth(pool.ethWei)} and {LAUNCH_POOL_SHARE_PCT}% of the supply
+            </StatusChip>
+            <p className="text-sm text-ink-300">
+              Opening price {formatPriceEth(pool.ethWei, pool.tokensWei)} ETH per {ticker}. Trading is
+              open on the token page.
+            </p>
+          </div>
+        ) : pool.kind === "failed" ? (
+          <div className="mt-4 text-left">
+            <StatusChip tone={pool.cause === "rejected" ? "warning" : "error"} variant="block">
+              {pool.poolId === undefined
+                ? `Your token is live, but the pool was not created. ${pool.message} Open the token page to create the pool and add liquidity as the creator.`
+                : `Your token is live and its pool exists, but no liquidity was added. ${pool.message} Open the token page and use Add liquidity with ${(tokensForPool / 10n ** 18n).toLocaleString("en-US")} ${ticker} and ${fmtEth(devBuyWei)} to open trading at the same price.`}
+            </StatusChip>
+          </div>
+        ) : null}
         <div className="mt-6 text-left">
           <McpConnectCard
             target={{
@@ -390,9 +619,17 @@ export function LaunchForm({
             Transaction <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
+        <p className="mt-3 text-xs text-ink-500">
+          The token page fills in once the indexer has seen the launch, usually within a minute.
+        </p>
       </div>
     );
   }
+
+  const prefixedInput =
+    "flex items-center gap-0 px-0 py-0 focus-within:border-electric-500/60 focus-within:ring-1 focus-within:ring-electric-500/30";
+  const bareInput =
+    "w-full bg-transparent py-2.5 text-sm text-ink-50 placeholder:text-ink-500 focus:outline-none";
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -456,27 +693,9 @@ export function LaunchForm({
               </Field>
             </div>
 
-            <div className="rounded-xl border border-ink-700/60 bg-ink-950/50">
-              <button
-                type="button"
-                onClick={() => setShowOptional((v) => !v)}
-                aria-expanded={showOptional}
-                className="flex w-full items-center justify-between gap-3 p-4 text-left"
-              >
-                <span>
-                  <span className="block text-sm font-medium text-ink-100">Optional details</span>
-                  <span className="mt-0.5 block text-xs text-ink-500">
-                    Description, image, X profile and website. None of these are required to launch.
-                  </span>
-                </span>
-                <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 text-ink-400 transition-transform", showOptional && "rotate-180")}
-                />
-              </button>
-              {showOptional ? (
-                <div className="space-y-5 border-t border-ink-800/70 p-4">
             <Field
               label="Description"
+              required
               error={descriptionError}
               hint={LAUNCH_FORM.description.hint}
               counter={`${description.length}/${LAUNCH_FORM.description.max}`}
@@ -485,13 +704,14 @@ export function LaunchForm({
                 value={description}
                 maxLength={LAUNCH_FORM.description.max}
                 rows={3}
-                placeholder="A short description of the token"
+                placeholder="What this token is and why it exists"
                 className="resize-none"
                 onChange={(e) => setDescription(e.target.value)}
               />
             </Field>
 
             <ImagePicker
+              required
               previewUrl={image?.previewUrl ?? null}
               fileName={image?.file.name ?? null}
               onSelect={selectImage}
@@ -499,41 +719,73 @@ export function LaunchForm({
             />
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="X profile" error={xHandleError}>
-                <div
-                  className={cn(
-                    inputClasses,
-                    "flex items-center gap-0 px-0 py-0 focus-within:border-electric-500/60 focus-within:ring-1 focus-within:ring-electric-500/30",
-                  )}
-                >
+              <Field
+                label="X profile"
+                error={xHandleError}
+                counter={`${xHandle.length}/${LAUNCH_FORM.xHandle.max}`}
+              >
+                <div className={cn(inputClasses, prefixedInput)}>
                   <span className="pl-3.5 text-sm text-ink-500">{LAUNCH_FORM.xHandle.prefix}</span>
                   <input
                     value={xHandle}
-                    maxLength={LAUNCH_FORM.xHandle.max}
                     placeholder="handle"
-                    className="w-full bg-transparent py-2.5 pr-3.5 text-sm text-ink-50 placeholder:text-ink-500 focus:outline-none"
-                    onChange={(e) => setXHandle(e.target.value.replace(LAUNCH_FORM.xHandle.strip, ""))}
+                    className={cn(bareInput, "pr-3.5")}
+                    onChange={(e) => setXHandle(normalizeXHandle(e.target.value))}
                   />
                 </div>
               </Field>
 
-              <Field label="Website" error={websiteError} hint={LAUNCH_FORM.website.hint}>
-                <Input
-                  type="url"
-                  value={website}
-                  placeholder="https://example.com"
-                  onChange={(e) => {
-                    setWebsite(e.target.value);
-                    if (websiteError) setWebsiteError(validateWebsite(e.target.value.trim()));
-                  }}
-                  onBlur={() => setWebsiteError(validateWebsite(website.trim()))}
-                />
+              <Field
+                label="Telegram"
+                error={telegramError}
+                counter={String(telegram.length)}
+                range={`${LAUNCH_FORM.telegram.min}–${LAUNCH_FORM.telegram.max}`}
+                counterMet={telegram.length >= LAUNCH_FORM.telegram.min}
+              >
+                <div className={cn(inputClasses, prefixedInput)}>
+                  <span className="pl-3.5 text-sm text-ink-500">{LAUNCH_FORM.telegram.prefix}</span>
+                  <input
+                    value={telegram}
+                    placeholder="community"
+                    className={cn(bareInput, "pr-3.5")}
+                    onChange={(e) => setTelegram(normalizeTelegram(e.target.value))}
+                  />
+                </div>
               </Field>
             </div>
 
-                </div>
-              ) : null}
-            </div>
+            <Field label="Website" error={websiteError} hint={LAUNCH_FORM.website.hint}>
+              <Input
+                type="url"
+                value={website}
+                placeholder="https://example.com"
+                onChange={(e) => {
+                  setWebsite(e.target.value);
+                  if (websiteError) setWebsiteError(validateWebsite(e.target.value.trim()));
+                }}
+                onBlur={() => setWebsiteError(validateWebsite(website.trim()))}
+              />
+            </Field>
+
+            <Field
+              label={LAUNCH_DEV_BUY.label}
+              error={devBuyError}
+              hint={devBuyEth ? balanceLine : `${LAUNCH_DEV_BUY.hint} ${balanceLine}.`}
+            >
+              <div className={cn(inputClasses, prefixedInput)}>
+                <input
+                  inputMode="decimal"
+                  value={devBuyEth}
+                  placeholder={LAUNCH_DEV_BUY.placeholder}
+                  className={cn(bareInput, "tabular pl-3.5 text-lg")}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(",", ".");
+                    if (v === "" || LAUNCH_DEV_BUY.pattern.test(v)) setDevBuyEth(v);
+                  }}
+                />
+                <span className="pr-3.5 text-sm text-ink-500">{LAUNCH_DEV_BUY.suffix}</span>
+              </div>
+            </Field>
 
             {!designCommitment ? (
               <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
@@ -660,6 +912,28 @@ export function LaunchForm({
                       : `${formatEther(launchFee)} ETH`}
                 </span>
               </div>
+              <div className="flex justify-between gap-4 py-1">
+                <span className="shrink-0 text-ink-500">{LAUNCH_DEV_BUY.label}</span>
+                <span className="text-right text-ink-100">
+                  {seeding ? `${formatEther(devBuyWei)} ETH, seeds the pool` : LAUNCH_DEV_BUY.none}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4 py-1">
+                <span className="shrink-0 text-ink-500">{LAUNCH_POOL.labels.pool}</span>
+                <span className="text-right text-ink-100">
+                  {seeding
+                    ? `${LAUNCH_POOL_SHARE_PCT}% of supply, opening price ${openingPrice} ETH per ${ticker}`
+                    : "None. Create one later from the token page"}
+                </span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-ink-500">Total ETH needed</span>
+                <span className="tabular text-ink-100">
+                  {launchFee === undefined
+                    ? "Reading fee…"
+                    : `${formatEther(launchFee + devBuyWei)} ETH plus gas`}
+                </span>
+              </div>
             </div>
 
             <p className="break-all font-mono text-xs text-ink-500">
@@ -685,7 +959,12 @@ export function LaunchForm({
               </Button>
               <div className="flex items-center gap-3">
                 {status.kind === "working" ? (
-                  <span className="text-xs text-ink-400">{status.label}</span>
+                  <span className="text-xs text-ink-400">
+                    {status.label}
+                    {status.step !== undefined && status.total !== undefined
+                      ? ` (${status.step} of ${status.total})`
+                      : ""}
+                  </span>
                 ) : null}
                 <Button
                   disabled={!isConnected || !!journeyProblem || !step1Valid || status.kind === "working"}
@@ -709,9 +988,12 @@ export function LaunchForm({
           description={description}
           imageUrl={image?.previewUrl ?? null}
           xHandle={xHandle}
+          telegram={telegram}
           website={websiteError ? "" : website.trim()}
           totalSupply={totalSupply}
           launchFeeWei={launchFee}
+          devBuyWei={devBuyError ? 0n : devBuyWei}
+          openingPrice={devBuyError ? null : openingPrice}
         />
       </div>
     </div>

@@ -8,7 +8,7 @@ A **journey** is the off-chain plan for a token: milestones, narrative, and upda
 
 | Hash | Commits to |
 |------|------------|
-| `descriptionHash` | Short description from the launch form |
+| `descriptionHash` | Short description from the launch form. The text is stored off-chain and shown only when it re-hashes to this value |
 | `journeyHash` | Full journey document stored off-chain |
 
 They are independent. Changing one document does not rewrite the other hash. Verification is: hash the published bytes and compare to the event.

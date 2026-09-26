@@ -3,8 +3,7 @@ import type { ReactNode } from "react";
 import { Globe, ImageIcon } from "lucide-react";
 import { formatEther } from "viem";
 
-import { SoonBadge } from "@/components/ui/SoonBadge";
-import { LAUNCH_COPY, LAUNCH_FORM, LAUNCH_PARAMS } from "@/content/launch";
+import { LAUNCH_COPY, LAUNCH_DEV_BUY, LAUNCH_FORM, LAUNCH_PARAMS } from "@/content/launch";
 
 /**
  * Live preview of the token being drafted, plus the launch parameters that
@@ -16,9 +15,9 @@ import { LAUNCH_COPY, LAUNCH_FORM, LAUNCH_PARAMS } from "@/content/launch";
  */
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-ink-500">{label}</span>
-      <span className="text-ink-200">{children}</span>
+    <div className="flex items-start justify-between gap-3">
+      <span className="shrink-0 text-ink-500">{label}</span>
+      <span className="text-right text-ink-200">{children}</span>
     </div>
   );
 }
@@ -35,21 +34,30 @@ export function TokenPreviewCard({
   description,
   imageUrl,
   xHandle,
+  telegram,
   website,
   totalSupply,
   launchFeeWei,
+  devBuyWei,
+  openingPrice,
 }: {
   name: string;
   ticker: string;
   description: string;
   imageUrl: string | null;
   xHandle: string;
+  telegram: string;
   website: string;
   totalSupply: number;
   launchFeeWei: bigint | undefined;
+  /** 0n when the field is empty or invalid. */
+  devBuyWei: bigint;
+  /** Preformatted ETH per token, null when there is no developer buy. */
+  openingPrice: string | null;
 }) {
   const initial = name.trim().charAt(0).toUpperCase();
   const L = LAUNCH_PARAMS.labels;
+  const hasDevBuy = devBuyWei > 0n;
 
   return (
     <div className="card-surface glow-ring rounded-2xl border border-ink-700/70 p-6">
@@ -80,6 +88,12 @@ export function TokenPreviewCard({
             {xHandle}
           </span>
         ) : null}
+        {telegram ? (
+          <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300">
+            {LAUNCH_FORM.telegram.prefix}
+            {telegram}
+          </span>
+        ) : null}
         {website ? (
           <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300">
             <Globe className="h-3 w-3 shrink-0" />
@@ -103,19 +117,27 @@ export function TokenPreviewCard({
         <Row label={L.launchFee}>
           <span className="tabular">{feeValue(launchFeeWei)}</span>
         </Row>
+        <Row label={L.devBuy}>
+          <span className="tabular">
+            {hasDevBuy ? `${formatEther(devBuyWei)} ETH` : LAUNCH_DEV_BUY.none}
+          </span>
+        </Row>
         <Row label={L.pairedWith}>{LAUNCH_PARAMS.pairedWith}</Row>
         <Row label={L.tradeFee}>
           <span className="tabular">{LAUNCH_PARAMS.tradeFee}</span>
         </Row>
-        <Row label={L.launchWindow}>
-          <SoonBadge label={LAUNCH_PARAMS.soonLabel} />
-        </Row>
-        <Row label={L.graduation}>
-          <SoonBadge label={LAUNCH_PARAMS.soonLabel} />
-        </Row>
+        <Row label={L.launchWindow}>{LAUNCH_PARAMS.launchWindow}</Row>
+        <Row label={L.graduation}>{LAUNCH_PARAMS.graduation}</Row>
         <Row label={L.liquidity}>
-          <SoonBadge label={LAUNCH_PARAMS.soonLabel} />
+          {hasDevBuy ? LAUNCH_PARAMS.liquidity : LAUNCH_PARAMS.liquidityNone}
         </Row>
+        {hasDevBuy && openingPrice ? (
+          <Row label={L.openingPrice}>
+            <span className="tabular">
+              {openingPrice} ETH per {ticker || "token"}
+            </span>
+          </Row>
+        ) : null}
       </div>
     </div>
   );

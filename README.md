@@ -130,5 +130,14 @@ event window so judges can verify it.
 - Sept 24, 2026. Indexer deploy config in the repo. The Ponder indexer ships
   with a Dockerfile, a fly.toml and a documented env contract, so the host can
   be rebuilt from the repository instead of from a dashboard.
+- Sept 26, 2026. Launchpad-style launch form. Description and image are
+  required, X, Telegram and website sit flat beneath them, and an optional
+  developer buy seeds the creator's pool with ETH and 80% of the supply right
+  after launch, three more confirmations counted on screen. The description
+  text and Telegram handle are stored off-chain and the token page shows the
+  description only when it re-hashes to the on-chain commitment. The three
+  Soon rows on the parameters card now say what the contracts actually do, and
+  every launch write carries a gas limit estimated on CanHav's own RPC so the
+  wallet no longer has to.
 
 This list grows as work lands on the branch.

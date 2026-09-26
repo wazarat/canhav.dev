@@ -225,6 +225,28 @@ await sql`
     on launchpad.launches (owner_id, created_at desc)
 `;
 
+// Launch metadata the chain only carries as a hash. description is the exact
+// string whose keccak256 is the on-chain descriptionHash, stored before the
+// launch tx like journeys are. telegram is not committed on-chain and is
+// shown best-effort. Insert-only: first write wins, so knowing a public
+// description cannot be used to overwrite a creator's Telegram link. The
+// length limits mirror LAUNCH_FORM in content/launch.ts (256, 5 to 32).
+await sql`
+  create table if not exists launchpad.token_metadata (
+    description_hash text not null check (description_hash ~ '^0x[0-9a-f]{64}$'),
+    creator_address text not null check (creator_address ~ '^0x[0-9a-f]{40}$'),
+    description text not null check (char_length(description) between 1 and 256),
+    telegram text check (telegram is null or telegram ~ '^[A-Za-z0-9_]{5,32}$'),
+    created_at timestamptz not null default now(),
+    primary key (description_hash, creator_address)
+  )
+`;
+
+await sql`
+  create index if not exists token_metadata_creator_idx
+    on launchpad.token_metadata (creator_address, created_at desc)
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

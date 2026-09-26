@@ -103,7 +103,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "Get a token launch",
       description:
-        "Everything CanHav knows about one deployed token by address. Token metadata, the journey document verified against its on-chain hash, creator milestone updates, vesting, milestone escrow tranches, allocation sales, the creator's AMM pool, and the linked published design when one exists.",
+        "Everything CanHav knows about one deployed token by address. Token metadata, the description text and Telegram handle verified against the on-chain description hash, the journey document verified against its on-chain hash, creator milestone updates, vesting, milestone escrow tranches, allocation sales, the creator's AMM pool, and the linked published design when one exists.",
       inputSchema: z.object({ address: ADDRESS }),
     },
     async ({ address }) => {

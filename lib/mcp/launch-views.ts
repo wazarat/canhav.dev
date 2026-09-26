@@ -15,6 +15,7 @@ import {
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
 /**
  * Read-only views over a deployed launch, shared by the global MCP tools
@@ -165,8 +166,9 @@ export async function launchView(address: string): Promise<View<unknown>> {
     return { ok: false, message: `No CanHav launch at ${address}.` };
   const token = read.value;
   const now = Math.floor(Date.now() / 1000);
-  const [journey, vesting, escrows, sales, pool, design] = await Promise.all([
+  const [journey, meta, vesting, escrows, sales, pool, design] = await Promise.all([
     journeyBlock(token),
+    getVerifiedTokenMetadata(token.descriptionHash, token.creator),
     getVesting(token.address),
     getEscrows(token.address),
     getSales(token.address),
@@ -177,6 +179,14 @@ export async function launchView(address: string): Promise<View<unknown>> {
     ok: true,
     value: {
       token: summarizeToken(token),
+      // The description text only counts when it re-hashes to the on-chain
+      // descriptionHash. Telegram is stored beside it and is not committed.
+      metadata: {
+        descriptionHash: token.descriptionHash,
+        description: meta?.description ?? null,
+        telegram: meta?.telegram ?? null,
+        verified: meta !== null,
+      },
       journey,
       vesting: vesting
         ? {

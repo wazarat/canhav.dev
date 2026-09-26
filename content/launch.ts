@@ -42,33 +42,89 @@ export const LAUNCH_SUPPLY = 1_000_000_000;
 export const LAUNCH_SUPPLY_MAX = 1_000_000_000_000;
 
 /**
- * The launch parameters shown beside the form. Only rows backed by deployed
- * code carry a value; the rest are marked soon rather than given a number the
- * contracts would not honour.
+ * Pool seeding at launch. The ETH in the Developer buy field becomes the first
+ * liquidity of a LaunchAMM pool, paired with this share of the supply from the
+ * creator's wallet. The creator holds the resulting liquidity shares. The
+ * first deposit fixes the opening price at ETH divided by tokens.
+ *
+ * supplyShareBps  80% in the market matches what launchpads put on their
+ *                 curves and leaves a working balance for escrow and sales.
+ * optInProtocolFee  the same default as the token page's create-pool flow
+ *                 (components/launch/PoolActions.tsx) and scripts/e2e-amm.mjs.
+ */
+export const LAUNCH_POOL = {
+  supplyShareBps: 8_000,
+  optInProtocolFee: true,
+  /** Wallet confirmations when seeding, in order. */
+  steps: ["launch", "createPool", "approve", "addLiquidity"],
+  labels: {
+    pool: "Pool",
+    createPool: "Creating pool",
+    approve: "Approving tokens",
+    addLiquidity: "Adding liquidity",
+  },
+} as const;
+
+/** Whole-number percent of the supply that goes into the pool, for copy. */
+export const LAUNCH_POOL_SHARE_PCT = LAUNCH_POOL.supplyShareBps / 100;
+
+/**
+ * The optional ETH the creator pairs with part of the supply to open the pool
+ * right after launch. There is no bonding curve, so nothing is bought; the
+ * ETH and tokens become the creator's own liquidity shares, withdrawable at
+ * any time. min keeps a pool from opening on dust, max is a testnet sanity cap.
+ */
+export const LAUNCH_DEV_BUY = {
+  min: "0.0001",
+  max: "10",
+  suffix: "ETH",
+  label: "Developer buy",
+  placeholder: "0.00",
+  hint: `Optional. Seeds a trading pool with this ETH and ${LAUNCH_POOL_SHARE_PCT}% of your supply right after launch. You hold the shares and can withdraw any time.`,
+  balanceLabel: "Balance",
+  balanceUnavailable: "Balance unavailable",
+  none: "None",
+  /** Digits with at most one dot and 18 decimals, so parseEther always accepts it. */
+  pattern: /^\d*\.?\d{0,18}$/,
+} as const;
+
+/**
+ * The launch parameters shown beside the form. Every row says what the
+ * deployed contracts do. Nothing here promises a mechanism contracts/src does
+ * not have.
  *
  * pairedWith  LaunchAMM pools are token/native-ETH. There is no WETH anywhere.
  * tradeFee    LP_FEE_BPS = 30 in contracts/src/LaunchAMM.sol. A further 20 bps
  *             protocol fee exists but is opt-in at pool creation, so it is not
  *             part of the number every launch pays.
- * launchWindow, graduation, liquidity  no snipe tax, no bonding curve and no
- *             liquidity lock exist in contracts/src today.
+ * launchWindow  no snipe tax or anti-bot window exists. Trading starts when a
+ *             pool gets its first liquidity, nothing gates the first block.
+ * graduation  no bonding curve, so nothing to graduate from. The LaunchAMM
+ *             pool is the market from the first deposit.
+ * liquidity   LaunchAMM.removeLiquidity has no lock. Only MINIMUM_LIQUIDITY
+ *             (1e3 shares) burns forever, which does not lock the creator's
+ *             position. A curve with locked liquidity is a separate milestone.
  */
 export const LAUNCH_PARAMS = {
   pairedWith: "ETH",
   tradeFee: "0.30%",
-  soon: ["launchWindow", "graduation", "liquidity"],
+  launchWindow: "None. Trading opens the moment a pool is seeded",
+  graduation: "None. The pool is the market from day one",
+  liquidity: "Seeded by you, withdrawable any time, never locked",
+  liquidityNone: "None until a pool is seeded, withdrawable any time, never locked",
   labels: {
     totalSupply: "Total supply",
     launchFee: "Launch fee",
+    devBuy: "Developer buy",
     pairedWith: "Paired with",
     tradeFee: "Trade fee",
     launchWindow: "Launch window",
     graduation: "Graduation",
     liquidity: "Liquidity",
+    openingPrice: "Opening price",
   },
   feeLoading: "Reading fee",
   feeFree: "Free",
-  soonLabel: "Soon",
 } as const;
 
 /** Vesting form constraints (client-side mirror of factory validation). */
@@ -115,7 +171,7 @@ export const LAUNCH_FORM = {
     max: 256,
     // Rejects obvious URLs: schemes, www., or bare domains with a path.
     linkPattern: /(https?:\/\/|www\.|\.[a-z]{2,}\/)/i,
-    hint: "No links. 256 characters max.",
+    hint: "No links.",
   },
   image: {
     maxBytes: 4 * 1024 * 1024,
@@ -127,6 +183,17 @@ export const LAUNCH_FORM = {
     pattern: /^[A-Za-z0-9_]*$/,
     strip: /[^A-Za-z0-9_]/g,
     prefix: "x.com/",
+    // A pasted https://x.com/name, twitter.com/name or @name.
+    pasteStrip: /^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/|^@/i,
+  },
+  telegram: {
+    min: 5,
+    max: 32,
+    pattern: /^[A-Za-z0-9_]*$/,
+    strip: /[^A-Za-z0-9_]/g,
+    prefix: "t.me/",
+    // A pasted https://t.me/name, telegram.me/name or @name.
+    pasteStrip: /^(?:https?:\/\/)?(?:www\.)?(?:t\.me|telegram\.me)\/|^@/i,
   },
   website: {
     hint: "https:// URL",
@@ -201,7 +268,7 @@ export const LAUNCH_COPY = {
   title: "Launch a token",
   subtitleLead: "Create a token on Robinhood Chain Testnet in two steps.",
   subtitleDetail:
-    "Name it and launch. Add a commitment if you want one, and its hash goes on-chain with the token. Any agent can read the launch over MCP.",
+    "Name it, describe it, add an image and launch. Seed a pool with ETH if you want trading from the first block, and add a commitment if you want one. Any agent can read the launch over MCP.",
   previewTitle: "Your token",
   exploreTitle: "Recent launches",
   exploreLead:
@@ -247,10 +314,49 @@ export function validateImageFile(file: File): string | undefined {
   return undefined;
 }
 
+/** Reduces a pasted profile URL or @handle to the bare handle, then strips illegal characters. */
+export function normalizeXHandle(raw: string): string {
+  return raw
+    .replace(LAUNCH_FORM.xHandle.pasteStrip, "")
+    .replace(LAUNCH_FORM.xHandle.strip, "")
+    .slice(0, LAUNCH_FORM.xHandle.max);
+}
+
 export function validateXHandle(value: string): string | undefined {
   if (!value) return undefined;
   if (value.length > LAUNCH_FORM.xHandle.max) return `Max ${LAUNCH_FORM.xHandle.max} characters.`;
   if (!LAUNCH_FORM.xHandle.pattern.test(value)) return "Letters, numbers, and underscores only.";
+  return undefined;
+}
+
+/** Reduces a pasted t.me link or @handle to the bare username, then strips illegal characters. */
+export function normalizeTelegram(raw: string): string {
+  return raw
+    .replace(LAUNCH_FORM.telegram.pasteStrip, "")
+    .replace(LAUNCH_FORM.telegram.strip, "")
+    .slice(0, LAUNCH_FORM.telegram.max);
+}
+
+export function validateTelegram(value: string): string | undefined {
+  if (!value) return undefined;
+  if (value.length < LAUNCH_FORM.telegram.min)
+    return `At least ${LAUNCH_FORM.telegram.min} characters.`;
+  if (value.length > LAUNCH_FORM.telegram.max) return `Max ${LAUNCH_FORM.telegram.max} characters.`;
+  if (!LAUNCH_FORM.telegram.pattern.test(value)) return "Letters, numbers, and underscores only.";
+  return undefined;
+}
+
+/**
+ * Format and range only. Whether the wallet can cover it is checked in the
+ * form, where the balance and the live launch fee are.
+ */
+export function validateDevBuy(value: string): string | undefined {
+  if (!value) return undefined;
+  if (!LAUNCH_DEV_BUY.pattern.test(value) || value === ".") return "Enter an ETH amount, like 0.05.";
+  const n = Number(value);
+  if (!(n > 0)) return "Enter an amount above zero, or leave it empty.";
+  if (n < Number(LAUNCH_DEV_BUY.min)) return `At least ${LAUNCH_DEV_BUY.min} ETH.`;
+  if (n > Number(LAUNCH_DEV_BUY.max)) return `Max ${LAUNCH_DEV_BUY.max} ETH.`;
   return undefined;
 }
 
