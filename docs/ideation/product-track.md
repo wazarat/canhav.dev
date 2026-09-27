@@ -17,6 +17,8 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 | Project name | Required |
 | Sector | Credit; Staking; Liquidity; Derivatives; RWAs; Other. Only Credit can be chosen today. The other five are listed and marked "Coming soon". |
 | Subsector | Asked when the sector is Credit. Lending; Leveraged yield; Fixed income. Pick one to three. Only Lending can be chosen today; the other two are marked "Coming soon". |
+| What are you building | Asked when the subsectors include Lending. Curated vault; Earn inside your app; Collateral-backed loans. Optional, but the research kit that follows is filtered by it. Each option has a "Why this matters" card with a worked example. |
+| Starting point | Asked with the shape. From scratch; On top of an existing product (with an optional link or one line about what exists today). |
 | What it does | One paragraph |
 | Users and payers | Who the user is, and who pays (often not the same answer) |
 | Why this chain specifically | Free text |

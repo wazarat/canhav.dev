@@ -1,4 +1,6 @@
 import { keccak256, stringToBytes } from "viem";
+
+import { normalizeProjectKit, type ProjectKit, validateProjectKit } from "@/lib/kits";
 import { sortValue } from "@/lib/journey";
 import { LAUNCH_FORM } from "@/content/launch";
 
@@ -115,6 +117,11 @@ export interface ProjectDoc {
    * so normalizeProjectDoc never injects the key into older documents.
    */
   subsectors?: Subsector[];
+  /**
+   * Research kit (M21+). Created when a builder picks a lending product
+   * shape; absent otherwise. Optional so normalizeProjectDoc never injects it.
+   */
+  kit?: ProjectKit;
   /** What it does, one paragraph. */
   whatItDoes: string;
   /** Who the user is. Payment is asked separately, gated on `payer`. */
@@ -245,8 +252,14 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     subsectorPatch = { subsectors: [...seen].slice(0, PROJECT_LIMITS.subsectors.max) };
   }
 
+  // Research kit: coerced when the key exists, dropped when it is garbage,
+  // never invented.
+  const { kit: rawKit, ...rest } = doc as ProjectDoc & { kit?: unknown };
+  const kit = rawKit === undefined ? null : normalizeProjectKit(rawKit);
+
   return {
-    ...doc,
+    ...(rest as ProjectDoc),
+    ...(kit ? { kit } : {}),
     sector,
     ...(sectorOther !== undefined ? { sectorOther } : {}),
     ...subsectorPatch,
@@ -464,6 +477,10 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     if (n > L.subsectors.max) return `At most ${L.subsectors.max} subsectors.`;
     if (doc.subsectors!.some((v) => !SUBSECTOR_VALUES.includes(v)))
       return "Unknown subsector.";
+  }
+  if (doc.kit) {
+    p = validateProjectKit(doc.kit);
+    if (p) return p;
   }
   p =
     checkText("What it does", doc.whatItDoes, L.whatItDoes) ??

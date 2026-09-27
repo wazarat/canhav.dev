@@ -9,7 +9,8 @@ import { TextField } from "@/components/ideation/TextField";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
-import { ChipMultiSelect } from "@/components/ui/ChipGroup";
+import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
+import { ChipMultiSelect, ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
@@ -29,7 +30,17 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
+import { kitForDoc } from "@/content/kits";
+import {
+  LENDING_KIT_COPY,
+  LENDING_SHAPE_OPTIONS,
+  STARTING_POINT_OPTIONS,
+  shapeBlurb,
+  shapeLabel,
+  startingPointLabel,
+} from "@/content/kits/lending";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
+import { KIT_LIMITS, type ProjectKit, emptyProjectKit } from "@/lib/kits";
 
 const STEP_LABELS = ["Basics", "Architecture", "Security", "Reality", "Review"] as const;
 
@@ -106,6 +117,10 @@ export function ProjectEditor({
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
   const overall = problems[4];
+  const kitId = kitForDoc(doc);
+  const kit = doc.kit;
+  const patchKit = (partial: Partial<ProjectKit>) =>
+    patch({ kit: { ...(kit ?? emptyProjectKit()), ...partial } });
 
   const steps = STEP_LABELS.map((label, i) => ({ label, problem: problems[i] }));
 
@@ -164,6 +179,42 @@ export function ProjectEditor({
                 options={SUBSECTOR_OPTIONS}
                 max={PROJECT_LIMITS.subsectors.max}
               />
+            )}
+            {kitId === "lending" && (
+              <>
+                <ChipRadioGroup
+                  label={LENDING_KIT_COPY.shapeLabel}
+                  hint={LENDING_KIT_COPY.shapeHint}
+                  value={kit?.shape ?? ""}
+                  onChange={(shape) => patchKit({ shape })}
+                  options={LENDING_SHAPE_OPTIONS}
+                />
+                {kit?.shape ? (
+                  <p className="-mt-3 text-sm leading-relaxed text-ink-300">
+                    {shapeBlurb(kit.shape)}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <OptionResourceCard field="project.kit.shape" value={kit?.shape ?? ""} />
+                  <FieldIntroCard intro="project.kit.shape" />
+                </div>
+                <ChipRadioGroup
+                  label={LENDING_KIT_COPY.startingPointLabel}
+                  value={kit?.startingPoint ?? ""}
+                  onChange={(startingPoint) => patchKit({ startingPoint })}
+                  options={STARTING_POINT_OPTIONS}
+                />
+                {kit?.startingPoint === "existing_product" && (
+                  <TextField
+                    label={LENDING_KIT_COPY.existingProductLabel}
+                    hint={LENDING_KIT_COPY.existingProductHint}
+                    value={kit.existingProduct ?? ""}
+                    onChange={(v) => patchKit({ existingProduct: v })}
+                    max={KIT_LIMITS.existingProduct.max}
+                    placeholder={LENDING_KIT_COPY.existingProductPlaceholder}
+                  />
+                )}
+              </>
             )}
             <TextField
               label="What it does"
@@ -393,6 +444,15 @@ export function ProjectEditor({
                   term="Subsector"
                   detail={subsectorLabels(doc).join(" · ") || "Not set"}
                 />
+              )}
+              {kitId === "lending" && (
+                <>
+                  <ReviewRow term="Building" detail={shapeLabel(kit?.shape) ?? "Not set"} />
+                  <ReviewRow
+                    term="Starting from"
+                    detail={(kit && startingPointLabel(kit)) ?? "Not set"}
+                  />
+                </>
               )}
               <ReviewRow term="Stage" detail={optionLabel(STAGE_OPTIONS, doc.stage)} />
               <ReviewRow

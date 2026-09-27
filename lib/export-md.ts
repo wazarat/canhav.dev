@@ -25,6 +25,7 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
+import { shapeLabel, startingPointLabel } from "@/content/kits/lending";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import {
   type ProjectDoc,
@@ -80,6 +81,18 @@ function fmtRatio(n: number | null): string {
   return `${n % 1 === 0 ? n : n.toFixed(1)}×`;
 }
 
+/** "Building" and "Starting from" lines when a research kit has a shape. */
+function kitLines(doc: ProjectDoc): string[] {
+  const kit = doc.kit;
+  if (!kit) return [];
+  const out: string[] = [];
+  const shape = shapeLabel(kit.shape);
+  if (shape) out.push(`- **Building:** ${shape}`);
+  const start = startingPointLabel(kit);
+  if (start) out.push(`- **Starting from:** ${start}`);
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // canhav-[slug].md — project
 
@@ -95,6 +108,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     `- **Sector:** ${sectorLabel(doc)}`,
     ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
+    ...kitLines(doc),
     `- **Stage:** ${optionLabel(STAGE_OPTIONS, doc.stage)}`,
     "",
     `**What it does**`,
@@ -365,6 +379,7 @@ export function buildAgentsMd(input: {
       "",
       `- **Sector:** ${sectorLabel(project)}`,
       ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
+      ...kitLines(project),
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
       `- **What it does:** ${project.whatItDoes}`,
       "",

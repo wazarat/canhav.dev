@@ -10,6 +10,7 @@ import type {
   UndersubscriptionPlan,
   Upgradeability,
 } from "@/lib/ideation";
+import type { ProductShape } from "@/lib/kits";
 import type { DeployabilityCode, DeployabilityTier } from "@/lib/tokenDesign";
 
 /**
@@ -650,6 +651,62 @@ export const FIELD_RESOURCES = {
         "price it as trust.",
     },
   } satisfies Partial<Record<Upgradeability, OptionResource>>,
+
+  "project.kit.shape": {
+    curated_vault: {
+      title: "Running a curated vault",
+      body:
+        "A curated vault is a yield strategy with a public rulebook. Depositors " +
+        "buy shares, the vault lends their assets across a set of isolated " +
+        "markets, and the curator decides which markets, how much exposure each " +
+        "may carry, and what fee the strategy charges. The roles are split on " +
+        "purpose. An owner can change the rules, a curator sets risk " +
+        "limits, an allocator moves capital inside those limits, and a " +
+        "sentinel can only pull the brakes. Timelocks and depositor exits " +
+        "are what make strangers trust a team they have never met. You are " +
+        "signing up to be a risk manager first and a product company second.",
+      example:
+        "Worked example: boutique risk shops such as Sentora and MEV Capital " +
+        "curate vaults beside institutional managers, adjusting supply caps and " +
+        "shifting capital between conservative stablecoin markets and " +
+        "higher-yield ones. Their back office is a few hundred lines of open " +
+        "code plus timelocks, not a custody desk.",
+    },
+    embedded_earn: {
+      title: "Earn inside an app you already run",
+      body:
+        "You are not building lending. You are routing balances your users " +
+        "already hold into vaults someone else curates, and showing the result " +
+        "as a savings feature. The engineering is deposits, withdrawals, share " +
+        "accounting and honest rate display; the hard part is the product " +
+        "surface, the disclosures, and choosing which vaults deserve your " +
+        "users. Non-custodial matters here because each user holds their own position, " +
+        "so your app never carries a pooled balance sheet.",
+      example:
+        "Worked example: Deblock, a neobank and wallet, routes USDC and EURC " +
+        "deposits into curated vaults and presents them as a savings account. " +
+        "Blend does the same as infrastructure for other neobanks, one isolated " +
+        "account per user and no central balance sheet.",
+    },
+    collateral_loans: {
+      title: "A borrowing venue with your own markets",
+      body:
+        "You open lending markets where your users post collateral and borrow " +
+        "against it. Each market is isolated and fixed at creation, meaning the " +
+        "collateral asset, the loan asset, the price feed, the interest model " +
+        "and the liquidation line. You own the borrower experience, which means " +
+        "you also own position health, liquidation warnings and what happens " +
+        "when the price feed goes stale. Oracle choice and the liquidation " +
+        "threshold are the two decisions that decide whether this product " +
+        "survives a bad week.",
+      example:
+        "Worked example: Tenor Labs built fixed-rate, fixed-term loans on the " +
+        "same market contracts institutions borrow through. Early-stage teams " +
+        "also open isolated markets for long-tail tokens or tokenized assets, " +
+        "setting the liquidation line themselves instead of waiting on a " +
+        "governance vote.",
+    },
+  } satisfies Partial<Record<ProductShape, OptionResource>>,
 } as const;
 
 export type ResourceFieldKey = keyof typeof FIELD_RESOURCES;
@@ -768,6 +825,20 @@ export const FIELD_INTROS = {
       'Worked example: "if fees do not cover infrastructure by month 18, ' +
       'we sunset and return the treasury pro rata." Painful to write, and ' +
       "the strongest trust signal on this page.",
+  },
+  "project.kit.shape": {
+    title: "How the three shapes relate",
+    body:
+      "The three shapes are one stack, not three products. Markets are where " +
+      "borrowing happens, vaults allocate deposits across markets, and apps " +
+      "embed either one. Pick the layer your users touch first. A vault team " +
+      "can later open its own markets, and an app that embeds earn can later " +
+      "curate its own vault. The research kit that follows is filtered by this " +
+      "answer, and you can change it at any time before publishing.",
+    example:
+      "Worked example: a wallet ships embedded earn in a quarter, sees which " +
+      "vaults its users prefer, then launches a curated vault of its own with " +
+      "the same deposit flow already in place.",
   },
   "token.distribution.softCap": {
     title: "Soft cap",

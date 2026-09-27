@@ -15,6 +15,7 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
+import { shapeLabel, startingPointLabel } from "@/content/kits/lending";
 import { explorerAddressUrl } from "@/lib/explorer";
 import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
@@ -110,6 +111,9 @@ export default async function ProjectPublicPage({
               {label}
             </StatusChip>
           ))}
+          {shapeLabel(doc.kit?.shape) ? (
+            <StatusChip tone="neutral">{shapeLabel(doc.kit?.shape)}</StatusChip>
+          ) : null}
           <StatusChip tone="info">{optionLabel(STAGE_OPTIONS, doc.stage)}</StatusChip>
           <StatusChip tone="neutral">
             v{doc.publishVersion} · {new Date(snapshot.created_at).toLocaleDateString("en-US")}
@@ -132,6 +136,9 @@ export default async function ProjectPublicPage({
               />
             </div>
             <Prose label="Why this chain" text={doc.whyThisChain} />
+            {doc.kit && startingPointLabel(doc.kit) ? (
+              <Prose label="Starting from" text={startingPointLabel(doc.kit) ?? ""} />
+            ) : null}
           </div>
         </Section>
 
