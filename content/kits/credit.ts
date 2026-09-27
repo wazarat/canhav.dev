@@ -171,7 +171,7 @@ export const CHECKLIST_COPY = {
   tab: "Build steps",
   resourcesTab: "Resources",
   intro: "The order a small team should take these. Tick a step when it is written down, not when it is started.",
-  none: "Build steps for this shape arrive with its subsector.",
+  none: "Build steps for this shape are on the way.",
   progress: (done: number, total: number) => `${done} of ${total} done`,
   rowChip: (done: number, total: number) => `Build ${done} of ${total}`,
 } as const;
@@ -240,9 +240,9 @@ export function startingPointLabel(
 
 /**
  * Shapes a builder can pick today. A shape is offered when the chosen
- * subsectors reach it and every subsector it belongs to is open, so the
- * combined shapes appear on their own the day the other subsectors lose
- * their Coming soon flag.
+ * subsectors reach it and every subsector it belongs to is open. All three
+ * credit subsectors are open, so this is shapesFor() unless a subsector is
+ * ever closed again.
  */
 export function offeredShapes(subsectors: readonly Subsector[]): ProductShape[] {
   const open = new Set(SUBSECTOR_OPTIONS.filter((o) => o.available !== false).map((o) => o.value));
@@ -256,20 +256,22 @@ export interface ShapeGroup {
 }
 
 /**
- * Offered shapes grouped by the first chosen subsector each one belongs to.
+ * Offered shapes grouped by subsector, groups in SUBSECTOR_OPTIONS order. A
+ * shape that spans subsectors sits under the first entry of its own
+ * SHAPE_SUBSECTORS list that the builder has chosen, so Borrow against
+ * fixed-rate positions stays with Fixed income when Lending is also ticked.
  * One group when one subsector is chosen, so no headings are needed.
  */
 export function shapeGroupsFor(subsectors: readonly Subsector[]): ShapeGroup[] {
   const offered = new Set(offeredShapes(subsectors));
   const chosen = SUBSECTOR_OPTIONS.filter((o) => subsectors.includes(o.value));
-  const placed = new Set<ProductShape>();
+  const chosenSet = new Set(chosen.map((o) => o.value));
+  const home = (shape: ProductShape) => SHAPE_SUBSECTORS[shape].find((s) => chosenSet.has(s));
   const groups: ShapeGroup[] = [];
   for (const sub of chosen) {
     const options = CREDIT_SHAPE_OPTIONS.filter(
-      (o) =>
-        offered.has(o.value) && !placed.has(o.value) && SHAPE_SUBSECTORS[o.value].includes(sub.value),
+      (o) => offered.has(o.value) && home(o.value) === sub.value,
     );
-    for (const o of options) placed.add(o.value);
     if (options.length) groups.push({ subsector: sub.value, heading: sub.label, options });
   }
   return groups;

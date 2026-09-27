@@ -13,7 +13,7 @@ import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
-import { ChipMultiSelect, ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { ChipMultiSelect, ChipRadioGroup, ChipRadioGroups } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
@@ -229,20 +229,17 @@ export function ProjectEditor({
             )}
             {kitId === "credit" && (
               <>
-                {shapeGroupsFor(doc.subsectors ?? []).map((group, i, all) => (
-                  <ChipRadioGroup
-                    key={group.subsector}
-                    label={
-                      all.length > 1
-                        ? `${CREDIT_KIT_COPY.shapeLabel} (${group.heading})`
-                        : CREDIT_KIT_COPY.shapeLabel
-                    }
-                    hint={i === all.length - 1 ? CREDIT_KIT_COPY.shapeHint : undefined}
-                    value={kit?.shape ?? ""}
-                    onChange={(shape) => patchKit({ shape })}
-                    options={group.options}
-                  />
-                ))}
+                <ChipRadioGroups
+                  label={CREDIT_KIT_COPY.shapeLabel}
+                  hint={CREDIT_KIT_COPY.shapeHint}
+                  value={kit?.shape ?? ""}
+                  onChange={(shape) => patchKit({ shape })}
+                  groups={shapeGroupsFor(doc.subsectors ?? []).map((g) => ({
+                    key: g.subsector,
+                    heading: g.heading,
+                    options: g.options,
+                  }))}
+                />
                 {kit?.shape ? (
                   <p className="-mt-3 text-sm leading-relaxed text-ink-300">
                     {shapeBlurb(kit.shape)}

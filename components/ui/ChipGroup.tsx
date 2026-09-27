@@ -126,3 +126,60 @@ export function ChipRadioGroup<V extends string>({
     </Field>
   );
 }
+
+export interface ChipRadioGroupSection<V extends string> {
+  key: string;
+  heading: string;
+  options: ReadonlyArray<ChipOption<V>>;
+}
+
+/**
+ * One radio choice spread over several headed sections (the product shape
+ * picker, grouped by subsector). The heading rows appear only when there is
+ * more than one section, so a single section renders exactly like
+ * ChipRadioGroup.
+ */
+export function ChipRadioGroups<V extends string>({
+  label,
+  required,
+  hint,
+  value,
+  onChange,
+  groups,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  value: V | "";
+  onChange: (value: V) => void;
+  groups: ReadonlyArray<ChipRadioGroupSection<V>>;
+}) {
+  const headed = groups.length > 1;
+  return (
+    <Field label={label} required={required} hint={hint}>
+      <div className={cn(headed ? "space-y-3" : "")} role="radiogroup" aria-label={label}>
+        {groups.map((group) => (
+          <div key={group.key} role={headed ? "group" : undefined} aria-label={headed ? group.heading : undefined}>
+            {headed ? (
+              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-500">
+                {group.heading}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {group.options.map((opt) => (
+                <Chip
+                  key={opt.value}
+                  role="radio"
+                  label={opt.label}
+                  soon={opt.available === false}
+                  selected={value === opt.value}
+                  onToggle={() => onChange(opt.value)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Field>
+  );
+}

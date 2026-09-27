@@ -706,6 +706,94 @@ export const FIELD_RESOURCES = {
         "setting the liquidation line themselves instead of waiting on a " +
         "governance vote.",
     },
+    fixed_rate_yield: {
+      title: "Turning a yield source into a fixed rate",
+      body:
+        "You already hold or issue something that earns. Wrap it in a standard " +
+        "yield interface and a protocol can split it into two tokens that each " +
+        "trade until a maturity date. The fixed half is a claim on one unit of " +
+        "the asset at maturity, so it sells at a discount today and that discount " +
+        "is the fixed rate. The variable half collects whatever the asset earns " +
+        "until then. A time-aware pool prices the discount as maturity approaches, " +
+        "so your real decisions are the expiry, the rate band the pool opens with, " +
+        "the fee, and how much liquidity you seed. Rollover at maturity is a " +
+        "product feature you own, not something the pool does for you.",
+      example:
+        "Worked example: Pendle runs these markets on Robinhood Chain mainnet. A " +
+        "vault share that follows the ERC-4626 standard is the natural input, " +
+        "because the wrapper reads the share price directly and the fixed half " +
+        "becomes a fixed rate on that vault.",
+    },
+    embedded_fixed_rate: {
+      title: "A fixed rate inside an app you already run",
+      body:
+        "Your users see a rate on the day they deposit and receive it at " +
+        "maturity. Behind the screen your app buys the fixed half of an existing " +
+        "yield market on their behalf and holds it to expiry. The engineering is " +
+        "small. The product work is honesty. The rate is implied by a market " +
+        "price, nobody guarantees it, and an early exit means selling back into " +
+        "that market at whatever price it offers. You also own the calendar, " +
+        "because every market expires and your users expect the feature to " +
+        "continue, so rolling into the next maturity is part of the design.",
+      example:
+        "Worked example: a wallet shows Lock 1,000 USDC for 90 days and receive " +
+        "1,012 at maturity. The 1,012 is what the fixed half bought today pays " +
+        "at expiry, not a promise from the wallet. The disclosure names the " +
+        "market, the maturity date and what an early exit does.",
+    },
+    pt_backed_borrowing: {
+      title: "Lending against a fixed-yield position",
+      body:
+        "Holders of the fixed half post it as collateral and borrow the " +
+        "underlying asset. You open the lending market, so you choose the price " +
+        "feed and the liquidation line. The feed should not be the pool price, " +
+        "which a large trade can move. Use a deterministic discount that starts " +
+        "below par and converges to par at maturity, wrapped so the lending " +
+        "market sees a fresh timestamp. The parameters that decide whether this " +
+        "survives a bad week are the maturity, the discount rate you assume, the " +
+        "liquidation line, and how deep the exit is if liquidators need to sell " +
+        "the position before expiry.",
+      example:
+        "Worked example: risk teams curating Morpho markets have adopted the " +
+        "linear discount approach for this collateral, pairing the discount with " +
+        "the underlying asset's own price feed so the market prices the position " +
+        "as a bond rather than as a token.",
+    },
+    leveraged_fixed_yield: {
+      title: "The loop and its arithmetic",
+      body:
+        "Buy the fixed half, post it as collateral, borrow the underlying, buy " +
+        "more of the fixed half, repeat. The position earns the fixed rate on " +
+        "everything it holds and pays the borrow rate on everything it owes, so " +
+        "the product is the spread after fees, multiplied by the leverage. That " +
+        "multiplier cuts both ways. If the borrow rate rises above the fixed rate " +
+        "the loop loses money on every turn, and if the collateral discount " +
+        "widens the position can be liquidated before maturity. Cap the number of " +
+        "turns in the contract, publish the arithmetic, and show users the rate " +
+        "at which the trade turns negative.",
+      example:
+        "Worked example: fixed 5 percent, borrow 3 percent, three turns. Roughly " +
+        "2 percent of spread on close to three times the capital, so about 6 " +
+        "percent before fees. Borrow moves to 6 percent and the same position " +
+        "loses about 3 percent a year while still carrying the liquidation risk.",
+    },
+    yield_token_exposure: {
+      title: "Products on the variable half",
+      body:
+        "The variable half pays the yield of many units of the asset for the " +
+        "price of one, and it is worth exactly zero at maturity. Holding it is a " +
+        "view that the rate will run higher than the market implies today. " +
+        "Products built on it are leveraged rate products, so the disclosure " +
+        "that matters is the decay curve and the breakeven rate, not the headline " +
+        "yield. Point rewards and airdrops often flow to this half too, which is " +
+        "a real source of value and a hard one to price.",
+      example:
+        "Worked example: a token bought at 5 percent of the asset price pays the " +
+        "yield on twenty units. If the asset earns 6 percent a year over the " +
+        "remaining term the buyer roughly breaks even; anything above that is " +
+        "profit and anything below is loss, with the token reaching zero on the " +
+        "maturity date regardless.",
+    },
   } satisfies Partial<Record<ProductShape, OptionResource>>,
 } as const;
 
@@ -827,18 +915,21 @@ export const FIELD_INTROS = {
       "the strongest trust signal on this page.",
   },
   "project.kit.shape": {
-    title: "How the three shapes relate",
+    title: "How the shapes relate",
     body:
-      "The three shapes are one stack, not three products. Markets are where " +
+      "The shapes are one stack, not eight products. Markets are where " +
       "borrowing happens, vaults allocate deposits across markets, and apps " +
-      "embed either one. Pick the layer your users touch first. A vault team " +
-      "can later open its own markets, and an app that embeds earn can later " +
-      "curate its own vault. The research kit that follows is filtered by this " +
-      "answer, and you can change it at any time before publishing.",
+      "embed either one. Any yield source, a vault share included, can then be " +
+      "split into a fixed half and a variable half that each trade until a " +
+      "maturity date, which is where fixed income and leveraged yield begin. " +
+      "The fixed half can in turn be posted as collateral in a market, which is " +
+      "where the subsectors meet. Pick the layer your users touch first. The " +
+      "research kit that follows is filtered by this answer, and you can change " +
+      "it at any time before publishing.",
     example:
-      "Worked example: a wallet ships embedded earn in a quarter, sees which " +
-      "vaults its users prefer, then launches a curated vault of its own with " +
-      "the same deposit flow already in place.",
+      "Worked example: a vault team wraps its own shares to offer depositors a " +
+      "fixed rate, then opens a market that takes the fixed half as collateral " +
+      "so those depositors can borrow without leaving the product.",
   },
   "token.distribution.softCap": {
     title: "Soft cap",

@@ -187,5 +187,14 @@ event window so judges can verify it.
   first prompt, prelaunch_review, which walks the passes against an open
   repository. PRELAUNCH_REVIEW.md mirrors the list in the kit, and both
   exports carry the verdicts.
+- Sept 27, 2026. Fixed income and Leveraged yield open. Both Credit
+  subsectors lose Coming soon and five more product shapes join the three
+  lending ones, Fixed-rate yield on your asset, Fixed-rate savings inside
+  your app, Borrow against fixed-rate positions, Leveraged fixed-yield loop
+  and Yield-token products, each with a teaching card in CanHav's own words.
+  The picker groups shapes under subsector headings when more than one
+  subsector is chosen, a shape that spans subsectors appears once, and the
+  intro card now walks the whole stack from markets and vaults to splitting a
+  yield source and borrowing against the fixed half.
 
 This list grows as work lands on the branch.

@@ -79,11 +79,11 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
   { value: "other", label: "Other", available: false },
 ];
 
-/** Credit subsectors. Pick one to three; only Lending opens today. */
+/** Credit subsectors. Pick one to three; all three are open. */
 export const SUBSECTOR_OPTIONS: Array<GatedOption<Subsector>> = [
   { value: "lending", label: "Lending" },
-  { value: "leveraged_yield", label: "Leveraged yield", available: false },
-  { value: "fixed_income", label: "Fixed income", available: false },
+  { value: "leveraged_yield", label: "Leveraged yield" },
+  { value: "fixed_income", label: "Fixed income" },
 ];
 
 /** Display label for a project's sector, honouring the free-text "other". */
