@@ -78,12 +78,16 @@ export interface ProjectKit {
   selected: string[];
   /** Core resource ids the builder opted out of. */
   dismissed: string[];
+  /** Build checklist item id to done. Only true entries are stored. */
+  checklist?: Record<string, true>;
 }
 
 export const KIT_LIMITS = {
   existingProduct: { max: 200 },
   /** Cap on each id list, well above any catalog size. */
   ids: { max: 200 },
+  /** Cap on stored checklist entries. */
+  checklist: { max: 200 },
 } as const;
 
 export function emptyProjectKit(): ProjectKit {
@@ -120,6 +124,17 @@ export function normalizeProjectKit(raw: unknown): ProjectKit | null {
   };
   if (typeof r.existingProduct === "string")
     kit.existingProduct = r.existingProduct.slice(0, KIT_LIMITS.existingProduct.max);
+  if (r.checklist && typeof r.checklist === "object" && !Array.isArray(r.checklist)) {
+    const done: Record<string, true> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.checklist as Record<string, unknown>)) {
+      if (v === true && k && n < KIT_LIMITS.checklist.max) {
+        done[k] = true;
+        n++;
+      }
+    }
+    if (n > 0) kit.checklist = done;
+  }
   return kit;
 }
 
@@ -133,7 +148,63 @@ export function validateProjectKit(kit: ProjectKit): string | null {
     return `Existing product note is over ${KIT_LIMITS.existingProduct.max} characters.`;
   if (kit.selected.length > KIT_LIMITS.ids.max || kit.dismissed.length > KIT_LIMITS.ids.max)
     return "Too many resource selections.";
+  if (kit.checklist && Object.keys(kit.checklist).length > KIT_LIMITS.checklist.max)
+    return "Too many checklist entries.";
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Build checklist
+
+export interface ChecklistItem {
+  /** "<shape>.<slug>", immutable once shipped. */
+  id: string;
+  title: string;
+  /** One or two sentences on what done looks like. */
+  detail: string;
+  /** The editor step this item informs. */
+  step: KitStep;
+  /** Catalog resource ids that help with this item. */
+  resources: readonly string[];
+}
+
+export function checklistProgress(
+  items: readonly ChecklistItem[],
+  kit: Pick<ProjectKit, "checklist"> | undefined,
+): { done: number; total: number } {
+  const done = kit?.checklist ?? {};
+  return { done: items.filter((i) => done[i.id] === true).length, total: items.length };
+}
+
+/** Flip one item and return the patched field. Never stores false. */
+export function toggleChecklistItem(
+  kit: Pick<ProjectKit, "checklist">,
+  id: string,
+  done: boolean,
+): Pick<ProjectKit, "checklist"> {
+  const next: Record<string, true> = { ...(kit.checklist ?? {}) };
+  if (done) next[id] = true;
+  else delete next[id];
+  return Object.keys(next).length ? { checklist: next } : { checklist: undefined };
+}
+
+export function assertChecklists(
+  lists: Partial<Record<ProductShape, readonly ChecklistItem[]>>,
+  knownResourceIds: ReadonlySet<string>,
+): void {
+  const seen = new Set<string>();
+  const problems: string[] = [];
+  for (const [shape, items] of Object.entries(lists)) {
+    for (const item of items ?? []) {
+      if (seen.has(item.id)) problems.push(`duplicate checklist id ${item.id}`);
+      seen.add(item.id);
+      if (!item.id.startsWith(`${shape}.`)) problems.push(`${item.id} is not under ${shape}`);
+      if (!KIT_STEPS.includes(item.step)) problems.push(`${item.id} unknown step ${item.step}`);
+      for (const r of item.resources)
+        if (!knownResourceIds.has(r)) problems.push(`${item.id} references unknown resource ${r}`);
+    }
+  }
+  if (problems.length) throw new Error(`Kit checklists are invalid. ${problems.join("; ")}`);
 }
 
 // ---------------------------------------------------------------------------

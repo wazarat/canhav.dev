@@ -166,6 +166,15 @@ export const RAIL_COPY = {
     "extra. Your ticks travel with the project into AGENTS.md and the MCP tools.",
 } as const;
 
+export const CHECKLIST_COPY = {
+  tab: "Build steps",
+  resourcesTab: "Resources",
+  intro: "The order a small team should take these. Tick a step when it is written down, not when it is started.",
+  none: "Build steps for this shape arrive with its subsector.",
+  progress: (done: number, total: number) => `${done} of ${total} done`,
+  rowChip: (done: number, total: number) => `Build ${done} of ${total}`,
+} as const;
+
 export const HANDOFF_COPY = {
   title: "Get this into your IDE",
   intro:

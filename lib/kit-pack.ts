@@ -1,8 +1,10 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
+import { checklistFor } from "@/content/kits/checklists";
 import { FAMILY_LABELS, shapeLabel } from "@/content/kits/credit";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
+  type ChecklistItem,
   type FamilyEnvironment,
   type KitFamily,
   type KitFlag,
@@ -11,6 +13,7 @@ import {
   type KitResourceKind,
   type KitStep,
   type PackFilter,
+  checklistProgress,
   effectiveSelection,
   effectiveSubsectors,
   environmentPlanFor,
@@ -53,6 +56,8 @@ export interface ResourcePackView {
   readFirst: string[];
   resources: PackResourceView[];
   counts: ReturnType<typeof packCounts>;
+  /** The ordered build steps for the shape and which are done. */
+  checklist: { done: number; total: number; items: Array<ChecklistItem & { done: boolean }> };
   howToUse: string;
 }
 
@@ -90,6 +95,7 @@ export function buildResourcePack(
   });
   const resources = filtered.filter((r) => opts.includeUnselected || selection.has(r.id)).map(view);
   const families = environmentPlanFor(kit.shape, KIT_ENVIRONMENTS);
+  const checklistItems = checklistFor(kit.shape);
   const checkedOn = families.length
     ? families.map((f) => f.checkedOn).sort().at(-1) ?? null
     : null;
@@ -105,6 +111,10 @@ export function buildResourcePack(
       .map((r) => r.id),
     resources,
     counts: packCounts(fullPack, selection),
+    checklist: {
+      ...checklistProgress(checklistItems, kit),
+      items: checklistItems.map((i) => ({ ...i, done: kit.checklist?.[i.id] === true })),
+    },
     howToUse: HOW_TO_USE,
   };
 }

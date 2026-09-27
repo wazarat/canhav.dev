@@ -44,9 +44,11 @@ import {
 } from "@/content/kits/credit";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { RAIL_COPY } from "@/content/kits/credit";
+import { checklistFor } from "@/content/kits/checklists";
+import { CHECKLIST_COPY, RAIL_COPY } from "@/content/kits/credit";
 import {
   KIT_LIMITS,
+  checklistProgress,
   KIT_STEPS,
   type ProjectKit,
   effectiveSelection,
@@ -499,6 +501,17 @@ export function ProjectEditor({
                   <ReviewRow
                     term="Starting from"
                     detail={(kit && startingPointLabel(kit)) ?? "Not set"}
+                  />
+                  <ReviewRow
+                    term="Build steps"
+                    detail={
+                      kit?.shape && checklistFor(kit.shape).length
+                        ? CHECKLIST_COPY.progress(
+                            checklistProgress(checklistFor(kit.shape), kit).done,
+                            checklistFor(kit.shape).length,
+                          )
+                        : "Not set"
+                    }
                   />
                   <ReviewRow
                     term="Resource pack"

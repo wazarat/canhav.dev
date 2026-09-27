@@ -28,7 +28,10 @@ import {
   mcpUserId,
   registerMeteredTool,
 } from "@/lib/mcp/register";
+import { checklistFor } from "@/content/kits/checklists";
+import { shapeLabel } from "@/content/kits/credit";
 import { NO_SHAPE_HINT, buildResourcePack } from "@/lib/kit-pack";
+import { checklistProgress } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
 /**
@@ -133,7 +136,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's status",
       description:
-        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked, whether each side is published, whether a token is deployed, and the next action. Takes no arguments.",
+        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked, whether each side is published, whether a token is deployed, the research kit's build progress when the project has a product shape, and the next action. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -156,6 +159,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                 : !deployed
                   ? "Launch the token from canhav.com/launch."
                   : "Nothing left. The project is published and its token is deployed.";
+      const kit = project.draft_doc.kit;
       return jsonResult({
         project: {
           id: project.id,
@@ -165,6 +169,13 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           firstProblem: projectProblem,
           publicUrl: publicUrl("p", project),
         },
+        kit: kit?.shape
+          ? {
+              shape: kit.shape,
+              shapeLabel: shapeLabel(kit.shape),
+              build: checklistProgress(checklistFor(kit.shape), kit),
+            }
+          : null,
         tokenDesign: design
           ? {
               id: design.id,

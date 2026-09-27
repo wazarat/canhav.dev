@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
+import { BuildChecklist } from "@/components/ideation/kit/BuildChecklist";
 import { KitResourceRow } from "@/components/ideation/kit/KitResourceRow";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { PRIORITY_LABELS, RAIL_COPY, shapeLabel } from "@/content/kits/credit";
+import { checklistFor } from "@/content/kits/checklists";
+import { CHECKLIST_COPY, PRIORITY_LABELS, RAIL_COPY, shapeLabel } from "@/content/kits/credit";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
   KIT_PRIORITY_ORDER,
@@ -14,6 +16,7 @@ import {
   type KitResource,
   type KitStep,
   type ProjectKit,
+  checklistProgress,
   effectiveSelection,
   groupByPriority,
   packCounts,
@@ -44,6 +47,7 @@ export function KitRail({
 }) {
   const [scope, setScope] = useState<"step" | "all">("step");
   const [deepOpen, setDeepOpen] = useState(false);
+  const [view, setView] = useState<"resources" | "build">("resources");
 
   const fullPack = useMemo(() => packFor(KIT_CATALOG, kit, doc), [kit, doc]);
   const selection = useMemo(
@@ -77,6 +81,7 @@ export function KitRail({
   const toggle = (r: KitResource) => {
     onPatchKit(toggleResource(kit, r, selection.has(r.id)));
   };
+  const build = checklistProgress(checklistFor(kit.shape), kit);
 
   return (
     <section aria-label={RAIL_COPY.title} className="glass rounded-2xl p-4">
@@ -84,12 +89,36 @@ export function KitRail({
         title={RAIL_COPY.title}
         right={
           <StatusChip tone="info" className="px-2 py-0.5 text-[11px]">
-            {RAIL_COPY.selectedOf(counts.selected, counts.total)}
+            {view === "build"
+              ? CHECKLIST_COPY.progress(build.done, build.total)
+              : RAIL_COPY.selectedOf(counts.selected, counts.total)}
           </StatusChip>
         }
       />
       <p className="mt-1 text-xs text-ink-400">{shapeLabel(kit.shape)}</p>
 
+      <div className="mt-3 flex gap-4 border-b border-ink-800/70 text-xs" role="tablist" aria-label={RAIL_COPY.title}>
+        {(["resources", "build"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={cn(
+              "-mb-px border-b-2 px-1 pb-2 font-medium transition-colors",
+              view === v ? "border-electric-500 text-ink-50" : "border-transparent text-ink-400 hover:text-ink-200",
+            )}
+          >
+            {v === "build" ? CHECKLIST_COPY.tab : CHECKLIST_COPY.resourcesTab}
+          </button>
+        ))}
+      </div>
+
+      {view === "build" ? (
+        <BuildChecklist kit={kit} onPatchKit={onPatchKit} />
+      ) : (
+        <>
       {step !== null && (
         <div className="mt-3 flex gap-1 rounded-full border border-ink-800/70 p-0.5 text-xs" role="tablist">
           {(["step", "all"] as const).map((s) => (
@@ -151,6 +180,8 @@ export function KitRail({
       <p className="mt-4 border-t border-ink-800/70 pt-3 text-[11px] leading-relaxed text-ink-500">
         {RAIL_COPY.footnote}
       </p>
+        </>
+      )}
     </section>
   );
 }

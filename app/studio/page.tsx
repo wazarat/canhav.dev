@@ -6,6 +6,9 @@ import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { checklistFor } from "@/content/kits/checklists";
+import { CHECKLIST_COPY } from "@/content/kits/credit";
+import { checklistProgress } from "@/lib/kits";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import {
   type EntityLinkSummary,
@@ -53,6 +56,20 @@ function LinkLine({ link, side }: { link: EntityLinkSummary; side: "project" | "
         </>
       )}
     </span>
+  );
+}
+
+/** "Build 4 of 12" for a project with a product shape, nothing otherwise. */
+function buildChip(row: ProjectRow | TokenDesignRow) {
+  const doc = row.draft_doc;
+  if (doc.kind !== "project" || !doc.kit?.shape) return null;
+  const items = checklistFor(doc.kit.shape);
+  if (items.length === 0) return null;
+  const p = checklistProgress(items, doc.kit);
+  return (
+    <StatusChip tone="info" className="hidden sm:inline-flex">
+      {CHECKLIST_COPY.rowChip(p.done, p.total)}
+    </StatusChip>
   );
 }
 
@@ -110,9 +127,12 @@ function EntityList({
                     {link && <LinkLine link={link} side={side} />}
                   </p>
                 </div>
-                <StatusChip tone={row.status === "published" ? "success" : "neutral"}>
-                  {row.status === "published" ? "Published" : "Draft"}
-                </StatusChip>
+                <div className="flex shrink-0 items-center gap-2">
+                  {buildChip(row)}
+                  <StatusChip tone={row.status === "published" ? "success" : "neutral"}>
+                    {row.status === "published" ? "Published" : "Draft"}
+                  </StatusChip>
+                </div>
               </li>
             );
           })}

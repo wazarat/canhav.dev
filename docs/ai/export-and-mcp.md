@@ -17,7 +17,7 @@ A Credit project's research happens before publishing, so its owner can export f
 
 | Artifact | Purpose |
 |----------|---------|
-| `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, with an environment section |
+| `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, then the build steps with their done state and an environment section |
 | `?file=agents` | `AGENTS.md` built from the draft plus the linked token design's draft, marked as a draft export in its first paragraph |
 
 ## MCP server
@@ -74,7 +74,7 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | Tool | Purpose |
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
-| `get_project_status` | What is left before the project can publish and launch, ending in one next action |
+| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a Credit project with a product shape, a `kit` block with the shape and build progress (`done` of `total` steps) |
 | `get_linked_token_design` | The token design linked to this project, with derived tokenomics and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
@@ -84,7 +84,7 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 
 ### Resource pack fields
 
-`get_resource_pack` and `get_resource_catalog` share one vocabulary. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain) and `testnet_only`. `environment.families` lists, for Robinhood Chain and each protocol family the shape relies on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. Fields are only ever added, never renamed.
+`get_resource_pack` and `get_resource_catalog` share one vocabulary. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain) and `testnet_only`. `environment.families` lists, for Robinhood Chain and each protocol family the shape relies on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. `checklist` carries the ordered build steps for the shape with `done` and `total` and, per item, the step it informs, the resource ids that help and whether the team has ticked it. Fields are only ever added, never renamed.
 
 Two notes on what the URL is and is not. Clerk issues access tokens for the origin rather than for a path, so a token minted at `/mcp` is accepted at `/mcp/p/<id>` as well. The scoped URL is a tool surface, not a secret and not a capability: ownership is checked on every call against the signed-in account. And because the URL keys on the project id rather than its slug, a brand-new draft is connectable before it is ever published.
 

@@ -25,7 +25,14 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
-import { FLAG_COPY, KIND_LABELS, PRIORITY_LABELS, shapeLabel, startingPointLabel } from "@/content/kits/credit";
+import {
+  FAMILY_LABELS,
+  FLAG_COPY,
+  KIND_LABELS,
+  PRIORITY_LABELS,
+  shapeLabel,
+  startingPointLabel,
+} from "@/content/kits/credit";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
 import { KIT_PRIORITY_ORDER } from "@/lib/kits";
@@ -54,6 +61,11 @@ import {
  */
 
 const COHORT_LABELS = { team: "Team", investors: "Investors", advisors: "Advisors" } as const;
+
+/** Drafts can be exported, so empty answers must read as unset, not vanish. */
+function orNotSet(text: string): string {
+  return text.trim() ? text : "Not set";
+}
 
 function payerLine(doc: ProjectDoc): string {
   return doc.payer === "user" ? "The user pays." : doc.whoPays;
@@ -117,15 +129,28 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
     if (!items.length) continue;
     lines.push("", `${heading}# ${PRIORITY_LABELS[p]}`, "", ...items.map(resourceLine));
   }
+  if (pack.checklist.total > 0) {
+    lines.push(
+      "",
+      `${heading} Build steps`,
+      "",
+      `${pack.checklist.done} of ${pack.checklist.total} done. In order.`,
+      "",
+      ...pack.checklist.items.map(
+        (i, n) => `${n + 1}. [${i.done ? "x" : " "}] **${i.title}** (${i.step}). ${i.detail}`,
+      ),
+    );
+  }
   if (pack.environment.families.length) {
     lines.push("", `${heading} Where this runs today`, "");
     for (const f of pack.environment.families) {
       lines.push(
-        `- **${f.family}.** Testnet 46630 ${f.testnet.status.replace("_", " ")}. ${f.testnet.note} Mainnet 4663 ${f.mainnet.status.replace("_", " ")}. ${f.mainnet.note}`,
+        `- **${FAMILY_LABELS[f.family]}.** Testnet 46630 ${f.testnet.status.replace("_", " ")}. ${f.testnet.note} Mainnet 4663 ${f.mainnet.status.replace("_", " ")}. ${f.mainnet.note}`,
       );
     }
-    lines.push("", `Recommended path. ${pack.environment.families[0].devPath.join(", then ")}.`);
-    if (pack.environment.checkedOn) lines.push(`Last checked ${pack.environment.checkedOn}.`);
+    lines.push("", "Recommended path", "");
+    pack.environment.families[0].devPath.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+    if (pack.environment.checkedOn) lines.push("", `Last checked ${pack.environment.checkedOn}.`);
   }
   return lines;
 }
@@ -442,14 +467,14 @@ export function buildAgentsMd(input: {
       ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
       ...kitLines(project),
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
-      `- **What it does:** ${project.whatItDoes}`,
+      `- **What it does:** ${orNotSet(project.whatItDoes)}`,
       "",
       "## Contract architecture",
       "",
-      `- **Contracts:** ${a.contracts}`,
+      `- **Contracts:** ${orNotSet(a.contracts)}`,
       `- **External dependencies:** ${externalDepsLine(a)}`,
-      `- **Oracles:** ${oraclesLine(a)}`,
-      `- **Admin functions (and why):** ${a.adminFunctions}`,
+      `- **Oracles:** ${orNotSet(oraclesLine(a))}`,
+      `- **Admin functions (and why):** ${orNotSet(a.adminFunctions)}`,
       `- **Upgradeability:** ${optionLabel(UPGRADEABILITY_OPTIONS, a.upgradeability)}`,
       `- **Worst-case bug impact:** ${optionLabel(WORST_CASE_OPTIONS, project.worstCase)}`,
       "",

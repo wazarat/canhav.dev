@@ -171,5 +171,13 @@ event window so judges can verify it.
   framework, the role model, the invariants and per-asset research, and a
   machine-readable copy of the community Morpho testnet deployment marked
   unofficial in its first field. The resource pack links each one.
+- Sept 27, 2026. Build steps. The resource pack rail gains a second tab with
+  the ordered steps for the chosen product shape, ten to eleven per shape,
+  each naming the editor step it informs and the resources that help. Ticks
+  are saved with the project, the studio row and the public page show
+  "Build 4 of 11", the project status tool reports the same numbers, and
+  RESOURCES.md and AGENTS.md list the steps with their done state. Exports
+  also gain display names for the environment rows and "Not set" for empty
+  answers.
 
 This list grows as work lands on the branch.
