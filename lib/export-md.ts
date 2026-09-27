@@ -32,7 +32,7 @@ import {
   PRIORITY_LABELS,
   REVIEW_VERDICT_LABELS,
   STEP_LABELS_KIT,
-  shapeLabel,
+  shapeLabels,
   startingPointLabel,
 } from "@/content/kits/credit";
 import { LAUNCH_CHAIN } from "@/content/launch";
@@ -102,8 +102,8 @@ function kitLines(doc: ProjectDoc): string[] {
   const kit = doc.kit;
   if (!kit) return [];
   const out: string[] = [];
-  const shape = shapeLabel(kit.shape);
-  if (shape) out.push(`- **Building:** ${shape}`);
+  const shapes = shapeLabels(kit);
+  if (shapes.length) out.push(`- **Building:** ${shapes.join(", ")}`);
   const start = startingPointLabel(kit);
   if (start) out.push(`- **Starting from:** ${start}`);
   return out;
@@ -124,7 +124,7 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
     "",
     `${heading} Resource pack`,
     "",
-    `${pack.counts.selected} of ${pack.counts.total} resources selected by the team for ${pack.shapeLabel ?? pack.shape}. Core items are numbered in read-first order.`,
+    `${pack.counts.selected} of ${pack.counts.total} resources selected by the team for ${pack.shapeLabels.join(", ") || pack.shape}. Core items are numbered in read-first order.`,
   ];
   for (const p of KIT_PRIORITY_ORDER) {
     const items = pack.resources.filter((r) => r.priority === p);

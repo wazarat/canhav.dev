@@ -16,8 +16,8 @@ import {
   subsectorLabels,
 } from "@/content/ideation";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, shapeLabel, startingPointLabel } from "@/content/kits/credit";
-import { checklistProgress } from "@/lib/kits";
+import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/credit";
+import { checklistProgress, kitShapes } from "@/lib/kits";
 import { explorerAddressUrl } from "@/lib/explorer";
 import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
@@ -113,14 +113,16 @@ export default async function ProjectPublicPage({
               {label}
             </StatusChip>
           ))}
-          {shapeLabel(doc.kit?.shape) ? (
-            <StatusChip tone="neutral">{shapeLabel(doc.kit?.shape)}</StatusChip>
-          ) : null}
-          {doc.kit?.shape && checklistFor(doc.kit.shape).length > 0 ? (
+          {shapeLabels(doc.kit).map((label) => (
+            <StatusChip key={label} tone="neutral">
+              {label}
+            </StatusChip>
+          ))}
+          {doc.kit && checklistFor(kitShapes(doc.kit)).length > 0 ? (
             <StatusChip tone="info">
               {CHECKLIST_COPY.rowChip(
-                checklistProgress(checklistFor(doc.kit.shape), doc.kit).done,
-                checklistFor(doc.kit.shape).length,
+                checklistProgress(checklistFor(kitShapes(doc.kit)), doc.kit).done,
+                checklistFor(kitShapes(doc.kit)).length,
               )}
             </StatusChip>
           ) : null}

@@ -6,7 +6,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, STEP_LABELS_KIT } from "@/content/kits/credit";
-import { type ProjectKit, checklistProgress, toggleChecklistItem } from "@/lib/kits";
+import { type ProjectKit, checklistProgress, kitShapes, toggleChecklistItem } from "@/lib/kits";
 
 const TITLE_BY_ID = new Map(KIT_CATALOG.map((r) => [r.id, r] as const));
 
@@ -21,7 +21,7 @@ export function BuildChecklist({
   kit: ProjectKit;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
 }) {
-  const items = checklistFor(kit.shape);
+  const items = checklistFor(kitShapes(kit));
   if (items.length === 0) {
     return (
       <StatusChip tone="neutral" variant="block" className="mt-3">

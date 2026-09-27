@@ -31,9 +31,9 @@ import {
   registerMeteredTool,
 } from "@/lib/mcp/register";
 import { checklistFor } from "@/content/kits/checklists";
-import { REVIEW_VERDICT_LABELS, shapeLabel } from "@/content/kits/credit";
+import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/credit";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
-import { checklistProgress } from "@/lib/kits";
+import { checklistProgress, kitShapes } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
 /**
@@ -175,7 +175,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           ? {
               shape: kit.shape,
               shapeLabel: shapeLabel(kit.shape),
-              build: checklistProgress(checklistFor(kit.shape), kit),
+              shapes: kitShapes(kit),
+              shapeLabels: shapeLabels(kit),
+              build: checklistProgress(checklistFor(kitShapes(kit)), kit),
             }
           : null,
         tokenDesign: design
@@ -376,7 +378,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         )
         .join("\n");
       const text = [
-        `You are reviewing a ${view.shapeLabel ?? view.shape} product before it holds value. Work inside the repository you have open.`,
+        `You are reviewing a ${view.shapeLabels.join(" and ") || view.shape} product before it holds value. Work inside the repository you have open.`,
         "",
         "First call get_prelaunch_review and get_resource_pack on this project's CanHav MCP server. Fetch the rawUrl of any resource a pass is defined by before judging that pass.",
         "",

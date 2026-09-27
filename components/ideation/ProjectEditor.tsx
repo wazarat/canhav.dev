@@ -13,7 +13,7 @@ import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
-import { ChipMultiSelect, ChipRadioGroup, ChipRadioGroups } from "@/components/ui/ChipGroup";
+import { ChipMultiSelect, ChipMultiSelectGroups, ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
@@ -41,6 +41,7 @@ import {
   shapeBlurb,
   shapeGroupsFor,
   shapeLabel,
+  shapeLabels,
   startingPointLabel,
 } from "@/content/kits/credit";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
@@ -57,8 +58,10 @@ import {
   type ProjectKit,
   effectiveSelection,
   emptyProjectKit,
+  kitShapes,
   packCounts,
   packFor,
+  withShapes,
 } from "@/lib/kits";
 
 const STEP_LABELS = ["Basics", "Architecture", "Security", "Reality", "Review"] as const;
@@ -220,8 +223,14 @@ export function ProjectEditor({
                 hint="Pick one or more. Each opens its own research workflow."
                 value={doc.subsectors ?? []}
                 onChange={(v) => {
-                  const keep = !kit?.shape || offeredShapes(v).includes(kit.shape);
-                  patch(keep ? { subsectors: v } : { subsectors: v, kit: { ...kit!, shape: "" } });
+                  const offered = offeredShapes(v);
+                  const current = kitShapes(kit);
+                  const keep = current.filter((s) => offered.includes(s));
+                  patch(
+                    keep.length === current.length
+                      ? { subsectors: v }
+                      : { subsectors: v, kit: { ...kit!, ...withShapes(keep) } },
+                  );
                 }}
                 options={SUBSECTOR_OPTIONS}
                 max={PROJECT_LIMITS.subsectors.max}
@@ -229,24 +238,39 @@ export function ProjectEditor({
             )}
             {kitId === "credit" && (
               <>
-                <ChipRadioGroups
+                <ChipMultiSelectGroups
                   label={CREDIT_KIT_COPY.shapeLabel}
                   hint={CREDIT_KIT_COPY.shapeHint}
-                  value={kit?.shape ?? ""}
-                  onChange={(shape) => patchKit({ shape })}
+                  value={kitShapes(kit)}
+                  onChange={(shapes) => patchKit(withShapes(shapes))}
+                  max={KIT_LIMITS.shapes.max}
                   groups={shapeGroupsFor(doc.subsectors ?? []).map((g) => ({
                     key: g.subsector,
                     heading: g.heading,
                     options: g.options,
                   }))}
                 />
-                {kit?.shape ? (
-                  <p className="-mt-3 text-sm leading-relaxed text-ink-300">
-                    {shapeBlurb(kit.shape)}
-                  </p>
+                {kitShapes(kit).length ? (
+                  <div className="-mt-3 space-y-1.5 text-sm leading-relaxed text-ink-300">
+                    {kitShapes(kit).map((s) => (
+                      <p key={s}>
+                        {kitShapes(kit).length > 1 ? (
+                          <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
+                        ) : null}
+                        {shapeBlurb(s)}
+                      </p>
+                    ))}
+                  </div>
                 ) : null}
                 <div className="flex flex-wrap gap-2">
-                  <OptionResourceCard field="project.kit.shape" value={kit?.shape ?? ""} />
+                  {kitShapes(kit).map((s) => (
+                    <OptionResourceCard
+                      key={s}
+                      field="project.kit.shape"
+                      value={s}
+                      label={kitShapes(kit).length > 1 ? `Why ${shapeLabel(s)}` : undefined}
+                    />
+                  ))}
                   <FieldIntroCard intro="project.kit.shape" />
                 </div>
                 <ChipRadioGroup
@@ -499,7 +523,7 @@ export function ProjectEditor({
               )}
               {kitId === "credit" && (
                 <>
-                  <ReviewRow term="Building" detail={shapeLabel(kit?.shape) ?? "Not set"} />
+                  <ReviewRow term="Building" detail={shapeLabels(kit).join(" · ") || "Not set"} />
                   <ReviewRow
                     term="Starting from"
                     detail={(kit && startingPointLabel(kit)) ?? "Not set"}
@@ -507,10 +531,10 @@ export function ProjectEditor({
                   <ReviewRow
                     term="Build steps"
                     detail={
-                      kit?.shape && checklistFor(kit.shape).length
+                      kit && checklistFor(kitShapes(kit)).length
                         ? CHECKLIST_COPY.progress(
-                            checklistProgress(checklistFor(kit.shape), kit).done,
-                            checklistFor(kit.shape).length,
+                            checklistProgress(checklistFor(kitShapes(kit)), kit).done,
+                            checklistFor(kitShapes(kit)).length,
                           )
                         : "Not set"
                     }
@@ -518,8 +542,8 @@ export function ProjectEditor({
                   <ReviewRow
                     term="Review passes"
                     detail={
-                      kit?.shape && reviewPassesFor(REVIEW_PASSES, kit.shape).length
-                        ? REVIEW_COPY.reviewRow(reviewProgress(reviewPassesFor(REVIEW_PASSES, kit.shape), kit))
+                      kit && reviewPassesFor(REVIEW_PASSES, kitShapes(kit)).length
+                        ? REVIEW_COPY.reviewRow(reviewProgress(reviewPassesFor(REVIEW_PASSES, kitShapes(kit)), kit))
                         : "Not set"
                     }
                   />

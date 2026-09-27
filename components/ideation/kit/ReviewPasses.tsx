@@ -11,6 +11,7 @@ import {
   reviewPassesFor,
   reviewProgress,
   setReviewVerdict,
+  kitShapes,
 } from "@/lib/kits";
 
 const BY_ID = new Map(KIT_CATALOG.map((r) => [r.id, r] as const));
@@ -27,7 +28,7 @@ export function ReviewPasses({
   kit: ProjectKit;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
 }) {
-  const passes = reviewPassesFor(REVIEW_PASSES, kit.shape);
+  const passes = reviewPassesFor(REVIEW_PASSES, kitShapes(kit));
   if (passes.length === 0) return null;
   const p = reviewProgress(passes, kit);
   return (

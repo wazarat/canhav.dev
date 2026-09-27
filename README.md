@@ -196,5 +196,19 @@ event window so judges can verify it.
   subsector is chosen, a shape that spans subsectors appears once, and the
   intro card now walks the whole stack from markets and vaults to splitting a
   yield source and borrowing against the fixed half.
+- Sept 27, 2026. Several shapes per project. A Credit project can tick more
+  than one product shape, and its resource pack, build steps, review passes
+  and where-it-runs families become the union across them, each item once.
+  Exports and the project's MCP tools list every shape while keeping the
+  first one where older readers expect it. Unselected chips across the
+  editors are brighter.
+- Sept 27, 2026. Pendle, Boros and Robinhood Chain in the catalog. The
+  resource catalog behind the Fixed income and Leveraged yield shapes is
+  filled, 51 Pendle entries from the agent skills and hosted tooling to
+  the yield wrapper, the two halves, the market and the fixed half as
+  collateral, 32 Boros entries as flagged background reading because Boros
+  runs elsewhere, 17 more Robinhood Chain pages from endpoints to stock
+  token APIs, and two more standards. Every link was fetched before it was
+  written.
 
 This list grows as work lands on the branch.

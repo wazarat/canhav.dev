@@ -8,7 +8,7 @@ import { KitResourceRow } from "@/components/ideation/kit/KitResourceRow";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, PRIORITY_LABELS, RAIL_COPY, shapeLabel } from "@/content/kits/credit";
+import { CHECKLIST_COPY, PRIORITY_LABELS, RAIL_COPY, shapeLabels } from "@/content/kits/credit";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
   KIT_PRIORITY_ORDER,
@@ -24,6 +24,7 @@ import {
   resetSelection,
   selectAllResources,
   toggleResource,
+  kitShapes,
 } from "@/lib/kits";
 import { cn } from "@/lib/utils";
 
@@ -81,7 +82,7 @@ export function KitRail({
   const toggle = (r: KitResource) => {
     onPatchKit(toggleResource(kit, r, selection.has(r.id)));
   };
-  const build = checklistProgress(checklistFor(kit.shape), kit);
+  const build = checklistProgress(checklistFor(kitShapes(kit)), kit);
 
   return (
     <section aria-label={RAIL_COPY.title} className="glass rounded-2xl p-4">
@@ -95,7 +96,7 @@ export function KitRail({
           </StatusChip>
         }
       />
-      <p className="mt-1 text-xs text-ink-400">{shapeLabel(kit.shape)}</p>
+      <p className="mt-1 text-xs text-ink-400">{shapeLabels(kit).join(" · ")}</p>
 
       <div className="mt-3 flex gap-4 border-b border-ink-800/70 text-xs" role="tablist" aria-label={RAIL_COPY.title}>
         {(["resources", "build"] as const).map((v) => (

@@ -49,14 +49,43 @@ export function shapesFor(subsectors: readonly Subsector[]): ProductShape[] {
   return PRODUCT_SHAPE_VALUES.filter((s) => SHAPE_SUBSECTORS[s].some((x) => chosen.has(x)));
 }
 
-/** Declared subsectors plus the ones the chosen shape implies. */
+/** Declared subsectors plus the ones the chosen shapes imply. */
 export function effectiveSubsectors(
-  kit: Pick<ProjectKit, "shape"> | undefined,
+  kit: Pick<ProjectKit, "shape" | "shapes"> | undefined,
   doc: Pick<ProjectDoc, "subsectors">,
 ): Subsector[] {
   const out = new Set<Subsector>(doc.subsectors ?? []);
-  if (kit?.shape) for (const s of SHAPE_SUBSECTORS[kit.shape]) out.add(s);
+  for (const shape of kitShapes(kit)) for (const s of SHAPE_SUBSECTORS[shape]) out.add(s);
   return [...out];
+}
+
+/** One shape, a list of shapes or nothing, as a list. */
+export type ShapeInput = ProductShape | "" | undefined | readonly ProductShape[];
+
+export function toShapeList(input: ShapeInput): ProductShape[] {
+  if (!input) return [];
+  return typeof input === "string" ? [input] : [...input];
+}
+
+/**
+ * The shapes a project is building, in table order. Reads `shapes` and falls
+ * back to the older single `shape` so a kit patched in memory before the
+ * normaliser runs still answers.
+ */
+export function kitShapes(kit: Pick<ProjectKit, "shape" | "shapes"> | undefined): ProductShape[] {
+  if (!kit) return [];
+  if (kit.shapes?.length) return kit.shapes;
+  return kit.shape ? [kit.shape] : [];
+}
+
+/**
+ * The field patch for a new set of shapes. Deduplicated, in table order, and
+ * `shape` follows as the first one so every older reader keeps working.
+ */
+export function withShapes(input: ShapeInput): Pick<ProjectKit, "shape" | "shapes"> {
+  const chosen = new Set(toShapeList(input));
+  const shapes = PRODUCT_SHAPE_VALUES.filter((s) => chosen.has(s));
+  return { shapes, shape: shapes[0] ?? "" };
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +99,10 @@ export type KitId = "credit";
 
 export interface ProjectKit {
   id: KitId;
+  /** The first of `shapes`, kept so stored docs, exports and MCP readers from before multi-shape keep working. */
   shape: ProductShape | "";
+  /** Every shape the project is building, in table order. Use kitShapes() to read. */
+  shapes: ProductShape[];
   startingPoint: StartingPoint | "";
   /** A link or one line about the existing product. Only meaningful for existing_product. */
   existingProduct?: string;
@@ -90,6 +122,8 @@ export const REVIEW_VERDICTS: readonly ReviewVerdict[] = ["pass", "fail", "na"];
 
 export const KIT_LIMITS = {
   existingProduct: { max: 200 },
+  /** Every shape at most once. */
+  shapes: { max: PRODUCT_SHAPE_VALUES.length },
   /** Cap on each id list, well above any catalog size. */
   ids: { max: 200 },
   /** Cap on stored checklist entries. */
@@ -99,7 +133,7 @@ export const KIT_LIMITS = {
 } as const;
 
 export function emptyProjectKit(): ProjectKit {
-  return { id: "credit", shape: "", startingPoint: "", selected: [], dismissed: [] };
+  return { id: "credit", shape: "", shapes: [], startingPoint: "", selected: [], dismissed: [] };
 }
 
 function idList(v: unknown): string[] {
@@ -117,15 +151,18 @@ function idList(v: unknown): string[] {
 export function normalizeProjectKit(raw: unknown): ProjectKit | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
-  const shape = PRODUCT_SHAPE_VALUES.includes(r.shape as ProductShape)
-    ? (r.shape as ProductShape)
-    : "";
+  const rawShapes = Array.isArray(r.shapes) ? [...(r.shapes as unknown[])] : [];
+  if (typeof r.shape === "string" && r.shape) rawShapes.unshift(r.shape);
+  const { shape, shapes } = withShapes(
+    rawShapes.filter((x): x is ProductShape => PRODUCT_SHAPE_VALUES.includes(x as ProductShape)),
+  );
   const startingPoint = STARTING_POINT_VALUES.includes(r.startingPoint as StartingPoint)
     ? (r.startingPoint as StartingPoint)
     : "";
   const kit: ProjectKit = {
     id: "credit",
     shape,
+    shapes,
     startingPoint,
     selected: idList(r.selected),
     dismissed: idList(r.dismissed),
@@ -161,6 +198,10 @@ export function normalizeProjectKit(raw: unknown): ProjectKit | null {
 export function validateProjectKit(kit: ProjectKit): string | null {
   if (kit.id !== "credit") return "Unknown research kit.";
   if (kit.shape && !PRODUCT_SHAPE_VALUES.includes(kit.shape)) return "Unknown product shape.";
+  if (kit.shapes.some((s) => !PRODUCT_SHAPE_VALUES.includes(s))) return "Unknown product shape.";
+  if (new Set(kit.shapes).size !== kit.shapes.length || kit.shapes.length > KIT_LIMITS.shapes.max)
+    return "Too many product shapes.";
+  if (kit.shape && !kit.shapes.includes(kit.shape)) return "Product shapes are out of step.";
   if (kit.startingPoint && !STARTING_POINT_VALUES.includes(kit.startingPoint))
     return "Unknown starting point.";
   if ((kit.existingProduct?.length ?? 0) > KIT_LIMITS.existingProduct.max)
@@ -192,12 +233,11 @@ export interface ReviewPass {
   resources: readonly string[];
 }
 
-export function reviewPassesFor(
-  passes: readonly ReviewPass[],
-  shape: ProductShape | "" | undefined,
-): ReviewPass[] {
-  if (!shape) return [];
-  return passes.filter((p) => p.shapes === "all" || p.shapes.includes(shape));
+/** The passes that apply to any of the given shapes, in catalog order, each once. */
+export function reviewPassesFor(passes: readonly ReviewPass[], shapes: ShapeInput): ReviewPass[] {
+  const list = toShapeList(shapes);
+  if (!list.length) return [];
+  return passes.filter((p) => p.shapes === "all" || p.shapes.some((s) => list.includes(s)));
 }
 
 export function reviewProgress(
@@ -328,19 +368,25 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
   yield_token_exposure: ["pendle"],
 };
 
-/** Environment rows for a shape, Robinhood first, from whatever rows exist. */
+/** Environment rows for the given shapes, Robinhood first, each family once, from whatever rows exist. */
 export function environmentPlanFor(
-  shape: ProductShape | "" | undefined,
+  shapes: ShapeInput,
   rows: Partial<Record<FamilyEnvironment["family"], FamilyEnvironment>>,
 ): FamilyEnvironment[] {
-  if (!shape) return [];
+  const list = toShapeList(shapes);
+  if (!list.length) return [];
   const out: FamilyEnvironment[] = [];
   const rh = rows.robinhood;
   if (rh) out.push(rh);
-  for (const f of SHAPE_FAMILIES[shape]) {
-    const row = rows[f];
-    if (row) out.push(row);
-  }
+  const seen = new Set<FamilyEnvironment["family"]>();
+  for (const shape of list)
+    for (const f of SHAPE_FAMILIES[shape]) {
+      const row = rows[f];
+      if (row && !seen.has(f)) {
+        seen.add(f);
+        out.push(row);
+      }
+    }
   return out;
 }
 
@@ -412,13 +458,14 @@ export interface PackFilter {
 
 function appliesTo(
   r: KitResource,
-  kit: Pick<ProjectKit, "shape" | "startingPoint">,
+  shapes: readonly ProductShape[],
+  kit: Pick<ProjectKit, "startingPoint">,
   subsectors: readonly Subsector[],
 ): boolean {
-  if (!kit.shape) return false;
+  if (!shapes.length) return false;
   if (r.shapes === "all") {
     if (r.subsectors && !r.subsectors.some((s) => subsectors.includes(s))) return false;
-  } else if (!r.shapes.includes(kit.shape)) return false;
+  } else if (!r.shapes.some((s) => shapes.includes(s))) return false;
   if (r.startingPoints && kit.startingPoint && !r.startingPoints.includes(kit.startingPoint))
     return false;
   return true;
@@ -436,8 +483,9 @@ function compareResources(a: KitResource, b: KitResource): number {
 }
 
 /**
- * The resources that apply to a project, sorted priority then readOrder then
- * family then title. Empty when no shape is chosen.
+ * The resources that apply to a project, the union over its shapes, sorted
+ * priority then readOrder then family then title. Empty when no shape is
+ * chosen.
  */
 export function packFor(
   catalog: readonly KitResource[],
@@ -445,10 +493,11 @@ export function packFor(
   doc: Pick<ProjectDoc, "subsectors">,
   filter: PackFilter = {},
 ): KitResource[] {
-  if (!kit?.shape) return [];
+  const shapes = kitShapes(kit);
+  if (!kit || !shapes.length) return [];
   const subs = effectiveSubsectors(kit, doc);
   return catalog
-    .filter((r) => appliesTo(r, kit, subs))
+    .filter((r) => appliesTo(r, shapes, kit, subs))
     .filter((r) => !filter.step || r.steps.includes(filter.step))
     .filter((r) => !filter.priority || r.priority === filter.priority)
     .filter((r) => !filter.family || r.family === filter.family)

@@ -132,9 +132,12 @@ function DeployabilityChip({ resource }: { resource: OptionResource }) {
 export function OptionResourceCard({
   field,
   value,
+  label = "Why this matters",
 }: {
   field: ResourceFieldKey;
   value: string;
+  /** Trigger text. Pass the option's own label when several cards sit side by side. */
+  label?: string;
 }) {
   if (!value) return null;
   const r = (FIELD_RESOURCES[field] as Record<string, OptionResource>)[value];
@@ -142,7 +145,7 @@ export function OptionResourceCard({
   return (
     <div className={cn("space-y-2", !r.deployability && "-mt-2")}>
       <DeployabilityChip resource={r} />
-      <ResourceTrigger resource={r} label="Why this matters" />
+      <ResourceTrigger resource={r} label={label} />
     </div>
   );
 }

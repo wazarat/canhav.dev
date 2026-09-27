@@ -1,5 +1,5 @@
 import { KIT_CATALOG_IDS } from "@/content/kits/catalog";
-import { type ChecklistItem, type ProductShape, assertChecklists } from "@/lib/kits";
+import { type ChecklistItem, type ProductShape, type ShapeInput, assertChecklists, toShapeList } from "@/lib/kits";
 
 import {
   COLLATERAL_LOANS_CHECKLIST,
@@ -18,9 +18,9 @@ export const KIT_CHECKLISTS: Partial<Record<ProductShape, readonly ChecklistItem
   collateral_loans: COLLATERAL_LOANS_CHECKLIST,
 };
 
-export function checklistFor(shape: ProductShape | "" | undefined): readonly ChecklistItem[] {
-  if (!shape) return [];
-  return KIT_CHECKLISTS[shape] ?? [];
+/** The steps for one shape or, for several, their lists one after another in table order. */
+export function checklistFor(shapes: ShapeInput): readonly ChecklistItem[] {
+  return toShapeList(shapes).flatMap((s) => KIT_CHECKLISTS[s] ?? []);
 }
 
 assertChecklists(KIT_CHECKLISTS, KIT_CATALOG_IDS);

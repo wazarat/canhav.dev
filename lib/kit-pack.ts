@@ -1,7 +1,7 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
-import { FAMILY_LABELS, shapeLabel } from "@/content/kits/credit";
+import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/credit";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
@@ -20,6 +20,7 @@ import {
   effectiveSelection,
   effectiveSubsectors,
   environmentPlanFor,
+  kitShapes,
   packCounts,
   packFor,
   reviewPassesFor,
@@ -53,8 +54,12 @@ export interface PackResourceView {
 
 export interface ResourcePackView {
   kit: "credit";
+  /** The first shape. Kept for readers from before a project could build several. */
   shape: string;
   shapeLabel: string | null;
+  /** Every shape the project is building, in table order. */
+  shapes: string[];
+  shapeLabels: string[];
   subsectors: string[];
   startingPoint: string;
   environment: { checkedOn: string | null; families: FamilyEnvironment[] };
@@ -76,6 +81,8 @@ export interface ReviewPassView extends Omit<ReviewPass, "resources"> {
 export interface ReviewView {
   shape: string;
   shapeLabel: string | null;
+  shapes: string[];
+  shapeLabels: string[];
   progress: ReturnType<typeof reviewProgress>;
   passes: ReviewPassView[];
 }
@@ -85,11 +92,14 @@ const BY_ID = new Map(KIT_CATALOG.map((r) => [r.id, r] as const));
 /** The review passes for a project's shape with verdicts, or null without a shape. */
 export function buildReviewView(doc: ProjectDoc): ReviewView | null {
   const kit = doc.kit;
-  if (!kit?.shape) return null;
-  const passes = reviewPassesFor(REVIEW_PASSES, kit.shape);
+  const shapes = kitShapes(kit);
+  if (!kit || !shapes.length) return null;
+  const passes = reviewPassesFor(REVIEW_PASSES, shapes);
   return {
     shape: kit.shape,
     shapeLabel: shapeLabel(kit.shape),
+    shapes,
+    shapeLabels: shapeLabels(kit),
     progress: reviewProgress(passes, kit),
     passes: passes.map((p) => ({
       ...p,
@@ -113,7 +123,8 @@ export function buildResourcePack(
   opts: PackFilter & { includeUnselected?: boolean } = {},
 ): ResourcePackView | null {
   const kit = doc.kit;
-  if (!kit?.shape) return null;
+  const shapes = kitShapes(kit);
+  if (!kit || !shapes.length) return null;
   const fullPack = packFor(KIT_CATALOG, kit, doc);
   const selection = effectiveSelection(fullPack, kit);
   const ranks = new Map<string, number>();
@@ -135,8 +146,8 @@ export function buildResourcePack(
     selected: selection.has(r.id),
   });
   const resources = filtered.filter((r) => opts.includeUnselected || selection.has(r.id)).map(view);
-  const families = environmentPlanFor(kit.shape, KIT_ENVIRONMENTS);
-  const checklistItems = checklistFor(kit.shape);
+  const families = environmentPlanFor(shapes, KIT_ENVIRONMENTS);
+  const checklistItems = checklistFor(shapes);
   const checkedOn = families.length
     ? families.map((f) => f.checkedOn).sort().at(-1) ?? null
     : null;
@@ -144,6 +155,8 @@ export function buildResourcePack(
     kit: "credit",
     shape: kit.shape,
     shapeLabel: shapeLabel(kit.shape),
+    shapes,
+    shapeLabels: shapeLabels(kit),
     subsectors: effectiveSubsectors(kit, doc),
     startingPoint: kit.startingPoint,
     environment: { checkedOn, families },

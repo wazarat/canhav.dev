@@ -11,6 +11,7 @@ import {
   type ProjectKit,
   SHAPE_SUBSECTORS,
   type StartingPoint,
+  kitShapes,
   shapesFor,
 } from "@/lib/kits";
 import { SUBSECTOR_OPTIONS } from "@/content/ideation";
@@ -102,7 +103,7 @@ export const STARTING_POINT_OPTIONS: ReadonlyArray<ChipOption<StartingPoint>> = 
 
 export const CREDIT_KIT_COPY = {
   shapeLabel: "What are you building",
-  shapeHint: "Pick the layer your users touch first. The research kit follows this choice.",
+  shapeHint: "Pick every layer your users touch. The research kit merges the packs for what you choose.",
   startingPointLabel: "Starting point",
   existingProductLabel: "What exists today",
   existingProductHint: "A link or one line. Optional.",
@@ -220,6 +221,13 @@ function ordinal(n: number): string {
 export function shapeLabel(shape: ProductShape | "" | undefined): string | null {
   if (!shape) return null;
   return CREDIT_SHAPE_OPTIONS.find((o) => o.value === shape)?.label ?? null;
+}
+
+/** Labels for every shape a kit is building, in table order. Empty when none. */
+export function shapeLabels(kit: Pick<ProjectKit, "shape" | "shapes"> | undefined): string[] {
+  return kitShapes(kit)
+    .map((s) => shapeLabel(s))
+    .filter((l): l is string => Boolean(l));
 }
 
 export function shapeBlurb(shape: ProductShape | ""): string | null {
