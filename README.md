@@ -230,5 +230,11 @@ event window so judges can verify it.
   of the yield protocol's mainnet manifest marked unverified on testnet, a
   chain master file with every endpoint and address the chain publishes,
   and an architecture template that now covers all eight shapes.
+- Sept 27, 2026. Build steps and review passes for every shape. The five
+  fixed income and leveraged yield shapes get their ordered build steps,
+  from the wrapper checklist and the market worksheet to the leverage cap
+  and the decay disclosure, and seven review passes of their own, so every
+  one of the eight shapes now has a guided list, a review, and an agent
+  prompt that walks it.
 
 This list grows as work lands on the branch.

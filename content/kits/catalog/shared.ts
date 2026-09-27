@@ -91,7 +91,7 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     kind: "checklist",
     href: `${KIT}/PRELAUNCH_REVIEW.md`,
     rawHref: `${KIT}/PRELAUNCH_REVIEW.md`,
-    why: "The fifteen passes the studio records verdicts for, with what counts as evidence for each.",
+    why: "The twenty-two passes the studio records verdicts for, with what counts as evidence for each.",
     shapes: "all",
     steps: ["security", "review"],
     priority: "core",
