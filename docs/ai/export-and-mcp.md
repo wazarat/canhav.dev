@@ -88,6 +88,10 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 
 Two notes on what the URL is and is not. Clerk issues access tokens for the origin rather than for a path, so a token minted at `/mcp` is accepted at `/mcp/p/<id>` as well. The scoped URL is a tool surface, not a secret and not a capability: ownership is checked on every call against the signed-in account. And because the URL keys on the project id rather than its slug, a brand-new draft is connectable before it is ever published.
 
+## Kit files
+
+CanHav publishes its own files for credit builders at `https://www.canhav.com/kits/credit/`, served raw so an agent can fetch them and a team can commit them. The index is `README.md`, the agent skill is `SKILL.md`, and the templates are `ARCHITECTURE.md`, `RISK_FRAMEWORK.md`, `ROLE_MODEL.md`, `INVARIANTS.md` and `morpho/COLLATERAL_ASSET_RESEARCH.md`. `morpho/robinhood-testnet-46630.manifest.json` is a machine-readable copy of the community Morpho Blue deployment on testnet, marked unofficial in its first field. The resource pack links each file as a `template` or `addresses` entry, so `get_resource_pack` and `RESOURCES.md` carry their URLs.
+
 ## Status discipline
 
 This page reflects the tools registered in the repository. When a tool is added or its input changes, update the matching table in the same change.

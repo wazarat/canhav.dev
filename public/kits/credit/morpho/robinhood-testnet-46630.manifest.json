@@ -1,0 +1,99 @@
+{
+  "unofficial": true,
+  "notice": "Community deployment of the Morpho Blue core contracts on Robinhood Chain Testnet, published by EqualFi Labs in their Statics repository. Not Morpho's official infrastructure and not in Morpho's address registry. Useful as a shared test fixture. It deploys no oracle and no market; each test scenario supplies its own. Re-verify on the explorer before use.",
+  "copiedFrom": "https://github.com/EqualFiLabs/Statics/blob/master/deployments/robinhood-testnet-46630-morpho.json",
+  "checkedOn": "2026-09-27",
+  "chainId": 46630,
+  "network": {
+    "name": "Robinhood Chain Testnet",
+    "rpc": "https://rpc.testnet.chain.robinhood.com",
+    "explorer": "https://explorer.testnet.chain.robinhood.com",
+    "faucet": "https://faucet.testnet.chain.robinhood.com"
+  },
+  "contracts": {
+    "morphoBlue": {
+      "address": "0xC0dd6aB9E1e59F9dF696cc90Ba947B4E6C74E6A9",
+      "verified": true,
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0xC0dd6aB9E1e59F9dF696cc90Ba947B4E6C74E6A9"
+    },
+    "adaptiveCurveIrm": {
+      "address": "0x6e8555DAbbAe94aDfA5b606E3eaF35246E346332",
+      "verified": true,
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0x6e8555DAbbAe94aDfA5b606E3eaF35246E346332"
+    },
+    "create2Deployer": {
+      "address": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "note": "Deployment infrastructure only"
+    },
+    "vaultV2Factory": null,
+    "chainlinkOracleV2Factory": null,
+    "publicAllocator": null,
+    "midnight": null
+  },
+  "enabledIrms": [
+    "adaptiveCurveIrm",
+    "zeroIrm"
+  ],
+  "enabledLltvs": [
+    {
+      "wad": "0",
+      "percent": 0
+    },
+    {
+      "wad": "385000000000000000",
+      "percent": 38.5
+    },
+    {
+      "wad": "625000000000000000",
+      "percent": 62.5
+    },
+    {
+      "wad": "770000000000000000",
+      "percent": 77
+    },
+    {
+      "wad": "860000000000000000",
+      "percent": 86
+    },
+    {
+      "wad": "915000000000000000",
+      "percent": 91.5
+    },
+    {
+      "wad": "945000000000000000",
+      "percent": 94.5
+    },
+    {
+      "wad": "965000000000000000",
+      "percent": 96.5
+    },
+    {
+      "wad": "980000000000000000",
+      "percent": 98
+    }
+  ],
+  "deployment": {
+    "timestamp": "2026-09-01T12:26:09Z",
+    "startBlock": 111138899,
+    "endBlock": 111138919,
+    "deployer": "0x6Ae2aD9905FEDC8270b828294D4b9CEC7CBBE316",
+    "owner": "0x6Ae2aD9905FEDC8270b828294D4b9CEC7CBBE316",
+    "feeRecipient": "0x0000000000000000000000000000000000000000"
+  },
+  "source": {
+    "morphoBlueCommit": "731e3f7ed97cf15f8fe00b86e4be5365eb3802ac",
+    "adaptiveCurveIrmCommit": "a7d9cce3451b4a106bfd40933ac57a785b5228f3",
+    "compiler": {
+      "version": "0.8.19",
+      "evmVersion": "paris",
+      "viaIr": true,
+      "optimizerRuns": 999999
+    }
+  },
+  "mainnetReference": {
+    "note": "Morpho's official mainnet 4663 addresses live in Morpho's registry. The community manifest records these for comparison only.",
+    "registry": "https://docs.morpho.org/developers/contracts/addresses",
+    "morphoBlue": "0x9D53d5E3bd5E8d4Cbfa6DB1ca238AEA02E651010",
+    "adaptiveCurveIrm": "0x2BD3d5965B26B51814AC95127B2b80dD6CcC0fa1"
+  }
+}

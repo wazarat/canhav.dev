@@ -165,5 +165,11 @@ event window so judges can verify it.
   downloads built from the current draft, and the connect card gains a
   ready-made prompt that makes an agent load the pack before writing code.
   The rail also gains Select all and Core only.
+- Sept 27, 2026. Kit files. CanHav's own files for credit builders live at
+  canhav.com/kits/credit, served raw for agents and teams alike. A one-page
+  index, an agent skill, templates for the architecture document, the risk
+  framework, the role model, the invariants and per-asset research, and a
+  machine-readable copy of the community Morpho testnet deployment marked
+  unofficial in its first field. The resource pack links each one.
 
 This list grows as work lands on the branch.

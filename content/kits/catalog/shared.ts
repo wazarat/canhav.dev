@@ -1,4 +1,7 @@
+import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
+
+const KIT = `${MCP_CONNECT.baseUrl}/kits/credit`;
 
 const VAULT_LIKE = ["curated_vault", "embedded_earn", "fixed_rate_yield", "embedded_fixed_rate"] as const;
 const LENDING_LIKE = ["collateral_loans", "pt_backed_borrowing", "leveraged_fixed_yield"] as const;
@@ -15,6 +18,85 @@ const APP_FLOWS = [
  * that sit above every protocol. Ids are immutable.
  */
 export const SHARED_RESOURCES: readonly KitResource[] = [
+  // -- CanHav kit files -----------------------------------------------------------
+  {
+    id: "canhav.kit-readme",
+    family: "shared",
+    title: "CanHav credit kit",
+    kind: "template",
+    href: `${KIT}/README.md`,
+    rawHref: `${KIT}/README.md`,
+    why: "What is in the kit and how to use it with a coding agent, in one page.",
+    shapes: "all",
+    steps: ["basics"],
+    priority: "core",
+    readOrder: 0,
+  },
+  {
+    id: "canhav.kit-skill",
+    family: "shared",
+    title: "Credit kit agent skill",
+    kind: "skill",
+    href: `${KIT}/SKILL.md`,
+    rawHref: `${KIT}/SKILL.md`,
+    why: "Install this so your agent loads the pack first, works in order, and never sends a transaction from intent straight to broadcast.",
+    shapes: "all",
+    steps: ["basics", "architecture"],
+    priority: "core",
+    readOrder: 0,
+  },
+  {
+    id: "canhav.architecture-template",
+    family: "shared",
+    title: "Architecture template",
+    kind: "template",
+    href: `${KIT}/ARCHITECTURE.md`,
+    rawHref: `${KIT}/ARCHITECTURE.md`,
+    why: "The design document, one section per product shape, blanks where a decision is still open.",
+    shapes: "all",
+    steps: ["architecture"],
+    priority: "core",
+    readOrder: 23,
+  },
+  {
+    id: "canhav.risk-framework",
+    family: "shared",
+    title: "Risk framework",
+    kind: "template",
+    href: `${KIT}/RISK_FRAMEWORK.md`,
+    rawHref: `${KIT}/RISK_FRAMEWORK.md`,
+    why: "A repeatable way to choose oracles, thresholds and caps and to write down why, dated.",
+    shapes: ["curated_vault", "collateral_loans", "pt_backed_borrowing", "leveraged_fixed_yield", "fixed_rate_yield"],
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 24,
+  },
+  {
+    id: "canhav.role-model",
+    family: "shared",
+    title: "Role model",
+    kind: "template",
+    href: `${KIT}/ROLE_MODEL.md`,
+    rawHref: `${KIT}/ROLE_MODEL.md`,
+    why: "Who can change what, which key holds it, and which rules are enforced rather than promised.",
+    shapes: "all",
+    steps: ["security"],
+    priority: "core",
+    readOrder: 25,
+  },
+  {
+    id: "canhav.invariants",
+    family: "shared",
+    title: "Invariants",
+    kind: "template",
+    href: `${KIT}/INVARIANTS.md`,
+    rawHref: `${KIT}/INVARIANTS.md`,
+    why: "Fifteen statements that must always hold for vaults and markets, phrased for Foundry and Medusa.",
+    shapes: "all",
+    steps: ["security"],
+    priority: "recommended",
+  },
+
   // -- standards ---------------------------------------------------------------
   {
     id: "eip.erc-4626",

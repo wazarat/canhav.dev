@@ -1,5 +1,7 @@
+import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
 
+const KIT = `${MCP_CONNECT.baseUrl}/kits/credit/morpho`;
 const SKILLS = "https://github.com/morpho-org/morpho-skills/blob/main/plugins/morpho-builder/skills";
 const SKILLS_RAW =
   "https://raw.githubusercontent.com/morpho-org/morpho-skills/main/plugins/morpho-builder/skills";
@@ -629,6 +631,32 @@ export const MORPHO_RESOURCES: readonly KitResource[] = [
     steps: ["reality"],
     priority: "recommended",
     flags: ["mainnet_only"],
+  },
+  {
+    id: "canhav.asset-research-template",
+    family: "morpho",
+    title: "Asset research template",
+    kind: "template",
+    href: `${KIT}/COLLATERAL_ASSET_RESEARCH.md`,
+    rawHref: `${KIT}/COLLATERAL_ASSET_RESEARCH.md`,
+    why: "One file per asset before it is approved as collateral, loan asset or vault asset. Identity, price, liquidity, risk, proposed parameters, checklist result.",
+    shapes: [...LENDING, "pt_backed_borrowing", "leveraged_fixed_yield"],
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 26,
+  },
+  {
+    id: "canhav.testnet-manifest",
+    family: "morpho",
+    title: "Testnet 46630 manifest (CanHav copy)",
+    kind: "addresses",
+    href: `${KIT}/robinhood-testnet-46630.manifest.json`,
+    rawHref: `${KIT}/robinhood-testnet-46630.manifest.json`,
+    why: "The community deployment above as one JSON your config can read, with the unofficial notice first, the enabled thresholds in percent, and nulls where nothing is deployed.",
+    shapes: [...LENDING, "pt_backed_borrowing", "leveraged_fixed_yield"],
+    steps: ["reality"],
+    priority: "recommended",
+    flags: ["unofficial", "testnet_only"],
   },
   {
     id: "morpho.testnet-community-deployment",
