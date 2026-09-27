@@ -26,7 +26,7 @@ One line per asset, with a link to its research file.
 
 | Role | Asset | Address (testnet) | Address (mainnet) | Research file |
 |------|-------|-------------------|-------------------|---------------|
-| `[vault asset / loan asset / collateral]` | `[...]` | `[...]` | `[...]` | `morpho/COLLATERAL_ASSET_RESEARCH.md` copy |
+| `[vault asset / loan asset / collateral / wrapped unit / fixed half]` | `[...]` | `[...]` | `[...]` | `morpho/COLLATERAL_ASSET_RESEARCH.md` copy, or the `ASSET_REGISTRY.json` entry |
 
 ## Curated vault
 
@@ -97,8 +97,98 @@ Fill this section when the shape is Collateral-backed loans.
 - Local fork of mainnet 4663. What integration tests run there. `[...]`
 - Mainnet staging. Caps, kill switch, who watches. `[...]`
 
-## Arriving with the next subsectors
+## Fixed-rate yield on your asset
 
-Sections for Fixed-rate yield on your asset, Fixed-rate savings inside your
-app, Borrow against fixed-rate positions, Leveraged fixed-yield loop and
-Yield-token products are added when those shapes open in the studio.
+Fill this section when the shape is Fixed-rate yield on your asset.
+
+- The asset that earns, and its yield source. `[...]`
+- Wrapper. Common wrapper over a vault share with its adapter, or a custom
+  one. Link the wrapper checklist. `pendle/SY_WRAPPER_CHECKLIST.md`
+- Market. Maturity, rate band, initial implied rate, fee, seed liquidity.
+  Link the worksheet. `pendle/MARKET_PARAMETERS.md`
+- Who holds the fixed half. The user, or the product on the user's behalf.
+  `[...]`
+- Rollover. What happens in the week before maturity and on the day. `[...]`
+- Early exit. How it is priced and disclosed. `[...]`
+- Rate labels in use. Link the rate transparency file and list the labels
+  this product shows. `[...]`
+- Registry entries. Vault, wrapper, market, fixed half, variable half.
+  `ASSET_REGISTRY.json`
+- Strategy note. `strategies/01-vault-yield-to-fixed-rate.md`
+
+## Fixed-rate savings inside your app
+
+Fill this section when the shape is Fixed-rate savings inside your app.
+
+- Markets the app buys into, and the rule for choosing a maturity. `[...]`
+- Custody. Each user holds their own fixed half, or the app holds one
+  position and owes claims. State which and why. `[...]`
+- Purchase flow. Quote from a simulation through the hosted SDK, slippage
+  bound, approval method. `[...]`
+- What the user is promised. The rate at purchase, held to maturity, in
+  the wrapped unit. State what is not promised. `[...]`
+- Early exit. Sold into the pool at that day's implied rate; how the app
+  shows the difference. `[...]`
+- Rollover. Auto-roll, redeem, or ask, and the disclosure for each. `[...]`
+- Rate display. Fixed rate, implied rate today, fees, each on its own line
+  with source and time. `[...]`
+- Revenue. Fee on purchase, spread, or none. `[...]`
+
+## Borrow against fixed-rate positions
+
+Fill this section when the shape is Borrow against fixed-rate positions.
+
+- Markets to create. For each, the fixed half accepted, the loan asset, the
+  feed, the rate model, the liquidation threshold. Link the template.
+  `pendle/PT_COLLATERAL_PARAMETERS.md`
+- Feed. Deterministic discount with its rate, the timestamp wrapper, the
+  underlying's feed, the sequencer rule. `[...]`
+- Maturity handling. What the borrower sees as maturity approaches and what
+  the market does on the day. `[...]`
+- Liquidation. Incentive, exit depth measured, who liquidates and into
+  what. `[...]`
+- Position health surface. `[...]`
+- Registry entries. The fixed half with this market under `collateralIn`.
+- Strategy note. `strategies/02-fixed-half-as-collateral.md`
+
+## Leveraged fixed-yield loop
+
+Fill this section when the shape is Leveraged fixed-yield loop.
+
+- The market and the lending market it loops through, with both worksheets
+  linked. `[...]`
+- Leverage cap, enforced in the contract. `[...]`
+- Loop execution. One transaction or several; the unwind path. `[...]`
+- Breakeven. The formula from the strategy note with the current inputs,
+  shown on the same screen as the headline. `[...]`
+- Who watches the borrow rate and the implied rate, and the action at each
+  threshold. `[...]`
+- Disclosure before the first turn. `[...]`
+- Invariants 13 and 14 from the cross-protocol file, with their tests.
+- Strategy note. `strategies/03-leveraged-fixed-yield-loop.md`
+
+## Yield-token products
+
+Fill this section when the shape is Yield-token products.
+
+- The variable half in use, its market and maturity. `[...]`
+- What the product is. A view on the rate, a hedge, an incentive capture,
+  a structured payout. State it in one sentence. `[...]`
+- The decay. How the screen shows the path to zero at maturity and the
+  breakeven rate. `[...]`
+- Yield collection. When accrued yield is claimed and by whom. `[...]`
+- Rewards and points. Valued at what price, shown on which line. `[...]`
+- Exit. Selling the variable half into the pool before maturity, and what
+  it is worth on the day. `[...]`
+- Rate labels in use. `[...]`
+
+## Cross-protocol
+
+Fill this section for any shape that touches both a vault and a yield
+market, or a fixed half and a lending market.
+
+- The chain of dependencies, from the underlying to the product, as
+  registry ids. `[...]`
+- Cross-protocol invariants under test, by number, with test files.
+  `CROSS_PROTOCOL_INVARIANTS.md`
+- Where each rate on the screen comes from. `RATE_TRANSPARENCY.md`

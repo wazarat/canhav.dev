@@ -124,7 +124,25 @@ export async function deleteProjectDraft(id: string, ownerId: string): Promise<b
     where id = ${id} and owner_id = ${ownerId} and status = 'draft'
     returning id
   `;
-  return rows.length > 0;
+  if (rows.length === 0) return false;
+  await deleteEntityLinks(sql, "project", id);
+  return true;
+}
+
+/**
+ * entity_links has no foreign keys, so a deleted draft must take its link
+ * rows with it or the partial unique indexes keep the other side from ever
+ * linking again. Snapshots are left alone; a hash stays resolvable.
+ */
+async function deleteEntityLinks(
+  sql: NonNullable<ReturnType<typeof getDb>>,
+  type: "project" | "token_design",
+  id: string,
+): Promise<void> {
+  await sql`
+    delete from launchpad.entity_links
+    where (a_type = ${type} and a_id = ${id}) or (b_type = ${type} and b_id = ${id})
+  `;
 }
 
 export async function getProjectBySlug(slug: string): Promise<ProjectRow | null> {
@@ -209,7 +227,9 @@ export async function deleteTokenDesignDraft(id: string, ownerId: string): Promi
     where id = ${id} and owner_id = ${ownerId} and status = 'draft'
     returning id
   `;
-  return rows.length > 0;
+  if (rows.length === 0) return false;
+  await deleteEntityLinks(sql, "token_design", id);
+  return true;
 }
 
 export async function getTokenDesignBySlug(slug: string): Promise<TokenDesignRow | null> {

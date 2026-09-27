@@ -1,5 +1,7 @@
+import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
 
+const KIT = `${MCP_CONNECT.baseUrl}/kits/credit/pendle`;
 const DOCS = "https://docs.pendle.finance";
 const DEV = `${DOCS}/pendle-v2-dev`;
 const MECH = `${DOCS}/pendle-v2/ProtocolMechanics`;
@@ -570,6 +572,60 @@ export const PENDLE_RESOURCES: readonly KitResource[] = [
     shapes: COLLATERAL,
     steps: ["architecture"],
     priority: "deep_dive",
+  },
+
+  // -- CanHav kit files ------------------------------------------------------------
+  {
+    id: "canhav.sy-wrapper-checklist",
+    family: "pendle",
+    title: "Wrapper checklist",
+    kind: "checklist",
+    href: `${KIT}/SY_WRAPPER_CHECKLIST.md`,
+    rawHref: `${KIT}/SY_WRAPPER_CHECKLIST.md`,
+    why: "Run before a market is opened on any wrapper. Choice of wrapper, the exchange rate, conformance, roles, readiness, each line ending in evidence.",
+    shapes: ISSUER,
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 13,
+  },
+  {
+    id: "canhav.market-parameters",
+    family: "pendle",
+    title: "Market parameter worksheet",
+    kind: "template",
+    href: `${KIT}/MARKET_PARAMETERS.md`,
+    rawHref: `${KIT}/MARKET_PARAMETERS.md`,
+    why: "Expiry, rate band, initial implied rate, fee and seed liquidity as product decisions, one copy per market, with the rollover plan.",
+    shapes: ISSUER,
+    steps: ["architecture", "reality"],
+    priority: "core",
+    readOrder: 14,
+  },
+  {
+    id: "canhav.pt-collateral-parameters",
+    family: "pendle",
+    title: "Fixed half as collateral, parameter template",
+    kind: "template",
+    href: `${KIT}/PT_COLLATERAL_PARAMETERS.md`,
+    rawHref: `${KIT}/PT_COLLATERAL_PARAMETERS.md`,
+    why: "Feed, discount rate, timestamp wrapper, threshold, term, caps, exit depth and the four scenarios to write down before listing the fixed half.",
+    shapes: COLLATERAL,
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 11,
+  },
+  {
+    id: "canhav.pendle-mainnet-manifest",
+    family: "pendle",
+    title: "Mainnet 4663 manifest (CanHav copy)",
+    kind: "addresses",
+    href: `${KIT}/robinhood-mainnet-4663.manifest.json`,
+    rawHref: `${KIT}/robinhood-mainnet-4663.manifest.json`,
+    why: "The protocol's mainnet addresses as one JSON your config can read, with the unverified-on-testnet flag on the second line, explorer links, and a note that testnet has nothing.",
+    shapes: ALL_PENDLE,
+    steps: ["reality"],
+    priority: "recommended",
+    flags: ["mainnet_only", "unofficial"],
   },
 
   // -- deployments, security, code -------------------------------------------------

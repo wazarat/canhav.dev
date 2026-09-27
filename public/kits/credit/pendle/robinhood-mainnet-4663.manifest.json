@@ -1,0 +1,46 @@
+{
+  "unofficial": true,
+  "verifiedOnTestnet": false,
+  "notice": "CanHav copy of the addresses in Pendle's own deployment manifest for Robinhood Chain mainnet, chain 4663. Pendle publishes the manifest; CanHav did not deploy or verify these contracts and has not found any deployment on testnet 46630. Read each address from the explorer before you depend on it, and re-copy from the source when the manifest changes.",
+  "copiedFrom": "https://github.com/pendle-finance/pendle-core-v2-public/blob/main/deployments/4663-core.json",
+  "checkedOn": "2026-09-27",
+  "chainId": 4663,
+  "network": {
+    "name": "Robinhood Chain",
+    "rpc": "https://rpc.mainnet.chain.robinhood.com",
+    "explorer": "https://robinhoodchain.blockscout.com",
+    "wrappedNative": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+  },
+  "contracts": {
+    "router": "0x888888888889758F76e7103c6CbF23ABbF58F946",
+    "routerStatic": "0x6813d43782395A1F2AAb42f39aeEDE03ac655e09",
+    "limitRouter": "0x000000000000c9B3E2C3Ec88B1B4c0cD853f4321",
+    "yieldContractFactoryV6": "0xa543BF1ac6441822E95eD408076bB53090a0a9d7",
+    "marketFactoryV6": "0x544BF81c855AE84c1e8b65d5E38770898D01EeE2",
+    "syFactory": "0x466CeD3b33045Ea986B2f306C8D0aA8067961CF8",
+    "commonDeploy": "0x2Ed473F528E5B320f850d17ADfe0e558f0298aA9",
+    "decimalsFactory": "0x992ec6a490a4b7f256bd59e63746951d98b29be9",
+    "pyYtLpOracle": "0x5542be50420E88dd7D5B4a3D488FA6ED82F6DAc2",
+    "pendleChainlinkOracleFactory": "0x6502cda86f9110f3655512237C9FF2B9CE247c69",
+    "lpLinearDiscountOracleFactory": "0x44fb16D078E9C39B65d6c15E78EDe9736a9f2DF5",
+    "sparkLinearDiscountOracleFactory": "0x34C91651A070664279866E5f3d6B4d5F65cbbFFb",
+    "lpWrapperFactory": "0x35BEA227c195fD074dE662445957CEDD8Cf6399e",
+    "pendleToken": "0x5E49E1f85813F2B65858860A3FA231b4186f2e0E"
+  },
+  "governance": {
+    "governanceProxy": "0x2aD631F72fB16d91c4953A7f4260A97C2fE2f31e",
+    "treasury": "0xCbcb48e22622a3778b6F14C2f5d258Ba026b05e6",
+    "devMultisig": "0xE6F0489ED91dc27f40f9dbe8f81fccbFC16b9cb1"
+  },
+  "testnet46630": {
+    "status": "none",
+    "note": "No Pendle deployment on testnet 46630 is published. Develop against mocks there, then a local fork of mainnet 4663 using the addresses above."
+  },
+  "explorerLinks": {
+    "router": "https://robinhoodchain.blockscout.com/address/0x888888888889758F76e7103c6CbF23ABbF58F946",
+    "syFactory": "https://robinhoodchain.blockscout.com/address/0x466CeD3b33045Ea986B2f306C8D0aA8067961CF8",
+    "marketFactoryV6": "https://robinhoodchain.blockscout.com/address/0x544BF81c855AE84c1e8b65d5E38770898D01EeE2",
+    "commonDeploy": "https://robinhoodchain.blockscout.com/address/0x2Ed473F528E5B320f850d17ADfe0e558f0298aA9",
+    "pyYtLpOracle": "https://robinhoodchain.blockscout.com/address/0x5542be50420E88dd7D5B4a3D488FA6ED82F6DAc2"
+  }
+}

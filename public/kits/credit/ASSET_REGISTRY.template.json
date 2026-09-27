@@ -1,0 +1,70 @@
+{
+  "notice": "Template. Copy to ASSET_REGISTRY.json in your repository, replace every example entry, and keep checkedOn honest. Addresses are per network; use null where nothing is deployed.",
+  "checkedOn": "YYYY-MM-DD",
+  "underlying": [
+    {
+      "id": "usdc",
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "decimals": 6,
+      "addresses": { "testnet46630": null, "mainnet4663": null },
+      "priceSource": { "kind": "feed", "feed": "USDC/USD", "provider": "Chainlink", "heartbeatSeconds": null },
+      "researchFile": "assets/underlying/USDC.md",
+      "dependsOn": [],
+      "checkedOn": "YYYY-MM-DD"
+    }
+  ],
+  "vaults": [
+    {
+      "id": "vault-usdc-example",
+      "symbol": "vUSDC",
+      "name": "Example USDC vault",
+      "standard": "ERC-4626",
+      "addresses": { "testnet46630": null, "mainnet4663": null },
+      "underlying": "usdc",
+      "curator": null,
+      "allocatesTo": [],
+      "priceSource": { "kind": "share-price", "read": "convertToAssets" },
+      "researchFile": "assets/vaults/vault-usdc-example.md",
+      "dependsOn": ["usdc"],
+      "checkedOn": "YYYY-MM-DD"
+    }
+  ],
+  "sy": [
+    {
+      "id": "sy-vault-usdc-example",
+      "symbol": "SY-vUSDC",
+      "name": "Wrapped example USDC vault",
+      "wrapper": "PendleERC4626WithAdapterSY",
+      "addresses": { "testnet46630": null, "mainnet4663": null },
+      "source": "vault-usdc-example",
+      "priceSource": { "kind": "exchange-rate", "read": "exchangeRate" },
+      "researchFile": "assets/sy/sy-vault-usdc-example.md",
+      "dependsOn": ["vault-usdc-example"],
+      "checkedOn": "YYYY-MM-DD"
+    }
+  ],
+  "pt": [
+    {
+      "id": "pt-vault-usdc-example-2027-12-31",
+      "symbol": "PT-vUSDC-31DEC2027",
+      "name": "Fixed half of the example USDC vault market, December 2027",
+      "maturity": "2027-12-31",
+      "addresses": { "testnet46630": null, "mainnet4663": null },
+      "market": { "testnet46630": null, "mainnet4663": null },
+      "yt": { "testnet46630": null, "mainnet4663": null },
+      "sy": "sy-vault-usdc-example",
+      "priceSource": {
+        "kind": "discount-feed",
+        "feed": null,
+        "discountRatePercent": null,
+        "timestampWrapper": null,
+        "underlyingFeed": "USDC/USD"
+      },
+      "collateralIn": [],
+      "researchFile": "assets/pt/pt-vault-usdc-example-2027-12-31.md",
+      "dependsOn": ["sy-vault-usdc-example"],
+      "checkedOn": "YYYY-MM-DD"
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "notice": "CanHav copy of Robinhood Chain's public endpoints and contract addresses, taken from docs.robinhood.com on the date below. Re-read the source pages before you depend on an address. Provider endpoints need your own API key.",
+  "checkedOn": "2026-09-27",
+  "sources": {
+    "connecting": "https://docs.robinhood.com/chain/connecting",
+    "protocolContracts": "https://docs.robinhood.com/chain/protocol-contracts",
+    "accountAbstraction": "https://docs.robinhood.com/chain/account-abstraction",
+    "dataStreams": "https://docs.robinhood.com/chain/data-streams",
+    "stockTokenApis": "https://docs.robinhood.com/chain/stock-token-apis",
+    "tokenContracts": "https://docs.robinhood.com/chain/contracts",
+    "notices": "https://docs.robinhood.com/chain/notices-and-upgrades",
+    "status": "https://status.robinhood.com"
+  },
+  "networks": {
+    "mainnet": {
+      "name": "Robinhood Chain",
+      "chainId": 4663,
+      "currency": "ETH",
+      "layer": "Arbitrum L2 on Ethereum, blobs for data availability",
+      "publicRpc": "https://rpc.mainnet.chain.robinhood.com",
+      "providerRpc": "https://robinhood-mainnet.g.alchemy.com/v2/{API_KEY}",
+      "providerWebSocket": "wss://robinhood-mainnet.g.alchemy.com/v2/{API_KEY}",
+      "sequencerFeed": "wss://feed.mainnet.chain.robinhood.com",
+      "sequencer": "https://sequencer.mainnet.chain.robinhood.com",
+      "explorer": "https://robinhoodchain.blockscout.com",
+      "explorerApi": "https://robinhoodchain.blockscout.com/api/",
+      "faucet": null
+    },
+    "testnet": {
+      "name": "Robinhood Chain Testnet",
+      "chainId": 46630,
+      "currency": "ETH",
+      "layer": "Arbitrum L2 on Ethereum Sepolia",
+      "publicRpc": "https://rpc.testnet.chain.robinhood.com",
+      "providerRpc": "https://robinhood-testnet.g.alchemy.com/v2/{API_KEY}",
+      "providerWebSocket": "wss://robinhood-testnet.g.alchemy.com/v2/{API_KEY}",
+      "sequencerFeed": "wss://feed.testnet.chain.robinhood.com",
+      "sequencer": "https://sequencer.testnet.chain.robinhood.com",
+      "explorer": "https://explorer.testnet.chain.robinhood.com",
+      "explorerApi": "https://explorer.testnet.chain.robinhood.com/api/",
+      "faucet": "https://faucet.testnet.chain.robinhood.com"
+    }
+  },
+  "notes": {
+    "publicRpc": "Rate limited and not for production. The chain team recommends a provider; Alchemy first, with Chainstack, QuickNode, Blockdaemon, dRPC, Validation Cloud and GlobalStake also listed.",
+    "archive": "Historical reads and indexing need an archive endpoint from a provider.",
+    "sequencerFeed": "Direct feed for low latency block and transaction monitoring."
+  },
+  "l1Contracts": {
+    "note": "Deployed on Ethereum L1 (Sepolia for testnet).",
+    "rollup": {
+      "mainnet": "0x23A19d23e89166adedbDcB432518AB01e4272D94",
+      "testnet": "0xdc5F8E399DBd8a9F5F87AeC4C23Beb12431b386D"
+    },
+    "sequencerInbox": {
+      "mainnet": "0xBd0D173EEb87D57A09521c24388a12789F33ba96",
+      "testnet": "0xA0D9dB3DC9791D54b5183C1C1866eFe1eCA7D414"
+    },
+    "coreProxyAdmin": {
+      "mainnet": "0x1232813BDd40aa9d53066A880dE78a4Be70B90FD",
+      "testnet": "0x20d5d542c1bF0a3c295524Eaef336fC07e890622"
+    },
+    "delayedInbox": {
+      "mainnet": "0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D",
+      "testnet": "0xF2939afA86F6f933A3CE17fCAB007907B6b0B7a4"
+    },
+    "bridge": {
+      "mainnet": "0xDf8755334ce7A73cCF6b581C02eA649AE3E864b3",
+      "testnet": "0x96295BDad104eaD97cC08797b3dC68efF59CcF30"
+    },
+    "outbox": {
+      "mainnet": "0xf0ce991ea4A0d2400A4AB49b20ae333f6Dce3DE9",
+      "testnet": "0x8D180Caf588f3Da027BEf1F42a106Da93F90b166"
+    },
+    "l1GatewayRouter": {
+      "mainnet": "0x6a2E3a1e16FC29f27Ce61429746D558d656975bB",
+      "testnet": "0xF6F11aAEE80875776C264d93B37B34cE437382D1"
+    },
+    "l1Erc20Gateway": {
+      "mainnet": "0x85001CC4867C5e1C22dA4B79BB8852B9e2a06da0",
+      "testnet": "0x52C2976cbDEf48BcC51d07d3c523769F76ECBd09"
+    },
+    "l1CustomGateway": {
+      "mainnet": "0x9368EAEbFe6E063C69dcF8126711A6997E0eCeE1",
+      "testnet": "0xFB4aa8024F70B00121723A9C923BaD0Dd2dFaf8F"
+    },
+    "l1WethGateway": {
+      "mainnet": "0xF7e12b9614b509C747ab4423bC4ACF923759Cf1B",
+      "testnet": "0x8f8A6799F2b1978c6586318543c73D8Fb12f218f"
+    },
+    "l1Weth": {
+      "mainnet": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "testnet": "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"
+    },
+    "l1Multicall": {
+      "mainnet": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
+      "testnet": null
+    }
+  },
+  "l2Contracts": {
+    "l2GatewayRouter": {
+      "mainnet": "0x1E324B9316138CA9a73F960213621AD1aaf01B89",
+      "testnet": "0x77bF00A6A90c600f214b34BAFBB7918c0cF113A8"
+    },
+    "l2Erc20Gateway": {
+      "mainnet": "0xfd9b17206278C16DdaacF6AC8f05dBf97EdCb31e",
+      "testnet": "0x8689aFB9086734e12beA6b5DF541a1da252Ea32a"
+    },
+    "l2CustomGateway": {
+      "mainnet": "0x912285144fC0f6e89d3Ed16F5Ab72f87A1878959",
+      "testnet": "0xE4EE9C15e2cA44136796342e31b67d953E67a70b"
+    },
+    "l2WethGateway": {
+      "mainnet": "0x1D187C3E2dA52D72BC9C41e3AbA0fdFa6a7bF055",
+      "testnet": "0x5A8F55202A625D12FFCb76F857FE4563bC8Ce413"
+    },
+    "weth": {
+      "mainnet": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "testnet": "0x7943e237c7F95DA44E0301572D358911207852Fa"
+    },
+    "l2ProxyAdmin": {
+      "mainnet": "0xa3Acd31AFb851B4eB9DAD00F5204c01D924267dF",
+      "testnet": "0xE743e696B00789Ef489cF617477771764E9283a0"
+    },
+    "l2Multicall": {
+      "mainnet": "0x2cAC2D899eCC914d704FeaAE33ac1bF36277DaD1",
+      "testnet": "0xa432504b6F04Cafe775b09D8AA92e8dbe41Ec7a8"
+    },
+    "permit2": {
+      "mainnet": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+      "testnet": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+    }
+  },
+  "precompiles": {
+    "note": "Same address on both networks.",
+    "arbSys": "0x0000000000000000000000000000000000000064",
+    "arbGasInfo": "0x000000000000000000000000000000000000006C",
+    "arbRetryableTx": "0x000000000000000000000000000000000000006E",
+    "arbInfo": "0x0000000000000000000000000000000000000065",
+    "arbOwnerPublic": "0x000000000000000000000000000000000000006b",
+    "nodeInterface": "0x00000000000000000000000000000000000000C8"
+  },
+  "accountAbstraction": {
+    "note": "ERC-4337 with EIP-7702 delegation. Listed for mainnet 4663; confirm on testnet before assuming the same addresses.",
+    "entryPointV060": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    "entryPointV070": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "entryPointV080": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+    "safe4337ModuleV030": "0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226",
+    "safeModuleSetupV030": "0x2dd68b007B46fBe91B9A7c3EDa5A7a1063cB5b47",
+    "bundlerRpc": "https://robinhood-mainnet.g.alchemy.com/v2/{API_KEY}"
+  },
+  "dataStreams": {
+    "note": "Chainlink Data Streams, pull based, signed off chain and verified on chain through verify() on the proxy. Mainnet only on the page.",
+    "verifierProxy": {
+      "mainnet": "0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7",
+      "testnet": null
+    }
+  },
+  "stockTokenApis": {
+    "note": "Read only REST, rate limited to 60 requests a second, cached. The prices endpoint returns raw underlying equity bid and ask, not multiplier adjusted; the on-chain feed is multiplier adjusted. Convert with currentMultiplier from the assets endpoint.",
+    "base": "https://api.robinhood.com/rhj/",
+    "assets": "https://api.robinhood.com/rhj/assets",
+    "prices": "https://api.robinhood.com/rhj/prices/{symbol}",
+    "corporateActions": "https://api.robinhood.com/rhj/corporate-actions"
+  }
+}

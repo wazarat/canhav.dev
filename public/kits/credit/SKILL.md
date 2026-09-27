@@ -31,10 +31,18 @@ reading list. Your job is to work from that list, not from memory.
 3. Read `RISK_FRAMEWORK.md`. Every cap, threshold and oracle choice gets a
    one-paragraph justification that names its inputs.
 4. For each asset the product touches, produce a
-   `COLLATERAL_ASSET_RESEARCH.md` entry. The token integration checklist in
-   the pack runs before an asset is approved for anything.
-5. Turn `INVARIANTS.md` into tests. Property tests over line coverage.
-6. Before any deposit of real value, run the review passes from the pack
+   `COLLATERAL_ASSET_RESEARCH.md` entry and a registry entry in
+   `ASSET_REGISTRY.json` that points back to what the asset is built on.
+   The token integration checklist in the pack runs before an asset is
+   approved for anything.
+5. For a fixed income or leveraged yield shape, run
+   `pendle/SY_WRAPPER_CHECKLIST.md` before any market is opened, fill
+   `pendle/MARKET_PARAMETERS.md` per market and
+   `pendle/PT_COLLATERAL_PARAMETERS.md` per lending market that accepts the
+   fixed half. Read the matching note in `strategies/`.
+6. Turn `INVARIANTS.md` and, across any seam, `CROSS_PROTOCOL_INVARIANTS.md`
+   into tests. Property tests over line coverage, on a fork of mainnet 4663.
+7. Before any deposit of real value, run the review passes from the pack
    (the Morpho review files and checkers, the Trail of Bits workflow) and
    record the evidence for each pass.
 
@@ -43,7 +51,13 @@ reading list. Your job is to work from that list, not from memory.
 - Every state-changing call follows simulate, explain, confirm, execute.
   No agent-generated transaction goes from intent straight to broadcast.
 - Never show one number called "yield" or "APY". Name which rate it is and
-  where it comes from. Native yield, incentives and fees are separate lines.
+  where it comes from, using the labels in `RATE_TRANSPARENCY.md`. Native
+  yield, incentives and fees are separate lines. A fixed rate is fixed to
+  maturity and for nobody who exits early; the variable half reaches zero
+  at maturity.
+- Addresses come from the manifests and the chain master file in this kit,
+  read on a fork, never from memory. The Pendle manifest is unverified on
+  testnet and says so on its second line.
 - The worst-case answer in the project record is the review bar. Changes
   touching value flows get scrutiny proportional to it.
 - Where the pack says a deployment is unofficial or missing, say so in the

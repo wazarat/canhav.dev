@@ -1,6 +1,8 @@
+import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
 
 const DOCS = "https://docs.robinhood.com/chain";
+const KIT = `${MCP_CONNECT.baseUrl}/kits/credit/robinhood`;
 
 const COLLATERAL_SHAPES = [
   "collateral_loans",
@@ -110,6 +112,19 @@ export const ROBINHOOD_RESOURCES: readonly KitResource[] = [
     priority: "core",
     readOrder: 22,
     flags: ["mainnet_only"],
+  },
+  {
+    id: "canhav.chain-master",
+    family: "robinhood",
+    title: "Chain master file (CanHav copy)",
+    kind: "addresses",
+    href: `${KIT}/chain.master.json`,
+    rawHref: `${KIT}/chain.master.json`,
+    why: "Every endpoint and address the chain publishes in one JSON your config can read. RPCs, feeds, explorers, bridge contracts, precompiles, entry points, the data streams verifier, the stock token APIs, with the date it was copied.",
+    shapes: "all",
+    steps: ["architecture", "reality"],
+    priority: "core",
+    readOrder: 22,
   },
   {
     id: "robinhood.add-network-to-wallet",

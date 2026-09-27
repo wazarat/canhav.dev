@@ -218,5 +218,17 @@ event window so judges can verify it.
   mainnet staging. Pendle is manifest only on mainnet and absent on
   testnet; Boros runs elsewhere. The exports and the project's MCP server
   say the same.
+- Sept 27, 2026. Delete drafts. Draft projects and draft token designs can
+  be removed from the studio list with a two-click control. Published
+  records still go through unpublish first.
+- Sept 27, 2026. Kit content for the fixed income and leveraged yield
+  shapes. The credit kit gains a rate transparency file naming the nine
+  rates a credit product carries, fourteen cross-protocol invariants, an
+  asset registry template where every entry points back to what it is
+  built on, four strategy notes, a wrapper checklist, a market parameter
+  worksheet and a collateral parameter template for the yield side, a copy
+  of the yield protocol's mainnet manifest marked unverified on testnet, a
+  chain master file with every endpoint and address the chain publishes,
+  and an architecture template that now covers all eight shapes.
 
 This list grows as work lands on the branch.

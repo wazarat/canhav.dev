@@ -388,6 +388,15 @@ export const STUDIO_COPY = {
     "Ship a DeFi product that is researched before it is launched. Start " +
     "with a token design grounded in real constraints and published " +
     "tradeoffs; project records and agent launches follow on the same rails.",
+  /** Draft rows only. Published records are unpublished from their editor first. */
+  delete: {
+    action: "Delete",
+    confirm: (name: string) => `Delete the draft ${name}? This cannot be undone.`,
+    yes: "Delete draft",
+    no: "Keep",
+    busy: "Deleting",
+    failed: "Could not delete this draft. Reload and try again.",
+  },
 } as const;
 
 /** The three launch tracks, in launch order: tokens, then projects, then agents. */

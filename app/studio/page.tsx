@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DeleteDraftButton } from "@/components/studio/DeleteDraftButton";
 import { LaunchList } from "@/components/studio/LaunchList";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
@@ -127,11 +128,18 @@ function EntityList({
                     {link && <LinkLine link={link} side={side} />}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
                   {buildChip(row)}
                   <StatusChip tone={row.status === "published" ? "success" : "neutral"}>
                     {row.status === "published" ? "Published" : "Draft"}
                   </StatusChip>
+                  {row.status === "draft" ? (
+                    <DeleteDraftButton
+                      entity={side === "project" ? "projects" : "token-designs"}
+                      id={row.id}
+                      name={row.draft_doc.name}
+                    />
+                  ) : null}
                 </div>
               </li>
             );
