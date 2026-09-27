@@ -16,13 +16,14 @@ import {
   RELEASE_TYPE_OPTIONS,
   REPORTING_OPTIONS,
   ROBINHOOD_MYTH,
-  SECTOR_OPTIONS,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
   UNDERSUBSCRIPTION_OPTIONS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
+  sectorLabel,
+  subsectorLabels,
 } from "@/content/ideation";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import {
@@ -83,11 +84,8 @@ function fmtRatio(n: number | null): string {
 // canhav-[slug].md — project
 
 export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): string {
-  const sector =
-    doc.sector === "other" && doc.sectorOther
-      ? doc.sectorOther
-      : optionLabel(SECTOR_OPTIONS, doc.sector);
   const a = doc.architecture;
+  const subsectors = subsectorLabels(doc);
   const lines: string[] = [
     `# ${doc.name}`,
     "",
@@ -95,7 +93,8 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     "## The product",
     "",
-    `- **Sector:** ${sector}`,
+    `- **Sector:** ${sectorLabel(doc)}`,
+    ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
     `- **Stage:** ${optionLabel(STAGE_OPTIONS, doc.stage)}`,
     "",
     `**What it does**`,
@@ -358,16 +357,14 @@ export function buildAgentsMd(input: {
   ];
 
   if (project) {
-    const sector =
-      project.sector === "other" && project.sectorOther
-        ? project.sectorOther
-        : optionLabel(SECTOR_OPTIONS, project.sector);
     const a = project.architecture;
+    const subsectors = subsectorLabels(project);
     lines.push(
       "",
       "## Product",
       "",
-      `- **Sector:** ${sector}`,
+      `- **Sector:** ${sectorLabel(project)}`,
+      ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
       `- **What it does:** ${project.whatItDoes}`,
       "",

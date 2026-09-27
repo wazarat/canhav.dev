@@ -7,12 +7,13 @@ import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import {
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
-  SECTOR_OPTIONS,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
+  sectorLabel,
+  subsectorLabels,
 } from "@/content/ideation";
 import { explorerAddressUrl } from "@/lib/explorer";
 import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
@@ -103,11 +104,12 @@ export default async function ProjectPublicPage({
           {doc.name}
         </h1>
         <div className="mt-4 flex flex-wrap gap-2">
-          <StatusChip tone="neutral">
-            {doc.sector === "other" && doc.sectorOther
-              ? doc.sectorOther
-              : optionLabel(SECTOR_OPTIONS, doc.sector)}
-          </StatusChip>
+          <StatusChip tone="neutral">{sectorLabel(doc)}</StatusChip>
+          {subsectorLabels(doc).map((label) => (
+            <StatusChip key={label} tone="neutral">
+              {label}
+            </StatusChip>
+          ))}
           <StatusChip tone="info">{optionLabel(STAGE_OPTIONS, doc.stage)}</StatusChip>
           <StatusChip tone="neutral">
             v{doc.publishVersion} · {new Date(snapshot.created_at).toLocaleDateString("en-US")}

@@ -139,5 +139,10 @@ event window so judges can verify it.
   Soon rows on the parameters card now say what the contracts actually do, and
   every launch write carries a gas limit estimated on CanHav's own RPC so the
   wallet no longer has to.
+- Sept 27, 2026. Sector and subsector in the project editor. The sector list is
+  six entries with only Credit open, the rest marked Coming soon. Credit asks
+  for one to three subsectors, Lending open today, as the first step of a
+  guided research workflow for lending products. Projects saved under a
+  retired sector keep their old label under Other.
 
 This list grows as work lands on the branch.

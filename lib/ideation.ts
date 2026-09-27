@@ -34,18 +34,50 @@ export interface StatusDecl {
 // ---------------------------------------------------------------------------
 // Project track
 
+/**
+ * Six sectors since M20 (2026-09-27). Only credit_lending is selectable today;
+ * the rest render as "Coming soon". Ids that survived the cut keep their old
+ * value so stored docs need no rewrite; the six retired ids are folded into
+ * "other" by normalizeProjectDoc (see LEGACY_SECTOR_MAP).
+ */
 export type Sector =
   | "credit_lending"
+  | "staking"
   | "liquidity_infra"
-  | "underwriting_risk"
-  | "rwa_infra"
-  | "oracles_data"
   | "perps_derivatives"
-  | "agentic_trading"
-  | "stablecoin_payments"
-  | "portfolio_vaults"
-  | "dex_market_structure"
+  | "rwa_infra"
   | "other";
+
+/** Subsectors of credit_lending. Only "lending" is selectable today. */
+export type Subsector = "lending" | "leveraged_yield" | "fixed_income";
+
+export const SUBSECTOR_VALUES: readonly Subsector[] = [
+  "lending",
+  "leveraged_yield",
+  "fixed_income",
+];
+
+/**
+ * Retired sector ids and the label they carried, so an old doc lands on
+ * "other" with its sectorOther back-filled instead of rendering "Not set".
+ */
+export const LEGACY_SECTOR_MAP: Record<string, string> = {
+  underwriting_risk: "Underwriting and risk",
+  oracles_data: "Oracles and data",
+  agentic_trading: "Agentic trading",
+  stablecoin_payments: "Stablecoin and payments",
+  portfolio_vaults: "Portfolio and vaults",
+  dex_market_structure: "DEX and market structure",
+};
+
+const SECTOR_VALUES: readonly Sector[] = [
+  "credit_lending",
+  "staking",
+  "liquidity_infra",
+  "perps_derivatives",
+  "rwa_infra",
+  "other",
+];
 
 export type ProjectStage =
   | "idea"
@@ -78,6 +110,11 @@ export interface ProjectDoc {
   name: string;
   sector: Sector | "";
   sectorOther?: string;
+  /**
+   * Asked only when sector is credit_lending, one to three values. Optional
+   * so normalizeProjectDoc never injects the key into older documents.
+   */
+  subsectors?: Subsector[];
   /** What it does, one paragraph. */
   whatItDoes: string;
   /** Who the user is. Payment is asked separately, gated on `payer`. */
@@ -128,6 +165,7 @@ export interface ProjectDoc {
 export const PROJECT_LIMITS = {
   name: { min: 3, max: 60 },
   sectorOther: { max: 60 },
+  subsectors: { min: 1, max: 3 },
   whatItDoes: { min: 80, max: 1200 },
   userIs: { min: 20, max: 400 },
   whoPays: { min: 20, max: 400 },
@@ -182,8 +220,36 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
         ? "third_party"
         : "";
 
+  // Retired sector ids fold into "other", keeping the old label as the
+  // free-text sector so nothing renders "Not set". Idempotent: a doc already
+  // on "other" is left alone.
+  const rawSector = doc.sector as string;
+  let sector: Sector | "" = doc.sector;
+  let sectorOther = doc.sectorOther;
+  if (rawSector in LEGACY_SECTOR_MAP) {
+    sector = "other";
+    if (!sectorOther?.trim()) sectorOther = LEGACY_SECTOR_MAP[rawSector];
+  } else if (rawSector && !SECTOR_VALUES.includes(rawSector as Sector)) {
+    sector = "";
+  }
+
+  // Subsectors: only present when the stored doc has the key. Unknown values
+  // drop, duplicates collapse, the list is capped at the limit.
+  let subsectorPatch: { subsectors?: Subsector[] } = {};
+  if (Array.isArray(doc.subsectors)) {
+    const seen = new Set<Subsector>();
+    for (const v of doc.subsectors as unknown[]) {
+      if (typeof v === "string" && SUBSECTOR_VALUES.includes(v as Subsector))
+        seen.add(v as Subsector);
+    }
+    subsectorPatch = { subsectors: [...seen].slice(0, PROJECT_LIMITS.subsectors.max) };
+  }
+
   return {
     ...doc,
+    sector,
+    ...(sectorOther !== undefined ? { sectorOther } : {}),
+    ...subsectorPatch,
     payer,
     whoPays,
     architecture: {
@@ -391,6 +457,13 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     if (!doc.sectorOther?.trim()) return "Describe the sector.";
     if (doc.sectorOther.length > L.sectorOther.max)
       return `Sector description is over ${L.sectorOther.max} characters.`;
+  }
+  if (doc.sector === "credit_lending") {
+    const n = doc.subsectors?.length ?? 0;
+    if (n < L.subsectors.min) return "Pick at least one subsector.";
+    if (n > L.subsectors.max) return `At most ${L.subsectors.max} subsectors.`;
+    if (doc.subsectors!.some((v) => !SUBSECTOR_VALUES.includes(v)))
+      return "Unknown subsector.";
   }
   p =
     checkText("What it does", doc.whatItDoes, L.whatItDoes) ??

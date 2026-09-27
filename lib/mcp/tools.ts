@@ -58,6 +58,7 @@ export function registerAllTools(server: McpServer): void {
           status: r.status,
           name: r.draft_doc.name,
           sector: r.draft_doc.sector,
+          subsectors: r.draft_doc.subsectors ?? [],
           stage: r.draft_doc.stage,
           updatedAt: r.updated_at,
         })),

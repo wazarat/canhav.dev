@@ -8,14 +8,15 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 
 ---
 
-## Sector, what it does, users and payers, why this chain, current stage
+## Sector, subsector, what it does, users and payers, why this chain, current stage
 
 ### Asked
 
 | Field | Notes |
 |-------|-------|
 | Project name | Required |
-| Sector | Credit and lending; liquidity infrastructure; underwriting and risk; RWA infrastructure; oracles and data; perps and derivatives; agentic trading; stablecoin and payments; portfolio and vaults; DEX and market structure; other (with free text) |
+| Sector | Credit; Staking; Liquidity; Derivatives; RWAs; Other. Only Credit can be chosen today. The other five are listed and marked "Coming soon". |
+| Subsector | Asked when the sector is Credit. Lending; Leveraged yield; Fixed income. Pick one to three. Only Lending can be chosen today; the other two are marked "Coming soon". |
 | What it does | One paragraph |
 | Users and payers | Who the user is, and who pays (often not the same answer) |
 | Why this chain specifically | Free text |
@@ -24,6 +25,8 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 ### Computed / warnings
 
 None in this step.
+
+Projects saved under a retired sector (underwriting and risk, oracles and data, agentic trading, stablecoin and payments, portfolio and vaults, DEX and market structure) render as Other with the old label kept as the free text.
 
 ---
 

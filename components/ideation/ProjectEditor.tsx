@@ -9,6 +9,7 @@ import { TextField } from "@/components/ideation/TextField";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
+import { ChipMultiSelect } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
@@ -20,10 +21,13 @@ import {
   SECTOR_OPTIONS,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
+  SUBSECTOR_OPTIONS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   WORST_CASE_PRESSURE,
   optionLabel,
+  sectorLabel,
+  subsectorLabels,
 } from "@/content/ideation";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
 
@@ -37,6 +41,7 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
     short(doc.name, L.name.min) ||
     !doc.sector ||
     (doc.sector === "other" && !doc.sectorOther?.trim()) ||
+    (doc.sector === "credit_lending" && (doc.subsectors?.length ?? 0) < L.subsectors.min) ||
     short(doc.whatItDoes, L.whatItDoes.min) ||
     short(doc.userIs, L.userIs.min) ||
     !doc.payer ||
@@ -147,6 +152,17 @@ export function ProjectEditor({
                 value={doc.sectorOther ?? ""}
                 onChange={(v) => patch({ sectorOther: v })}
                 max={PROJECT_LIMITS.sectorOther.max}
+              />
+            )}
+            {doc.sector === "credit_lending" && (
+              <ChipMultiSelect
+                label="Subsector"
+                required
+                hint="Pick one or more. Each opens its own research workflow."
+                value={doc.subsectors ?? []}
+                onChange={(v) => patch({ subsectors: v })}
+                options={SUBSECTOR_OPTIONS}
+                max={PROJECT_LIMITS.subsectors.max}
               />
             )}
             <TextField
@@ -371,7 +387,13 @@ export function ProjectEditor({
               version is kept, and the latest renders at your public URL.
             </p>
             <dl className="space-y-3 text-sm">
-              <ReviewRow term="Sector" detail={optionLabel(SECTOR_OPTIONS, doc.sector)} />
+              <ReviewRow term="Sector" detail={sectorLabel(doc)} />
+              {doc.sector === "credit_lending" && (
+                <ReviewRow
+                  term="Subsector"
+                  detail={subsectorLabels(doc).join(" · ") || "Not set"}
+                />
+              )}
               <ReviewRow term="Stage" detail={optionLabel(STAGE_OPTIONS, doc.stage)} />
               <ReviewRow
                 term="Who pays"

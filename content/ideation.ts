@@ -8,11 +8,13 @@ import type {
   MarketTiming,
   OracleUse,
   Payer,
+  ProjectDoc,
   ProjectStage,
   RationaleWhy,
   ReleaseType,
   Sector,
   StatusDecl,
+  Subsector,
   SupplyPolicy,
   UndersubscriptionPlan,
   Upgradeability,
@@ -53,19 +55,48 @@ export const STATUS_DECL_LABELS: Record<StatusDecl["status"], string> = {
 // ---------------------------------------------------------------------------
 // Project track
 
-export const SECTOR_OPTIONS: Array<{ value: Sector; label: string }> = [
-  { value: "credit_lending", label: "Credit and lending" },
-  { value: "liquidity_infra", label: "Liquidity infrastructure" },
-  { value: "underwriting_risk", label: "Underwriting and risk" },
-  { value: "rwa_infra", label: "RWA infrastructure" },
-  { value: "oracles_data", label: "Oracles and data" },
-  { value: "perps_derivatives", label: "Perps and derivatives" },
-  { value: "agentic_trading", label: "Agentic trading" },
-  { value: "stablecoin_payments", label: "Stablecoin and payments" },
-  { value: "portfolio_vaults", label: "Portfolio and vaults" },
-  { value: "dex_market_structure", label: "DEX and market structure" },
-  { value: "other", label: "Other" },
+/** The exact phrase for options that exist in the list but cannot be chosen yet. */
+export const SOON_LABEL = "Coming soon";
+
+/** An option that may be listed but not yet selectable. `available` defaults to true. */
+export interface GatedOption<V extends string> {
+  value: V;
+  label: string;
+  available?: boolean;
+}
+
+/**
+ * Six sectors, Credit first. Only Credit opens today; the other five are
+ * listed so builders see where the platform is going. Retired ids from the
+ * earlier eleven-sector list are remapped in lib/ideation.ts.
+ */
+export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
+  { value: "credit_lending", label: "Credit" },
+  { value: "staking", label: "Staking", available: false },
+  { value: "liquidity_infra", label: "Liquidity", available: false },
+  { value: "perps_derivatives", label: "Derivatives", available: false },
+  { value: "rwa_infra", label: "RWAs", available: false },
+  { value: "other", label: "Other", available: false },
 ];
+
+/** Credit subsectors. Pick one to three; only Lending opens today. */
+export const SUBSECTOR_OPTIONS: Array<GatedOption<Subsector>> = [
+  { value: "lending", label: "Lending" },
+  { value: "leveraged_yield", label: "Leveraged yield", available: false },
+  { value: "fixed_income", label: "Fixed income", available: false },
+];
+
+/** Display label for a project's sector, honouring the free-text "other". */
+export function sectorLabel(doc: Pick<ProjectDoc, "sector" | "sectorOther">): string {
+  if (doc.sector === "other" && doc.sectorOther?.trim()) return doc.sectorOther.trim();
+  return optionLabel(SECTOR_OPTIONS, doc.sector);
+}
+
+/** Labels for a project's chosen subsectors, in option order. Empty when none. */
+export function subsectorLabels(doc: Pick<ProjectDoc, "subsectors">): string[] {
+  const chosen = new Set(doc.subsectors ?? []);
+  return SUBSECTOR_OPTIONS.filter((o) => chosen.has(o.value)).map((o) => o.label);
+}
 
 export const STAGE_OPTIONS: Array<{ value: ProjectStage; label: string }> = [
   { value: "idea", label: "Idea" },
