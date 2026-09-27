@@ -210,5 +210,13 @@ event window so judges can verify it.
   runs elsewhere, 17 more Robinhood Chain pages from endpoints to stock
   token APIs, and two more standards. Every link was fetched before it was
   written.
+- Sept 27, 2026. Where it runs. The Reality step of a Credit project shows,
+  for Robinhood Chain and each protocol the chosen shapes rely on, whether
+  testnet 46630 and mainnet 4663 have an official deployment, a community
+  one, a manifest only or nothing, with a note, a source and the
+  recommended path from testnet with mocks to a local fork to capped
+  mainnet staging. Pendle is manifest only on mainnet and absent on
+  testnet; Boros runs elsewhere. The exports and the project's MCP server
+  say the same.
 
 This list grows as work lands on the branch.

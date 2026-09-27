@@ -1,6 +1,7 @@
 import type { ChipOption } from "@/components/ui/ChipGroup";
 import type { Subsector } from "@/lib/ideation";
 import {
+  type DeploymentStatus,
   type ReviewVerdict,
   type KitFamily,
   type KitFlag,
@@ -199,6 +200,31 @@ export const REVIEW_COPY = {
       : `${p.pass} pass, ${p.fail} fail, ${p.na} not applicable, ${p.open} open`,
   reviewRow: (p: { pass: number; fail: number; na: number; open: number; total: number }) =>
     `${p.pass} of ${p.total} passed${p.fail ? `, ${p.fail} failed` : ""}${p.open ? `, ${p.open} open` : ""}`,
+} as const;
+
+/** The Reality step block and the export section on where each family runs. */
+export const ENVIRONMENT_COPY = {
+  title: "Where this runs today",
+  intro:
+    "Robinhood Chain and each protocol your shapes rely on, on testnet 46630 and mainnet 4663, checked by hand on the date shown. The same block reaches your agent through get_resource_pack.",
+  testnet: "Testnet 46630",
+  mainnet: "Mainnet 4663",
+  status: {
+    official: "Official deployment",
+    community: "Community deployment",
+    manifest_only: "Manifest only",
+    none: "No deployment",
+  } satisfies Record<DeploymentStatus, string>,
+  /** Tone follows the testnet status, because that is where a team starts. */
+  tone: {
+    official: "success",
+    community: "info",
+    manifest_only: "info",
+    none: "warning",
+  } satisfies Record<DeploymentStatus, "success" | "info" | "warning">,
+  source: "Source",
+  pathTitle: "Recommended path",
+  checked: (date: string) => `Last checked ${date}.`,
 } as const;
 
 export const HANDOFF_COPY = {

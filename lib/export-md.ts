@@ -26,6 +26,7 @@ import {
   subsectorLabels,
 } from "@/content/ideation";
 import {
+  ENVIRONMENT_COPY,
   FAMILY_LABELS,
   FLAG_COPY,
   KIND_LABELS,
@@ -162,12 +163,12 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
     lines.push("", `${heading} Where this runs today`, "");
     for (const f of pack.environment.families) {
       lines.push(
-        `- **${FAMILY_LABELS[f.family]}.** Testnet 46630 ${f.testnet.status.replace("_", " ")}. ${f.testnet.note} Mainnet 4663 ${f.mainnet.status.replace("_", " ")}. ${f.mainnet.note}`,
+        `- **${FAMILY_LABELS[f.family]}.** ${ENVIRONMENT_COPY.testnet}, ${ENVIRONMENT_COPY.status[f.testnet.status].toLowerCase()}. ${f.testnet.note} ${ENVIRONMENT_COPY.mainnet}, ${ENVIRONMENT_COPY.status[f.mainnet.status].toLowerCase()}. ${f.mainnet.note}`,
       );
     }
-    lines.push("", "Recommended path", "");
+    lines.push("", ENVIRONMENT_COPY.pathTitle, "");
     pack.environment.families[0].devPath.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
-    if (pack.environment.checkedOn) lines.push("", `Last checked ${pack.environment.checkedOn}.`);
+    if (pack.environment.checkedOn) lines.push("", ENVIRONMENT_COPY.checked(pack.environment.checkedOn));
   }
   return lines;
 }

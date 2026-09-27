@@ -11,6 +11,7 @@ import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
+import { EnvironmentBlock } from "@/components/ideation/kit/EnvironmentBlock";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import { ChipMultiSelect, ChipMultiSelectGroups, ChipRadioGroup } from "@/components/ui/ChipGroup";
@@ -453,6 +454,7 @@ export function ProjectEditor({
               />
               {ROBINHOOD_MYTH.ack}
             </label>
+            {kitId === "credit" ? <EnvironmentBlock kit={kit} /> : null}
             <TextField
               label={ROBINHOOD_MYTH.followUp}
               required

@@ -100,6 +100,12 @@ Before publish, the editor requires an explicit acknowledgement:
 | Myth acknowledgement | Required checkbox |
 | Where will your first hundred users come from? | Free text |
 
+### Computed
+
+| Block | Notes |
+|-------|-------|
+| Where this runs today | Shown under the acknowledgement for a Credit project with a product shape. One chip for Robinhood Chain and one for each protocol family the chosen shapes rely on (Morpho, Pendle), with the testnet 46630 and mainnet 4663 status (official deployment, community deployment, manifest only, no deployment), a note and a source, then the recommended path (testnet with mocks, a local fork of mainnet, mainnet staging behind caps) and the date the rows were last checked. The chip's dot follows the testnet status. `get_resource_pack` returns the same rows in `environment`. |
+
 Optional verify signals (wallet, GitHub repo, testnet contract addresses) attach for public credibility checks scoped to the **project**, not to a linked token. Each signal is omitted silently if it fails to load. See [Public pages](public-pages.md).
 
 ---
