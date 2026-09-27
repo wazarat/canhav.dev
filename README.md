@@ -157,5 +157,13 @@ event window so judges can verify it.
   is saved with the project. Sixty-odd entries cover Morpho, shared standards,
   oracle and risk methodology, security tooling and Robinhood Chain, with
   Pendle to follow.
+- Sept 27, 2026. The pack travels to the IDE. A project's own MCP server gains
+  get_resource_pack, which returns the ticked reading list in read-first
+  order with fetchable URLs, caveat flags and where each protocol runs on
+  Robinhood Chain today, and the shared server gains a public
+  get_resource_catalog. The Review step offers RESOURCES.md and AGENTS.md
+  downloads built from the current draft, and the connect card gains a
+  ready-made prompt that makes an agent load the pack before writing code.
+  The rail also gains Select all and Core only.
 
 This list grows as work lands on the branch.

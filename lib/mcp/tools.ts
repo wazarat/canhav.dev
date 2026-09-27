@@ -16,6 +16,10 @@ import {
   designDeployability,
   designWarnings,
 } from "@/lib/mcp/design-views";
+import { KIT_CATALOG } from "@/content/kits/catalog";
+import { CREDIT_SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/credit";
+import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
+import { SHAPE_SUBSECTORS, type ProductShape } from "@/lib/kits";
 import { registerLaunchTools } from "@/lib/mcp/launch-tools";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 import {
@@ -203,4 +207,67 @@ export function registerAllTools(server: McpServer): void {
       });
     },
   );
+  registerMeteredTool(
+    server,
+    "get_resource_catalog",
+    {
+      title: "Credit resource catalog",
+      description:
+        "CanHav's public catalog of resources for building credit products on Robinhood Chain (Morpho, Pendle, shared standards, oracles, risk and security tooling), with the product shapes each applies to, caveat flags and where each protocol family runs today. Filter by shape, family or priority. No sign-in needed.",
+      inputSchema: z.object({
+        shape: z
+          .enum([
+            "curated_vault",
+            "embedded_earn",
+            "collateral_loans",
+            "fixed_rate_yield",
+            "embedded_fixed_rate",
+            "pt_backed_borrowing",
+            "leveraged_fixed_yield",
+            "yield_token_exposure",
+          ])
+          .optional(),
+        family: z.enum(["shared", "robinhood", "morpho", "pendle", "boros"]).optional(),
+        priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
+      }),
+    },
+    async ({ shape, family, priority }) => {
+      const subsOf = (s: ProductShape) => SHAPE_SUBSECTORS[s];
+      const resources = KIT_CATALOG.filter((r) => {
+        if (family && r.family !== family) return false;
+        if (priority && r.priority !== priority) return false;
+        if (shape) {
+          if (r.shapes === "all")
+            return !r.subsectors || r.subsectors.some((x) => subsOf(shape).includes(x));
+          return r.shapes.includes(shape);
+        }
+        return true;
+      }).map((r) => ({
+        id: r.id,
+        family: r.family,
+        familyLabel: FAMILY_LABELS[r.family],
+        kind: r.kind,
+        title: r.title,
+        url: r.href,
+        ...(r.rawHref ? { rawUrl: r.rawHref } : {}),
+        why: r.why,
+        shapes: r.shapes,
+        ...(r.subsectors ? { subsectors: r.subsectors } : {}),
+        steps: r.steps,
+        priority: r.priority,
+        flags: [...(r.flags ?? [])],
+      }));
+      return jsonResult({
+        shapes: CREDIT_SHAPE_OPTIONS.map((o) => ({
+          id: o.value,
+          label: o.label,
+          subsectors: SHAPE_SUBSECTORS[o.value],
+        })),
+        environments: Object.values(KIT_ENVIRONMENTS),
+        total: resources.length,
+        resources,
+      });
+    },
+  );
+
 }

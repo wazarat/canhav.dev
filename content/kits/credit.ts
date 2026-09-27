@@ -157,11 +157,24 @@ export const RAIL_COPY = {
   allSteps: "All steps",
   noShape: "Pick what you are building in Basics to get a resource pack.",
   noneForStep: "Nothing in the pack is tied to this step. Switch to All steps to see everything.",
+  selectAll: "Select all",
+  coreOnly: "Core only",
   readFirst: (n: number) => `Read ${ordinal(n)}`,
   selectedOf: (selected: number, total: number) => `${selected} of ${total} selected`,
   footnote:
     "Core items are ticked for you. Untick what you already know, tick anything " +
     "extra. Your ticks travel with the project into AGENTS.md and the MCP tools.",
+} as const;
+
+export const HANDOFF_COPY = {
+  title: "Get this into your IDE",
+  intro:
+    "Download the pack as files for your repo, or let your coding agent pull it straight from this project's MCP server. Both follow your ticks and update as you change them.",
+  resourcesFile: "Download RESOURCES.md",
+  agentsFile: "Download AGENTS.md",
+  gateNote: "Free, sign-in required",
+  footnote:
+    "AGENTS.md carries the whole project record plus the pack. RESOURCES.md is the pack alone. Both are built from the current draft, not a published snapshot.",
 } as const;
 
 function ordinal(n: number): string {

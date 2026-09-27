@@ -25,8 +25,10 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
-import { shapeLabel, startingPointLabel } from "@/content/kits/credit";
+import { FLAG_COPY, KIND_LABELS, PRIORITY_LABELS, shapeLabel, startingPointLabel } from "@/content/kits/credit";
 import { LAUNCH_CHAIN } from "@/content/launch";
+import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
+import { KIT_PRIORITY_ORDER } from "@/lib/kits";
 import {
   type ProjectDoc,
   type StatusDecl,
@@ -93,6 +95,60 @@ function kitLines(doc: ProjectDoc): string[] {
   return out;
 }
 
+function resourceLine(r: PackResourceView): string {
+  const tags = [KIND_LABELS[r.kind], r.familyLabel, ...r.flags.map((f) => FLAG_COPY[f].label)];
+  const order = r.readOrder !== undefined ? `${r.readOrder}. ` : "";
+  const raw = r.rawUrl && r.rawUrl !== r.url ? ` Raw: ${r.rawUrl}` : "";
+  return `- ${order}**[${r.title}](${r.url})** (${tags.join(", ")}). ${r.why}${raw}`;
+}
+
+/** "## Resource pack" and "## Where this runs today", or nothing without a shape. */
+function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] {
+  const pack = buildResourcePack(doc);
+  if (!pack) return [];
+  const lines: string[] = [
+    "",
+    `${heading} Resource pack`,
+    "",
+    `${pack.counts.selected} of ${pack.counts.total} resources selected by the team for ${pack.shapeLabel ?? pack.shape}. Core items are numbered in read-first order.`,
+  ];
+  for (const p of KIT_PRIORITY_ORDER) {
+    const items = pack.resources.filter((r) => r.priority === p);
+    if (!items.length) continue;
+    lines.push("", `${heading}# ${PRIORITY_LABELS[p]}`, "", ...items.map(resourceLine));
+  }
+  if (pack.environment.families.length) {
+    lines.push("", `${heading} Where this runs today`, "");
+    for (const f of pack.environment.families) {
+      lines.push(
+        `- **${f.family}.** Testnet 46630 ${f.testnet.status.replace("_", " ")}. ${f.testnet.note} Mainnet 4663 ${f.mainnet.status.replace("_", " ")}. ${f.mainnet.note}`,
+      );
+    }
+    lines.push("", `Recommended path. ${pack.environment.families[0].devPath.join(", then ")}.`);
+    if (pack.environment.checkedOn) lines.push(`Last checked ${pack.environment.checkedOn}.`);
+  }
+  return lines;
+}
+
+/** RESOURCES.md, the pack on its own for a repo. */
+export function buildResourcesMd(doc: ProjectDoc, draft = true): string {
+  const pack = buildResourcePack(doc);
+  const lines: string[] = [
+    `# RESOURCES.md: ${doc.name}`,
+    "",
+    draft
+      ? "Generated from the team's current CanHav draft, not a published snapshot."
+      : "Generated from the team's published CanHav record.",
+  ];
+  if (!pack) {
+    lines.push("", "No product shape chosen yet, so no resource pack.");
+  } else {
+    lines.push("", pack.howToUse, ...resourcePackSections(doc, "##"));
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
 // ---------------------------------------------------------------------------
 // canhav-[slug].md — project
 
@@ -142,6 +198,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => decl(label, doc.security[key])),
   ];
+  lines.push(...resourcePackSections(doc, "##"));
   if (doc.githubRepo || doc.testnetContracts?.length || doc.verifyWallet) {
     lines.push("", "## Declared pointers", "");
     if (doc.githubRepo) lines.push(`- **GitHub:** https://github.com/${doc.githubRepo}`);
@@ -353,6 +410,8 @@ export function buildAgentsMd(input: {
   project?: ProjectDoc;
   token?: TokenDesignDoc;
   deployedAddress?: string | null;
+  /** True when built from the current draft rather than a published snapshot. */
+  draft?: boolean;
 }): string {
   const { project, token } = input;
   const name = project?.name ?? token?.name ?? "CanHav record";
@@ -360,8 +419,10 @@ export function buildAgentsMd(input: {
     `# AGENTS.md: ${name}`,
     "",
     "Context for AI coding assistants working on this project. Generated from",
-    "the team's published CanHav record(s); constraints below are the team's",
-    "own stated design.",
+    input.draft
+      ? "the team's current CanHav draft, not a published snapshot; constraints"
+      : "the team's published CanHav record(s); constraints below are the team's",
+    input.draft ? "below are the team's own stated design." : "own stated design.",
     "",
     "## Chain",
     "",
@@ -396,6 +457,7 @@ export function buildAgentsMd(input: {
       "flows deserve scrutiny proportional to it.",
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
+    lines.push(...resourcePackSections(project, "##"));
   }
 
   if (token) {

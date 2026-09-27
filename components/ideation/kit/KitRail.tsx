@@ -18,6 +18,8 @@ import {
   groupByPriority,
   packCounts,
   packFor,
+  resetSelection,
+  selectAllResources,
   toggleResource,
 } from "@/lib/kits";
 import { cn } from "@/lib/utils";
@@ -105,6 +107,25 @@ export function KitRail({
               {s === "step" ? RAIL_COPY.thisStep : RAIL_COPY.allSteps}
             </button>
           ))}
+        </div>
+      )}
+
+      {visible.length > 0 && (
+        <div className="mt-3 flex items-center justify-end gap-3 text-[11px] font-medium">
+          <button
+            type="button"
+            onClick={() => onPatchKit(selectAllResources(kit, visible))}
+            className="text-ink-400 transition-colors hover:text-ink-50"
+          >
+            {RAIL_COPY.selectAll}
+          </button>
+          <button
+            type="button"
+            onClick={() => onPatchKit(resetSelection())}
+            className="text-ink-400 transition-colors hover:text-ink-50"
+          >
+            {RAIL_COPY.coreOnly}
+          </button>
         </div>
       )}
 

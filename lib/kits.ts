@@ -137,6 +137,49 @@ export function validateProjectKit(kit: ProjectKit): string | null {
 }
 
 // ---------------------------------------------------------------------------
+// Where a shape can run today
+
+export type DeploymentStatus = "official" | "community" | "manifest_only" | "none";
+
+export interface FamilyEnvironment {
+  family: Exclude<KitFamily, "shared">;
+  testnet: { chainId: 46630; status: DeploymentStatus; note: string; source?: string };
+  mainnet: { chainId: 4663; status: DeploymentStatus; note: string; source?: string };
+  /** The recommended path from first commit to production, in order. */
+  devPath: readonly string[];
+  /** ISO date the row was last checked against the world. */
+  checkedOn: string;
+}
+
+/** Protocol families a shape relies on. Robinhood is always implied, Boros never. */
+export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "shared" | "robinhood">[]> = {
+  curated_vault: ["morpho"],
+  embedded_earn: ["morpho"],
+  collateral_loans: ["morpho"],
+  fixed_rate_yield: ["pendle"],
+  embedded_fixed_rate: ["pendle"],
+  pt_backed_borrowing: ["pendle", "morpho"],
+  leveraged_fixed_yield: ["pendle", "morpho"],
+  yield_token_exposure: ["pendle"],
+};
+
+/** Environment rows for a shape, Robinhood first, from whatever rows exist. */
+export function environmentPlanFor(
+  shape: ProductShape | "" | undefined,
+  rows: Partial<Record<FamilyEnvironment["family"], FamilyEnvironment>>,
+): FamilyEnvironment[] {
+  if (!shape) return [];
+  const out: FamilyEnvironment[] = [];
+  const rh = rows.robinhood;
+  if (rh) out.push(rh);
+  for (const f of SHAPE_FAMILIES[shape]) {
+    const row = rows[f];
+    if (row) out.push(row);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Resource catalog
 
 export type KitFamily = "shared" | "robinhood" | "morpho" | "pendle" | "boros";
@@ -280,6 +323,23 @@ export function toggleResource(
     selected.push(r.id);
   }
   return { selected, dismissed };
+}
+
+/** Tick every resource in `list`. Core items lose any dismissal, the rest are selected. */
+export function selectAllResources(
+  kit: ProjectKit,
+  list: readonly KitResource[],
+): Pick<ProjectKit, "selected" | "dismissed"> {
+  const ids = new Set(list.map((r) => r.id));
+  const dismissed = kit.dismissed.filter((id) => !ids.has(id));
+  const selected = [...kit.selected];
+  for (const r of list) if (r.priority !== "core" && !selected.includes(r.id)) selected.push(r.id);
+  return { selected, dismissed };
+}
+
+/** Back to the default: core ticked, nothing else. */
+export function resetSelection(): Pick<ProjectKit, "selected" | "dismissed"> {
+  return { selected: [], dismissed: [] };
 }
 
 /** Drop or remap ids that left the catalog. Idempotent. */

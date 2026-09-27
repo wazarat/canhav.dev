@@ -50,7 +50,12 @@ export default async function ProjectEditorPage({
             candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
           />
           <McpConnectCard
-            target={{ kind: "project", id: row.id, name: row.draft_doc.name }}
+            target={{
+              kind: "project",
+              id: row.id,
+              name: row.draft_doc.name,
+              hasKit: Boolean(row.draft_doc.kit?.shape),
+            }}
             className="mt-6"
           />
         </>

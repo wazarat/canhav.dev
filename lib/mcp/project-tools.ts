@@ -28,6 +28,7 @@ import {
   mcpUserId,
   registerMeteredTool,
 } from "@/lib/mcp/register";
+import { NO_SHAPE_HINT, buildResourcePack } from "@/lib/kit-pack";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
 /**
@@ -294,6 +295,30 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const draft: ProjectDoc = loaded.value.project.draft_doc;
       const firstProblem = validateProjectDoc(draft);
       return jsonResult({ valid: firstProblem === null, firstProblem });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_resource_pack",
+    {
+      title: "This project's resource pack",
+      description:
+        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, and where the relevant protocols can run on Robinhood Chain today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family.",
+      inputSchema: z.object({
+        step: z.enum(["basics", "architecture", "security", "reality", "review"]).optional(),
+        priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
+        family: z.enum(["shared", "robinhood", "morpho", "pendle", "boros"]).optional(),
+        includeUnselected: z.boolean().optional(),
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const pack = buildResourcePack(loaded.value.project.draft_doc, args);
+      if (!pack) return errorResult(NO_SHAPE_HINT);
+      return jsonResult({ source: "draft", ...pack });
     },
     scope,
   );

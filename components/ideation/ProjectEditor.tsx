@@ -9,6 +9,7 @@ import { TextField } from "@/components/ideation/TextField";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
+import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import { ChipMultiSelect, ChipRadioGroup } from "@/components/ui/ChipGroup";
@@ -561,6 +562,7 @@ export function ProjectEditor({
                 Everything checks out. Publish from the button above.
               </StatusChip>
             )}
+            {kitId === "credit" && kit?.shape ? <KitHandoff projectId={id} name={doc.name} /> : null}
           </div>
         )}
       </div>

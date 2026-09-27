@@ -1,76 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Cable, Check, Copy } from "lucide-react";
+import { Cable } from "lucide-react";
 
+import { CopyLine } from "@/components/ui/CopyLine";
 import { MCP_CONNECT } from "@/content/launch";
 import { cn } from "@/lib/utils";
 
 /**
- * The MCP connection card shown on launch surfaces. Static copy plus three
- * copy-to-clipboard lines. No wallet, no auth, no network. When the
- * clipboard is unavailable (permissions, insecure context) the button simply
- * does nothing visible; the text is still selectable.
+ * The MCP connection card shown on launch surfaces and the studio. Static
+ * copy plus copy-to-clipboard lines (components/ui/CopyLine). No wallet, no
+ * auth, no network.
  */
-
-function CopyLine({ label, text, mono = true }: { label: string; text: string; mono?: boolean }) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(t);
-  }, [copied]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      return;
-    } catch {
-      // Async clipboard denied. Fall through to the selection-based copy.
-    }
-    try {
-      const area = document.createElement("textarea");
-      area.value = text;
-      area.setAttribute("readonly", "");
-      area.style.position = "fixed";
-      area.style.opacity = "0";
-      document.body.appendChild(area);
-      area.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(area);
-      if (ok) setCopied(true);
-    } catch {
-      // Nothing else to try. The line stays selectable for manual copy.
-    }
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <span className="text-xs font-medium text-ink-200">{label}</span>
-      <div className="flex items-stretch gap-2">
-        <pre
-          className={cn(
-            "min-w-0 flex-1 overflow-x-auto whitespace-pre rounded-lg border border-ink-700/60 bg-ink-950/70 px-3 py-2 text-xs text-ink-100",
-            mono ? "font-mono" : "whitespace-pre-wrap font-sans",
-          )}
-        >
-          {text}
-        </pre>
-        <button
-          type="button"
-          onClick={() => void copy()}
-          aria-label={`Copy ${label.toLowerCase()}`}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-ink-700 bg-ink-900/60 px-2.5 text-xs text-ink-300 transition-colors hover:text-ink-50"
-        >
-          {copied ? <Check className="h-3.5 w-3.5 text-signal-400" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /**
  * What the card connects to. "any" is the generic launch card, "launch" binds
@@ -80,7 +20,7 @@ function CopyLine({ label, text, mono = true }: { label: string; text: string; m
 export type McpTarget =
   | { kind: "any" }
   | { kind: "launch"; address: string; committed: boolean }
-  | { kind: "project"; id: string; name: string };
+  | { kind: "project"; id: string; name: string; hasKit?: boolean };
 
 function lines(target: McpTarget) {
   if (target.kind === "project")
@@ -91,6 +31,8 @@ function lines(target: McpTarget) {
       addCommand: MCP_CONNECT.projectAddCommand(target.id, target.name),
       askLabel: MCP_CONNECT.steps.askProject,
       prompt: MCP_CONNECT.projectPrompt(target.id, target.name),
+      kitLabel: target.hasKit ? MCP_CONNECT.steps.loadKit : null,
+      kitPrompt: target.hasKit ? MCP_CONNECT.kitPrompt(target.id, target.name) : null,
       note: MCP_CONNECT.projectNote,
     };
   return {
@@ -103,6 +45,8 @@ function lines(target: McpTarget) {
       target.kind === "launch"
         ? MCP_CONNECT.promptFor(target.address, target.committed)
         : MCP_CONNECT.promptAny,
+    kitLabel: null,
+    kitPrompt: null,
     note: MCP_CONNECT.desktopNote,
   };
 }
@@ -138,6 +82,9 @@ export function McpConnectCard({
         ) : null}
         <CopyLine label={l.addLabel} text={l.addCommand} />
         <CopyLine label={l.askLabel} text={l.prompt} mono={false} />
+        {l.kitLabel && l.kitPrompt ? (
+          <CopyLine label={l.kitLabel} text={l.kitPrompt} mono={false} />
+        ) : null}
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-ink-500">
