@@ -1,5 +1,6 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
+import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { FAMILY_LABELS, shapeLabel } from "@/content/kits/credit";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import type { ProjectDoc } from "@/lib/ideation";
@@ -13,12 +14,16 @@ import {
   type KitResourceKind,
   type KitStep,
   type PackFilter,
+  type ReviewPass,
+  type ReviewVerdict,
   checklistProgress,
   effectiveSelection,
   effectiveSubsectors,
   environmentPlanFor,
   packCounts,
   packFor,
+  reviewPassesFor,
+  reviewProgress,
 } from "@/lib/kits";
 
 /**
@@ -58,7 +63,43 @@ export interface ResourcePackView {
   counts: ReturnType<typeof packCounts>;
   /** The ordered build steps for the shape and which are done. */
   checklist: { done: number; total: number; items: Array<ChecklistItem & { done: boolean }> };
+  /** Pre-launch review passes for the shape with recorded verdicts. */
+  review: ReviewView;
   howToUse: string;
+}
+
+export interface ReviewPassView extends Omit<ReviewPass, "resources"> {
+  verdict: ReviewVerdict | null;
+  resources: Array<{ id: string; title: string; url: string; rawUrl?: string }>;
+}
+
+export interface ReviewView {
+  shape: string;
+  shapeLabel: string | null;
+  progress: ReturnType<typeof reviewProgress>;
+  passes: ReviewPassView[];
+}
+
+const BY_ID = new Map(KIT_CATALOG.map((r) => [r.id, r] as const));
+
+/** The review passes for a project's shape with verdicts, or null without a shape. */
+export function buildReviewView(doc: ProjectDoc): ReviewView | null {
+  const kit = doc.kit;
+  if (!kit?.shape) return null;
+  const passes = reviewPassesFor(REVIEW_PASSES, kit.shape);
+  return {
+    shape: kit.shape,
+    shapeLabel: shapeLabel(kit.shape),
+    progress: reviewProgress(passes, kit),
+    passes: passes.map((p) => ({
+      ...p,
+      verdict: kit.review?.[p.id] ?? null,
+      resources: p.resources
+        .map((id) => BY_ID.get(id))
+        .filter((r): r is NonNullable<typeof r> => Boolean(r))
+        .map((r) => ({ id: r.id, title: r.title, url: r.href, ...(r.rawHref ? { rawUrl: r.rawHref } : {}) })),
+    })),
+  };
 }
 
 export const HOW_TO_USE =
@@ -115,6 +156,7 @@ export function buildResourcePack(
       ...checklistProgress(checklistItems, kit),
       items: checklistItems.map((i) => ({ ...i, done: kit.checklist?.[i.id] === true })),
     },
+    review: buildReviewView(doc)!,
     howToUse: HOW_TO_USE,
   };
 }

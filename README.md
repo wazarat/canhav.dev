@@ -179,5 +179,13 @@ event window so judges can verify it.
   RESOURCES.md and AGENTS.md list the steps with their done state. Exports
   also gain display names for the environment rows and "Not set" for empty
   answers.
+- Sept 27, 2026. Pre-launch review passes. The Security step lists the
+  review passes for the chosen product shape, fifteen in all with the
+  vault-side and borrow-side ones filtered by shape, each with what counts
+  as evidence and a pass, fail or not applicable verdict that is saved with
+  the project. A project's MCP server gains get_prelaunch_review and its
+  first prompt, prelaunch_review, which walks the passes against an open
+  repository. PRELAUNCH_REVIEW.md mirrors the list in the kit, and both
+  exports carry the verdicts.
 
 This list grows as work lands on the branch.

@@ -30,6 +30,8 @@ import {
   FLAG_COPY,
   KIND_LABELS,
   PRIORITY_LABELS,
+  REVIEW_VERDICT_LABELS,
+  STEP_LABELS_KIT,
   shapeLabel,
   startingPointLabel,
 } from "@/content/kits/credit";
@@ -137,7 +139,22 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
       `${pack.checklist.done} of ${pack.checklist.total} done. In order.`,
       "",
       ...pack.checklist.items.map(
-        (i, n) => `${n + 1}. [${i.done ? "x" : " "}] **${i.title}** (${i.step}). ${i.detail}`,
+        (i, n) =>
+          `${n + 1}. [${i.done ? "x" : " "}] **${i.title}** (${STEP_LABELS_KIT[i.step]}). ${i.detail}`,
+      ),
+    );
+  }
+  if (pack.review.passes.length > 0) {
+    const p = pack.review.progress;
+    lines.push(
+      "",
+      `${heading} Review passes`,
+      "",
+      `${p.pass} pass, ${p.fail} fail, ${p.na} not applicable, ${p.open} open of ${p.total}. Run before anything holds value.`,
+      "",
+      ...pack.review.passes.map(
+        (r, n) =>
+          `${n + 1}. **${r.title}** [${r.verdict ? REVIEW_VERDICT_LABELS[r.verdict] : "Open"}]. ${r.detail} Defined by ${r.resources.map((x) => `[${x.title}](${x.url})`).join(", ")}.`,
       ),
     );
   }

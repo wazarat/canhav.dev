@@ -77,3 +77,60 @@ export function registerMeteredTool<Schema extends z.ZodType>(
     return result;
   });
 }
+
+export interface PromptResult {
+  description?: string;
+  messages: Array<{ role: "user" | "assistant"; content: { type: "text"; text: string } }>;
+}
+
+/** A single user message, the shape every CanHav prompt returns. */
+export function promptResult(text: string, description?: string): PromptResult {
+  return {
+    ...(description ? { description } : {}),
+    messages: [{ role: "user", content: { type: "text", text } }],
+  };
+}
+
+/**
+ * The same seam for prompts. Registration is static, so a prompt may not
+ * read the database at registration time either; its callback may, and it
+ * runs per request like a tool call.
+ */
+export function registerMeteredPrompt<Schema extends z.ZodType>(
+  server: McpServer,
+  name: string,
+  config: { title: string; description: string; argsSchema?: Schema },
+  cb: (args: z.infer<Schema>, ctx: unknown) => Promise<PromptResult>,
+  opts?: { scope?: string },
+): void {
+  (server.registerPrompt as unknown as (
+    name: string,
+    config: unknown,
+    cb: (args: z.infer<Schema>, ctx: unknown) => Promise<PromptResult>,
+  ) => void)(name, config, async (args, ctx) => {
+    const startedAt = Date.now();
+    try {
+      const result = await cb(args, ctx);
+      console.info(
+        JSON.stringify({
+          mcpPrompt: name,
+          userId: mcpUserId(ctx),
+          ms: Date.now() - startedAt,
+          ...(opts?.scope ? { scope: opts.scope } : {}),
+        }),
+      );
+      return result;
+    } catch (err) {
+      console.info(
+        JSON.stringify({
+          mcpPrompt: name,
+          userId: mcpUserId(ctx),
+          ms: Date.now() - startedAt,
+          threw: true,
+          ...(opts?.scope ? { scope: opts.scope } : {}),
+        }),
+      );
+      throw err;
+    }
+  });
+}

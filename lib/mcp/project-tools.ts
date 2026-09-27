@@ -26,11 +26,13 @@ import {
   errorResult,
   jsonResult,
   mcpUserId,
+  promptResult,
+  registerMeteredPrompt,
   registerMeteredTool,
 } from "@/lib/mcp/register";
 import { checklistFor } from "@/content/kits/checklists";
-import { shapeLabel } from "@/content/kits/credit";
-import { NO_SHAPE_HINT, buildResourcePack } from "@/lib/kit-pack";
+import { REVIEW_VERDICT_LABELS, shapeLabel } from "@/content/kits/credit";
+import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { checklistProgress } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
@@ -330,6 +332,61 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const pack = buildResourcePack(loaded.value.project.draft_doc, args);
       if (!pack) return errorResult(NO_SHAPE_HINT);
       return jsonResult({ source: "draft", ...pack });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_prelaunch_review",
+    {
+      title: "This project's pre-launch review",
+      description:
+        "The review passes that apply to this project's product shape, each with what a reviewer checks, the resources that define it, and the team's recorded verdict (pass, fail, not applicable, or open). Takes no arguments. Run the prelaunch_review prompt to walk them against a repository.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const view = buildReviewView(loaded.value.project.draft_doc);
+      if (!view) return errorResult(NO_SHAPE_HINT);
+      return jsonResult({ source: "draft", ...view });
+    },
+    scope,
+  );
+
+  registerMeteredPrompt(
+    server,
+    "prelaunch_review",
+    {
+      title: "Walk the pre-launch review",
+      description:
+        "Walks this project's review passes against the repository the agent is working in, one pass at a time, and reports a verdict with evidence for each. Reads get_prelaunch_review and get_resource_pack first.",
+      argsSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return promptResult(loaded.message);
+      const view = buildReviewView(loaded.value.project.draft_doc);
+      if (!view) return promptResult(NO_SHAPE_HINT);
+      const list = view.passes
+        .map(
+          (p, i) =>
+            `${i + 1}. ${p.title} [${p.verdict ? REVIEW_VERDICT_LABELS[p.verdict] : "open"}]\n   ${p.detail}\n   Defined by: ${p.resources.map((r) => r.url).join(", ")}`,
+        )
+        .join("\n");
+      const text = [
+        `You are reviewing a ${view.shapeLabel ?? view.shape} product before it holds value. Work inside the repository you have open.`,
+        "",
+        "First call get_prelaunch_review and get_resource_pack on this project's CanHav MCP server. Fetch the rawUrl of any resource a pass is defined by before judging that pass.",
+        "",
+        "Then take the passes below one at a time. For each, look for evidence in the repository (code, tests, screenshots, documents). Report Pass only when you can point at the evidence, Fail when the check is not met, Not applicable with a one-line reason. Never guess.",
+        "",
+        list,
+        "",
+        "Finish with a table of verdicts and a list of the smallest changes that would turn each Fail into a Pass. The team records the verdicts in the CanHav studio; do not claim they are recorded.",
+      ].join("\n");
+      return promptResult(text, `Pre-launch review for ${loaded.value.project.draft_doc.name}`);
     },
     scope,
   );

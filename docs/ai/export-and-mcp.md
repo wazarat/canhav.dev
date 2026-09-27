@@ -17,7 +17,7 @@ A Credit project's research happens before publishing, so its owner can export f
 
 | Artifact | Purpose |
 |----------|---------|
-| `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, then the build steps with their done state and an environment section |
+| `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, then the build steps with their done state, the review passes with their verdicts, and an environment section |
 | `?file=agents` | `AGENTS.md` built from the draft plus the linked token design's draft, marked as a draft export in its first paragraph |
 
 ## MCP server
@@ -80,17 +80,20 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
 | `check_project` | Validate the project draft against the project rules and report the first problem |
 | `get_resource_pack` | The reading list the team ticked for this project's product shape, in read-first order, with fetchable `rawUrl`s, the family each resource comes from, caveat flags and an `environment` block. Pass `includeUnselected` for everything, or narrow with `step`, `priority` or `family` |
+| `get_prelaunch_review` | The review passes for this project's product shape, each with what a reviewer checks, the resources that define it and the team's recorded verdict |
 | `get_launch` | The token deployed from this project's design, in the same shape the shared server returns |
+
+The scoped server also registers one prompt, `prelaunch_review`. In Claude Code it appears as a slash command named after the server; it walks the passes against the open repository and reports a verdict with evidence for each. Clients that do not surface prompts get the same content through `get_prelaunch_review`.
 
 ### Resource pack fields
 
-`get_resource_pack` and `get_resource_catalog` share one vocabulary. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain) and `testnet_only`. `environment.families` lists, for Robinhood Chain and each protocol family the shape relies on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. `checklist` carries the ordered build steps for the shape with `done` and `total` and, per item, the step it informs, the resource ids that help and whether the team has ticked it. Fields are only ever added, never renamed.
+`get_resource_pack` and `get_resource_catalog` share one vocabulary. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain) and `testnet_only`. `environment.families` lists, for Robinhood Chain and each protocol family the shape relies on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. `checklist` carries the ordered build steps for the shape with `done` and `total` and, per item, the step it informs, the resource ids that help and whether the team has ticked it. `review` carries the passes for the shape with a progress block (`pass`, `fail`, `na`, `open`, `total`) and, per pass, the detail, the defining resources with URLs and the verdict or `null`. Fields are only ever added, never renamed.
 
 Two notes on what the URL is and is not. Clerk issues access tokens for the origin rather than for a path, so a token minted at `/mcp` is accepted at `/mcp/p/<id>` as well. The scoped URL is a tool surface, not a secret and not a capability: ownership is checked on every call against the signed-in account. And because the URL keys on the project id rather than its slug, a brand-new draft is connectable before it is ever published.
 
 ## Kit files
 
-CanHav publishes its own files for credit builders at `https://www.canhav.com/kits/credit/`, served raw so an agent can fetch them and a team can commit them. The index is `README.md`, the agent skill is `SKILL.md`, and the templates are `ARCHITECTURE.md`, `RISK_FRAMEWORK.md`, `ROLE_MODEL.md`, `INVARIANTS.md` and `morpho/COLLATERAL_ASSET_RESEARCH.md`. `morpho/robinhood-testnet-46630.manifest.json` is a machine-readable copy of the community Morpho Blue deployment on testnet, marked unofficial in its first field. The resource pack links each file as a `template` or `addresses` entry, so `get_resource_pack` and `RESOURCES.md` carry their URLs.
+CanHav publishes its own files for credit builders at `https://www.canhav.com/kits/credit/`, served raw so an agent can fetch them and a team can commit them. The index is `README.md`, the agent skill is `SKILL.md`, and the templates are `ARCHITECTURE.md`, `RISK_FRAMEWORK.md`, `ROLE_MODEL.md`, `INVARIANTS.md` and `morpho/COLLATERAL_ASSET_RESEARCH.md`. `morpho/robinhood-testnet-46630.manifest.json` is a machine-readable copy of the community Morpho Blue deployment on testnet, marked unofficial in its first field. `PRELAUNCH_REVIEW.md` mirrors the review passes the studio records verdicts for. The resource pack links each file as a `template` or `addresses` entry, so `get_resource_pack` and `RESOURCES.md` carry their URLs.
 
 ## Status discipline
 

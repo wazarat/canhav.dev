@@ -80,7 +80,13 @@ export interface ProjectKit {
   dismissed: string[];
   /** Build checklist item id to done. Only true entries are stored. */
   checklist?: Record<string, true>;
+  /** Pre-launch review pass id to verdict. Only set verdicts are stored. */
+  review?: Record<string, ReviewVerdict>;
 }
+
+export type ReviewVerdict = "pass" | "fail" | "na";
+
+export const REVIEW_VERDICTS: readonly ReviewVerdict[] = ["pass", "fail", "na"];
 
 export const KIT_LIMITS = {
   existingProduct: { max: 200 },
@@ -88,6 +94,8 @@ export const KIT_LIMITS = {
   ids: { max: 200 },
   /** Cap on stored checklist entries. */
   checklist: { max: 200 },
+  /** Cap on stored review verdicts. */
+  review: { max: 200 },
 } as const;
 
 export function emptyProjectKit(): ProjectKit {
@@ -135,6 +143,17 @@ export function normalizeProjectKit(raw: unknown): ProjectKit | null {
     }
     if (n > 0) kit.checklist = done;
   }
+  if (r.review && typeof r.review === "object" && !Array.isArray(r.review)) {
+    const verdicts: Record<string, ReviewVerdict> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.review as Record<string, unknown>)) {
+      if (k && REVIEW_VERDICTS.includes(v as ReviewVerdict) && n < KIT_LIMITS.review.max) {
+        verdicts[k] = v as ReviewVerdict;
+        n++;
+      }
+    }
+    if (n > 0) kit.review = verdicts;
+  }
   return kit;
 }
 
@@ -150,7 +169,82 @@ export function validateProjectKit(kit: ProjectKit): string | null {
     return "Too many resource selections.";
   if (kit.checklist && Object.keys(kit.checklist).length > KIT_LIMITS.checklist.max)
     return "Too many checklist entries.";
+  if (kit.review) {
+    const entries = Object.entries(kit.review);
+    if (entries.length > KIT_LIMITS.review.max) return "Too many review verdicts.";
+    if (entries.some(([, v]) => !REVIEW_VERDICTS.includes(v))) return "Unknown review verdict.";
+  }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Pre-launch review passes
+
+export interface ReviewPass {
+  /** "review.<slug>", immutable once shipped. */
+  id: string;
+  title: string;
+  /** What a reviewer checks and what counts as evidence. */
+  detail: string;
+  /** Shapes this pass applies to, or "all". */
+  shapes: readonly ProductShape[] | "all";
+  /** Catalog resource ids that define the pass. */
+  resources: readonly string[];
+}
+
+export function reviewPassesFor(
+  passes: readonly ReviewPass[],
+  shape: ProductShape | "" | undefined,
+): ReviewPass[] {
+  if (!shape) return [];
+  return passes.filter((p) => p.shapes === "all" || p.shapes.includes(shape));
+}
+
+export function reviewProgress(
+  passes: readonly ReviewPass[],
+  kit: Pick<ProjectKit, "review"> | undefined,
+): { pass: number; fail: number; na: number; open: number; total: number } {
+  const v = kit?.review ?? {};
+  const out = { pass: 0, fail: 0, na: 0, open: 0, total: passes.length };
+  for (const p of passes) {
+    const verdict = v[p.id];
+    if (verdict === "pass") out.pass++;
+    else if (verdict === "fail") out.fail++;
+    else if (verdict === "na") out.na++;
+    else out.open++;
+  }
+  return out;
+}
+
+/** Set or clear one verdict. Never stores an empty map. */
+export function setReviewVerdict(
+  kit: Pick<ProjectKit, "review">,
+  id: string,
+  verdict: ReviewVerdict | null,
+): Pick<ProjectKit, "review"> {
+  const next: Record<string, ReviewVerdict> = { ...(kit.review ?? {}) };
+  if (verdict) next[id] = verdict;
+  else delete next[id];
+  return Object.keys(next).length ? { review: next } : { review: undefined };
+}
+
+export function assertReviewPasses(
+  passes: readonly ReviewPass[],
+  knownResourceIds: ReadonlySet<string>,
+): void {
+  const seen = new Set<string>();
+  const problems: string[] = [];
+  for (const p of passes) {
+    if (seen.has(p.id)) problems.push(`duplicate review id ${p.id}`);
+    seen.add(p.id);
+    if (!p.id.startsWith("review.")) problems.push(`${p.id} must start with review.`);
+    if (p.shapes !== "all")
+      for (const s of p.shapes)
+        if (!PRODUCT_SHAPE_VALUES.includes(s)) problems.push(`${p.id} unknown shape ${s}`);
+    for (const r of p.resources)
+      if (!knownResourceIds.has(r)) problems.push(`${p.id} references unknown resource ${r}`);
+  }
+  if (problems.length) throw new Error(`Review passes are invalid. ${problems.join("; ")}`);
 }
 
 // ---------------------------------------------------------------------------

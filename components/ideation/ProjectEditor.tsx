@@ -11,6 +11,7 @@ import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
+import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import { ChipMultiSelect, ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
@@ -45,10 +46,13 @@ import {
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, RAIL_COPY } from "@/content/kits/credit";
+import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY } from "@/content/kits/credit";
+import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   KIT_LIMITS,
   checklistProgress,
+  reviewPassesFor,
+  reviewProgress,
   KIT_STEPS,
   type ProjectKit,
   effectiveSelection,
@@ -409,6 +413,7 @@ export function ProjectEditor({
                 />
               ))}
             </div>
+            {kitId === "credit" && kit?.shape ? <ReviewPasses kit={kit} onPatchKit={patchKit} /> : null}
           </>
         )}
 
@@ -510,6 +515,14 @@ export function ProjectEditor({
                             checklistProgress(checklistFor(kit.shape), kit).done,
                             checklistFor(kit.shape).length,
                           )
+                        : "Not set"
+                    }
+                  />
+                  <ReviewRow
+                    term="Review passes"
+                    detail={
+                      kit?.shape && reviewPassesFor(REVIEW_PASSES, kit.shape).length
+                        ? REVIEW_COPY.reviewRow(reviewProgress(reviewPassesFor(REVIEW_PASSES, kit.shape), kit))
                         : "Not set"
                     }
                   />

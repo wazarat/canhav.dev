@@ -1,6 +1,7 @@
 import type { ChipOption } from "@/components/ui/ChipGroup";
 import type { Subsector } from "@/lib/ideation";
 import {
+  type ReviewVerdict,
   type KitFamily,
   type KitFlag,
   type KitPriority,
@@ -173,6 +174,30 @@ export const CHECKLIST_COPY = {
   none: "Build steps for this shape arrive with its subsector.",
   progress: (done: number, total: number) => `${done} of ${total} done`,
   rowChip: (done: number, total: number) => `Build ${done} of ${total}`,
+} as const;
+
+export const REVIEW_VERDICT_OPTIONS: ReadonlyArray<ChipOption<ReviewVerdict>> = [
+  { value: "pass", label: "Pass" },
+  { value: "fail", label: "Fail" },
+  { value: "na", label: "Not applicable" },
+];
+
+export const REVIEW_VERDICT_LABELS: Record<ReviewVerdict, string> = {
+  pass: "Pass",
+  fail: "Fail",
+  na: "Not applicable",
+};
+
+export const REVIEW_COPY = {
+  title: "Review passes",
+  intro:
+    "Run these before anything holds value. A verdict is a claim with evidence behind it, so record where the evidence lives in your repository. Click a verdict again to clear it.",
+  summary: (p: { pass: number; fail: number; na: number; open: number; total: number }) =>
+    p.open === p.total
+      ? `${p.total} passes, none recorded`
+      : `${p.pass} pass, ${p.fail} fail, ${p.na} not applicable, ${p.open} open`,
+  reviewRow: (p: { pass: number; fail: number; na: number; open: number; total: number }) =>
+    `${p.pass} of ${p.total} passed${p.fail ? `, ${p.fail} failed` : ""}${p.open ? `, ${p.open} open` : ""}`,
 } as const;
 
 export const HANDOFF_COPY = {
