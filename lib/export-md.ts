@@ -25,7 +25,7 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
-import { shapeLabel, startingPointLabel } from "@/content/kits/lending";
+import { shapeLabel, startingPointLabel } from "@/content/kits/credit";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import {
   type ProjectDoc,

@@ -149,5 +149,13 @@ event window so judges can verify it.
   loans, and whether it starts from scratch or on top of a product that
   exists, each shape with a worked example. The answer travels to the public
   page and both markdown exports and will drive the research kit.
+- Sept 27, 2026. Resource pack rail. A Credit project's editor gains a right
+  rail with the reading list for its product shape, filtered to the step in
+  view, grouped Core, Recommended and Deep dive, each row a checkbox with the
+  source family, the kind, any caveat such as Unofficial or Mainnet only, and
+  one line on why it matters. Core items are ticked by default and every tick
+  is saved with the project. Sixty-odd entries cover Morpho, shared standards,
+  oracle and risk methodology, security tooling and Robinhood Chain, with
+  Pendle to follow.
 
 This list grows as work lands on the branch.

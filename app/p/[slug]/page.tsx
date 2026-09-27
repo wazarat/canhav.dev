@@ -15,7 +15,7 @@ import {
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
-import { shapeLabel, startingPointLabel } from "@/content/kits/lending";
+import { shapeLabel, startingPointLabel } from "@/content/kits/credit";
 import { explorerAddressUrl } from "@/lib/explorer";
 import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";

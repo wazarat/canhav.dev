@@ -40,6 +40,8 @@ When you publish:
 
 Unpublishing flips status back to draft for editors. Snapshots are not deleted.
 
+A Credit project's research kit (its product shape, starting point and resource pack ticks) is part of the draft, so it is inside the snapshot too. Changing a tick after publishing means the next Republish produces a new version.
+
 ## Deployed tokens
 
 A published token design may attach a deployed contract address after a design deploy. That attachment is optional. A design that is never deployed remains a legitimate public document.

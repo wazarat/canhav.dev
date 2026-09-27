@@ -9,6 +9,7 @@ import { TextField } from "@/components/ideation/TextField";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
+import { KitRail } from "@/components/ideation/kit/KitRail";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import { ChipMultiSelect, ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
@@ -32,15 +33,26 @@ import {
 } from "@/content/ideation";
 import { kitForDoc } from "@/content/kits";
 import {
-  LENDING_KIT_COPY,
-  LENDING_SHAPE_OPTIONS,
+  CREDIT_KIT_COPY,
   STARTING_POINT_OPTIONS,
+  offeredShapes,
   shapeBlurb,
+  shapeGroupsFor,
   shapeLabel,
   startingPointLabel,
-} from "@/content/kits/lending";
+} from "@/content/kits/credit";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
-import { KIT_LIMITS, type ProjectKit, emptyProjectKit } from "@/lib/kits";
+import { KIT_CATALOG } from "@/content/kits/catalog";
+import { RAIL_COPY } from "@/content/kits/credit";
+import {
+  KIT_LIMITS,
+  KIT_STEPS,
+  type ProjectKit,
+  effectiveSelection,
+  emptyProjectKit,
+  packCounts,
+  packFor,
+} from "@/lib/kits";
 
 const STEP_LABELS = ["Basics", "Architecture", "Security", "Reality", "Review"] as const;
 
@@ -121,6 +133,16 @@ export function ProjectEditor({
   const kit = doc.kit;
   const patchKit = (partial: Partial<ProjectKit>) =>
     patch({ kit: { ...(kit ?? emptyProjectKit()), ...partial } });
+  const showRail = kitId === "credit";
+  const kitStep = step === 4 ? null : KIT_STEPS[step];
+  const railCounts = useMemo(() => {
+    if (!kit?.shape) return null;
+    const pack = packFor(KIT_CATALOG, kit, doc);
+    return packCounts(pack, effectiveSelection(pack, kit));
+  }, [kit, doc]);
+  const rail = showRail ? (
+    <KitRail doc={doc} kit={kit} step={kitStep} onPatchKit={patchKit} />
+  ) : null;
 
   const steps = STEP_LABELS.map((label, i) => ({ label, problem: problems[i] }));
 
@@ -141,6 +163,21 @@ export function ProjectEditor({
       current={step}
       onSelectStep={(i) => setStep(Math.max(0, Math.min(steps.length - 1, i)))}
     >
+      <div className={showRail ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]" : undefined}>
+      <div>
+      {rail ? (
+        <details className="glass mb-6 rounded-2xl lg:hidden">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-ink-100">
+            {RAIL_COPY.title}
+            {railCounts ? (
+              <span className="ml-2 text-xs text-ink-400">
+                {RAIL_COPY.selectedOf(railCounts.selected, railCounts.total)}
+              </span>
+            ) : null}
+          </summary>
+          <div className="px-2 pb-2">{rail}</div>
+        </details>
+      ) : null}
       <div className="max-w-2xl space-y-6">
         {step === 0 && (
           <>
@@ -175,20 +212,30 @@ export function ProjectEditor({
                 required
                 hint="Pick one or more. Each opens its own research workflow."
                 value={doc.subsectors ?? []}
-                onChange={(v) => patch({ subsectors: v })}
+                onChange={(v) => {
+                  const keep = !kit?.shape || offeredShapes(v).includes(kit.shape);
+                  patch(keep ? { subsectors: v } : { subsectors: v, kit: { ...kit!, shape: "" } });
+                }}
                 options={SUBSECTOR_OPTIONS}
                 max={PROJECT_LIMITS.subsectors.max}
               />
             )}
-            {kitId === "lending" && (
+            {kitId === "credit" && (
               <>
-                <ChipRadioGroup
-                  label={LENDING_KIT_COPY.shapeLabel}
-                  hint={LENDING_KIT_COPY.shapeHint}
-                  value={kit?.shape ?? ""}
-                  onChange={(shape) => patchKit({ shape })}
-                  options={LENDING_SHAPE_OPTIONS}
-                />
+                {shapeGroupsFor(doc.subsectors ?? []).map((group, i, all) => (
+                  <ChipRadioGroup
+                    key={group.subsector}
+                    label={
+                      all.length > 1
+                        ? `${CREDIT_KIT_COPY.shapeLabel} (${group.heading})`
+                        : CREDIT_KIT_COPY.shapeLabel
+                    }
+                    hint={i === all.length - 1 ? CREDIT_KIT_COPY.shapeHint : undefined}
+                    value={kit?.shape ?? ""}
+                    onChange={(shape) => patchKit({ shape })}
+                    options={group.options}
+                  />
+                ))}
                 {kit?.shape ? (
                   <p className="-mt-3 text-sm leading-relaxed text-ink-300">
                     {shapeBlurb(kit.shape)}
@@ -199,19 +246,19 @@ export function ProjectEditor({
                   <FieldIntroCard intro="project.kit.shape" />
                 </div>
                 <ChipRadioGroup
-                  label={LENDING_KIT_COPY.startingPointLabel}
+                  label={CREDIT_KIT_COPY.startingPointLabel}
                   value={kit?.startingPoint ?? ""}
                   onChange={(startingPoint) => patchKit({ startingPoint })}
                   options={STARTING_POINT_OPTIONS}
                 />
                 {kit?.startingPoint === "existing_product" && (
                   <TextField
-                    label={LENDING_KIT_COPY.existingProductLabel}
-                    hint={LENDING_KIT_COPY.existingProductHint}
+                    label={CREDIT_KIT_COPY.existingProductLabel}
+                    hint={CREDIT_KIT_COPY.existingProductHint}
                     value={kit.existingProduct ?? ""}
                     onChange={(v) => patchKit({ existingProduct: v })}
                     max={KIT_LIMITS.existingProduct.max}
-                    placeholder={LENDING_KIT_COPY.existingProductPlaceholder}
+                    placeholder={CREDIT_KIT_COPY.existingProductPlaceholder}
                   />
                 )}
               </>
@@ -445,12 +492,20 @@ export function ProjectEditor({
                   detail={subsectorLabels(doc).join(" · ") || "Not set"}
                 />
               )}
-              {kitId === "lending" && (
+              {kitId === "credit" && (
                 <>
                   <ReviewRow term="Building" detail={shapeLabel(kit?.shape) ?? "Not set"} />
                   <ReviewRow
                     term="Starting from"
                     detail={(kit && startingPointLabel(kit)) ?? "Not set"}
+                  />
+                  <ReviewRow
+                    term="Resource pack"
+                    detail={
+                      railCounts
+                        ? `${railCounts.selected} selected of ${railCounts.total}. ${railCounts.core} core, ${railCounts.recommended} recommended, ${railCounts.deepDive} deep dive.`
+                        : "Not set"
+                    }
                   />
                 </>
               )}
@@ -510,6 +565,11 @@ export function ProjectEditor({
         )}
       </div>
       {linkPanel}
+      </div>
+      {rail ? (
+        <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start">{rail}</aside>
+      ) : null}
+      </div>
     </EditorShell>
   );
 }
