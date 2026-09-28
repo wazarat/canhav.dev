@@ -287,5 +287,17 @@ event window so judges can verify it.
   mainnet addresses marked reference only, a pool parameters worksheet, a
   hook design file and twelve pool invariants. The resource pack links each
   one.
+- Sept 28, 2026. Build steps and review passes for the liquidity shapes.
+  The five liquidity shapes get their ordered build steps, from the market
+  thesis and the eligibility file to the self-deployed stack, the manifest,
+  the first position and the mined hook address, 51 steps, and fifteen
+  review passes of their own, the dead deposit, gates with exit rights, the
+  unwind rehearsal, the lender run, allocator failure and release gates on
+  the vault side, and the atomic seed, the manifest with provenance, hook
+  permissions, fee bounds, custom accounting, adversarial simulations, the
+  pool invariants, the deployment target and the provider disclosure on the
+  pool side. A liquidity pre-launch review file mirrors them, so every one
+  of the thirteen shapes across both sectors now has a guided list, a
+  review, and an agent prompt that walks it.
 
 This list grows as work lands on the branch.

@@ -12,9 +12,15 @@ import {
   EMBEDDED_EARN_CHECKLIST,
 } from "./lending";
 import { LEVERAGED_FIXED_YIELD_CHECKLIST, YIELD_TOKEN_EXPOSURE_CHECKLIST } from "./leveraged-yield";
+import {
+  BASIC_AMM_POOL_CHECKLIST,
+  CONCENTRATED_LIQUIDITY_POOL_CHECKLIST,
+  HOOK_POOL_CHECKLIST,
+} from "./pools";
+import { LIQUIDITY_ALLOCATOR_CHECKLIST, PERMISSIONED_VAULT_CHECKLIST } from "./vaults";
 
 /**
- * Build checklists by shape, all eight. assertChecklists runs at import and
+ * Build checklists by shape, all thirteen. assertChecklists runs at import and
  * fails the build on a duplicate id or a reference to a resource that is
  * not in the catalog.
  */
@@ -27,6 +33,11 @@ export const KIT_CHECKLISTS: Partial<Record<ProductShape, readonly ChecklistItem
   pt_backed_borrowing: PT_BACKED_BORROWING_CHECKLIST,
   leveraged_fixed_yield: LEVERAGED_FIXED_YIELD_CHECKLIST,
   yield_token_exposure: YIELD_TOKEN_EXPOSURE_CHECKLIST,
+  liquidity_allocator: LIQUIDITY_ALLOCATOR_CHECKLIST,
+  permissioned_vault: PERMISSIONED_VAULT_CHECKLIST,
+  basic_amm_pool: BASIC_AMM_POOL_CHECKLIST,
+  concentrated_liquidity_pool: CONCENTRATED_LIQUIDITY_POOL_CHECKLIST,
+  hook_pool: HOOK_POOL_CHECKLIST,
 };
 
 /** The steps for one shape or, for several, their lists one after another in table order. */

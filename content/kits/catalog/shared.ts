@@ -272,6 +272,20 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     priority: "core",
     readOrder: 23,
   },
+  {
+    id: "canhav.liquidity-prelaunch-review",
+    family: "shared",
+    title: "Liquidity pre-launch review",
+    kind: "checklist",
+    href: `${LIQUIDITY_KIT}/PRELAUNCH_REVIEW.md`,
+    rawHref: `${LIQUIDITY_KIT}/PRELAUNCH_REVIEW.md`,
+    why: "The passes the studio records verdicts for on a vault or a pool product, twenty-eight rows each naming its shapes, with what counts as evidence for each.",
+    shapes: "all",
+    kits: ["liquidity"],
+    steps: ["security", "review"],
+    priority: "core",
+    readOrder: 27,
+  },
 
   // -- standards ---------------------------------------------------------------
   {

@@ -25,6 +25,10 @@ const MATURITY_SIDE = [
 /** Sells or buys a half at the pool's implied rate on behalf of users. */
 const IMPLIED_RATE_SIDE = ["fixed_rate_yield", "embedded_fixed_rate", "leveraged_fixed_yield", "yield_token_exposure"] as const;
 const PT_COLLATERAL_SIDE = ["pt_backed_borrowing", "leveraged_fixed_yield"] as const;
+/** The two liquidity vault shapes. Their operations passes are theirs alone; widening to Curated vault is one list edit. */
+const LIQUIDITY_VAULTS = ["liquidity_allocator", "permissioned_vault"] as const;
+const POOLS = ["basic_amm_pool", "concentrated_liquidity_pool", "hook_pool"] as const;
+const HOOKS = ["hook_pool"] as const;
 
 /**
  * Pre-launch review passes. The vault-side and borrow-side passes follow the
@@ -34,9 +38,10 @@ const PT_COLLATERAL_SIDE = ["pt_backed_borrowing", "leveraged_fixed_yield"] as c
  * own rules; the maturity, implied rate, collateral feed, loop and decay
  * passes are the fixed income and leveraged yield additions. Passes whose
  * resources are credit kit files are scoped to the credit and vault shapes;
- * only the static analysis and key custody passes apply to every shape.
- * Each pass names the resources that define it. Our own wording. Ids are
- * immutable.
+ * only the static analysis and key custody passes apply to every shape. The
+ * liquidity vault operations passes and the pool passes are the M37
+ * additions. Each pass names the resources that define it. Our own wording.
+ * Ids are immutable.
  */
 export const REVIEW_PASSES: readonly ReviewPass[] = [
   {
@@ -192,6 +197,115 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     detail: "Each numbered statement in the cross-protocol file that applies to the shape maps to a passing property on a fork of mainnet 4663, with the vault-loss case traced through every seam. Evidence is the mapping table and the test run.",
     shapes: MATURITY_SIDE,
     resources: ["canhav.cross-protocol-invariants", "foundry.invariant-testing", "canhav.pendle-mainnet-manifest"],
+  },
+
+  // -- liquidity vault operations (M37) ------------------------------------------
+  {
+    id: "review.dead-deposit",
+    title: "The dead deposit was made on the empty vault",
+    detail: "Shares were minted to a burn address before the first real deposit, the transaction is in the specification, and a test shows the share price cannot be inflated against a first depositor.",
+    shapes: LIQUIDITY_VAULTS,
+    resources: ["morpho.vault-v2-dead-deposit", "oz.erc-4626", "canhav.vault-specification"],
+  },
+  {
+    id: "review.gates",
+    title: "Every gate has written exit rights the contract enforces",
+    detail: "A removed party can withdraw, a withdrawal gate delays but never denies, a transfer gate never blocks redemption, and an operator that disappears cannot trap capital. Evidence is the eligibility file and a test per right.",
+    shapes: ["permissioned_vault"],
+    resources: ["morpho.vault-gates", "canhav.gates-and-eligibility"],
+  },
+  {
+    id: "review.unwind",
+    title: "The unwind and the emergency procedures were rehearsed on a fork",
+    detail: "Soft and hard deprecation of a market, a compromised role and a full unwind with an illiquid adapter each ran on a fork, and every depositor got out. Evidence is the runs and the order of withdrawal.",
+    shapes: LIQUIDITY_VAULTS,
+    resources: ["morpho.vault-v2-unwind", "morpho.vault-v2-emergency", "canhav.vault-specification"],
+  },
+  {
+    id: "review.lender-run",
+    title: "A lender run was simulated while borrowers kept their loans",
+    detail: "Withdrawals in waves against the cash buffer, with the point where the buffer ran out recorded and the disclosure on the deposit screen saying how withdrawals work then. Evidence is the scenario file with numbers.",
+    shapes: LIQUIDITY_VAULTS,
+    resources: ["canhav.liquidity-scenarios", "morpho.vault-mechanics"],
+  },
+  {
+    id: "review.allocator-failure",
+    title: "Allocator parameters, fee budget and failure handling are written down and tested",
+    detail: "Which markets may pull, the flow caps in each direction, the reallocation fee and budget, and what happens when a pull fails or a supplied market turns bad. Evidence is the specification and a test that forces a failed reallocation.",
+    shapes: ["liquidity_allocator"],
+    resources: ["morpho.public-allocator", "morpho.public-allocator-tutorial", "canhav.liquidity-scenarios"],
+  },
+  {
+    id: "review.release-gates",
+    title: "Every release gate has signed evidence",
+    detail: "The seven phases each have their evidence in the repository with an owner and a date, and the address registry carries provenance, environment and status for every dependency.",
+    shapes: LIQUIDITY_VAULTS,
+    resources: ["canhav.release-gates"],
+  },
+
+  // -- pools (M37) ------------------------------------------------------------------
+  {
+    id: "review.pool-init",
+    title: "The pool was initialised and seeded in one transaction",
+    detail: "The first liquidity went in with the initialisation, or through the router at the reference ratio for a pair, so no first provider was exposed to an empty pool. Evidence is the transaction and the worksheet.",
+    shapes: POOLS,
+    resources: ["uniswap.v4-create-pool", "uniswap.v2-providing-liquidity", "canhav.pool-parameters"],
+  },
+  {
+    id: "review.pool-manifest",
+    title: "Every address comes from the testnet manifest with provenance",
+    detail: "The code, the tests and the front end read the manifest and nothing else, every entry has a commit, a code hash and a verified source, and no mainnet address appears in it. Evidence is the manifest and a script that calls a view on every contract.",
+    shapes: POOLS,
+    resources: ["canhav.uniswap-testnet-manifest-template", "canhav.uniswap-mainnet-manifest", "canhav.uniswap-deploy-runbook"],
+  },
+  {
+    id: "review.hook-permissions",
+    title: "The hook's address carries exactly the permissions it implements",
+    detail: "The declared flags match the overridden callbacks, the mined salt is recorded, and a call to a callback the hook did not declare reverts. Evidence is the design file and the permission test.",
+    shapes: HOOKS,
+    resources: ["uniswap.v4-hook-deployment", "uniswap.hooks-library-source", "canhav.hook-design"],
+  },
+  {
+    id: "review.dynamic-fee-bounds",
+    title: "The fee schedule is bounded, tested at every condition and shown on the swap screen",
+    detail: "A maximum enforced in the contract, a test per condition in the schedule, the delay on changes, and the current fee visible where the user swaps. Evidence is the schedule, the tests and the screen.",
+    shapes: HOOKS,
+    resources: ["uniswap.v4-dynamic-fees", "uniswap.lpfee-library-source", "canhav.hook-design"],
+  },
+  {
+    id: "review.custom-accounting",
+    title: "Every delta the hook returns reconciles and takes no custody",
+    detail: "A test shows every unlock settles to zero with the hook attached, and the hook's deltas never move more value than the swap or liquidity change they wrapped. Evidence is the test and the design file.",
+    shapes: HOOKS,
+    resources: ["uniswap.v4-custom-accounting", "uniswap.v4-flash-accounting", "canhav.pool-invariants"],
+  },
+  {
+    id: "review.mev",
+    title: "Sandwich, just-in-time liquidity and oracle manipulation were simulated",
+    detail: "Adversarial swaps around a user's trade, liquidity added and removed around a block, and manipulation of any input a fee or a rule reads, each run on a fork with the results recorded.",
+    shapes: POOLS,
+    resources: ["uniswap.v4-security", "uniswap.security-resources"],
+  },
+  {
+    id: "review.pool-invariants",
+    title: "The pool invariants are under property tests",
+    detail: "Each numbered statement in the pool invariants file that applies to the shape maps to a passing Foundry property, re-run with the hook attached where one exists. Evidence is the mapping table and the run.",
+    shapes: POOLS,
+    resources: ["canhav.pool-invariants", "foundry.invariant-testing", "crytic.medusa-agents"],
+  },
+  {
+    id: "review.pool-environment",
+    title: "The deployment target matches what the team actually deployed",
+    detail: "Nothing assumes a protocol contract exists on testnet 46630, the self-deployed stack is verified on the explorer with its commits, and the canonical mainnet record is used for forks only. Evidence is the manifest and the verification links.",
+    shapes: POOLS,
+    resources: ["canhav.uniswap-testnet-manifest-template", "uniswap.deployments-4663", "robinhood.deploy-smart-contracts"],
+  },
+  {
+    id: "review.lp-disclosure",
+    title: "Divergence loss and the fee tier are disclosed where a provider commits",
+    detail: "The gap between holding and providing, the fee the pool charges and, for a range, what happens when the price leaves it, on the screen where liquidity is added. Evidence is that screen.",
+    shapes: POOLS,
+    resources: ["uniswap.v2-understanding-returns", "canhav.pool-parameters"],
   },
 ];
 
