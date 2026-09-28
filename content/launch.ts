@@ -254,7 +254,7 @@ export const MCP_CONNECT = {
   projectPrompt: (projectId: string, name: string) =>
     `Use the ${mcpAlias(name, projectId)} get_project_status tool and tell me what is left before this project can launch.`,
   kitPrompt: (projectId: string, name: string) =>
-    `Use the ${mcpAlias(name, projectId)} get_resource_pack tool, fetch every core resource in readFirst order, and tell me what each one requires of this project before we write code. Respect the mainnet_only and not_on_robinhood flags when you propose where to deploy.`,
+    `Use the ${mcpAlias(name, projectId)} get_resource_pack tool, fetch every core resource in readFirst order, and tell me what each one requires of this project before we write code. Respect the mainnet_only, not_on_robinhood and self_deploy flags when you propose where to deploy.`,
   projectTitle: "Read this project from your agent",
   projectIntro:
     "This project has its own MCP server. Add it and your agent sees this project, the token design linked to it and the token it deployed. Nothing else.",

@@ -794,6 +794,118 @@ export const FIELD_RESOURCES = {
         "profit and anything below is loss, with the token reaching zero on the " +
         "maturity date regardless.",
     },
+    liquidity_allocator: {
+      title: "Routing inventory instead of chasing a rate",
+      body:
+        "A market with an oracle and no reliable supply is an unfinished " +
+        "product, and a high rate on a thin market is not evidence of depth. " +
+        "An allocator solves the supply side. You hold or raise the loan asset, " +
+        "approve a set of markets with a cap on each, and move inventory to " +
+        "where borrowers are, either by hand, by a bot, or by letting a public " +
+        "allocator pull idle supply into a market the moment a borrower needs " +
+        "it. The decisions that matter are the caps, the cash buffer you keep " +
+        "for withdrawals, the fee budget for reallocations, and what happens " +
+        "when a market you supply turns bad. You are a capital router first and " +
+        "a yield product second, and your customers are curators and borrowers " +
+        "as much as depositors.",
+      example:
+        "Worked example: a stablecoin vault supplies three isolated markets " +
+        "with a cap on each. A borrower arrives at the smallest one wanting more " +
+        "than it holds. With the public allocator enabled the borrow transaction " +
+        "carries a reallocation that moves idle supply from the other two, " +
+        "inside the caps, and the loan clears without anyone waking the curator. " +
+        "Without it the borrower leaves, and the rate on the small market tells " +
+        "the story of thin inventory.",
+    },
+    permissioned_vault: {
+      title: "A vault with a door",
+      body:
+        "Everything a curated vault is, plus an allowlist on who may deposit, " +
+        "who may borrow, and where shares may move. That door is what lets " +
+        "institutions and real-world collateral in. The vault contracts give " +
+        "you gates on deposit, withdrawal and transfer, but they do not tell you " +
+        "who belongs on the list, which jurisdictions may hold the shares, or how " +
+        "a tokenised bond gets its price. The work above the protocol is the " +
+        "product. A custodian holds the underlying, a legal wrapper maps it to " +
+        "the token, onboarding checks the counterparty, an institutional price " +
+        "feeds an oracle adapter, and exit rights are written down so a " +
+        "depositor knows what a gate can and cannot do to them.",
+      example:
+        "Worked example: Liquida lets institutions deposit UK government bonds " +
+        "with a regulated custodian, activates them as tokenised collateral, and " +
+        "lends sterling against them on isolated markets. Its team built a net " +
+        "asset value oracle behind a market adapter, onboards counterparties with " +
+        "business and identity checks, and told an audience it was in due " +
+        "diligence with a curator to run the vault. Only the bottom of that " +
+        "stack is the lending protocol.",
+    },
+    basic_amm_pool: {
+      title: "The classic pair",
+      body:
+        "Two tokens sit in one contract and every swap keeps the product of " +
+        "the two reserves constant, so the price is the ratio of what is left. " +
+        "Liquidity providers deposit both sides at the current ratio and hold " +
+        "fungible shares of the pair; the swap fee accrues to the reserves, so " +
+        "their shares are worth more over time. What you own is the pair, the " +
+        "router your users go through, and the first deposit that sets the " +
+        "opening price. Deposit at the wrong ratio and the first trader takes " +
+        "the difference, which is why the guides say to add liquidity through " +
+        "the router rather than by sending tokens to the pair. Impermanent " +
+        "loss, the gap between holding and providing when the price moves, is " +
+        "the disclosure that matters.",
+      example:
+        "Worked example: the version two core contracts have run unchanged " +
+        "since 2020 with no owner and no upgrade path, which is why so many " +
+        "chains start with a fork of them. On Robinhood Chain testnet there is " +
+        "no deployment to fork into, so a team deploys the factory, the router " +
+        "and a wrapped native token itself and records the addresses in its " +
+        "own manifest.",
+    },
+    concentrated_liquidity_pool: {
+      title: "Liquidity where the price is",
+      body:
+        "Instead of spreading capital over every price from zero to infinity, " +
+        "a provider chooses a range. Inside it the position behaves like a " +
+        "constant-product pair with far more depth per unit of capital; outside " +
+        "it the position is entirely one token and earns nothing. Ranges are " +
+        "measured in ticks, positions are not fungible, and the modern " +
+        "implementation keeps every pool inside one singleton contract keyed by " +
+        "the two currencies, the fee, the tick spacing and an optional hook. " +
+        "The product decisions are the fee tier, the tick spacing, the starting " +
+        "price and how much to seed. Initialise the pool and add the first " +
+        "liquidity in one transaction, because an initialised empty pool can " +
+        "be priced by whoever arrives first.",
+      example:
+        "Worked example: a pool key of currency0, currency1, fee, tick " +
+        "spacing and hook, a starting square-root price, a lower and upper " +
+        "tick and two maximum amounts. The position manager takes all of that " +
+        "in one call, creates the pool and mints the first position, so the " +
+        "first provider is never exposed to a pool that exists without depth.",
+    },
+    hook_pool: {
+      title: "A pool that follows your rules",
+      body:
+        "A hook is your contract attached to a pool. It runs before or after " +
+        "initialisation, swaps, liquidity changes and donations, and the " +
+        "callbacks it may use are encoded in bits of its own address, so the " +
+        "address is mined before deployment rather than taken at random. With " +
+        "one you can change the fee on every swap, keep custom accounting, " +
+        "gate who may trade or provide, or replace the curve entirely. That is " +
+        "also where the new attack surface lives, because the core contracts " +
+        "are audited and your hook is not. The framework that matters lists " +
+        "custom accounting, dynamic fees, autonomous parameter changes, external " +
+        "dependencies and upgradeability as the risk categories, and the fee " +
+        "algorithm itself is your product design, not something the protocol " +
+        "prescribes.",
+      example:
+        "Worked example: the protocol's own hook repository ships a stable-pair " +
+        "hook with production dynamic fees, tests and audits, the best first " +
+        "thing to read. A pool for tokenised stocks might charge five basis " +
+        "points in normal hours, twenty when the underlying market is closed, " +
+        "thirty-five when volatility rises and fifty when depth falls below a " +
+        "threshold. That schedule is an example architecture, not a feature " +
+        "anyone provides.",
+    },
   } satisfies Partial<Record<ProductShape, OptionResource>>,
 } as const;
 
@@ -917,19 +1029,26 @@ export const FIELD_INTROS = {
   "project.kit.shape": {
     title: "How the shapes relate",
     body:
-      "The shapes are one stack, not eight products. Markets are where " +
+      "The shapes are one stack, not thirteen products. Markets are where " +
       "borrowing happens, vaults allocate deposits across markets, and apps " +
       "embed either one. Any yield source, a vault share included, can then be " +
       "split into a fixed half and a variable half that each trade until a " +
-      "maturity date, which is where fixed income and leveraged yield begin. " +
-      "The fixed half can in turn be posted as collateral in a market, which is " +
-      "where the subsectors meet. Pick the layer your users touch first. The " +
-      "research kit that follows is filtered by this answer, and you can change " +
-      "it at any time before publishing.",
+      "maturity date, which is where fixed income and leveraged yield begin, " +
+      "and the fixed half can be posted as collateral in a market. Seen from " +
+      "the liquidity side the same vault is the supply a market runs on, an " +
+      "allocator routes that supply among markets, and a permissioned vault " +
+      "puts a door on it for institutions. Pools are where assets trade at " +
+      "all, from a constant-product pair to concentrated ranges to a hook " +
+      "that changes fees and rules per swap. A curated vault or an earn " +
+      "feature is reached from Credit and from Liquidity and gets the same " +
+      "kit either way. Pick the layer your users touch first. The research " +
+      "kit that follows is filtered by this answer, and you can change it at " +
+      "any time before publishing.",
     example:
       "Worked example: a vault team wraps its own shares to offer depositors a " +
-      "fixed rate, then opens a market that takes the fixed half as collateral " +
-      "so those depositors can borrow without leaving the product.",
+      "fixed rate, opens a market that takes the fixed half as collateral so " +
+      "those depositors can borrow without leaving the product, and seeds a " +
+      "pool where the share trades so exits never depend on the vault alone.",
   },
   "token.distribution.softCap": {
     title: "Soft cap",

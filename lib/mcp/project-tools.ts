@@ -325,7 +325,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       inputSchema: z.object({
         step: z.enum(["basics", "architecture", "security", "reality", "review"]).optional(),
         priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
-        family: z.enum(["shared", "robinhood", "morpho", "pendle", "boros"]).optional(),
+        family: z.enum(["shared", "robinhood", "morpho", "pendle", "uniswap", "boros"]).optional(),
         includeUnselected: z.boolean().optional(),
       }),
     },

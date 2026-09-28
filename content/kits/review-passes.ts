@@ -1,8 +1,17 @@
 import { KIT_CATALOG_IDS } from "@/content/kits/catalog";
 import { type ReviewPass, assertReviewPasses } from "@/lib/kits";
 
-const VAULT_SIDE = ["curated_vault", "embedded_earn", "fixed_rate_yield", "embedded_fixed_rate"] as const;
+const VAULT_SIDE = [
+  "curated_vault",
+  "embedded_earn",
+  "fixed_rate_yield",
+  "embedded_fixed_rate",
+  "liquidity_allocator",
+  "permissioned_vault",
+] as const;
 const BORROW_SIDE = ["collateral_loans", "pt_backed_borrowing", "leveraged_fixed_yield"] as const;
+/** Every shape the credit kit files speak to. The pool shapes get their own passes in M37. */
+const CREDIT_AND_VAULTS = [...VAULT_SIDE, ...BORROW_SIDE, "yield_token_exposure"] as const;
 /** Holds or sells the variable half for users. Gets the surface passes without the vault ones. */
 const YT_SIDE = ["yield_token_exposure"] as const;
 /** Every shape that touches a market with a maturity. */
@@ -23,8 +32,11 @@ const PT_COLLATERAL_SIDE = ["pt_backed_borrowing", "leveraged_fixed_yield"] as c
  * disclosure, rate display, conversion, clarity and safety, discoverability,
  * math); the security passes follow the security workflow and this kit's
  * own rules; the maturity, implied rate, collateral feed, loop and decay
- * passes are the fixed income and leveraged yield additions. Each pass
- * names the resources that define it. Our own wording. Ids are immutable.
+ * passes are the fixed income and leveraged yield additions. Passes whose
+ * resources are credit kit files are scoped to the credit and vault shapes;
+ * only the static analysis and key custody passes apply to every shape.
+ * Each pass names the resources that define it. Our own wording. Ids are
+ * immutable.
  */
 export const REVIEW_PASSES: readonly ReviewPass[] = [
   {
@@ -73,7 +85,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     id: "review.clarity",
     title: "Irreversible actions are clear and confirmed",
     detail: "Withdrawals, borrows, collateral moves and admin calls show what will happen, in the user's terms, and wait for a confirmation. Simulate, explain, confirm, execute.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     resources: ["viem.simulate-contract", "canhav.kit-skill"],
   },
   {
@@ -101,7 +113,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     id: "review.tokens",
     title: "Every asset passed the token integration checklist",
     detail: "Vault asset, loan asset and collateral each have a research file with a checklist result and no open finding.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     resources: ["tob.token-integration", "canhav.asset-research-template"],
   },
   {
@@ -115,7 +127,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     id: "review.invariants",
     title: "Invariants are under property tests",
     detail: "Each numbered invariant in the kit maps to a passing Foundry or Medusa property, or to a written reason it does not apply.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     resources: ["canhav.invariants", "foundry.invariant-testing", "crytic.medusa-agents"],
   },
   {
@@ -129,7 +141,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     id: "review.environment",
     title: "The deployment target matches what is actually deployed",
     detail: "Nothing assumes a contract exists on testnet that only exists on mainnet, and unofficial addresses were re-verified on the explorer on a recorded date.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     resources: ["morpho.addresses", "canhav.testnet-manifest", "robinhood.deploy-smart-contracts"],
   },
   {

@@ -120,7 +120,7 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
 }
 
 export const HOW_TO_USE =
-  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting.";
+  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest.";
 
 export const NO_SHAPE_HINT =
   "This project has no product shape yet. Pick what you are building in the studio Basics step and the resource pack will follow.";

@@ -5,6 +5,19 @@ const KIT = `${MCP_CONNECT.baseUrl}/kits/credit`;
 
 const VAULT_LIKE = ["curated_vault", "embedded_earn", "fixed_rate_yield", "embedded_fixed_rate"] as const;
 const LENDING_LIKE = ["collateral_loans", "pt_backed_borrowing", "leveraged_fixed_yield"] as const;
+/** Every credit shape plus the two vault shapes. Not the pools. */
+const CREDIT_AND_VAULTS = [
+  "curated_vault",
+  "embedded_earn",
+  "collateral_loans",
+  "fixed_rate_yield",
+  "embedded_fixed_rate",
+  "pt_backed_borrowing",
+  "leveraged_fixed_yield",
+  "yield_token_exposure",
+  "liquidity_allocator",
+  "permissioned_vault",
+] as const;
 const APP_FLOWS = [
   "embedded_earn",
   "collateral_loans",
@@ -109,7 +122,7 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     href: `${KIT}/RATE_TRANSPARENCY.md`,
     rawHref: `${KIT}/RATE_TRANSPARENCY.md`,
     why: "The nine rates a credit product carries, what each one is, where it comes from and the label to use. No screen shows one number called yield.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     steps: ["architecture", "security", "review"],
     priority: "core",
     readOrder: 28,
@@ -135,7 +148,7 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     href: `${KIT}/ASSET_REGISTRY.md`,
     rawHref: `${KIT}/ASSET_REGISTRY.md`,
     why: "One registry where every asset points back to what it is built on, underlying, vault, wrapped unit, fixed half, so any agent can walk to the base asset.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     steps: ["architecture"],
     priority: "recommended",
   },
@@ -147,7 +160,7 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     href: `${KIT}/ASSET_REGISTRY.template.json`,
     rawHref: `${KIT}/ASSET_REGISTRY.template.json`,
     why: "The registry as a JSON file your tests and your agent can read, with one example entry per layer and nulls where nothing is deployed.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     steps: ["architecture"],
     priority: "recommended",
   },
@@ -208,7 +221,7 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     href: `${KIT}/INVARIANTS.md`,
     rawHref: `${KIT}/INVARIANTS.md`,
     why: "Fifteen statements that must always hold for vaults and markets, phrased for Foundry and Medusa.",
-    shapes: "all",
+    shapes: CREDIT_AND_VAULTS,
     steps: ["security"],
     priority: "recommended",
   },

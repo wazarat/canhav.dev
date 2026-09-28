@@ -215,7 +215,7 @@ export function registerAllTools(server: McpServer): void {
     {
       title: "Resource catalog",
       description:
-        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain (Morpho, Pendle, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags and where each protocol family runs today. Filter by shape, family or priority. No sign-in needed.",
+        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain (Morpho, Pendle, Uniswap, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags and where each protocol family runs today. Filter by shape, family or priority. No sign-in needed.",
       inputSchema: z.object({
         shape: z
           .enum([
@@ -227,9 +227,14 @@ export function registerAllTools(server: McpServer): void {
             "pt_backed_borrowing",
             "leveraged_fixed_yield",
             "yield_token_exposure",
+            "liquidity_allocator",
+            "permissioned_vault",
+            "basic_amm_pool",
+            "concentrated_liquidity_pool",
+            "hook_pool",
           ])
           .optional(),
-        family: z.enum(["shared", "robinhood", "morpho", "pendle", "boros"]).optional(),
+        family: z.enum(["shared", "robinhood", "morpho", "pendle", "uniswap", "boros"]).optional(),
         priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
       }),
     },

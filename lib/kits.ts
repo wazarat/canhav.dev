@@ -34,7 +34,12 @@ export type ProductShape =
   | "embedded_fixed_rate"
   | "pt_backed_borrowing"
   | "leveraged_fixed_yield"
-  | "yield_token_exposure";
+  | "yield_token_exposure"
+  | "liquidity_allocator"
+  | "permissioned_vault"
+  | "basic_amm_pool"
+  | "concentrated_liquidity_pool"
+  | "hook_pool";
 
 /**
  * The one place subsector membership lives. Key order is picker order. A
@@ -52,6 +57,11 @@ export const SHAPE_SUBSECTORS: Record<ProductShape, readonly Subsector[]> = {
   pt_backed_borrowing: ["fixed_income", "lending"],
   leveraged_fixed_yield: ["leveraged_yield", "fixed_income", "lending"],
   yield_token_exposure: ["leveraged_yield"],
+  liquidity_allocator: ["vaults"],
+  permissioned_vault: ["vaults"],
+  basic_amm_pool: ["pools"],
+  concentrated_liquidity_pool: ["pools"],
+  hook_pool: ["pools"],
 };
 
 export const PRODUCT_SHAPE_VALUES = Object.keys(SHAPE_SUBSECTORS) as readonly ProductShape[];
@@ -508,6 +518,11 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
   pt_backed_borrowing: ["pendle", "morpho"],
   leveraged_fixed_yield: ["pendle", "morpho"],
   yield_token_exposure: ["pendle"],
+  liquidity_allocator: ["morpho"],
+  permissioned_vault: ["morpho"],
+  basic_amm_pool: ["uniswap"],
+  concentrated_liquidity_pool: ["uniswap"],
+  hook_pool: ["uniswap"],
 };
 
 /** Environment rows for the given shapes, Robinhood first, each family once, from whatever rows exist. */
@@ -535,17 +550,25 @@ export function environmentPlanFor(
 // ---------------------------------------------------------------------------
 // Resource catalog
 
-export type KitFamily = "shared" | "robinhood" | "morpho" | "pendle" | "boros";
+export type KitFamily = "shared" | "robinhood" | "morpho" | "pendle" | "uniswap" | "boros";
 
 export const KIT_FAMILY_ORDER: readonly KitFamily[] = [
   "shared",
   "robinhood",
   "morpho",
   "pendle",
+  "uniswap",
   "boros",
 ];
 
-export type KitFlag = "unofficial" | "mainnet_only" | "not_on_robinhood" | "testnet_only";
+/**
+ * unofficial, a community artifact to verify before trusting. mainnet_only,
+ * no testnet deployment exists. not_on_robinhood, background reading only.
+ * testnet_only, do not carry it to mainnet. self_deploy, contracts a team
+ * deploys itself on testnet 46630 and records in its own manifest, because
+ * the protocol has no deployment there.
+ */
+export type KitFlag = "unofficial" | "mainnet_only" | "not_on_robinhood" | "testnet_only" | "self_deploy";
 
 export type KitStep = "basics" | "architecture" | "security" | "reality" | "review";
 

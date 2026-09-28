@@ -61,6 +61,7 @@ export const FAMILY_LABELS: Record<KitFamily, string> = {
   robinhood: "Robinhood Chain",
   morpho: "Morpho",
   pendle: "Pendle",
+  uniswap: "Uniswap",
   boros: "Boros",
 };
 
@@ -97,6 +98,7 @@ export const FLAG_COPY: Record<KitFlag, { label: string; tone: "warning" | "info
   mainnet_only: { label: "Mainnet only", tone: "info" },
   not_on_robinhood: { label: "Not on Robinhood Chain", tone: "neutral" },
   testnet_only: { label: "Testnet only", tone: "info" },
+  self_deploy: { label: "Self-deploy on testnet", tone: "info" },
 };
 
 export const RAIL_COPY = {

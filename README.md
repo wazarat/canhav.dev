@@ -245,5 +245,14 @@ event window so judges can verify it.
   product shapes with one under the other sector is ticked automatically,
   with a line that says why. Exports, the public page and the MCP tools
   list every sector and every kit a project opens.
+- Sept 28, 2026. Five liquidity shapes. Pools opens beside Vaults, and a
+  Liquidity project can say it is building a liquidity allocator, a
+  permissioned vault, a basic AMM pool, a concentrated liquidity pool or a
+  pool with custom hooks, each with a teaching card in CanHav's own words
+  and the intro card rewritten to walk both sectors. The catalog gains a
+  Uniswap family and a self-deploy flag for contracts a team puts on
+  testnet itself, and the credit kit's own files and review passes are
+  scoped to the credit and vault shapes so a pools project starts from the
+  shared and Robinhood Chain resources.
 
 This list grows as work lands on the branch.

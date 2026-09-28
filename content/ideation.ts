@@ -81,10 +81,7 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
   { value: "other", label: "Other", available: false },
 ];
 
-/**
- * Subsectors per sector, in SECTOR_SUBSECTORS order. Pick one to three per
- * sector. Pools is listed and opens with its shapes in the next milestone.
- */
+/** Subsectors per sector, in SECTOR_SUBSECTORS order. Pick one to three per sector. All are open. */
 export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOption<Subsector>>>> = {
   credit_lending: [
     { value: "lending", label: "Lending" },
@@ -93,7 +90,7 @@ export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOpti
   ],
   liquidity_infra: [
     { value: "vaults", label: "Vaults" },
-    { value: "pools", label: "Pools", available: false },
+    { value: "pools", label: "Pools" },
   ],
 };
 
