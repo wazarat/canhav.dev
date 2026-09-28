@@ -12,6 +12,9 @@ const COLLATERAL_SHAPES = [
   "fixed_rate_yield",
   "permissioned_vault",
   "liquidity_allocator",
+  "basic_amm_pool",
+  "concentrated_liquidity_pool",
+  "hook_pool",
 ] as const;
 
 /**
@@ -200,7 +203,7 @@ export const ROBINHOOD_RESOURCES: readonly KitResource[] = [
     title: "Building with stock tokens",
     kind: "docs",
     href: `${DOCS}/building-with-stock-tokens`,
-    why: "Market hours, the display multiplier and transfer rules. Each one is a liquidation edge case for a lending product.",
+    why: "Market hours, the display multiplier and transfer rules. Each one is a liquidation edge case for a lending product and a fee or gating decision for a pool.",
     shapes: COLLATERAL_SHAPES,
     steps: ["architecture", "security"],
     priority: "recommended",

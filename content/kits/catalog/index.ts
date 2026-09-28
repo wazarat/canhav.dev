@@ -5,9 +5,10 @@ import { MORPHO_RESOURCES } from "./morpho";
 import { PENDLE_RESOURCES } from "./pendle";
 import { ROBINHOOD_RESOURCES } from "./robinhood";
 import { SHARED_RESOURCES } from "./shared";
+import { UNISWAP_RESOURCES } from "./uniswap";
 
 /**
- * The whole credit catalog, one file per family. Ids are immutable once
+ * The whole catalog, one file per family, serving the credit and liquidity kits. Ids are immutable once
  * shipped; a rename or removal goes through RETIRED_IDS so stored
  * selections keep meaning something. assertKitCatalog runs at import and
  * fails the build on a duplicate or malformed entry.
@@ -17,6 +18,7 @@ export const KIT_CATALOG: readonly KitResource[] = [
   ...ROBINHOOD_RESOURCES,
   ...MORPHO_RESOURCES,
   ...PENDLE_RESOURCES,
+  ...UNISWAP_RESOURCES,
   ...BOROS_RESOURCES,
 ];
 
@@ -30,5 +32,6 @@ assertKitCatalog(KIT_CATALOG, {
   robinhood: ROBINHOOD_RESOURCES,
   morpho: MORPHO_RESOURCES,
   pendle: PENDLE_RESOURCES,
+  uniswap: UNISWAP_RESOURCES,
   boros: BOROS_RESOURCES,
 });

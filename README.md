@@ -265,5 +265,15 @@ event window so judges can verify it.
   and Robinhood Chain gains its own status page and the chain terms of
   service. Every link was fetched before it was written, and the docs say
   which entries both sectors share.
+- Sept 28, 2026. Pools catalog. A Uniswap family of 95 entries behind the
+  three pool shapes, from the protocol's agent skills and its docs index
+  for agents to the v2 pair and router, the v4 singleton, position manager,
+  quoter and state view, hooks, dynamic fees, custom accounting, the hook
+  template, the public hook implementations with their audits, the
+  Universal Router and the v4 subgraph. Contract repositories a team
+  deploys on testnet itself are flagged Self-deploy on testnet, and the
+  canonical mainnet address record is flagged Mainnet only, because Uniswap
+  has no deployment on testnet 46630. Every link was fetched before it was
+  written.
 
 This list grows as work lands on the branch.
