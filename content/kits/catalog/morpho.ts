@@ -2,6 +2,7 @@ import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
 
 const KIT = `${MCP_CONNECT.baseUrl}/kits/credit/morpho`;
+const LIQUIDITY_KIT = `${MCP_CONNECT.baseUrl}/kits/liquidity/morpho`;
 const SKILLS = "https://github.com/morpho-org/morpho-skills/blob/main/plugins/morpho-builder/skills";
 const SKILLS_RAW =
   "https://raw.githubusercontent.com/morpho-org/morpho-skills/main/plugins/morpho-builder/skills";
@@ -463,6 +464,59 @@ export const MORPHO_RESOURCES: readonly KitResource[] = [
     shapes: [...BORROW_SIDE, ...CURATOR_SIDE],
     steps: ["security"],
     priority: "recommended",
+  },
+
+  // -- CanHav liquidity kit files for the vault shapes (M36) --------------------
+  {
+    id: "canhav.vault-specification",
+    family: "morpho",
+    title: "Vault specification",
+    kind: "template",
+    href: `${LIQUIDITY_KIT}/VAULT_SPECIFICATION.md`,
+    rawHref: `${LIQUIDITY_KIT}/VAULT_SPECIFICATION.md`,
+    why: "One file per vault. Asset, roles and their keys, gates, adapters and caps, timelocks, fee, cash buffer and redemption terms, filled in before the factory is called.",
+    shapes: CURATOR_SIDE,
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 28,
+  },
+  {
+    id: "canhav.liquidity-scenarios",
+    family: "morpho",
+    title: "Liquidity scenarios",
+    kind: "template",
+    href: `${LIQUIDITY_KIT}/LIQUIDITY_SCENARIOS.md`,
+    rawHref: `${LIQUIDITY_KIT}/LIQUIDITY_SCENARIOS.md`,
+    why: "The six scenarios a lender-facing vault has to survive, weekend gap, oracle pause, sequencer outage, thin collateral market, lender run and depeg, each with the test to run, the control to have and the numbers to keep.",
+    shapes: [...CURATOR_SIDE, "embedded_earn", "collateral_loans"],
+    steps: ["security", "reality"],
+    priority: "core",
+    readOrder: 29,
+  },
+  {
+    id: "canhav.release-gates",
+    family: "morpho",
+    title: "Release gates",
+    kind: "template",
+    href: `${LIQUIDITY_KIT}/RELEASE_GATES.md`,
+    rawHref: `${LIQUIDITY_KIT}/RELEASE_GATES.md`,
+    why: "Seven phases from product definition to scale, each with the evidence that lets it pass, and the team documents a small team keeps so a reviewer can follow the trail.",
+    shapes: [...CURATOR_SIDE, "embedded_earn", "collateral_loans"],
+    steps: ["reality", "review"],
+    priority: "recommended",
+  },
+  {
+    id: "canhav.gates-and-eligibility",
+    family: "morpho",
+    title: "Gates and eligibility",
+    kind: "template",
+    href: `${LIQUIDITY_KIT}/GATES_AND_ELIGIBILITY.md`,
+    rawHref: `${LIQUIDITY_KIT}/GATES_AND_ELIGIBILITY.md`,
+    why: "The allowlist design for a permissioned vault. Who may deposit, borrow and hold shares, which jurisdictions, who the custodian is, where the institutional price comes from and what exit rights a gate can never override.",
+    shapes: ["permissioned_vault"],
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 30,
   },
 
   // -- earn inside an app ----------------------------------------------------

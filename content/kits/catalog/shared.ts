@@ -2,6 +2,7 @@ import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
 
 const KIT = `${MCP_CONNECT.baseUrl}/kits/credit`;
+const LIQUIDITY_KIT = `${MCP_CONNECT.baseUrl}/kits/liquidity`;
 
 /** The two liquidity vault shapes (M34). */
 const VAULT_SHAPES = ["liquidity_allocator", "permissioned_vault"] as const;
@@ -226,6 +227,50 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     shapes: CREDIT_AND_VAULTS,
     steps: ["security"],
     priority: "recommended",
+  },
+
+  // -- CanHav liquidity kit files (M36) -----------------------------------------
+  {
+    id: "canhav.liquidity-kit-readme",
+    family: "shared",
+    title: "CanHav liquidity kit",
+    kind: "template",
+    href: `${LIQUIDITY_KIT}/README.md`,
+    rawHref: `${LIQUIDITY_KIT}/README.md`,
+    why: "What is in the liquidity kit, which files a vault product and a pool product each use, and how to use it with a coding agent, in one page.",
+    shapes: "all",
+    kits: ["liquidity"],
+    steps: ["basics"],
+    priority: "core",
+    readOrder: 0,
+  },
+  {
+    id: "canhav.liquidity-kit-skill",
+    family: "shared",
+    title: "Liquidity kit agent skill",
+    kind: "skill",
+    href: `${LIQUIDITY_KIT}/SKILL.md`,
+    rawHref: `${LIQUIDITY_KIT}/SKILL.md`,
+    why: "Install this so your agent loads the pack first, deploys nothing on testnet without recording it in the manifest, and never sends a transaction from intent straight to broadcast.",
+    shapes: "all",
+    kits: ["liquidity"],
+    steps: ["basics", "architecture"],
+    priority: "core",
+    readOrder: 0,
+  },
+  {
+    id: "canhav.liquidity-architecture-template",
+    family: "shared",
+    title: "Liquidity architecture template",
+    kind: "template",
+    href: `${LIQUIDITY_KIT}/ARCHITECTURE.md`,
+    rawHref: `${LIQUIDITY_KIT}/ARCHITECTURE.md`,
+    why: "The design document for a vault or a pool product, one section per shape, with the self-deploy step in the environment plan and blanks where a decision is still open.",
+    shapes: "all",
+    kits: ["liquidity"],
+    steps: ["architecture"],
+    priority: "core",
+    readOrder: 23,
   },
 
   // -- standards ---------------------------------------------------------------

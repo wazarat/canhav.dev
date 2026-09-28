@@ -4,8 +4,10 @@ import type { FamilyEnvironment } from "@/lib/kits";
  * Where each protocol family can run today on Robinhood Chain. One row per
  * family; SHAPE_FAMILIES decides which rows a shape shows, and Boros never
  * appears in a shape plan because it does not run here (it is listed for
- * the public catalog tool only). Every row carries the date it was last
- * checked. No colons, no em dashes in notes.
+ * the public catalog tool only). A family with its own path (Uniswap, which
+ * a team deploys itself on testnet) shows it beside the shared one. Every
+ * row carries the date it was last checked. No colons, no em dashes in
+ * notes.
  */
 
 const DEV_PATH = [
@@ -66,6 +68,27 @@ export const KIT_ENVIRONMENTS: Partial<Record<FamilyEnvironment["family"], Famil
     },
     devPath: DEV_PATH,
     checkedOn: "2026-09-27",
+  },
+  uniswap: {
+    family: "uniswap",
+    testnet: {
+      chainId: 46630,
+      status: "none",
+      note: "No deployment on testnet 46630 in the protocol's deployment records or its docs. Deploy the v2 or v4 stack yourself with the runbook in the kit and keep your manifest as the source of truth.",
+      source: "https://developers.uniswap.org/docs/protocols/v4/deployments",
+    },
+    mainnet: {
+      chainId: 4663,
+      status: "official",
+      note: "v2, v3, v4, Permit2 and the Universal Router are in the protocol's deployment records for chain 4663 and in its docs, and the hosted routing serves the chain. Reference only until your own pool exists there.",
+      source: "https://github.com/Uniswap/contracts/blob/main/deployments/4663.md",
+    },
+    devPath: [
+      "Deploy the v2 or v4 stack to testnet 46630 yourself and record every address, commit and transaction in the manifest",
+      "A local fork of mainnet 4663 against the canonical deployment",
+      "Mainnet 4663 on the canonical contracts with your own pool and hook, behind a cap at first",
+    ],
+    checkedOn: "2026-09-28",
   },
   boros: {
     family: "boros",

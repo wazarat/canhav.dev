@@ -1,3 +1,4 @@
+import { MCP_CONNECT } from "@/content/launch";
 import type { KitResource } from "@/lib/kits";
 
 const DOCS = "https://developers.uniswap.org/docs";
@@ -6,6 +7,7 @@ const RAW = "https://raw.githubusercontent.com/Uniswap";
 const AI = `${GH}/uniswap-ai/blob/main/packages/plugins`;
 const AI_RAW = `${RAW}/uniswap-ai/main/packages/plugins`;
 const HOOKS_PUBLIC = `${GH}/v4-hooks-public/blob/main`;
+const KIT = `${MCP_CONNECT.baseUrl}/kits/liquidity/uniswap`;
 
 const POOLS = ["basic_amm_pool", "concentrated_liquidity_pool", "hook_pool"] as const;
 /** Everything on the singleton, with or without a hook. */
@@ -1151,6 +1153,88 @@ export const UNISWAP_RESOURCES: readonly KitResource[] = [
     shapes: HOOKS,
     steps: ["architecture"],
     priority: "recommended",
+  },
+
+  // -- CanHav liquidity kit files for the pool shapes (M36) ----------------------
+  {
+    id: "canhav.uniswap-deploy-runbook",
+    family: "uniswap",
+    title: "Deploy the stack on testnet 46630",
+    kind: "template",
+    href: `${KIT}/DEPLOY_TESTNET_46630.md`,
+    rawHref: `${KIT}/DEPLOY_TESTNET_46630.md`,
+    why: "The runbook for putting v2 or v4 on testnet yourself, in order, with what to pin and record at every step, because the protocol has no deployment there.",
+    shapes: POOLS,
+    steps: ["architecture", "reality"],
+    priority: "core",
+    readOrder: 28,
+    flags: ["self_deploy"],
+  },
+  {
+    id: "canhav.uniswap-testnet-manifest-template",
+    family: "uniswap",
+    title: "Testnet 46630 manifest template (JSON)",
+    kind: "template",
+    href: `${KIT}/robinhood-testnet-46630.manifest.template.json`,
+    rawHref: `${KIT}/robinhood-testnet-46630.manifest.template.json`,
+    why: "The file your deployment fills in and your config, tests and agent read. Every contract, token and hook as a null until you deploy it, with the commit, compiler and transaction beside each address.",
+    shapes: POOLS,
+    steps: ["architecture", "reality"],
+    priority: "core",
+    readOrder: 29,
+    flags: ["self_deploy"],
+  },
+  {
+    id: "canhav.uniswap-mainnet-manifest",
+    family: "uniswap",
+    title: "Mainnet 4663 manifest (CanHav copy)",
+    kind: "addresses",
+    href: `${KIT}/robinhood-mainnet-4663.manifest.json`,
+    rawHref: `${KIT}/robinhood-mainnet-4663.manifest.json`,
+    why: "The canonical mainnet addresses as one JSON, copied from the protocol's deployment record with the notice first. Reference for a fork, never a value to paste into a testnet config.",
+    shapes: POOLS,
+    steps: ["reality"],
+    priority: "recommended",
+    flags: ["mainnet_only"],
+  },
+  {
+    id: "canhav.pool-parameters",
+    family: "uniswap",
+    title: "Pool parameters worksheet",
+    kind: "template",
+    href: `${KIT}/POOL_PARAMETERS.md`,
+    rawHref: `${KIT}/POOL_PARAMETERS.md`,
+    why: "The pool key, the starting price, the first range and the seed amounts as product decisions, one copy per pool, with the v2 ratio and slippage worksheet beside it.",
+    shapes: POOLS,
+    steps: ["architecture"],
+    priority: "core",
+    readOrder: 30,
+  },
+  {
+    id: "canhav.hook-design",
+    family: "uniswap",
+    title: "Hook design",
+    kind: "template",
+    href: `${KIT}/HOOK_DESIGN.md`,
+    rawHref: `${KIT}/HOOK_DESIGN.md`,
+    why: "The permission flags, a fee schedule worksheet, the custom accounting deltas and the risk categories from the security framework, written down before the first line of the hook.",
+    shapes: HOOKS,
+    steps: ["architecture", "security"],
+    priority: "core",
+    readOrder: 31,
+  },
+  {
+    id: "canhav.pool-invariants",
+    family: "uniswap",
+    title: "Pool invariants",
+    kind: "template",
+    href: `${KIT}/POOL_INVARIANTS.md`,
+    rawHref: `${KIT}/POOL_INVARIANTS.md`,
+    why: "Twelve statements that must always hold for a pair, a concentrated pool and a hook, phrased for Foundry, with the ones a hook can break marked.",
+    shapes: POOLS,
+    steps: ["security"],
+    priority: "core",
+    readOrder: 32,
   },
 
   // -- routing, approvals, data --------------------------------------------------

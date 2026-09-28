@@ -1,0 +1,235 @@
+{
+  "selfDeployed": true,
+  "provenance": "own",
+  "notice": "Template for a team's own deployment of the Uniswap stack on Robinhood Chain testnet, chain 46630. Uniswap has no deployment there. Fill every field as you deploy, following DEPLOY_TESTNET_46630.md, and make this file the only source of addresses for your code, tests, front end and agent. Never paste a mainnet 4663 address into it.",
+  "checkedOn": null,
+  "chainId": 46630,
+  "deployer": null,
+  "network": {
+    "name": "Robinhood Chain Testnet",
+    "rpc": "https://rpc.testnet.chain.robinhood.com",
+    "explorer": "https://explorer.testnet.chain.robinhood.com",
+    "faucet": "https://faucet.testnet.chain.robinhood.com"
+  },
+  "contracts": {
+    "wrappedNative": {
+      "address": null,
+      "sourceRepo": null,
+      "commitHash": null,
+      "compiler": null,
+      "runtimeCodeHash": null,
+      "deploymentTxn": null,
+      "explorer": null,
+      "verified": false,
+      "deployedOn": null
+    },
+    "v2": {
+      "factory": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "router02": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      }
+    },
+    "v3": {
+      "factory": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "nonfungiblePositionManager": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "quoterV2": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "swapRouter02": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      }
+    },
+    "v4": {
+      "poolManager": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "positionManager": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "quoter": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "stateView": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      }
+    },
+    "routing": {
+      "permit2": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      },
+      "universalRouter": {
+        "address": null,
+        "sourceRepo": null,
+        "commitHash": null,
+        "compiler": null,
+        "runtimeCodeHash": null,
+        "deploymentTxn": null,
+        "explorer": null,
+        "verified": false,
+        "deployedOn": null
+      }
+    }
+  },
+  "tokens": {
+    "mockUsd": {
+      "address": null,
+      "sourceRepo": null,
+      "commitHash": null,
+      "compiler": null,
+      "runtimeCodeHash": null,
+      "deploymentTxn": null,
+      "explorer": null,
+      "verified": false,
+      "deployedOn": null
+    },
+    "mockTokenA": {
+      "address": null,
+      "sourceRepo": null,
+      "commitHash": null,
+      "compiler": null,
+      "runtimeCodeHash": null,
+      "deploymentTxn": null,
+      "explorer": null,
+      "verified": false,
+      "deployedOn": null
+    },
+    "mockTokenB": {
+      "address": null,
+      "sourceRepo": null,
+      "commitHash": null,
+      "compiler": null,
+      "runtimeCodeHash": null,
+      "deploymentTxn": null,
+      "explorer": null,
+      "verified": false,
+      "deployedOn": null
+    }
+  },
+  "hooks": {
+    "exampleHook": {
+      "address": null,
+      "sourceRepo": null,
+      "commitHash": null,
+      "compiler": null,
+      "runtimeCodeHash": null,
+      "deploymentTxn": null,
+      "explorer": null,
+      "verified": false,
+      "deployedOn": null,
+      "salt": null,
+      "permissions": [],
+      "poolIds": []
+    }
+  },
+  "pools": [
+    {
+      "id": null,
+      "version": null,
+      "currency0": null,
+      "currency1": null,
+      "fee": null,
+      "tickSpacing": null,
+      "hook": null,
+      "initTxn": null,
+      "firstLiquidityTxn": null
+    }
+  ],
+  "officialDeployment": {
+    "present": false,
+    "notice": "If Uniswap publishes an official 46630 deployment, add it here with provenance official and retire the fixture only once every test passes against it."
+  }
+}

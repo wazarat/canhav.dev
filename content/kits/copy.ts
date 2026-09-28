@@ -171,6 +171,8 @@ export const ENVIRONMENT_COPY = {
   } satisfies Record<DeploymentStatus, "success" | "info" | "warning">,
   source: "Source",
   pathTitle: "Recommended path",
+  /** A family whose path differs from the shared one gets its own list. */
+  pathTitleFor: (family: string) => `Recommended path for ${family}`,
   checked: (date: string) => `Last checked ${date}.`,
 } as const;
 

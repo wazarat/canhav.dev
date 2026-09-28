@@ -167,7 +167,13 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
       );
     }
     lines.push("", ENVIRONMENT_COPY.pathTitle, "");
-    pack.environment.families[0].devPath.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+    const shared = pack.environment.families[0];
+    shared.devPath.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+    for (const f of pack.environment.families.slice(1)) {
+      if (f.devPath.join("\n") === shared.devPath.join("\n")) continue;
+      lines.push("", ENVIRONMENT_COPY.pathTitleFor(FAMILY_LABELS[f.family]), "");
+      f.devPath.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+    }
     if (pack.environment.checkedOn) lines.push("", ENVIRONMENT_COPY.checked(pack.environment.checkedOn));
   }
   return lines;

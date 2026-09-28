@@ -33,10 +33,26 @@ export function EnvironmentBlock({ kit }: { kit: ProjectKit | undefined }) {
             <li key={step}>{step}</li>
           ))}
         </ol>
+        {ownPaths(families).map((f) => (
+          <div key={f.family} className="mt-2">
+            <p className="font-medium text-ink-300">{ENVIRONMENT_COPY.pathTitleFor(FAMILY_LABELS[f.family])}</p>
+            <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+              {f.devPath.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        ))}
         {checkedOn ? <p className="mt-2 text-ink-500">{ENVIRONMENT_COPY.checked(checkedOn)}</p> : null}
       </div>
     </section>
   );
+}
+
+/** Families after the first whose path is not the shared one. */
+export function ownPaths(families: readonly FamilyEnvironment[]): FamilyEnvironment[] {
+  const shared = families[0]?.devPath.join("\n");
+  return families.slice(1).filter((f) => f.devPath.join("\n") !== shared);
 }
 
 function FamilyRow({ env }: { env: FamilyEnvironment }) {

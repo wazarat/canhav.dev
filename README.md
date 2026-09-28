@@ -275,5 +275,17 @@ event window so judges can verify it.
   canonical mainnet address record is flagged Mainnet only, because Uniswap
   has no deployment on testnet 46630. Every link was fetched before it was
   written.
+- Sept 28, 2026. Where it runs for Liquidity, and the liquidity kit files.
+  A pools project's Reality step now says that Uniswap has no deployment on
+  testnet 46630 and shows the path that starts with deploying the stack
+  yourself. CanHav's files for liquidity builders live at
+  canhav.com/kits/liquidity, a one-page index, an agent skill, an
+  architecture template for the five shapes, and for vaults a vault
+  specification, the six liquidity scenarios, seven release gates and a
+  gates and eligibility file, and for pools a testnet deployment runbook, a
+  manifest template with every contract as a blank, a copy of the canonical
+  mainnet addresses marked reference only, a pool parameters worksheet, a
+  hook design file and twelve pool invariants. The resource pack links each
+  one.
 
 This list grows as work lands on the branch.

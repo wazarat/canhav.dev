@@ -1,0 +1,169 @@
+{
+  "referenceOnly": true,
+  "neverReuseOnTestnet": true,
+  "notice": "CanHav copy of the addresses in Uniswap's own deployment record for Robinhood Chain mainnet, chain 4663. Uniswap publishes the record; CanHav did not deploy or verify these contracts. There is no Uniswap deployment on testnet 46630, so none of these addresses belongs in a testnet configuration. Read each address from the explorer before you depend on it, and re-copy from the source when the record changes.",
+  "copiedFrom": "https://github.com/Uniswap/contracts/blob/main/deployments/json/4663.json",
+  "docs": "https://developers.uniswap.org/docs/protocols/v4/deployments",
+  "checkedOn": "2026-09-28",
+  "chainId": 4663,
+  "network": {
+    "name": "Robinhood Chain",
+    "rpc": "https://rpc.mainnet.chain.robinhood.com",
+    "explorer": "https://robinhoodchain.blockscout.com",
+    "wrappedNative": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+  },
+  "contracts": {
+    "v2": {
+      "factory": {
+        "address": "0x8bceaa40b9acdfaedf85adf4ff01f5ad6517937f",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x2fc08b6c72d5f2120cec9f3be8ed0b45c210d51adbc87f33b2135886681edaf7",
+        "initcodeHash": null
+      },
+      "router02": {
+        "address": "0x89e5db8b5aa49aa85ac63f691524311aeb649eba",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0xd475f23df85f1a821abd8df540f6b2bdecde93593ff36310ddb393f314ce866c",
+        "initcodeHash": null
+      }
+    },
+    "v3": {
+      "factory": {
+        "address": "0x1f7d7550b1b028f7571e69a784071f0205fd2efa",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x8add72fbcad4bf7732336de35dcd06b582c1501d0832c4710a30850a7cff8977",
+        "initcodeHash": null
+      },
+      "nonfungiblePositionManager": {
+        "address": "0x73991a25c818bf1f1128deaab1492d45638de0d3",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x9a8d07e70166be68c325939e2cece936f3ce5b16c580f49291f844d7cd718d4e",
+        "initcodeHash": "9a6b4d18974982cda4dfff49b952c6c611c2bb858668af2be37fe15e88d3b0c5"
+      },
+      "nonfungibleTokenPositionDescriptor": {
+        "address": "0x6f84dae9c064ff453e5c8af51efb819f8f610225",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x47a78523d03f1c5215db006380c96c70a669c6e8cdee39365686dcab90f3fd02",
+        "initcodeHash": null,
+        "proxy": true,
+        "implementation": "0x2bb4e3af3f07353a3e3c91126bd30654abf03369"
+      },
+      "quoterV2": {
+        "address": "0x33e885ed0ec9bf04ecfb19341582aadcb4c8a9e7",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x62f593041cda98f3418898cfaae97617421de867c0d6fd4480f8a652ffe721b5",
+        "initcodeHash": "a12a6e367cd8be5084e90147e76106e4aa465b1929f666d79acf446e81e895e1"
+      },
+      "swapRouter02": {
+        "address": "0xcaf681a66d020601342297493863e78c959e5cb2",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0xeaa1bf6bd8e86ab33150936414780779800a2aa04a98667f4059ef5dfc0cdf92",
+        "initcodeHash": "9302debf06e69846d9933452ecfe6918896cd65def951b6c93331447324a2a93"
+      },
+      "tickLens": {
+        "address": "0x7dfd4f31be6814d2906bde155c3e1b146eac1468",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0xac803b65ac1d16bc3489342e08f3888d176a7491ff19551e394b4258931408f5",
+        "initcodeHash": "5aa22b1e9d3b0b48f5b5c7d92204903de53b1820bae045c6b55f2c31cf3e558c"
+      },
+      "nftDescriptor": {
+        "address": "0x2e9d45bb7b30549f5216813ada9a6b7982c5b3ed",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x76beabf4d46eb1bfdbe77a17918b85748b2bd246b4e0c901fec23ebc81b34fa6",
+        "initcodeHash": "a55614d151069ce1518fa9ebcb9aaa255c47c827dd08cb176e6002d22abd9914"
+      }
+    },
+    "v4": {
+      "poolManager": {
+        "address": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x4fb28d4935866f462582c6c931c6f2705e55f5be5eb178c7d8d9329a95c44c41",
+        "initcodeHash": "3bdcc016bd6b2f8a19e20bdfa136abbf66ffa7904f42dafa1f5c399e9758544c"
+      },
+      "positionManager": {
+        "address": "0x58daec3116aae6d93017baaea7749052e8a04fa7",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x228c18ada6cb46b4fbcc18f4ec1519953415393e256fa8349aafbd5a2db037c8",
+        "initcodeHash": "48de2ffa357273daf51deddb70d30539f1083ef0f089a2a7377129bfa881f4eb"
+      },
+      "positionDescriptor": {
+        "address": "0x9639443158e8c5efa35bd45287bf2effd3d8dc06",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x0092b86795c4e00150cde5bd987291a75c61ff2251e9eb99cbcc277e2c4903a2",
+        "initcodeHash": "2750130676166e2719e236855003b1618d7f3752295ebb56e508944236375329",
+        "proxy": true,
+        "implementation": "0xc1514adf9caed7ab2cf2dd7b3225761df61f03a8"
+      },
+      "quoter": {
+        "address": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x6bf436d72a17f87284ddcab43094689bd320dfb39b535213b9a0b669fabc4ab4",
+        "initcodeHash": "db731ce141d9e731a17e60e47d1c0582c9c8684bf76430794d47d1d71fac6260"
+      },
+      "stateView": {
+        "address": "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x3d61e2c9eeb482385b1aa436b9e8f812167ea579cc390e4f93bc5abde00582f4",
+        "initcodeHash": "0e2e13349f8e16c9ea97b0167f2747efd891690c087723e0a920356d274593d3"
+      }
+    },
+    "routing": {
+      "permit2": {
+        "address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+        "commitHash": null,
+        "deploymentTxn": null,
+        "initcodeHash": null
+      },
+      "universalRouter": {
+        "address": "0x204FAca1764B154221e35c0d20aBb3c525710498",
+        "commitHash": "802fe4c",
+        "deploymentTxn": "0xf669b9a4b8c322f5992788f737ee5fd2a1a73fd44f17546c5ac8b2211b6da339",
+        "initcodeHash": "30985525e6007cf1aaed52a7e3a8b1345e888c0d08a1a3715da0bd42982bd539"
+      },
+      "swapProxy": {
+        "address": "0x0000000085E102724e78eCd2F45DC9cA239Affad",
+        "commitHash": "484b405",
+        "deploymentTxn": "0x8368c4fdc9bdf5669a005f7d4432f7b4ef973f12a8253648d08fbec21b131673",
+        "initcodeHash": null
+      },
+      "mixedRouteQuoterV2": {
+        "address": "0x7edd862aa08dd5be664c21188e1a2a0e64e3a283",
+        "commitHash": "0ecb1fc",
+        "deploymentTxn": "0xf67f1663ddbb7dec8d0792a4571bf024bc6521a4fcf12e574342623c856c6075",
+        "initcodeHash": "50a98843e464b35961e16dbbda55b730381f38a1dea5aa222ae5955b52b7a67e"
+      },
+      "reservesLens": {
+        "address": "0x0000001b173C3bbF3984D417d8614E3eed34865B",
+        "commitHash": "b08eb66",
+        "deploymentTxn": "0x1c50a8395b386d7d1a81346e6dcf8f0d1a1b4c4bae7f54796f701367d241df0f",
+        "initcodeHash": null
+      }
+    },
+    "other": {
+      "interfaceMulticall": {
+        "address": "0x282a3c4d320cc7f0d5eaf56b8029e4b88338f0a3",
+        "commitHash": "56928a9",
+        "deploymentTxn": "0x6fc488375115e6de29f6ffc19ca5a7ed4971643b4b12e3e27933e3c73770ed5c",
+        "initcodeHash": "524b3b72db79ba09dbf7a52cf5941ffe162b9aba1be068d0cbbd452915eb7763"
+      },
+      "caliburEntry": {
+        "address": "0x000000009b1d0af20d8c6d0a44e162d11f9b8f00",
+        "commitHash": "e5b4eed",
+        "deploymentTxn": "0xfc5d58bca306b47501d741bbbb88d8278f8f19d2bd44051076525b25d4b85a60",
+        "initcodeHash": "458e1bad03d37fd3255098ba25bdd90a8d13283c38fd16bc2414612c818c7569"
+      },
+      "erc7914Detector": {
+        "address": "0xc470458fc6a7e43471b31e6a2eb2612215a7102e",
+        "commitHash": "e5b4eed",
+        "deploymentTxn": "0xd25a20ee2c22a20620ab0b73846ca31282be387a0ca618f180697f44fe778d0e",
+        "initcodeHash": "0dd2931a3fa4f9d62cfa0c23ec94d56019086a08952ae677c3e2e79d056e770f"
+      },
+      "unsupportedProtocol": {
+        "address": "0x7332D11BD10d18A04B119Cd4671a96f3148002c4",
+        "commitHash": "dbef74e",
+        "deploymentTxn": "0x029d23d957e6d9f39b2bd655a10d01e764999b32344c2ccdcb9667259cd80f24",
+        "initcodeHash": "be71b3dccc59971adbbc194a78fa72cdcc604e5f13e5305e725620f24378ce65"
+      }
+    }
+  }
+}
