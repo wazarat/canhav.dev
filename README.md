@@ -236,5 +236,14 @@ event window so judges can verify it.
   and the decay disclosure, and seven review passes of their own, so every
   one of the eight shapes now has a guided list, a review, and an agent
   prompt that walks it.
+- Sept 28, 2026. Liquidity opens and a project can be in more than one
+  sector. The sector field is a set of chips, Credit and Liquidity open,
+  each chosen sector asks for its own subsectors, and Liquidity offers
+  Vaults today with Pools marked soon. A Vaults project builds a curated
+  vault or an earn feature with the same research kit a Lending project
+  gets, and when a project is in both sectors a subsector that shares
+  product shapes with one under the other sector is ticked automatically,
+  with a line that says why. Exports, the public page and the MCP tools
+  list every sector and every kit a project opens.
 
 This list grows as work lands on the branch.

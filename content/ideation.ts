@@ -20,6 +20,7 @@ import type {
   Upgradeability,
   WorstCase,
 } from "@/lib/ideation";
+import { docSectors } from "@/lib/sectors";
 import type { DesignWarning } from "@/lib/tokenDesign";
 
 /**
@@ -66,36 +67,79 @@ export interface GatedOption<V extends string> {
 }
 
 /**
- * Six sectors, Credit first. Only Credit opens today; the other five are
- * listed so builders see where the platform is going. Retired ids from the
- * earlier eleven-sector list are remapped in lib/ideation.ts.
+ * Six sectors, Credit first. Credit and Liquidity open today; the other four
+ * are listed so builders see where the platform is going. A project picks one
+ * or more. Retired ids from the earlier eleven-sector list are remapped in
+ * lib/ideation.ts.
  */
 export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
   { value: "credit_lending", label: "Credit" },
   { value: "staking", label: "Staking", available: false },
-  { value: "liquidity_infra", label: "Liquidity", available: false },
+  { value: "liquidity_infra", label: "Liquidity" },
   { value: "perps_derivatives", label: "Derivatives", available: false },
   { value: "rwa_infra", label: "RWAs", available: false },
   { value: "other", label: "Other", available: false },
 ];
 
-/** Credit subsectors. Pick one to three; all three are open. */
-export const SUBSECTOR_OPTIONS: Array<GatedOption<Subsector>> = [
-  { value: "lending", label: "Lending" },
-  { value: "leveraged_yield", label: "Leveraged yield" },
-  { value: "fixed_income", label: "Fixed income" },
-];
+/**
+ * Subsectors per sector, in SECTOR_SUBSECTORS order. Pick one to three per
+ * sector. Pools is listed and opens with its shapes in the next milestone.
+ */
+export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOption<Subsector>>>> = {
+  credit_lending: [
+    { value: "lending", label: "Lending" },
+    { value: "leveraged_yield", label: "Leveraged yield" },
+    { value: "fixed_income", label: "Fixed income" },
+  ],
+  liquidity_infra: [
+    { value: "vaults", label: "Vaults" },
+    { value: "pools", label: "Pools", available: false },
+  ],
+};
 
-/** Display label for a project's sector, honouring the free-text "other". */
-export function sectorLabel(doc: Pick<ProjectDoc, "sector" | "sectorOther">): string {
-  if (doc.sector === "other" && doc.sectorOther?.trim()) return doc.sectorOther.trim();
-  return optionLabel(SECTOR_OPTIONS, doc.sector);
+/** Every subsector option, sector by sector, for label lookups and picker order. */
+export const ALL_SUBSECTOR_OPTIONS: Array<GatedOption<Subsector>> = SECTOR_OPTIONS.flatMap(
+  (s) => SUBSECTOR_OPTIONS_BY_SECTOR[s.value] ?? [],
+);
+
+/** The subsector chips a chosen sector shows, or none. */
+export function subsectorOptionsFor(sector: Sector): Array<GatedOption<Subsector>> {
+  return SUBSECTOR_OPTIONS_BY_SECTOR[sector] ?? [];
+}
+
+export const SECTOR_COPY = {
+  label: "Sector",
+  hint: "Pick one or more.",
+  subsectorLabel: "Subsector",
+  subsectorHint: "Pick one or more per sector. Each opens its own research workflow.",
+  /** Under the subsector chips when the overlap rule ticked something. */
+  overlapHint: (added: string, because: string) =>
+    `${added} is ticked because it shares product shapes with ${because}.`,
+} as const;
+
+/** Labels for a project's sectors, in option order, honouring the free-text "other". */
+export function sectorLabels(doc: Pick<ProjectDoc, "sector" | "sectors" | "sectorOther">): string[] {
+  const chosen = new Set(docSectors(doc));
+  return SECTOR_OPTIONS.filter((o) => chosen.has(o.value)).map((o) =>
+    o.value === "other" && doc.sectorOther?.trim() ? doc.sectorOther.trim() : o.label,
+  );
+}
+
+/** One line for a project's sectors, or "Not set". */
+export function sectorLabel(doc: Pick<ProjectDoc, "sector" | "sectors" | "sectorOther">): string {
+  const labels = sectorLabels(doc);
+  return labels.length ? labels.join(" · ") : "Not set";
 }
 
 /** Labels for a project's chosen subsectors, in option order. Empty when none. */
 export function subsectorLabels(doc: Pick<ProjectDoc, "subsectors">): string[] {
   const chosen = new Set(doc.subsectors ?? []);
-  return SUBSECTOR_OPTIONS.filter((o) => chosen.has(o.value)).map((o) => o.label);
+  return ALL_SUBSECTOR_OPTIONS.filter((o) => chosen.has(o.value)).map((o) => o.label);
+}
+
+/** The label of one subsector. */
+export function subsectorLabel(sub: Subsector): string {
+  return optionLabel(ALL_SUBSECTOR_OPTIONS, sub);
 }
 
 export const STAGE_OPTIONS: Array<{ value: ProjectStage; label: string }> = [

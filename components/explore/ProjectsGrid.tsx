@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { EmptyCard } from "@/components/explore/EmptyCard";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { STAGE_OPTIONS, optionLabel, sectorLabel } from "@/content/ideation";
+import { STAGE_OPTIONS, optionLabel, sectorLabels } from "@/content/ideation";
 import { getPublishedProjects } from "@/lib/ideation-db";
 
 /** Published project records — a product needs no token to be here. */
@@ -35,9 +35,11 @@ export async function ProjectsGrid() {
           </p>
           <p className="mt-1 line-clamp-2 text-xs text-ink-400">{p.draft_doc.whatItDoes}</p>
           <div className="mt-4 flex flex-wrap gap-1.5">
-            <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
-              {sectorLabel(p.draft_doc)}
-            </StatusChip>
+            {sectorLabels(p.draft_doc).map((label) => (
+              <StatusChip key={label} tone="neutral" className="px-2 py-0.5 text-[11px]">
+                {label}
+              </StatusChip>
+            ))}
             <StatusChip tone="info" className="px-2 py-0.5 text-[11px]">
               {optionLabel(STAGE_OPTIONS, p.draft_doc.stage)}
             </StatusChip>

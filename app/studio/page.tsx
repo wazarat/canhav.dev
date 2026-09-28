@@ -8,7 +8,7 @@ import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY } from "@/content/kits/credit";
+import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { checklistProgress, kitShapes } from "@/lib/kits";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import {

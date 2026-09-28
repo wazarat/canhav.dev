@@ -1,8 +1,31 @@
 import { keccak256, stringToBytes } from "viem";
 
-import { normalizeProjectKit, type ProjectKit, validateProjectKit } from "@/lib/kits";
+import { kitsForSectors, normalizeProjectKit, type ProjectKit, validateProjectKit } from "@/lib/kits";
 import { sortValue } from "@/lib/journey";
+import {
+  LEGACY_SECTOR_MAP,
+  SECTOR_SUBSECTORS,
+  SECTOR_VALUES,
+  SUBSECTOR_VALUES,
+  type Sector,
+  type Subsector,
+  docSectors,
+  sectorOfSubsector,
+  withSectors,
+} from "@/lib/sectors";
 import { LAUNCH_FORM } from "@/content/launch";
+
+export {
+  LEGACY_SECTOR_MAP,
+  SECTOR_SUBSECTORS,
+  SECTOR_VALUES,
+  SUBSECTOR_VALUES,
+  type Sector,
+  type Subsector,
+  docSectors,
+  sectorOfSubsector,
+  withSectors,
+} from "@/lib/sectors";
 
 /**
  * Ideation documents: the two-track thinking layer (Project + Token Design).
@@ -37,49 +60,10 @@ export interface StatusDecl {
 // Project track
 
 /**
- * Six sectors since M20 (2026-09-27). Only credit_lending is selectable today;
- * the rest render as "Coming soon". Ids that survived the cut keep their old
- * value so stored docs need no rewrite; the six retired ids are folded into
- * "other" by normalizeProjectDoc (see LEGACY_SECTOR_MAP).
+ * Sector and subsector types live in lib/sectors.ts since M32 (2026-09-28) and
+ * are re-exported above. A project declares one or more sectors; Credit and
+ * Liquidity are open today and the other four render as "Coming soon".
  */
-export type Sector =
-  | "credit_lending"
-  | "staking"
-  | "liquidity_infra"
-  | "perps_derivatives"
-  | "rwa_infra"
-  | "other";
-
-/** Subsectors of credit_lending. Only "lending" is selectable today. */
-export type Subsector = "lending" | "leveraged_yield" | "fixed_income";
-
-export const SUBSECTOR_VALUES: readonly Subsector[] = [
-  "lending",
-  "leveraged_yield",
-  "fixed_income",
-];
-
-/**
- * Retired sector ids and the label they carried, so an old doc lands on
- * "other" with its sectorOther back-filled instead of rendering "Not set".
- */
-export const LEGACY_SECTOR_MAP: Record<string, string> = {
-  underwriting_risk: "Underwriting and risk",
-  oracles_data: "Oracles and data",
-  agentic_trading: "Agentic trading",
-  stablecoin_payments: "Stablecoin and payments",
-  portfolio_vaults: "Portfolio and vaults",
-  dex_market_structure: "DEX and market structure",
-};
-
-const SECTOR_VALUES: readonly Sector[] = [
-  "credit_lending",
-  "staking",
-  "liquidity_infra",
-  "perps_derivatives",
-  "rwa_infra",
-  "other",
-];
 
 export type ProjectStage =
   | "idea"
@@ -110,11 +94,18 @@ export interface ProjectDoc {
   /** Snapshot counter, stamped at publish. 0 in drafts. */
   publishVersion: number;
   name: string;
+  /** The first of `sectors`, kept so older readers, snapshots and MCP consumers keep working. */
   sector: Sector | "";
+  /**
+   * Every sector the project is in, in table order (M32). Optional so
+   * normalizeProjectDoc never injects the key; read with docSectors().
+   */
+  sectors?: Sector[];
   sectorOther?: string;
   /**
-   * Asked only when sector is credit_lending, one to three values. Optional
-   * so normalizeProjectDoc never injects the key into older documents.
+   * One to three subsectors for each chosen sector that has them, all in one
+   * list. Optional so normalizeProjectDoc never injects the key into older
+   * documents.
    */
   subsectors?: Subsector[];
   /**
@@ -172,6 +163,8 @@ export interface ProjectDoc {
 export const PROJECT_LIMITS = {
   name: { min: 3, max: 60 },
   sectorOther: { max: 60 },
+  sectors: { min: 1, max: SECTOR_VALUES.length },
+  /** Per sector that asks for them. */
   subsectors: { min: 1, max: 3 },
   whatItDoes: { min: 80, max: 1200 },
   userIs: { min: 20, max: 400 },
@@ -229,19 +222,34 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
 
   // Retired sector ids fold into "other", keeping the old label as the
   // free-text sector so nothing renders "Not set". Idempotent: a doc already
-  // on "other" is left alone.
-  const rawSector = doc.sector as string;
-  let sector: Sector | "" = doc.sector;
+  // on "other" is left alone. The `sectors` list (M32) is cleaned the same
+  // way but only when the key exists, and `sector` then follows its first
+  // entry.
+  const foldSector = (raw: unknown): { sector: Sector | ""; legacyLabel?: string } => {
+    if (typeof raw !== "string" || !raw) return { sector: "" };
+    if (raw in LEGACY_SECTOR_MAP) return { sector: "other", legacyLabel: LEGACY_SECTOR_MAP[raw] };
+    return SECTOR_VALUES.includes(raw as Sector) ? { sector: raw as Sector } : { sector: "" };
+  };
   let sectorOther = doc.sectorOther;
-  if (rawSector in LEGACY_SECTOR_MAP) {
-    sector = "other";
-    if (!sectorOther?.trim()) sectorOther = LEGACY_SECTOR_MAP[rawSector];
-  } else if (rawSector && !SECTOR_VALUES.includes(rawSector as Sector)) {
-    sector = "";
+  const first = foldSector(doc.sector);
+  let sector: Sector | "" = first.sector;
+  if (first.legacyLabel && !sectorOther?.trim()) sectorOther = first.legacyLabel;
+  let sectorsPatch: { sectors?: Sector[] } = {};
+  if (Array.isArray(doc.sectors)) {
+    const folded: Sector[] = [];
+    for (const v of doc.sectors as unknown[]) {
+      const f = foldSector(v);
+      if (f.sector) folded.push(f.sector);
+      if (f.legacyLabel && !sectorOther?.trim()) sectorOther = f.legacyLabel;
+    }
+    const next = withSectors(folded);
+    sectorsPatch = { sectors: next.sectors };
+    sector = next.sector;
   }
 
   // Subsectors: only present when the stored doc has the key. Unknown values
-  // drop, duplicates collapse, the list is capped at the limit.
+  // drop, duplicates collapse, the stored order is kept so a published
+  // snapshot re-reads as it was hashed.
   let subsectorPatch: { subsectors?: Subsector[] } = {};
   if (Array.isArray(doc.subsectors)) {
     const seen = new Set<Subsector>();
@@ -249,18 +257,20 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
       if (typeof v === "string" && SUBSECTOR_VALUES.includes(v as Subsector))
         seen.add(v as Subsector);
     }
-    subsectorPatch = { subsectors: [...seen].slice(0, PROJECT_LIMITS.subsectors.max) };
+    subsectorPatch = { subsectors: [...seen] };
   }
 
   // Research kit: coerced when the key exists, dropped when it is garbage,
   // never invented.
   const { kit: rawKit, ...rest } = doc as ProjectDoc & { kit?: unknown };
-  const kit = rawKit === undefined ? null : normalizeProjectKit(rawKit);
+  const kits = kitsForSectors(docSectors({ sector, ...sectorsPatch }), subsectorPatch.subsectors ?? []);
+  const kit = rawKit === undefined ? null : normalizeProjectKit(rawKit, kits);
 
   return {
     ...(rest as ProjectDoc),
     ...(kit ? { kit } : {}),
     sector,
+    ...sectorsPatch,
     ...(sectorOther !== undefined ? { sectorOther } : {}),
     ...subsectorPatch,
     payer,
@@ -465,21 +475,30 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
 
   let p = checkText("Name", doc.name, L.name);
   if (p) return p;
-  if (!doc.sector) return "Pick a sector.";
-  if (doc.sector === "other") {
+  const sectors = docSectors(doc);
+  if (sectors.length < L.sectors.min) return "Pick a sector.";
+  if (sectors.some((s) => !SECTOR_VALUES.includes(s))) return "Unknown sector.";
+  if (new Set(sectors).size !== sectors.length || sectors.length > L.sectors.max)
+    return "Too many sectors.";
+  if (doc.sector && doc.sector !== sectors[0]) return "Sectors are out of step.";
+  if (sectors.includes("other")) {
     if (!doc.sectorOther?.trim()) return "Describe the sector.";
     if (doc.sectorOther.length > L.sectorOther.max)
       return `Sector description is over ${L.sectorOther.max} characters.`;
   }
-  if (doc.sector === "credit_lending") {
-    const n = doc.subsectors?.length ?? 0;
+  const subsectors = doc.subsectors ?? [];
+  if (subsectors.some((v) => !SUBSECTOR_VALUES.includes(v))) return "Unknown subsector.";
+  for (const sub of subsectors)
+    if (!sectors.includes(sectorOfSubsector(sub))) return "A subsector belongs to a sector that is not chosen.";
+  for (const sector of sectors) {
+    const own = SECTOR_SUBSECTORS[sector];
+    if (own.length === 0) continue;
+    const n = subsectors.filter((v) => own.includes(v)).length;
     if (n < L.subsectors.min) return "Pick at least one subsector.";
     if (n > L.subsectors.max) return `At most ${L.subsectors.max} subsectors.`;
-    if (doc.subsectors!.some((v) => !SUBSECTOR_VALUES.includes(v)))
-      return "Unknown subsector.";
   }
   if (doc.kit) {
-    p = validateProjectKit(doc.kit);
+    p = validateProjectKit(doc.kit, kitsForSectors(sectors, subsectors));
     if (p) return p;
   }
   p =

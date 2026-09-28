@@ -23,20 +23,22 @@ import {
   PAYER_OPTIONS,
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
+  SECTOR_COPY,
   SECTOR_OPTIONS,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
-  SUBSECTOR_OPTIONS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   WORST_CASE_PRESSURE,
   optionLabel,
   sectorLabel,
+  subsectorLabel,
   subsectorLabels,
+  subsectorOptionsFor,
 } from "@/content/ideation";
-import { kitForDoc } from "@/content/kits";
+import { kitsForDoc } from "@/content/kits";
 import {
-  CREDIT_KIT_COPY,
+  KIT_COPY,
   STARTING_POINT_OPTIONS,
   offeredShapes,
   shapeBlurb,
@@ -44,11 +46,20 @@ import {
   shapeLabel,
   shapeLabels,
   startingPointLabel,
-} from "@/content/kits/credit";
+} from "@/content/kits/copy";
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
+import {
+  SECTOR_SUBSECTORS,
+  type Sector,
+  type Subsector,
+  docSectors,
+  sectorOfSubsector,
+  subsectorsOf,
+  withSectors,
+} from "@/lib/sectors";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY } from "@/content/kits/credit";
+import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   KIT_LIMITS,
@@ -60,8 +71,12 @@ import {
   effectiveSelection,
   emptyProjectKit,
   kitShapes,
+  kitsForSectors,
+  overlappingSubsectors,
   packCounts,
   packFor,
+  withImpliedSubsectors,
+  withShapeSubsectors,
   withShapes,
 } from "@/lib/kits";
 
@@ -71,11 +86,17 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
   const L = PROJECT_LIMITS;
   const short = (v: string, min: number) => v.trim().length < min;
 
+  const sectors = docSectors(doc);
+  const subsectors = doc.subsectors ?? [];
   const basics =
     short(doc.name, L.name.min) ||
-    !doc.sector ||
-    (doc.sector === "other" && !doc.sectorOther?.trim()) ||
-    (doc.sector === "credit_lending" && (doc.subsectors?.length ?? 0) < L.subsectors.min) ||
+    sectors.length < L.sectors.min ||
+    (sectors.includes("other") && !doc.sectorOther?.trim()) ||
+    sectors.some(
+      (sec) =>
+        SECTOR_SUBSECTORS[sec].length > 0 &&
+        subsectors.filter((v) => SECTOR_SUBSECTORS[sec].includes(v)).length < L.subsectors.min,
+    ) ||
     short(doc.whatItDoes, L.whatItDoes.min) ||
     short(doc.userIs, L.userIs.min) ||
     !doc.payer ||
@@ -140,11 +161,65 @@ export function ProjectEditor({
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
   const overall = problems[4];
-  const kitId = kitForDoc(doc);
+  const kitIds = kitsForDoc(doc);
   const kit = doc.kit;
+  const sectors = docSectors(doc);
+  const subsectors = doc.subsectors ?? [];
   const patchKit = (partial: Partial<ProjectKit>) =>
-    patch({ kit: { ...(kit ?? emptyProjectKit()), ...partial } });
-  const showRail = kitId === "credit";
+    patch({ kit: { ...(kit ?? emptyProjectKit(kitIds)), ...partial } });
+  const showRail = kitIds.length > 0;
+  /**
+   * The kit fields that follow a change of sectors or subsectors. Shapes no
+   * longer offered are dropped and `kits` tracks what the sectors open,
+   * keeping a kit that already exists when they open nothing.
+   */
+  const kitAfter = (nextSectors: readonly Sector[], nextSubsectors: readonly Subsector[]) => {
+    if (!kit) return {};
+    const offered = offeredShapes(nextSubsectors);
+    const keep = kitShapes(kit).filter((s) => offered.includes(s));
+    const kits = kitsForSectors(nextSectors, nextSubsectors);
+    const next = { ...kit, ...withShapes(keep), kits: kits.length ? kits : kit.kits };
+    return { kit: { ...next, id: next.kits[0] } };
+  };
+  const onSectors = (v: Sector[]) => {
+    const next = withSectors(v);
+    const own = new Set(subsectorsOf(next.sectors));
+    const nextSubs = subsectors.filter((s) => own.has(s));
+    patch({
+      ...next,
+      ...(doc.subsectors ? { subsectors: nextSubs } : {}),
+      ...kitAfter(next.sectors, nextSubs),
+    });
+  };
+  const onSubsectors = (v: Subsector[]) => {
+    const nextSubs = withImpliedSubsectors(v, sectors, v.filter((s) => !subsectors.includes(s)));
+    patch({ subsectors: nextSubs, ...kitAfter(sectors, nextSubs) });
+  };
+  const onShapes = (shapes: readonly string[]) => {
+    const list = shapes as ProjectKit["shapes"];
+    const nextSubs = withShapeSubsectors(subsectors, list, sectors);
+    const kits = kitsForSectors(sectors, nextSubs);
+    const base = kit ?? emptyProjectKit(kitIds);
+    const nextKits = kits.length ? kits : base.kits;
+    patch({
+      ...(nextSubs.length !== subsectors.length ? { subsectors: nextSubs } : {}),
+      kit: { ...base, ...withShapes(list), kits: nextKits, id: nextKits[0] },
+    });
+  };
+  /** One line per subsector the overlap rule ticked, from the click order stored in the doc. */
+  const overlapHints = subsectors.flatMap((sub, i) => {
+    const because = subsectors
+      .slice(0, i)
+      .find((prev) => sectorOfSubsector(prev) !== sectorOfSubsector(sub) && overlappingSubsectors(prev).includes(sub));
+    return because ? [SECTOR_COPY.overlapHint(subsectorLabel(sub), subsectorLabel(because))] : [];
+  });
+  const subsectorGroups = sectors
+    .filter((sec) => subsectorOptionsFor(sec).length > 0)
+    .map((sec) => ({
+      key: sec,
+      heading: optionLabel(SECTOR_OPTIONS, sec),
+      options: subsectorOptionsFor(sec),
+    }));
   const kitStep = step === 4 ? null : KIT_STEPS[step];
   const railCounts = useMemo(() => {
     if (!kit?.shape) return null;
@@ -201,14 +276,16 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.name.max}
               placeholder="What is this called?"
             />
-            <SelectField
-              label="Sector"
+            <ChipMultiSelect
+              label={SECTOR_COPY.label}
               required
-              value={doc.sector}
-              onChange={(v) => patch({ sector: v })}
+              hint={SECTOR_COPY.hint}
+              value={sectors}
+              onChange={onSectors}
               options={SECTOR_OPTIONS}
+              max={PROJECT_LIMITS.sectors.max}
             />
-            {doc.sector === "other" && (
+            {sectors.includes("other") && (
               <TextField
                 label="Which sector?"
                 required
@@ -217,35 +294,30 @@ export function ProjectEditor({
                 max={PROJECT_LIMITS.sectorOther.max}
               />
             )}
-            {doc.sector === "credit_lending" && (
-              <ChipMultiSelect
-                label="Subsector"
+            {subsectorGroups.length > 0 && (
+              <ChipMultiSelectGroups
+                label={SECTOR_COPY.subsectorLabel}
                 required
-                hint="Pick one or more. Each opens its own research workflow."
-                value={doc.subsectors ?? []}
-                onChange={(v) => {
-                  const offered = offeredShapes(v);
-                  const current = kitShapes(kit);
-                  const keep = current.filter((s) => offered.includes(s));
-                  patch(
-                    keep.length === current.length
-                      ? { subsectors: v }
-                      : { subsectors: v, kit: { ...kit!, ...withShapes(keep) } },
-                  );
-                }}
-                options={SUBSECTOR_OPTIONS}
-                max={PROJECT_LIMITS.subsectors.max}
-              />
+                hint={SECTOR_COPY.subsectorHint}
+                value={subsectors}
+                onChange={onSubsectors}
+                groups={subsectorGroups}
+                maxPerGroup={PROJECT_LIMITS.subsectors.max}
+              >
+                {overlapHints.length > 0 ? (
+                  <p className="mt-2 text-xs leading-relaxed text-ink-400">{overlapHints.join(" ")}</p>
+                ) : null}
+              </ChipMultiSelectGroups>
             )}
-            {kitId === "credit" && (
+            {showRail && (
               <>
                 <ChipMultiSelectGroups
-                  label={CREDIT_KIT_COPY.shapeLabel}
-                  hint={CREDIT_KIT_COPY.shapeHint}
+                  label={KIT_COPY.shapeLabel}
+                  hint={KIT_COPY.shapeHint}
                   value={kitShapes(kit)}
-                  onChange={(shapes) => patchKit(withShapes(shapes))}
+                  onChange={onShapes}
                   max={KIT_LIMITS.shapes.max}
-                  groups={shapeGroupsFor(doc.subsectors ?? []).map((g) => ({
+                  groups={shapeGroupsFor(subsectors).map((g) => ({
                     key: g.subsector,
                     heading: g.heading,
                     options: g.options,
@@ -275,19 +347,19 @@ export function ProjectEditor({
                   <FieldIntroCard intro="project.kit.shape" />
                 </div>
                 <ChipRadioGroup
-                  label={CREDIT_KIT_COPY.startingPointLabel}
+                  label={KIT_COPY.startingPointLabel}
                   value={kit?.startingPoint ?? ""}
                   onChange={(startingPoint) => patchKit({ startingPoint })}
                   options={STARTING_POINT_OPTIONS}
                 />
                 {kit?.startingPoint === "existing_product" && (
                   <TextField
-                    label={CREDIT_KIT_COPY.existingProductLabel}
-                    hint={CREDIT_KIT_COPY.existingProductHint}
+                    label={KIT_COPY.existingProductLabel}
+                    hint={KIT_COPY.existingProductHint}
                     value={kit.existingProduct ?? ""}
                     onChange={(v) => patchKit({ existingProduct: v })}
                     max={KIT_LIMITS.existingProduct.max}
-                    placeholder={CREDIT_KIT_COPY.existingProductPlaceholder}
+                    placeholder={KIT_COPY.existingProductPlaceholder}
                   />
                 )}
               </>
@@ -435,7 +507,7 @@ export function ProjectEditor({
                 />
               ))}
             </div>
-            {kitId === "credit" && kit?.shape ? <ReviewPasses kit={kit} onPatchKit={patchKit} /> : null}
+            {showRail && kit?.shape ? <ReviewPasses kit={kit} onPatchKit={patchKit} /> : null}
           </>
         )}
 
@@ -454,7 +526,7 @@ export function ProjectEditor({
               />
               {ROBINHOOD_MYTH.ack}
             </label>
-            {kitId === "credit" ? <EnvironmentBlock kit={kit} /> : null}
+            {showRail ? <EnvironmentBlock kit={kit} /> : null}
             <TextField
               label={ROBINHOOD_MYTH.followUp}
               required
@@ -517,13 +589,13 @@ export function ProjectEditor({
             </p>
             <dl className="space-y-3 text-sm">
               <ReviewRow term="Sector" detail={sectorLabel(doc)} />
-              {doc.sector === "credit_lending" && (
+              {subsectorGroups.length > 0 && (
                 <ReviewRow
                   term="Subsector"
                   detail={subsectorLabels(doc).join(" · ") || "Not set"}
                 />
               )}
-              {kitId === "credit" && (
+              {showRail && (
                 <>
                   <ReviewRow term="Building" detail={shapeLabels(kit).join(" · ") || "Not set"} />
                   <ReviewRow
@@ -611,7 +683,7 @@ export function ProjectEditor({
                 Everything checks out. Publish from the button above.
               </StatusChip>
             )}
-            {kitId === "credit" && kit?.shape ? <KitHandoff projectId={id} name={doc.name} /> : null}
+            {showRail && kit?.shape ? <KitHandoff projectId={id} name={doc.name} /> : null}
           </div>
         )}
       </div>

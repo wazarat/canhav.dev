@@ -22,7 +22,7 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
-  sectorLabel,
+  sectorLabels,
   subsectorLabels,
 } from "@/content/ideation";
 import {
@@ -35,7 +35,7 @@ import {
   STEP_LABELS_KIT,
   shapeLabels,
   startingPointLabel,
-} from "@/content/kits/credit";
+} from "@/content/kits/copy";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
 import { KIT_PRIORITY_ORDER } from "@/lib/kits";
@@ -205,7 +205,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     "## The product",
     "",
-    `- **Sector:** ${sectorLabel(doc)}`,
+    `- **Sector:** ${sectorLabels(doc).join(", ") || "Not set"}`,
     ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
     ...kitLines(doc),
     `- **Stage:** ${optionLabel(STAGE_OPTIONS, doc.stage)}`,
@@ -481,7 +481,7 @@ export function buildAgentsMd(input: {
       "",
       "## Product",
       "",
-      `- **Sector:** ${sectorLabel(project)}`,
+      `- **Sector:** ${sectorLabels(project).join(", ") || "Not set"}`,
       ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
       ...kitLines(project),
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,

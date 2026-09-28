@@ -3,7 +3,7 @@
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { REVIEW_COPY, REVIEW_VERDICT_OPTIONS } from "@/content/kits/credit";
+import { REVIEW_COPY, REVIEW_VERDICT_OPTIONS } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   type ProjectKit,

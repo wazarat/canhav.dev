@@ -1,7 +1,7 @@
 "use client";
 
 import { StatusChip } from "@/components/ui/StatusChip";
-import { ENVIRONMENT_COPY, FAMILY_LABELS } from "@/content/kits/credit";
+import { ENVIRONMENT_COPY, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { type FamilyEnvironment, type ProjectKit, environmentPlanFor, kitShapes } from "@/lib/kits";
 

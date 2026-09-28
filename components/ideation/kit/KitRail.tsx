@@ -8,7 +8,7 @@ import { KitResourceRow } from "@/components/ideation/kit/KitResourceRow";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, PRIORITY_LABELS, RAIL_COPY, shapeLabels } from "@/content/kits/credit";
+import { CHECKLIST_COPY, PRIORITY_LABELS, RAIL_COPY, shapeLabels } from "@/content/kits/copy";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
   KIT_PRIORITY_ORDER,

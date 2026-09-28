@@ -1,11 +1,13 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor } from "@/content/kits/checklists";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
-import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/credit";
+import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import type { ProjectDoc } from "@/lib/ideation";
+import { docSectors } from "@/lib/sectors";
 import {
   type ChecklistItem,
+  type KitId,
   type FamilyEnvironment,
   type KitFamily,
   type KitFlag,
@@ -53,7 +55,12 @@ export interface PackResourceView {
 }
 
 export interface ResourcePackView {
-  kit: "credit";
+  /** The first kit. Kept for readers from before a project could be in several sectors. */
+  kit: KitId;
+  /** Every kit the project's sectors open, in sector order. */
+  kits: KitId[];
+  /** The sectors the project is in, in table order. */
+  sectors: string[];
   /** The first shape. Kept for readers from before a project could build several. */
   shape: string;
   shapeLabel: string | null;
@@ -152,7 +159,9 @@ export function buildResourcePack(
     ? families.map((f) => f.checkedOn).sort().at(-1) ?? null
     : null;
   return {
-    kit: "credit",
+    kit: kit.id,
+    kits: kit.kits,
+    sectors: docSectors(doc),
     shape: kit.shape,
     shapeLabel: shapeLabel(kit.shape),
     shapes,

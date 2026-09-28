@@ -1,12 +1,18 @@
 import type { ProjectDoc } from "@/lib/ideation";
-import type { KitId } from "@/lib/kits";
+import { type KitId, kitsForSectors } from "@/lib/kits";
+import { docSectors } from "@/lib/sectors";
 
 /**
- * Which research kit a project document qualifies for. One kit today, the
- * credit kit, for any Credit project with at least one subsector. Returns
- * null when none applies, and the editor then renders nothing kit-related.
+ * Which research kits a project document qualifies for: one per chosen
+ * sector that has a kit and at least one chosen subsector (Credit and
+ * Liquidity today). Empty when none applies, and the editor then renders
+ * nothing kit-related.
  */
-export function kitForDoc(doc: Pick<ProjectDoc, "sector" | "subsectors">): KitId | null {
-  if (doc.sector === "credit_lending" && (doc.subsectors ?? []).length > 0) return "credit";
-  return null;
+export function kitsForDoc(doc: Pick<ProjectDoc, "sector" | "sectors" | "subsectors">): KitId[] {
+  return kitsForSectors(docSectors(doc), doc.subsectors ?? []);
+}
+
+/** The first kit, for callers that want one. */
+export function kitForDoc(doc: Pick<ProjectDoc, "sector" | "sectors" | "subsectors">): KitId | null {
+  return kitsForDoc(doc)[0] ?? null;
 }

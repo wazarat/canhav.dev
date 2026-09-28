@@ -31,7 +31,7 @@ import {
   registerMeteredTool,
 } from "@/lib/mcp/register";
 import { checklistFor } from "@/content/kits/checklists";
-import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/credit";
+import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { checklistProgress, kitShapes } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
@@ -173,6 +173,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         },
         kit: kit?.shape
           ? {
+              kits: kit.kits,
               shape: kit.shape,
               shapeLabel: shapeLabel(kit.shape),
               shapes: kitShapes(kit),

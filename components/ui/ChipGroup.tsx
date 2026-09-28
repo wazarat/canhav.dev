@@ -135,9 +135,10 @@ export interface ChipGroupSection<V extends string> {
 
 /**
  * ChipMultiSelect spread over several headed sections (the product shape
- * picker, grouped by subsector). Zero or more values, optional `max`. The
- * heading rows appear only when there is more than one section, so a single
- * section renders exactly like ChipMultiSelect.
+ * picker grouped by subsector, the subsector picker grouped by sector). Zero
+ * or more values, optional `max` over the whole picker and `maxPerGroup`
+ * within one section. The heading rows appear only when there is more than
+ * one section, so a single section renders exactly like ChipMultiSelect.
  */
 export function ChipMultiSelectGroups<V extends string>({
   label,
@@ -147,6 +148,8 @@ export function ChipMultiSelectGroups<V extends string>({
   onChange,
   groups,
   max,
+  maxPerGroup,
+  children,
 }: {
   label: string;
   required?: boolean;
@@ -155,6 +158,9 @@ export function ChipMultiSelectGroups<V extends string>({
   onChange: (value: V[]) => void;
   groups: ReadonlyArray<ChipGroupSection<V>>;
   max?: number;
+  maxPerGroup?: number;
+  /** Rendered under the chips, inside the field. */
+  children?: React.ReactNode;
 }) {
   const headed = groups.length > 1;
   const chosen = new Set(value);
@@ -171,6 +177,7 @@ export function ChipMultiSelectGroups<V extends string>({
             <div className="flex flex-wrap gap-2">
               {group.options.map((opt) => {
                 const selected = chosen.has(opt.value);
+                const inGroup = group.options.filter((o) => chosen.has(o.value)).length;
                 return (
                   <Chip
                     key={opt.value}
@@ -180,7 +187,11 @@ export function ChipMultiSelectGroups<V extends string>({
                     selected={selected}
                     onToggle={() => {
                       if (selected) onChange(value.filter((v) => v !== opt.value));
-                      else if (max === undefined || value.length < max) onChange([...value, opt.value]);
+                      else if (
+                        (max === undefined || value.length < max) &&
+                        (maxPerGroup === undefined || inGroup < maxPerGroup)
+                      )
+                        onChange([...value, opt.value]);
                     }}
                   />
                 );
@@ -188,6 +199,7 @@ export function ChipMultiSelectGroups<V extends string>({
             </div>
           </div>
         ))}
+        {children}
       </div>
     </Field>
   );

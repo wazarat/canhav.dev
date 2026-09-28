@@ -1,15 +1,26 @@
-import type { ProjectDoc, Subsector } from "@/lib/ideation";
+import type { ProjectDoc } from "@/lib/ideation";
+import {
+  SECTOR_SUBSECTORS,
+  SUBSECTOR_VALUES,
+  type Sector,
+  type Subsector,
+  docSectors,
+  sectorOfSubsector,
+  subsectorsOf,
+} from "@/lib/sectors";
 
 /**
- * The credit research kit: the guided workflow attached to a Credit project.
- * Types, limits and pure logic live here; every human-facing string lives in
- * content/kits/*. Imported by client components, MCP tools and the markdown
- * builders, so this file has no Node imports and no `server-only`.
+ * The research kit: the guided workflow attached to a project in a sector
+ * that has one (Credit since M20, Liquidity since M32). Types, limits and
+ * pure logic live here; every human-facing string lives in content/kits/*.
+ * Imported by client components, MCP tools and the markdown builders, so
+ * this file has no Node imports and no `server-only`.
  *
- * One kit per project, one product shape. The kit is created the first time
- * a builder picks a shape, is never a publish requirement, and is never
- * injected by normalizeProjectDoc. Stored docs from M21 carried id "lending";
- * normalizeProjectKit hard-codes the id, so they read back as "credit".
+ * One kit per project, any number of product shapes. The kit is created the
+ * first time a builder picks a shape, is never a publish requirement, and is
+ * never injected by normalizeProjectDoc. `id` is the first kit the project's
+ * sectors qualify for and `kits` lists all of them; stored docs from M21
+ * carried id "lending" and read back as "credit".
  */
 
 // ---------------------------------------------------------------------------
@@ -28,11 +39,13 @@ export type ProductShape =
 /**
  * The one place subsector membership lives. Key order is picker order. A
  * shape listed under several subsectors is offered once, under the first of
- * them the builder has chosen.
+ * them the builder has chosen. Subsectors may belong to different sectors:
+ * a curated vault is reached from Credit through Lending and from Liquidity
+ * through Vaults, and carries the same pack, steps and passes either way.
  */
 export const SHAPE_SUBSECTORS: Record<ProductShape, readonly Subsector[]> = {
-  curated_vault: ["lending"],
-  embedded_earn: ["lending"],
+  curated_vault: ["lending", "vaults"],
+  embedded_earn: ["lending", "vaults"],
   collateral_loans: ["lending"],
   fixed_rate_yield: ["fixed_income"],
   embedded_fixed_rate: ["fixed_income"],
@@ -49,14 +62,102 @@ export function shapesFor(subsectors: readonly Subsector[]): ProductShape[] {
   return PRODUCT_SHAPE_VALUES.filter((s) => SHAPE_SUBSECTORS[s].some((x) => chosen.has(x)));
 }
 
-/** Declared subsectors plus the ones the chosen shapes imply. */
+/**
+ * Declared subsectors plus the ones the chosen shapes imply, limited to the
+ * sectors the project is in, so a Liquidity project building a curated vault
+ * does not report Lending.
+ */
 export function effectiveSubsectors(
   kit: Pick<ProjectKit, "shape" | "shapes"> | undefined,
-  doc: Pick<ProjectDoc, "subsectors">,
+  doc: Pick<ProjectDoc, "subsectors" | "sector" | "sectors">,
 ): Subsector[] {
-  const out = new Set<Subsector>(doc.subsectors ?? []);
-  for (const shape of kitShapes(kit)) for (const s of SHAPE_SUBSECTORS[shape]) out.add(s);
+  const own = new Set(subsectorsOf(docSectors(doc)));
+  const out = new Set<Subsector>((doc.subsectors ?? []).filter((s) => own.has(s)));
+  for (const shape of kitShapes(kit))
+    for (const s of SHAPE_SUBSECTORS[shape]) if (own.has(s)) out.add(s);
   return [...out];
+}
+
+// ---------------------------------------------------------------------------
+// Overlaps across sectors (owner rule, M32). Ticking a subsector that shares a
+// shape with a subsector under another chosen sector ticks that one too, so
+// the builder sees every door the product can be reached through. Applied by
+// the editor on change, never by the normaliser, so stored docs stay explicit.
+
+/** Every other subsector that shares at least one shape with `sub`, in table order. */
+export function overlappingSubsectors(sub: Subsector): Subsector[] {
+  const out = new Set<Subsector>();
+  for (const shape of PRODUCT_SHAPE_VALUES) {
+    const list = SHAPE_SUBSECTORS[shape];
+    if (list.includes(sub)) for (const other of list) if (other !== sub) out.add(other);
+  }
+  return SUBSECTOR_VALUES.filter((s) => out.has(s));
+}
+
+/**
+ * `chosen` plus every overlapping subsector that belongs to a different
+ * chosen sector, expanding from `seeds` (what was just ticked, by default
+ * everything) to a fixpoint. Order follows the builder's clicks, with the
+ * additions appended in table order. Expanding from the seeds only means an
+ * implied subsector can be unticked again afterwards, and same-sector
+ * overlaps are left alone so a Fixed income project that picks a borrowing
+ * shape does not gain Lending.
+ */
+export function withImpliedSubsectors(
+  chosen: readonly Subsector[],
+  sectors: readonly Sector[],
+  seeds: readonly Subsector[] = chosen,
+): Subsector[] {
+  const out = [...chosen];
+  const chosenSectors = new Set(sectors);
+  const frontier = seeds.filter((s) => out.includes(s));
+  while (frontier.length) {
+    const sub = frontier.shift()!;
+    const home = sectorOfSubsector(sub);
+    for (const other of overlappingSubsectors(sub)) {
+      const otherHome = sectorOfSubsector(other);
+      if (otherHome !== home && chosenSectors.has(otherHome) && !out.includes(other)) {
+        out.push(other);
+        frontier.push(other);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * `chosen` plus, for every chosen shape, its subsectors under a chosen sector
+ * that no chosen subsector already reaches the shape through, then the
+ * implied closure above. Picking Curated vault under Vaults in a Credit plus
+ * Liquidity project ticks Lending; picking a borrowing shape under Fixed
+ * income in a Credit-only project leaves Lending alone.
+ */
+export function withShapeSubsectors(
+  chosen: readonly Subsector[],
+  shapes: ShapeInput,
+  sectors: readonly Sector[],
+): Subsector[] {
+  const out = [...chosen];
+  const chosenSectors = new Set(sectors);
+  const added: Subsector[] = [];
+  for (const shape of toShapeList(shapes)) {
+    const list = SHAPE_SUBSECTORS[shape];
+    const reachedFrom = new Set(chosen.filter((s) => list.includes(s)).map(sectorOfSubsector));
+    for (const sub of list) {
+      const home = sectorOfSubsector(sub);
+      if (chosenSectors.has(home) && !reachedFrom.has(home) && !out.includes(sub)) {
+        out.push(sub);
+        added.push(sub);
+      }
+    }
+  }
+  return withImpliedSubsectors(out, sectors, added);
+}
+
+/** The subsectors `after` has that `before` did not, in table order. */
+export function addedSubsectors(before: readonly Subsector[], after: readonly Subsector[]): Subsector[] {
+  const had = new Set(before);
+  return SUBSECTOR_VALUES.filter((s) => after.includes(s) && !had.has(s));
 }
 
 /** One shape, a list of shapes or nothing, as a list. */
@@ -95,10 +196,38 @@ export type StartingPoint = "scratch" | "existing_product";
 
 export const STARTING_POINT_VALUES: readonly StartingPoint[] = ["scratch", "existing_product"];
 
-export type KitId = "credit";
+export type KitId = "credit" | "liquidity";
+
+export const KIT_ID_VALUES: readonly KitId[] = ["credit", "liquidity"];
+
+/** The kit a sector opens once one of its subsectors is chosen. */
+export const SECTOR_KITS: Partial<Record<Sector, KitId>> = {
+  credit_lending: "credit",
+  liquidity_infra: "liquidity",
+};
+
+/**
+ * The kits a project qualifies for, in sector order: one per chosen sector
+ * that has a kit and at least one chosen subsector of its own.
+ */
+export function kitsForSectors(
+  sectors: readonly Sector[],
+  subsectors: readonly Subsector[],
+): KitId[] {
+  const out: KitId[] = [];
+  for (const sector of sectors) {
+    const kit = SECTOR_KITS[sector];
+    if (!kit || out.includes(kit)) continue;
+    if (SECTOR_SUBSECTORS[sector].some((s) => subsectors.includes(s))) out.push(kit);
+  }
+  return out;
+}
 
 export interface ProjectKit {
+  /** The first of `kits`, kept so stored docs, exports and MCP readers from before M32 keep working. */
   id: KitId;
+  /** Every kit the project's sectors open, in sector order. */
+  kits: KitId[];
   /** The first of `shapes`, kept so stored docs, exports and MCP readers from before multi-shape keep working. */
   shape: ProductShape | "";
   /** Every shape the project is building, in table order. Use kitShapes() to read. */
@@ -132,8 +261,9 @@ export const KIT_LIMITS = {
   review: { max: 200 },
 } as const;
 
-export function emptyProjectKit(): ProjectKit {
-  return { id: "credit", shape: "", shapes: [], startingPoint: "", selected: [], dismissed: [] };
+export function emptyProjectKit(kits: readonly KitId[] = ["credit"]): ProjectKit {
+  const list = kits.length ? [...kits] : (["credit"] as KitId[]);
+  return { id: list[0], kits: list, shape: "", shapes: [], startingPoint: "", selected: [], dismissed: [] };
 }
 
 function idList(v: unknown): string[] {
@@ -146,11 +276,14 @@ function idList(v: unknown): string[] {
 /**
  * Coerce a stored kit to the current shape. Returns null for anything that
  * is not an object, so the caller can drop the key instead of inventing one.
- * Idempotent.
+ * `kits` is what the document's sectors and subsectors qualify for; when it
+ * is empty a valid stored id is kept, otherwise "credit". Idempotent.
  */
-export function normalizeProjectKit(raw: unknown): ProjectKit | null {
+export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): ProjectKit | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
+  const storedId = KIT_ID_VALUES.includes(r.id as KitId) ? (r.id as KitId) : "credit";
+  const kitList: KitId[] = kits.length ? [...kits] : [storedId];
   const rawShapes = Array.isArray(r.shapes) ? [...(r.shapes as unknown[])] : [];
   if (typeof r.shape === "string" && r.shape) rawShapes.unshift(r.shape);
   const { shape, shapes } = withShapes(
@@ -160,7 +293,8 @@ export function normalizeProjectKit(raw: unknown): ProjectKit | null {
     ? (r.startingPoint as StartingPoint)
     : "";
   const kit: ProjectKit = {
-    id: "credit",
+    id: kitList[0],
+    kits: kitList,
     shape,
     shapes,
     startingPoint,
@@ -194,9 +328,17 @@ export function normalizeProjectKit(raw: unknown): ProjectKit | null {
   return kit;
 }
 
-/** Bounds only. The kit never blocks publishing; it just has to be well formed. */
-export function validateProjectKit(kit: ProjectKit): string | null {
-  if (kit.id !== "credit") return "Unknown research kit.";
+/**
+ * Bounds only. The kit never blocks publishing; it just has to be well
+ * formed and, when `expected` is given, agree with the document's sectors.
+ */
+export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] = []): string | null {
+  if (!KIT_ID_VALUES.includes(kit.id)) return "Unknown research kit.";
+  if (!Array.isArray(kit.kits) || kit.kits.some((k) => !KIT_ID_VALUES.includes(k)))
+    return "Unknown research kit.";
+  if (kit.kits.length === 0 || kit.kits[0] !== kit.id) return "Research kits are out of step.";
+  if (expected.length && (expected.length !== kit.kits.length || expected.some((k, i) => k !== kit.kits[i])))
+    return "Research kits are out of step.";
   if (kit.shape && !PRODUCT_SHAPE_VALUES.includes(kit.shape)) return "Unknown product shape.";
   if (kit.shapes.some((s) => !PRODUCT_SHAPE_VALUES.includes(s))) return "Unknown product shape.";
   if (new Set(kit.shapes).size !== kit.shapes.length || kit.shapes.length > KIT_LIMITS.shapes.max)
@@ -441,6 +583,8 @@ export interface KitResource {
   shapes: readonly ProductShape[] | "all";
   /** Only read when shapes is "all". Absent means every subsector. */
   subsectors?: readonly Subsector[];
+  /** Kits this belongs to, for a kit's own files. Absent means every kit. */
+  kits?: readonly KitId[];
   steps: readonly KitStep[];
   priority: KitPriority;
   /** Core only. Lower reads first. */
@@ -459,10 +603,11 @@ export interface PackFilter {
 function appliesTo(
   r: KitResource,
   shapes: readonly ProductShape[],
-  kit: Pick<ProjectKit, "startingPoint">,
+  kit: Pick<ProjectKit, "startingPoint" | "kits">,
   subsectors: readonly Subsector[],
 ): boolean {
   if (!shapes.length) return false;
+  if (r.kits && !r.kits.some((k) => kit.kits.includes(k))) return false;
   if (r.shapes === "all") {
     if (r.subsectors && !r.subsectors.some((s) => subsectors.includes(s))) return false;
   } else if (!r.shapes.some((s) => shapes.includes(s))) return false;
@@ -490,7 +635,7 @@ function compareResources(a: KitResource, b: KitResource): number {
 export function packFor(
   catalog: readonly KitResource[],
   kit: ProjectKit | undefined,
-  doc: Pick<ProjectDoc, "subsectors">,
+  doc: Pick<ProjectDoc, "subsectors" | "sector" | "sectors">,
   filter: PackFilter = {},
 ): KitResource[] {
   const shapes = kitShapes(kit);
@@ -615,6 +760,10 @@ export function assertKitCatalog(
       problems.push(`${r.id} readOrder on a non-core resource`);
     if (r.subsectors && r.shapes !== "all") problems.push(`${r.id} subsectors without shapes "all"`);
     if (r.subsectors && r.subsectors.length === 0) problems.push(`${r.id} empty subsectors`);
+    if (r.kits) {
+      if (r.kits.length === 0) problems.push(`${r.id} empty kits`);
+      for (const k of r.kits) if (!KIT_ID_VALUES.includes(k)) problems.push(`${r.id} unknown kit ${k}`);
+    }
     if (r.shapes !== "all") {
       if (r.shapes.length === 0) problems.push(`${r.id} empty shapes`);
       for (const s of r.shapes)

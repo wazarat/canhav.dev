@@ -17,9 +17,10 @@ import {
   designWarnings,
 } from "@/lib/mcp/design-views";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { CREDIT_SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/credit";
+import { SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { SHAPE_SUBSECTORS, type ProductShape } from "@/lib/kits";
+import { docSectors, sectorOfSubsector } from "@/lib/sectors";
 import { registerLaunchTools } from "@/lib/mcp/launch-tools";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 import {
@@ -62,6 +63,7 @@ export function registerAllTools(server: McpServer): void {
           status: r.status,
           name: r.draft_doc.name,
           sector: r.draft_doc.sector,
+          sectors: docSectors(r.draft_doc),
           subsectors: r.draft_doc.subsectors ?? [],
           stage: r.draft_doc.stage,
           updatedAt: r.updated_at,
@@ -211,9 +213,9 @@ export function registerAllTools(server: McpServer): void {
     server,
     "get_resource_catalog",
     {
-      title: "Credit resource catalog",
+      title: "Resource catalog",
       description:
-        "CanHav's public catalog of resources for building credit products on Robinhood Chain (Morpho, Pendle, shared standards, oracles, risk and security tooling), with the product shapes each applies to, caveat flags and where each protocol family runs today. Filter by shape, family or priority. No sign-in needed.",
+        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain (Morpho, Pendle, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags and where each protocol family runs today. Filter by shape, family or priority. No sign-in needed.",
       inputSchema: z.object({
         shape: z
           .enum([
@@ -253,15 +255,17 @@ export function registerAllTools(server: McpServer): void {
         why: r.why,
         shapes: r.shapes,
         ...(r.subsectors ? { subsectors: r.subsectors } : {}),
+        ...(r.kits ? { kits: r.kits } : {}),
         steps: r.steps,
         priority: r.priority,
         flags: [...(r.flags ?? [])],
       }));
       return jsonResult({
-        shapes: CREDIT_SHAPE_OPTIONS.map((o) => ({
+        shapes: SHAPE_OPTIONS.map((o) => ({
           id: o.value,
           label: o.label,
           subsectors: SHAPE_SUBSECTORS[o.value],
+          sectors: [...new Set(SHAPE_SUBSECTORS[o.value].map(sectorOfSubsector))],
         })),
         environments: Object.values(KIT_ENVIRONMENTS),
         total: resources.length,

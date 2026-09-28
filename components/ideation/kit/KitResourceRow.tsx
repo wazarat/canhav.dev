@@ -5,7 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { FAMILY_LABELS, FLAG_COPY, KIND_LABELS, RAIL_COPY } from "@/content/kits/credit";
+import { FAMILY_LABELS, FLAG_COPY, KIND_LABELS, RAIL_COPY } from "@/content/kits/copy";
 import type { KitResource } from "@/lib/kits";
 
 const KIND_TONE = {

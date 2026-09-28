@@ -8,12 +8,12 @@ Every published Product or Token design page (`/p/[slug]` and `/t/[slug]`) has t
 
 | Artifact | Purpose |
 |----------|---------|
-| `canhav-[slug].md` | Markdown export of the published design snapshot, never the draft. For a Credit project with a product shape it ends with the resource pack and where the protocols run today |
-| `AGENTS.md` | Agent-oriented summary of the design for IDE and coding agents. For a token design linked to a project, the project's published snapshot is merged in. Carries the resource pack for a Credit project |
+| `canhav-[slug].md` | Markdown export of the published design snapshot, never the draft. For a project with a product shape it ends with the resource pack and where the protocols run today |
+| `AGENTS.md` | Agent-oriented summary of the design for IDE and coding agents. For a token design linked to a project, the project's published snapshot is merged in. Carries the resource pack for a project with a product shape |
 
 ### Exports from a draft
 
-A Credit project's research happens before publishing, so its owner can export from the current draft. The Review step of the project editor offers both files; the route is `/api/export/project/<project id>` and answers only to the signed-in owner, 404 to anyone else.
+A project's research happens before publishing, so its owner can export from the current draft. The Review step of the project editor offers both files; the route is `/api/export/project/<project id>` and answers only to the signed-in owner, 404 to anyone else.
 
 | Artifact | Purpose |
 |----------|---------|
@@ -36,13 +36,13 @@ Other MCP clients (Cursor, ChatGPT connectors, Claude Desktop) take the same URL
 
 | Tool | Purpose |
 |------|---------|
-| `get_my_projects` | List projects you own, drafts and published |
+| `get_my_projects` | List projects you own, drafts and published, with `sector` (the first), `sectors` and `subsectors` |
 | `get_my_tokens` | List token designs you own, with the deployed address when attached |
 | `get_project` | Fetch one published project by slug. Owners also get their draft |
 | `get_token` | Fetch one published token design by slug, including derived tokenomics |
 | `get_design_constraints` | For one published design, which parts the CanHav contracts enforce on-chain versus what the team merely states, plus deployability and float figures |
 | `check_design` | Run the warning rules and deployability classification against a published slug or an inline design document |
-| `get_resource_catalog` | The public catalog of resources for credit products on Robinhood Chain, with the product shapes each applies to, caveat flags and where each protocol family runs today. Filter by `shape`, `family` or `priority`. No sign-in |
+| `get_resource_catalog` | The public catalog of resources for credit and liquidity products on Robinhood Chain, with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags and where each protocol family runs today. Filter by `shape`, `family` or `priority`. No sign-in |
 
 ### Launch tools
 
@@ -74,7 +74,7 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | Tool | Purpose |
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
-| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a Credit project with a product shape, a `kit` block with `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them) |
+| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them) |
 | `get_linked_token_design` | The token design linked to this project, with derived tokenomics and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
@@ -87,7 +87,7 @@ The scoped server also registers one prompt, `prelaunch_review`. In Claude Code 
 
 ### Resource pack fields
 
-`get_resource_pack` and `get_resource_catalog` share one vocabulary. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain) and `testnet_only`. A project may build several shapes at once. `shape` and `shapeLabel` stay as the first of them for older readers; `shapes` and `shapeLabels` list all of them in table order, and the resources, environment families, build steps and review passes are the union across them, each once. `environment.families` lists, for Robinhood Chain and each protocol family the shapes rely on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. Rows exist for `robinhood`, `morpho`, `pendle` and `boros`; a shape plan never includes `boros`, which runs on Arbitrum, but `get_resource_catalog` lists all four. `checklist` carries the ordered build steps for the shape with `done` and `total` and, per item, the step it informs, the resource ids that help and whether the team has ticked it. `review` carries the passes for the shape with a progress block (`pass`, `fail`, `na`, `open`, `total`) and, per pass, the detail, the defining resources with URLs and the verdict or `null`. Fields are only ever added, never renamed.
+`get_resource_pack` and `get_resource_catalog` share one vocabulary. A project is in one or more sectors; `sector` stays as the first of them for older readers and `sectors` lists all of them. A research kit opens for each sector that has one (`credit` for Credit, `liquidity` for Liquidity) once a subsector of that sector is chosen; `kit` is the first and `kits` lists all of them, and a catalog entry that belongs to one kit's own files carries `kits`. A product shape can be reached from subsectors of different sectors (Curated vault and Earn inside your app from both Lending and Vaults) and carries the same resources, build steps and review passes either way, minus the other kit's own files. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain) and `testnet_only`. A project may build several shapes at once. `shape` and `shapeLabel` stay as the first of them for older readers; `shapes` and `shapeLabels` list all of them in table order, and the resources, environment families, build steps and review passes are the union across them, each once. `environment.families` lists, for Robinhood Chain and each protocol family the shapes rely on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. Rows exist for `robinhood`, `morpho`, `pendle` and `boros`; a shape plan never includes `boros`, which runs on Arbitrum, but `get_resource_catalog` lists all four. `checklist` carries the ordered build steps for the shape with `done` and `total` and, per item, the step it informs, the resource ids that help and whether the team has ticked it. `review` carries the passes for the shape with a progress block (`pass`, `fail`, `na`, `open`, `total`) and, per pass, the detail, the defining resources with URLs and the verdict or `null`. Fields are only ever added, never renamed.
 
 Two notes on what the URL is and is not. Clerk issues access tokens for the origin rather than for a path, so a token minted at `/mcp` is accepted at `/mcp/p/<id>` as well. The scoped URL is a tool surface, not a secret and not a capability: ownership is checked on every call against the signed-in account. And because the URL keys on the project id rather than its slug, a brand-new draft is connectable before it is ever published.
 

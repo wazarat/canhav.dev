@@ -12,11 +12,11 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
-  sectorLabel,
+  sectorLabels,
   subsectorLabels,
 } from "@/content/ideation";
 import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/credit";
+import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { checklistProgress, kitShapes } from "@/lib/kits";
 import { explorerAddressUrl } from "@/lib/explorer";
 import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
@@ -107,7 +107,11 @@ export default async function ProjectPublicPage({
           {doc.name}
         </h1>
         <div className="mt-4 flex flex-wrap gap-2">
-          <StatusChip tone="neutral">{sectorLabel(doc)}</StatusChip>
+          {sectorLabels(doc).map((label) => (
+            <StatusChip key={`sector-${label}`} tone="neutral">
+              {label}
+            </StatusChip>
+          ))}
           {subsectorLabels(doc).map((label) => (
             <StatusChip key={label} tone="neutral">
               {label}

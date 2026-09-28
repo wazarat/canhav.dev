@@ -3,7 +3,7 @@
 import { Download } from "lucide-react";
 
 import { CopyLine } from "@/components/ui/CopyLine";
-import { HANDOFF_COPY } from "@/content/kits/credit";
+import { HANDOFF_COPY } from "@/content/kits/copy";
 import { MCP_CONNECT } from "@/content/launch";
 
 /**
