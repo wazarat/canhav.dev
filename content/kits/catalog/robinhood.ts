@@ -10,6 +10,8 @@ const COLLATERAL_SHAPES = [
   "leveraged_fixed_yield",
   "curated_vault",
   "fixed_rate_yield",
+  "permissioned_vault",
+  "liquidity_allocator",
 ] as const;
 
 /**
@@ -279,6 +281,28 @@ export const ROBINHOOD_RESOURCES: readonly KitResource[] = [
     why: "Incidents and maintenance. Your monitoring should read it, and your liquidation pause should know about sequencer downtime.",
     shapes: "all",
     steps: ["reality"],
+    priority: "recommended",
+  },
+  {
+    id: "robinhood.chain-status",
+    family: "robinhood",
+    title: "Robinhood Chain status page",
+    kind: "tool",
+    href: "https://status.robinhoodchain.offchain.io/",
+    why: "Mainnet and testnet uptime, incidents and node software notices for the chain itself. The feed a sequencer-aware pause should read, alongside the company status page.",
+    shapes: "all",
+    steps: ["reality"],
+    priority: "recommended",
+  },
+  {
+    id: "robinhood.terms-of-service",
+    family: "robinhood",
+    title: "Chain terms of service",
+    kind: "docs",
+    href: `${DOCS}/terms-of-service`,
+    why: "What the sequencer, public RPC, snapshots and testnet may be used for, and the names and marks you may and may not use in your product copy. Read before the copy review.",
+    shapes: "all",
+    steps: ["reality", "review"],
     priority: "recommended",
   },
   {

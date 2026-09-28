@@ -254,5 +254,16 @@ event window so judges can verify it.
   testnet itself, and the credit kit's own files and review passes are
   scoped to the credit and vault shapes so a pools project starts from the
   shared and Robinhood Chain resources.
+- Sept 28, 2026. Vaults catalog and the overlap map. The Morpho family now
+  serves the Liquidity sector, with the earn skills, SDK and API pages, the
+  Vault V2 group, the public allocator and the testnet fixture widened to
+  the allocator and permissioned vault shapes, and nine pages added for the
+  operations a lender-facing vault needs, the dead deposit, gates, roles,
+  emergency procedures, unwind, permissioned tokens, bundles, the market
+  concepts and the lender's view of liquidation. The shared layer gains the
+  scaled-balance standard for tokenised stocks and the Safe documentation,
+  and Robinhood Chain gains its own status page and the chain terms of
+  service. Every link was fetched before it was written, and the docs say
+  which entries both sectors share.
 
 This list grows as work lands on the branch.
