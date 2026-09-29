@@ -29,6 +29,7 @@
 * [Overview](token-launch/overview.md)
 * [Network setup](token-launch/network-setup.md)
 * [Create a token](token-launch/create-a-token.md)
+* [Bonding curve](token-launch/bonding-curve.md)
 * [Deploy paths](token-launch/deploy-paths.md)
 * [Journey and credibility](token-launch/journey-and-credibility.md)
 * [Vesting](token-launch/vesting.md)

@@ -11,7 +11,8 @@
 | Item | Value |
 |------|-------|
 | Chain ID | `46630` |
-| Live factory | TokenFactory **v4** |
+| Live launcher | **CurveLauncher** `0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981` (the `/launch` path since 2026-09-29) |
+| Live factory | TokenFactory **v4** (script launches with vesting) |
 | Paused factories | v1, v2, v3 |
 | Timelock minDelay | 300 seconds (testnet) |
 

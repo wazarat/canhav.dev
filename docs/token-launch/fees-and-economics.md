@@ -12,13 +12,15 @@ Allocation sales take **0% platform cut** of sale proceeds (fee-free sales contr
 
 | Switch | Where | Current documented value | Hard cap | Who can change | Delay |
 |--------|-------|--------------------------|----------|----------------|-------|
-| Launch fee (`launchFee`) | TokenFactory | **0.0002 ETH** (calibrated on v4) | `MAX_LAUNCH_FEE = 0.05 ether` | Factory owner = Timelock | Timelock `minDelay` (**300 seconds** on testnet) |
+| Launch fee (`launchFee`) | CurveLauncher (the `/launch` path) and TokenFactory v4 | **0.0002 ETH** on both | `MAX_LAUNCH_FEE = 0.05 ether` | Owner = Timelock | Timelock `minDelay` (**300 seconds** on testnet) |
+| Snipe tax on curve buys | CurveLauncher | **20%** of buys in the first 60 seconds, held for the graduation pool | Immutable | Not an admin switch | N/A |
+| Trade fee on the curve | CurveLauncher | **0** | Immutable | N/A | N/A |
 | Default protocol fee for new opted-in pools (`defaultProtocolFeeBps`) | LaunchAMM | **20 bps** default | `MAX_PROTOCOL_FEE_BPS = 50` | AMM owner = Timelock | Same timelock delay |
 | LP trading fee | LaunchAMM | **30 bps (0.30%)** to LPs | Fixed in bytecode for the pool design | Not an admin switch | N/A |
 | Protocol fee split | LaunchAMM | **70% project / 30% platform** (`PROJECT_SHARE_BPS = 7000`) | Fixed constant | Not an admin switch | N/A |
 | Allocation sale platform cut | AllocationSale | **0** | N/A (no cut) | N/A | N/A |
 
-Factory pause stops new launches. It is an emergency control, not a fee switch. Unpause waits on the timelock. See [Governance](governance.md).
+Factory and launcher pause stop new launches (and curve buys); sells on the curve always work. Pause is an emergency control, not a fee switch. Unpause waits on the timelock. See [Governance](governance.md).
 
 ## Existing pools are frozen at creation rate
 
@@ -36,13 +38,13 @@ Platform protocol fees route to [FeeSplitter](https://explorer.testnet.chain.rob
 |------|-------|
 | Address | [`0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae`](https://explorer.testnet.chain.robinhood.com/address/0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae) |
 | minDelay (testnet) | **300 seconds** |
-| Owns | TokenFactory v4 admin surfaces, LaunchAMM admin surfaces, FeeSplitter payee config |
+| Owns | CurveLauncher and TokenFactory v4 admin surfaces, LaunchAMM admin surfaces, FeeSplitter payee config |
 | Production note | Anything closer to production should use 24h+ |
 
 ## How to verify independently
 
 1. Open each address on the [explorer](https://explorer.testnet.chain.robinhood.com).
-2. Read `launchFee` and `MAX_LAUNCH_FEE` on the factory.
+2. Read `launchFee` and `MAX_LAUNCH_FEE` on the launcher and the factory, and the curve immutables on the launcher (see [Bonding curve](bonding-curve.md)).
 3. Read `defaultProtocolFeeBps`, `MAX_PROTOCOL_FEE_BPS`, and `PROJECT_SHARE_BPS` on the AMM.
 4. Read `minDelay` on the TimelockController.
 5. For a live pool, inspect its stored `protocolFeeBps` and confirm it does not change when the default changes.

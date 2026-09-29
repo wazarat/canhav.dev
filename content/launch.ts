@@ -2,6 +2,7 @@
  * Config and validators for the /launch page (testnet token launchpad), the
  * Launch tab in the primary nav. Nothing here touches a network.
  */
+import { formatEther } from "viem";
 
 /** Chain metadata — single source for the hidden launchpad pages and the
  *  future wallet layer's hard network guard. */
@@ -94,45 +95,18 @@ export const LAUNCH_SUPPLY = 1_000_000_000;
 export const LAUNCH_SUPPLY_MAX = 1_000_000_000_000;
 
 /**
- * Pool seeding at launch. The ETH in the Developer buy field becomes the first
- * liquidity of a LaunchAMM pool, paired with this share of the supply from the
- * creator's wallet. The creator holds the resulting liquidity shares. The
- * first deposit fixes the opening price at ETH divided by tokens.
- *
- * supplyShareBps  80% in the market matches what launchpads put on their
- *                 curves and leaves a working balance for escrow and sales.
- * optInProtocolFee  the same default as the token page's create-pool flow
- *                 (components/launch/PoolActions.tsx) and scripts/e2e-amm.mjs.
- */
-export const LAUNCH_POOL = {
-  supplyShareBps: 8_000,
-  optInProtocolFee: true,
-  /** Wallet confirmations when seeding, in order. */
-  steps: ["launch", "createPool", "approve", "addLiquidity"],
-  labels: {
-    pool: "Pool",
-    createPool: "Creating pool",
-    approve: "Approving tokens",
-    addLiquidity: "Adding liquidity",
-  },
-} as const;
-
-/** Whole-number percent of the supply that goes into the pool, for copy. */
-export const LAUNCH_POOL_SHARE_PCT = LAUNCH_POOL.supplyShareBps / 100;
-
-/**
- * The optional ETH the creator pairs with part of the supply to open the pool
- * right after launch. There is no bonding curve, so nothing is bought; the
- * ETH and tokens become the creator's own liquidity shares, withdrawable at
- * any time. min keeps a pool from opening on dust, max is a testnet sanity cap.
+ * The optional developer buy, made inside the launch transaction as the
+ * first buy on the curve, exempt from the snipe tax and capped by the
+ * launcher (LAUNCH_CURVE.devBuyMaxWei). min keeps the field from accepting
+ * dust the curve would round to nothing.
  */
 export const LAUNCH_DEV_BUY = {
   min: "0.0001",
-  max: "10",
+  max: formatEther(LAUNCH_CURVE.devBuyMaxWei),
   suffix: "ETH",
   label: "Developer buy",
   placeholder: "0.00",
-  hint: `Optional. Seeds a trading pool with this ETH and ${LAUNCH_POOL_SHARE_PCT}% of your supply right after launch. You hold the shares and can withdraw any time.`,
+  hint: "Optional. Your first buy on the curve, made inside the launch transaction before anyone else can trade. The tokens land in your wallet at the opening price.",
   balanceLabel: "Balance",
   balanceUnavailable: "Balance unavailable",
   none: "None",
@@ -145,29 +119,27 @@ export const LAUNCH_DEV_BUY = {
  * deployed contracts do. Nothing here promises a mechanism contracts/src does
  * not have.
  *
- * pairedWith  LaunchAMM pools are token/native-ETH. There is no WETH anywhere.
- * tradeFee    LP_FEE_BPS = 30 in contracts/src/LaunchAMM.sol. A further 20 bps
- *             protocol fee exists but is opt-in at pool creation, so it is not
- *             part of the number every launch pays.
- * launchWindow  no snipe tax or anti-bot window exists. Trading starts when a
- *             pool gets its first liquidity, nothing gates the first block.
- * graduation  no bonding curve, so nothing to graduate from. The LaunchAMM
- *             pool is the market from the first deposit.
- * liquidity   LaunchAMM.removeLiquidity has no lock. Only MINIMUM_LIQUIDITY
- *             (1e3 shares) burns forever, which does not lock the creator's
- *             position. A curve with locked liquidity is a separate milestone.
+ * pairedWith    LaunchAMM pools are token/native-ETH. There is no WETH anywhere.
+ * tradeFee      the curve charges nothing per trade. LP_FEE_BPS = 30 in
+ *               contracts/src/LaunchAMM.sol applies once the pool exists.
+ * curveShare    CurveLauncher.curveShareBps; the rest seeds the pool.
+ * launchWindow  CurveLauncher.snipeWindowSeconds and snipeTaxBps, buys only.
+ * graduation    CurveLauncher.graduationEth and _graduate().
+ * liquidity     the launcher keeps the pool shares and has no removeLiquidity
+ *               path, and LaunchAMM shares cannot be transferred or burned.
  */
 export const LAUNCH_PARAMS = {
   pairedWith: "ETH",
-  tradeFee: "0.30%",
-  launchWindow: "None. Trading opens the moment a pool is seeded",
-  graduation: "None. The pool is the market from day one",
-  liquidity: "Seeded by you, withdrawable any time, never locked",
-  liquidityNone: "None until a pool is seeded, withdrawable any time, never locked",
+  tradeFee: "None on the curve, 0.30% in the pool after graduation",
+  curveShare: `${LAUNCH_CURVE_SHARE_PCT}% of supply, the rest seeds the pool`,
+  launchWindow: `First ${LAUNCH_CURVE.windowSeconds} seconds, ${LAUNCH_CURVE_TAX_PCT}% snipe tax on buys`,
+  graduation: `At ${LAUNCH_CURVE.thresholdEth} ETH raised, the curve seeds a locked pool`,
+  liquidity: "Locked forever in the pool at graduation",
   labels: {
     totalSupply: "Total supply",
     launchFee: "Launch fee",
     devBuy: "Developer buy",
+    curveShare: "Sold on the curve",
     pairedWith: "Paired with",
     tradeFee: "Trade fee",
     launchWindow: "Launch window",
@@ -298,7 +270,7 @@ export const MCP_CONNECT = {
   promptFor: (address: string, committed: boolean) =>
     committed
       ? `Use the canhav get_launch tool for ${address} and summarize the commitment and its milestones.`
-      : `Use the canhav get_launch tool for ${address} and summarize the token, its vesting, sales and pool.`,
+      : `Use the canhav get_launch tool for ${address} and summarize the token, its curve, vesting, sales and pool.`,
   promptAny: "Use the canhav list_launches tool and show the newest launches.",
   projectServerUrl: (projectId: string) => `${MCP_BASE}/mcp/p/${projectId}`,
   projectAddCommand: (projectId: string, name: string) =>
@@ -323,11 +295,11 @@ export const LAUNCH_COPY = {
   title: "Launch a token",
   subtitleLead: "Create a token on Robinhood Chain Testnet in two steps.",
   subtitleDetail:
-    "Name it, describe it, add an image and launch. Seed a pool with ETH if you want trading from the first block, and add a commitment if you want one. Any agent can read the launch over MCP.",
+    "Name it, describe it, add an image and launch. Trading opens on a bonding curve in the same transaction, with an optional first buy for you, and the curve seeds a locked pool when it graduates. Any agent can read the launch over MCP.",
   previewTitle: "Your token",
   exploreTitle: "Recent launches",
   exploreLead:
-    "Every token launched through the CanHav factory, newest first. Open one to see its commitment, sales and pool, or read it from your agent.",
+    "Every token launched through CanHav, newest first. Open one to see its curve or pool, its commitment and sales, or read it from your agent.",
 } as const;
 
 /**

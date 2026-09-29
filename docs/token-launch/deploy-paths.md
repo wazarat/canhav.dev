@@ -2,13 +2,13 @@
 
 **Available now** on Robinhood Chain Testnet.
 
-There are two ways to launch a token through `/launch`. Both use TokenFactory v4. They differ in what `journeyHash` means and how the token page labels the launch.
+There are two ways to launch a token through `/launch`. Both go through the [CurveLauncher](bonding-curve.md). They differ in what `journeyHash` means and how the token page labels the launch.
 
 ## Quick deploy (no design record)
 
 Use `/launch` without a design id.
 
-1. You fill the launch form (name, ticker, supply, journey, optional vesting).
+1. You fill the launch form (name, ticker, description, image, optional developer buy, optional journey).
 2. The launch commits a classic **JourneyDoc** hash as `journeyHash` (and stores the journey blob).
 3. On `/launch/t/[address]`, when that hash resolves in the journeys table, the page shows:
 
@@ -20,7 +20,7 @@ That label means this token was launched without a published Projects token desi
 
 Use `/launch?design=<id>` from a **published** token design (or an equivalent entry point that passes the design id).
 
-1. The form prefills from the design (name, ticker, supply, and team vesting months where applicable).
+1. The form prefills from the design (name, ticker and supply; a team vesting cohort is shown as a published commitment, not applied).
 2. Step 2 becomes a design commitment card instead of a free-form journey editor.
 3. The launch commits the design **snapshot hash** as `journeyHash`. The journeys POST for a classic JourneyDoc is skipped.
 4. On success, attach-deploy links the on-chain token to the design (server re-verifies via indexer `journeyHash` match).

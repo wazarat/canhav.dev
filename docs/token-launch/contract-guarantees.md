@@ -1,6 +1,6 @@
 # Contract guarantees
 
-**Available now** on Robinhood Chain Testnet for tokens launched through CanHav TokenFactory.
+**Available now** on Robinhood Chain Testnet for tokens launched through the CanHav CurveLauncher or TokenFactory. Both clone the same token implementation.
 
 This page states what a CanHav launch token **can and cannot** do. Claims below are about the token implementation cloned by the factory, not about every third-party contract a team may deploy later.
 
@@ -16,12 +16,24 @@ This page states what a CanHav launch token **can and cannot** do. Claims below 
 
 CanHav takes **zero percent of token supply**. That is enforced by the absence of a mint path for the platform, not by a policy document.
 
+## What a curve launch guarantees
+
+| Guarantee | Meaning |
+|-----------|---------|
+| Locked graduation liquidity | The pool the launcher seeds at graduation holds its shares in the launcher. LaunchAMM shares cannot be transferred or burned and the launcher has no `removeLiquidity` path. |
+| Sells always work | `sell` on the launcher is never pausable. A pause stops new launches and buys only. |
+| Curve parameters are immutable | Threshold, curve share, virtual reserve, window, tax and the developer buy cap are set at deploy and cannot change. |
+| Launch fees never touch curve ETH | `withdraw` moves only accrued launch fees to the treasury. |
+
+See [Bonding curve](bonding-curve.md).
+
 ## Source verification
 
 The factory clones a **verified** implementation. New tokens inherit that verified source rather than deploying opaque bytecode.
 
 | Contract | Address |
 |----------|---------|
+| CurveLauncher | [`0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981`](https://explorer.testnet.chain.robinhood.com/address/0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981) |
 | TokenFactory v4 (live) | [`0x30Db3A828F65B92434c6aDB27AEeD01850277b08`](https://explorer.testnet.chain.robinhood.com/address/0x30Db3A828F65B92434c6aDB27AEeD01850277b08) |
 | LaunchToken implementation | [`0x3E8c9be8BB486abEc132B0d1C35266b2336b129B`](https://explorer.testnet.chain.robinhood.com/address/0x3E8c9be8BB486abEc132B0d1C35266b2336b129B) |
 

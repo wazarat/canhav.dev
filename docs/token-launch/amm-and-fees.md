@@ -16,8 +16,9 @@ For the full fee table (launch fee, caps, freeze-at-creation, zero supply take),
 | Protocol split | 70% project / 30% platform (`PROJECT_SHARE_BPS = 7000`), enforced in bytecode |
 | Fee destination | [FeeSplitter](contract-addresses.md) (never an EOA as the platform sink) |
 | Existing pools | Protocol fee rate **frozen at pool creation**; changing the default does not rewrite old pools |
-| First liquidity | The first `addLiquidity` sets the price and is open to anyone holding the token. Between `createPool` and that deposit, another holder could set the opening price. Accepted on testnet because a fresh launch has no holders but the creator, and the launch form runs the two calls back to back. |
-| Liquidity lock | None. Shares are withdrawable at any time; only `MINIMUM_LIQUIDITY` (1e3 shares) burns forever. |
+| First liquidity | The first `addLiquidity` sets the price and is open to anyone holding the token. A pool the curve launcher seeds at graduation is created and funded in one call, so there is no gap. For a pool a creator opens by hand, another holder could set the opening price between `createPool` and the deposit; accepted on testnet. |
+| Liquidity lock | None for pools a creator opens. A pool seeded by the [curve launcher](bonding-curve.md) at graduation holds its shares in the launcher forever, since shares cannot be transferred or burned and the launcher never removes liquidity. Only `MINIMUM_LIQUIDITY` (1e3 shares) burns in every pool. |
+| Graduated pools | Opted out of the protocol fee. The 0.30% LP fee compounds into the locked reserves. |
 
 ## FeeSplitter
 
@@ -32,6 +33,7 @@ AMM knobs such as the default protocol fee sit behind the [TimelockController](g
 
 ## Related
 
+- [Bonding curve](bonding-curve.md)
 - [Fees and economics](fees-and-economics.md)
 - [Contract guarantees](contract-guarantees.md)
 - [Governance](governance.md)

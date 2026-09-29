@@ -65,18 +65,23 @@ function friendlyPoolError(err: unknown): string {
 /**
  * Wallet side of the trading pool: swap in both directions (quotes mirror the
  * contract math, 1% slippage floor), add/remove liquidity, the creator's
- * create-pool flow with the protocol-fee opt-in, and fee claims.
+ * create-pool flow with the protocol-fee opt-in, and fee claims. With
+ * `lockedLiquidity` (a pool the curve launcher seeded at graduation) only
+ * swaps and claims are offered: the launcher holds the shares and nothing
+ * can add to or remove that position from here.
  */
 export function PoolActions({
   tokenAddress,
   creator,
   symbol,
   pool,
+  lockedLiquidity = false,
 }: {
   tokenAddress: string;
   creator: string;
   symbol: string;
   pool: PoolActionPool | null;
+  lockedLiquidity?: boolean;
 }) {
   const router = useRouter();
   const { isConnected, address, ensureChain } = useLaunchChain();
@@ -328,7 +333,7 @@ export function PoolActions({
 
   return (
     <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
-      {!pool && isCreator ? (
+      {!pool && isCreator && !lockedLiquidity ? (
         <div className="space-y-3">
           <p className="text-sm text-ink-300">
             Open a trading pool for your token. Liquidity is anyone&apos;s to
@@ -390,7 +395,13 @@ export function PoolActions({
         </div>
       ) : null}
 
-      {pool ? (
+      {pool && lockedLiquidity ? (
+        <p className="mt-3 text-xs text-ink-500">
+          Liquidity in this pool belongs to the curve launcher and can never be withdrawn.
+        </p>
+      ) : null}
+
+      {pool && !lockedLiquidity ? (
         <div className={hasLiquidity ? "mt-4 border-t border-ink-800/70 pt-4" : ""}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

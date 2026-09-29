@@ -28,9 +28,14 @@
 | Term | Meaning |
 |------|---------|
 | Robinhood Chain Testnet | Arbitrum Orbit testnet used by CanHav Token Launch. Chain ID `46630`. Not affiliated with Robinhood brokerage distribution. |
-| TokenFactory | Contract that deploys token clones (CREATE2 / LibClone). Current live factory is v4. Older factories are paused; their tokens remain indexed. |
+| CurveLauncher | The contract behind `/launch` since September 29, 2026. Clones a LaunchToken, holds the supply on a bonding curve, taxes early buys into a pot, and at 0.1 ETH raised seeds a LaunchAMM pool whose shares it keeps forever. |
+| Bonding curve | A constant-product price curve with virtual reserves. Buys move ETH in and tokens out so the product of the reserves never falls; the price is the ratio of the two. |
+| Virtual reserves | The starting reserves a curve prices against before any real ETH has arrived. Derived so the curve's end price equals the pool's opening price. |
+| Snipe tax | 20% taken off buys in the first 60 seconds after launch and held for the graduation pool. Sells and the developer's first buy are exempt. |
+| Graduation | The moment 0.1 ETH of real ETH has been raised on a curve. The launcher creates and seeds the pool in that same transaction and trading moves there. |
+| TokenFactory | Contract that deploys token clones (CREATE2 / LibClone) without a curve. v4 stays live for script launches with vesting. Older factories are paused; their tokens remain indexed. |
 | LaunchToken | Fixed-supply ERC20 implementation cloned per launch. No mint after initialize; no owner; not upgradeable. |
-| Launch fee | ETH paid to the factory on launch. Hard-capped in bytecode (`MAX_LAUNCH_FEE`); current documented testnet value 0.0002 ETH. |
+| Launch fee | ETH paid to the launcher (or the factory) on launch, on top of any developer buy. Hard-capped in bytecode (`MAX_LAUNCH_FEE`); current documented testnet value 0.0002 ETH. |
 | userSalt | Creator-chosen salt. Combined with `msg.sender` so predicted addresses cannot be front-run by others. |
 | journeyHash | On-chain commitment to the full journey document. |
 | descriptionHash | On-chain commitment to the short form description field. The text itself is stored off-chain and displayed only when it re-hashes to this value. |
@@ -38,9 +43,9 @@
 | MilestoneEscrow | Admin-less singleton for milestone-dated token lockups. |
 | JourneyUpdates | Admin-less singleton that anchors content-addressed progress updates. |
 | AllocationSale | Admin-less fixed-price sale contract. Fee-free; proceeds unlock on milestone dates. |
-| LaunchAMM | Minimal token/ETH AMM. LP fee plus optional protocol fee routed through FeeSplitter. Per-pool protocol fee frozen at creation. |
+| LaunchAMM | Minimal token/ETH AMM. LP fee plus optional protocol fee routed through FeeSplitter. Per-pool protocol fee frozen at creation. Pools seeded by the curve launcher hold their shares in the launcher forever. |
 | FeeSplitter | Timelock-owned destination for platform fee share; permissionless distributions to configured payees. |
-| TimelockController | Owns factory and AMM admin knobs. Admin changes wait out a public delay (300s on testnet). |
+| TimelockController | Owns launcher, factory and AMM admin knobs. Admin changes wait out a public delay (300s on testnet). |
 | Indexer | Ponder app that indexes launch events for explore and token detail pages. |
 
 ## Agent Launch

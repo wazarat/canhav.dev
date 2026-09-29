@@ -1,7 +1,8 @@
 import { Waves } from "lucide-react";
 import { formatEther } from "viem";
 
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { StatusChip } from "@/components/ui/StatusChip";
+import { LAUNCH_CHAIN, LAUNCH_CURVE } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedPool, IndexedSwap } from "@/lib/indexer";
 
@@ -14,18 +15,21 @@ function shortAddr(a: string): string {
 }
 
 /**
- * The creator-authored AMM pool for a token: price from reserves, volume from
- * indexed swaps, and the fee structure spelled out (LP fee + the enforced
- * 70/30 protocol split when opted in). All numbers from on-chain events.
+ * The AMM pool for a token, the creator's own or the one the curve launcher
+ * seeded at graduation (`locked`): price from reserves, volume from indexed
+ * swaps, and the fee structure spelled out (LP fee + the enforced 70/30
+ * protocol split when opted in). All numbers from on-chain events.
  */
 export function PoolCard({
   pool,
   symbol,
   swapData,
+  locked = false,
 }: {
   pool: IndexedPool;
   symbol: string;
   swapData: { swaps: IndexedSwap[]; count: number; ethVolume: bigint } | null;
+  locked?: boolean;
 }) {
   const ethReserve = BigInt(pool.ethReserve);
   const tokenReserve = BigInt(pool.tokenReserve);
@@ -38,11 +42,18 @@ export function PoolCard({
         <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-ink-50">
           <Waves className="h-4 w-4 text-electric-300" /> Trading pool
         </h2>
-        <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 text-xs text-ink-300">
-          {pool.protocolFeeBps > 0
-            ? `${(pool.protocolFeeBps / 100).toFixed(2)}% protocol fee total, of which ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator`
-            : "No protocol fee"}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {locked ? (
+            <StatusChip tone="success" className="px-3 py-1 text-xs">
+              {LAUNCH_CURVE.labels.locked}
+            </StatusChip>
+          ) : null}
+          <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 text-xs text-ink-300">
+            {pool.protocolFeeBps > 0
+              ? `${(pool.protocolFeeBps / 100).toFixed(2)}% protocol fee total, of which ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator`
+              : "No protocol fee"}
+          </span>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -98,6 +109,9 @@ export function PoolCard({
         {pool.protocolFeeBps > 0
           ? ` The protocol fee is ${(pool.protocolFeeBps / 100).toFixed(2)}% of each swap in total, of which ${((pool.protocolFeeBps * 0.7) / 100).toFixed(2)}% to the creator and ${((pool.protocolFeeBps * 0.3) / 100).toFixed(2)}% to the platform's auditable FeeSplitter. The 70/30 split is a bytecode constant, and this pool's rate is frozen forever at its creation value.`
           : " This pool opted out of the protocol fee; its rate is frozen at zero forever."}
+        {locked
+          ? " The liquidity belongs to the curve launcher, which has no way to withdraw it, so it is locked forever and every LP fee compounds into these reserves."
+          : ""}
       </p>
     </div>
   );

@@ -1,10 +1,13 @@
 import Link from "next/link";
 
 import { EmptyCard } from "@/components/explore/EmptyCard";
+import { trimEth } from "@/components/launch/CurveProgress";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { LAUNCH_CURVE } from "@/content/launch";
 import { formatCount, formatPriceEth } from "@/lib/format";
 import {
   type IndexedPool,
+  curveProgressPct,
   formatSupply,
   getActiveSaleTokens,
   getCurves,
@@ -78,26 +81,46 @@ export async function TokensGrid() {
                 <p className="truncate font-display text-base font-semibold text-ink-50">{t.name}</p>
                 <p className="font-mono text-xs text-electric-300">${t.symbol}</p>
               </div>
-              {liveSale ? (
-                <StatusChip tone="success" className="ml-auto shrink-0 px-2 py-0.5 text-[11px]">
-                  Live sale
-                </StatusChip>
-              ) : !committed ? (
-                <StatusChip tone="neutral" className="ml-auto shrink-0 px-2 py-0.5 text-[11px]">
-                  No commitment
-                </StatusChip>
-              ) : null}
+              <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
+                {curve ? (
+                  <StatusChip
+                    tone={curve.graduated ? "success" : "info"}
+                    className="px-2 py-0.5 text-[11px]"
+                  >
+                    {curve.graduated
+                      ? LAUNCH_CURVE.labels.graduated
+                      : `${LAUNCH_CURVE.labels.live} ${curveProgressPct(curve)}%`}
+                  </StatusChip>
+                ) : null}
+                {liveSale ? (
+                  <StatusChip tone="success" className="px-2 py-0.5 text-[11px]">
+                    Live sale
+                  </StatusChip>
+                ) : !committed ? (
+                  <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
+                    No commitment
+                  </StatusChip>
+                ) : null}
+              </div>
             </div>
             <div className="mt-4 flex items-center justify-between text-xs">
               <span className="text-ink-500">Price</span>
               <span className="tabular text-ink-200">
-                {pool ? `${priceEth(pool)} ETH` : "No pool yet"}
+                {pool
+                  ? `${priceEth(pool)} ETH`
+                  : curve
+                    ? `${formatPriceEth(BigInt(curve.ethReserve), BigInt(curve.tokenReserve))} ETH`
+                    : "No pool yet"}
               </span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs">
               <span className="text-ink-500">Liquidity</span>
               <span className="tabular text-ink-200">
-                {pool ? `${liquidityEth(pool)} ETH` : "No pool yet"}
+                {pool
+                  ? `${liquidityEth(pool)} ETH`
+                  : curve
+                    ? `${trimEth(BigInt(curve.raisedWei))} of ${trimEth(BigInt(curve.thresholdWei))} ETH raised`
+                    : "No pool yet"}
               </span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs">

@@ -318,4 +318,11 @@ event window so judges can verify it.
   graduated pool by id, and agents get `get_curve_status` plus curve blocks on
   `get_launch`, `list_launches` and `get_project_status`.
 
+- Sept 29, 2026. Launch on the curve. The launch form is one transaction on
+  the curve launcher with the developer's first buy inside it and a live
+  opening price, the parameters card says what the contract does (a 60 second
+  snipe window, graduation at 0.1 ETH, liquidity locked forever), the token
+  page shows the curve with a buy and sell form and then the locked pool, and
+  Explore shows curve progress. A new Bonding curve page in the docs.
+
 This list grows as work lands on the branch.

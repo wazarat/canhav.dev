@@ -122,15 +122,14 @@ export function TokenPreviewCard({
             {hasDevBuy ? `${formatEther(devBuyWei)} ETH` : LAUNCH_DEV_BUY.none}
           </span>
         </Row>
+        <Row label={L.curveShare}>{LAUNCH_PARAMS.curveShare}</Row>
         <Row label={L.pairedWith}>{LAUNCH_PARAMS.pairedWith}</Row>
         <Row label={L.tradeFee}>
           <span className="tabular">{LAUNCH_PARAMS.tradeFee}</span>
         </Row>
         <Row label={L.launchWindow}>{LAUNCH_PARAMS.launchWindow}</Row>
         <Row label={L.graduation}>{LAUNCH_PARAMS.graduation}</Row>
-        <Row label={L.liquidity}>
-          {hasDevBuy ? LAUNCH_PARAMS.liquidity : LAUNCH_PARAMS.liquidityNone}
-        </Row>
+        <Row label={L.liquidity}>{LAUNCH_PARAMS.liquidity}</Row>
         {hasDevBuy && openingPrice ? (
           <Row label={L.openingPrice}>
             <span className="tabular">

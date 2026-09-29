@@ -148,11 +148,13 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
   anti_sniping: {
     tier: "custom",
     text:
-      "The CanHav AMM has no launch window, early-sell tax, or trading " +
-      "delay. Any anti-sniping mechanism requires custom market contracts.",
+      "The CanHav curve launcher taxes buys for a fixed window after launch " +
+      "and holds the tax for the graduation pool. Any other anti-sniping " +
+      "mechanism, such as a trading delay or a per-wallet cap, requires " +
+      "custom market contracts.",
     fix:
-      'To deploy through CanHav, pick "None" and size the liquidity ' +
-      "assuming bots arrive first.",
+      'To deploy through CanHav, pick "Launch window" and size the ' +
+      "liquidity assuming bots arrive at the first untaxed second.",
   },
   lp_locked: {
     tier: "custom",

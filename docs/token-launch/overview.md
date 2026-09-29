@@ -4,7 +4,7 @@
 
 Token Launch is CanHav's testnet launchpad on **Robinhood Chain Testnet**. [Projects](../ideation/two-tracks.md) (ideation and design deploy) is available now alongside it. Agent / ERC-8004 is **not started**.
 
-You create a fixed-supply ERC20 from a factory, optionally attach vesting in the same transaction, and commit a journey hash on-chain so the plan can be checked later. Supporting contracts cover milestone escrow, progress updates, allocation sales, and a minimal AMM. You can quick-deploy or deploy from a published token design.
+You create a fixed-supply ERC20 whose supply goes onto a [bonding curve](bonding-curve.md), make your first buy inside the launch, and commit a journey hash on-chain so the plan can be checked later. At 0.1 ETH raised the curve seeds a pool whose liquidity is locked forever. Supporting contracts cover milestone escrow, progress updates, allocation sales, and a minimal AMM. You can quick-deploy or deploy from a published token design.
 
 CanHav has no affiliation with Robinhood. Robinhood Chain does not distribute to Robinhood brokerage customers. See [Welcome](../general/welcome-to-canhav.md).
 
@@ -13,7 +13,7 @@ CanHav has no affiliation with Robinhood. Robinhood Chain does not distribute to
 | Item | Detail |
 |------|--------|
 | Network | Robinhood Chain Testnet (chain ID `46630`) |
-| Factory | TokenFactory **v4** (live). v1-v3 are paused; their tokens remain indexed and browsable. |
+| Launcher | **CurveLauncher** (live, the `/launch` path). TokenFactory **v4** stays live for script launches with vesting; v1-v3 are paused; every token remains indexed and browsable. |
 | Product UI | Hidden URL track on the product site: `/launch` |
 | Audience | Builders and testers. Not a mainnet product. |
 
@@ -24,14 +24,15 @@ Testnet only. Do not treat launches, fees, or liquidity as production or investm
 ## What you can do
 
 1. [Set up the network](network-setup.md) (RPC, faucet, wallet)
-2. [Create a token](create-a-token.md) with metadata and journey, or use [Deploy paths](deploy-paths.md) for design deploy
+2. [Create a token](create-a-token.md) with metadata and journey, or use [Deploy paths](deploy-paths.md) for design deploy, and read how the [bonding curve](bonding-curve.md) works
 3. Use [vesting](vesting.md), [escrow](milestone-escrow.md), [updates](journey-updates.md), [sales](allocation-sales.md), and [AMM](amm-and-fees.md)
 4. [Explore](explore-tokens.md) indexed launches and open a token detail page
 5. Review [contract guarantees](contract-guarantees.md), [fees and economics](fees-and-economics.md), [governance](governance.md), and [contract addresses](contract-addresses.md)
 
 ## Design principles
 
-- **Pause on factory, not on tokens.** Stopping new launches does not freeze existing tokens.
+- **Pause on the launcher and factory, not on tokens.** Stopping new launches does not freeze existing tokens, and sells on a curve always work.
+- **Liquidity locked by construction.** A graduated pool's shares sit in a contract with no way to remove them.
 - **Hashes for credibility.** Journey and description are committed as hashes in launch events.
 - **Admin-less where it matters.** Escrow, updates, and sales have no owner.
 - **Timelock for admin knobs.** Factory and AMM fee/config changes wait out a public delay.

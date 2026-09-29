@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { formatEther } from "viem";
 
+import { CurveActions } from "@/components/launch/CurveActions";
+import { CurveCard } from "@/components/launch/CurveCard";
 import { EscrowActions, type EscrowActionTranche } from "@/components/launch/EscrowActions";
 import { EscrowCard } from "@/components/launch/EscrowCard";
 import { JourneyCard } from "@/components/launch/JourneyCard";
@@ -22,13 +24,16 @@ import { getSnapshot } from "@/lib/ideation-db";
 import { formatCount } from "@/lib/format";
 import {
   formatSupply,
+  getCurve,
+  getCurveTrades,
   getEscrows,
-  getPool,
+  getLaunchPool,
   getRecentPurchases,
   getRecentSwaps,
   getSales,
   getTokenRead,
   getVesting,
+  isCurveLaunch,
   type IndexedPurchase,
   type IndexedVesting,
 } from "@/lib/indexer";
@@ -201,23 +206,28 @@ export default async function TokenPage({
   const token = read.value;
 
   const committed = hasCommitment(token.journeyHash);
-  const [journey, vesting, escrows, sales, ammPool] = await Promise.all([
+  const [journey, vesting, escrows, sales, curve] = await Promise.all([
     committed ? getVerifiedJourney(token.journeyHash) : null,
     getVesting(token.address),
     getEscrows(token.address),
     getSales(token.address),
-    getPool(token.address, token.creator),
+    getCurve(token.address),
   ]);
-  const [liveVesting, updates, metadata, swapData, designSnapshot, ...purchaseLists] = await Promise.all([
-    vesting ? getLiveVesting(vesting) : null,
-    getVerifiedUpdates(token.address, token.creator),
-    // The description text, only when it re-hashes to the on-chain value.
-    getVerifiedTokenMetadata(token.descriptionHash, token.creator),
-    ammPool ? getRecentSwaps(ammPool.poolId) : null,
-    // Only consulted when the hash isn't a v1 journey — the design-deploy path.
-    journey || !committed ? null : getSnapshot(token.journeyHash.toLowerCase()),
-    ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
-  ]);
+  // A graduated curve's pool belongs to the launcher, so it is found by id;
+  // otherwise the creator's own pool (lib/indexer.ts getLaunchPool).
+  const ammPool = await getLaunchPool(token, curve);
+  const [liveVesting, updates, metadata, swapData, designSnapshot, curveTrades, ...purchaseLists] =
+    await Promise.all([
+      vesting ? getLiveVesting(vesting) : null,
+      getVerifiedUpdates(token.address, token.creator),
+      // The description text, only when it re-hashes to the on-chain value.
+      getVerifiedTokenMetadata(token.descriptionHash, token.creator),
+      ammPool ? getRecentSwaps(ammPool.poolId) : null,
+      // Only consulted when the hash isn't a v1 journey — the design-deploy path.
+      journey || !committed ? null : getSnapshot(token.journeyHash.toLowerCase()),
+      curve ? getCurveTrades(token.address) : null,
+      ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
+    ]);
   const purchases: Record<string, IndexedPurchase[]> = {};
   (sales ?? []).forEach((s, i) => {
     purchases[s.saleId] = (purchaseLists[i] as IndexedPurchase[] | null) ?? [];
@@ -279,7 +289,7 @@ export default async function TokenPage({
               ${token.symbol}
             </span>
             <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300">
-              template v{token.version}
+              {isCurveLaunch(token) ? "curve launch" : `template v${token.version}`}
             </span>
             {token.xHandle ? (
               <a
@@ -416,30 +426,50 @@ export default async function TokenPage({
         sales={actionSales}
       />
 
+      {curve ? (
+        <CurveCard
+          curve={curve}
+          symbol={token.symbol}
+          trades={curveTrades as Awaited<ReturnType<typeof getCurveTrades>>}
+          nowSeconds={Math.floor(Date.now() / 1000)}
+        >
+          {!curve.graduated ? (
+            <CurveActions tokenAddress={token.address} symbol={token.symbol} />
+          ) : null}
+        </CurveCard>
+      ) : null}
+
       {ammPool ? (
         <PoolCard
           pool={ammPool}
           symbol={token.symbol}
           swapData={swapData as Awaited<ReturnType<typeof getRecentSwaps>>}
+          locked={Boolean(curve?.graduated)}
         />
       ) : null}
 
-      <PoolActions
-        tokenAddress={token.address}
-        creator={token.creator}
-        symbol={token.symbol}
-        pool={
-          ammPool
-            ? ({
-                poolId: ammPool.poolId,
-                protocolFeeBps: ammPool.protocolFeeBps,
-                ethReserve: ammPool.ethReserve,
-                tokenReserve: ammPool.tokenReserve,
-                totalShares: ammPool.totalShares,
-              } satisfies PoolActionPool)
-            : null
-        }
-      />
+      {curve && !curve.graduated ? null : (
+        // While a curve is live its market is the curve, so the creator is
+        // not offered a pool. After graduation the launcher's pool is
+        // tradable by everyone, with the liquidity controls hidden.
+        <PoolActions
+          tokenAddress={token.address}
+          creator={token.creator}
+          symbol={token.symbol}
+          lockedLiquidity={Boolean(curve?.graduated)}
+          pool={
+            ammPool
+              ? ({
+                  poolId: ammPool.poolId,
+                  protocolFeeBps: ammPool.protocolFeeBps,
+                  ethReserve: ammPool.ethReserve,
+                  tokenReserve: ammPool.tokenReserve,
+                  totalShares: ammPool.totalShares,
+                } satisfies PoolActionPool)
+              : null
+          }
+        />
+      )}
 
       <EscrowActions
         tokenAddress={token.address}
