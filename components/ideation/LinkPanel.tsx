@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -43,8 +44,11 @@ export function LinkPanel({
   const [choice, setChoice] = useState("");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** True once this visit created the linked draft, for the saved note. */
+  const [created, setCreated] = useState(false);
 
   const otherLabel = selfType === "project" ? "token design" : "project";
+  const selfLabel = selfType === "project" ? "project" : "token design";
 
   async function mutate(method: "POST" | "DELETE", otherId: string) {
     setWorking(true);
@@ -69,7 +73,11 @@ export function LinkPanel({
     }
   }
 
-  /** Create a blank draft on the other track, link it, then open it. */
+  /**
+   * Create a blank draft on the other track and link it. The page stays
+   * where it is, so nothing typed here is lost. The new draft shows up as a
+   * link that opens in its own tab.
+   */
   async function createAndLink() {
     setWorking(true);
     setError(null);
@@ -108,9 +116,12 @@ export function LinkPanel({
       router.refresh();
       return;
     }
-    const editorBase = selfType === "project" ? "/studio/token" : "/studio/project";
-    router.push(`${editorBase}/${newId}`);
+    setCreated(true);
+    setWorking(false);
+    router.refresh();
   }
+
+  const editorBase = selfType === "project" ? "/studio/token" : "/studio/project";
 
   return (
     <div className="glass mt-10 max-w-2xl rounded-2xl border border-ink-800/70 p-5">
@@ -123,53 +134,70 @@ export function LinkPanel({
       </p>
       <div className="mt-4">
         {linked ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusChip tone={linked.status === "published" ? "success" : "neutral"}>
-              {linked.name} · {linked.status === "published" ? "published" : "draft"}
-            </StatusChip>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={working}
-              onClick={() => mutate("DELETE", linked.id)}
-            >
-              Unlink
-            </Button>
-          </div>
-        ) : candidates.length === 0 ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-xs text-ink-500">No {otherLabel}s in your studio yet.</p>
-            <Button size="sm" variant="outline" disabled={working} onClick={createAndLink}>
-              {working ? "Creating…" : `New ${otherLabel}, linked`}
-            </Button>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusChip tone={linked.status === "published" ? "success" : "neutral"}>
+                {linked.name || "Untitled"} ·{" "}
+                {linked.status === "published" ? "published" : "draft"}
+              </StatusChip>
+              <a
+                href={`${editorBase}/${linked.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-electric-300 transition-colors hover:text-electric-200"
+              >
+                Open in a new tab <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+              </a>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={working}
+                onClick={() => mutate("DELETE", linked.id)}
+              >
+                Unlink
+              </Button>
+            </div>
+            {created ? (
+              <p className="text-xs text-ink-400">
+                The {otherLabel} draft is saved in your studio. Open it now or come back to it
+                later. This page stays as it is.
+              </p>
+            ) : null}
           </div>
         ) : (
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              value={choice}
-              onChange={(e) => setChoice(e.target.value)}
-              className={cn(inputClasses, "max-w-xs appearance-none", !choice && "text-ink-500")}
-            >
-              <option value="" disabled>
-                Choose a {otherLabel}…
-              </option>
-              {candidates.map((c) => (
-                <option key={c.id} value={c.id} className="bg-ink-950 text-ink-50">
-                  {c.name || "Untitled"}
-                </option>
-              ))}
-            </select>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!choice || working}
-              onClick={() => mutate("POST", choice)}
-            >
-              {working ? "Linking…" : "Link"}
-            </Button>
-            <Button size="sm" variant="ghost" disabled={working} onClick={createAndLink}>
-              or create new
-            </Button>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-ink-200">Start a {otherLabel} for this {selfLabel}?</p>
+              <Button size="sm" disabled={working} onClick={createAndLink}>
+                {working ? "Creating…" : "Yes"}
+              </Button>
+            </div>
+            {candidates.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={choice}
+                  onChange={(e) => setChoice(e.target.value)}
+                  className={cn(inputClasses, "max-w-xs appearance-none", !choice && "text-ink-500")}
+                >
+                  <option value="" disabled>
+                    Choose a {otherLabel}…
+                  </option>
+                  {candidates.map((c) => (
+                    <option key={c.id} value={c.id} className="bg-ink-950 text-ink-50">
+                      {c.name || "Untitled"}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!choice || working}
+                  onClick={() => mutate("POST", choice)}
+                >
+                  Link an existing one
+                </Button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

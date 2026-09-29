@@ -54,6 +54,8 @@ export async function LaunchFromProject({
           ) : null}
           <Link
             href={href}
+            target="_blank"
+            rel="noreferrer"
             className="inline-block text-xs text-electric-300 transition-colors hover:text-electric-200"
           >
             {C.again} →
@@ -61,8 +63,9 @@ export async function LaunchFromProject({
         </div>
       ) : (
         <div className="mt-3">
+          {/* A new tab, so the project editor and its unsaved typing stay open. */}
           <Button asChild size="sm">
-            <Link href={href}>
+            <Link href={href} target="_blank" rel="noreferrer">
               <Rocket aria-hidden className="h-3.5 w-3.5" /> {C.cta}
             </Link>
           </Button>
