@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { ExportButtons } from "@/components/ideation/ExportButtons";
 import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
+import { CurveProgress } from "@/components/launch/CurveProgress";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import {
   PROJECT_SECURITY_FIELDS,
@@ -20,8 +21,9 @@ import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/
 import { checklistProgress, kitShapes } from "@/lib/kits";
 import { explorerAddressUrl } from "@/lib/explorer";
 import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
+import { getLaunchesByProject } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
-import { getTokensByCreator } from "@/lib/indexer";
+import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
   getBlockscoutVerification,
   getGithubActivity,
@@ -82,7 +84,7 @@ export default async function ProjectPublicPage({
   if (!snapshot || snapshot.doc.kind !== "project") notFound();
   const doc = snapshot.doc;
 
-  const [linked, deploys, txCount, github, contractChecks] = await Promise.all([
+  const [linked, deploys, txCount, github, contractChecks, projectLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
     doc.verifyWallet ? getTokensByCreator(doc.verifyWallet) : null,
     doc.verifyWallet ? getWalletTxCount(doc.verifyWallet) : null,
@@ -90,7 +92,16 @@ export default async function ProjectPublicPage({
     doc.testnetContracts
       ? Promise.all(doc.testnetContracts.map((a) => getBlockscoutVerification(a)))
       : null,
+    // Tokens launched from this project through the studio (M19d).
+    getLaunchesByProject(row.id),
   ]);
+  const launchedTokens = await Promise.all(
+    (projectLaunches ?? []).slice(0, 5).map(async (l) => ({
+      address: l.token_address,
+      at: l.created_at,
+      curve: await getCurve(l.token_address),
+    })),
+  );
   const linkedPublished = linked && linked.status === "published" && linked.slug ? linked : null;
 
   const commitsLast30Days = github
@@ -298,6 +309,34 @@ export default async function ProjectPublicPage({
                 </StatusChip>
               )}
             </div>
+          </Section>
+        )}
+
+        {launchedTokens.length > 0 && (
+          <Section title="Launched from this project">
+            <ul className="space-y-3">
+              {launchedTokens.map((t) => (
+                <li key={t.address} className="text-sm">
+                  <a
+                    href={`/launch/t/${t.address}`}
+                    className="break-all font-mono text-electric-300 transition-colors hover:text-electric-200"
+                  >
+                    {t.address}
+                  </a>{" "}
+                  <span className="text-ink-500">
+                    · {new Date(t.at).toLocaleDateString("en-US")}
+                  </span>
+                  {t.curve ? (
+                    <CurveProgress
+                      className="mt-2 max-w-sm"
+                      raisedWei={t.curve.raisedWei}
+                      thresholdWei={t.curve.thresholdWei}
+                      graduated={t.curve.graduated}
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           </Section>
         )}
 

@@ -1,7 +1,9 @@
 import "server-only";
 
-import { getMyTokenDesigns } from "@/lib/ideation-db";
+import type { ProjectContext } from "@/lib/ideation";
+import { getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
 import { getToken, type IndexedToken } from "@/lib/indexer";
+import { projectContext } from "@/lib/launch-project";
 import { getLaunchesByOwner } from "@/lib/launches-db";
 
 /**
@@ -22,20 +24,26 @@ export interface MyLaunch {
   creatorWallet: string | null;
   launchTxHash: string | null;
   design: { id: string; slug: string | null; status: string; name: string } | null;
+  /** The studio project the launch was started from, when there was one. */
+  project: ProjectContext | null;
   /** Live indexer record, or null when the indexer is unreachable. */
   launch: IndexedToken | null;
 }
 
 /** Null only when storage is unconfigured. Indexer outages leave `launch` null per row. */
 export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> {
-  const [designs, recorded] = await Promise.all([
+  const [designs, recorded, projects] = await Promise.all([
     getMyTokenDesigns(userId),
     getLaunchesByOwner(userId),
+    getMyProjects(userId),
   ]);
   if (designs === null || recorded === null) return null;
+  // Joined in memory: the studio already lists every project of the account.
+  const projectsById = new Map((projects ?? []).map((p) => [p.id, p]));
 
   const byAddress = new Map<string, Omit<MyLaunch, "launch">>();
   for (const r of recorded) {
+    const projectRow = r.project_id ? projectsById.get(r.project_id) : undefined;
     byAddress.set(r.token_address, {
       address: r.token_address,
       source: "launch",
@@ -43,6 +51,7 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
       creatorWallet: r.creator_address,
       launchTxHash: r.tx_hash,
       design: null,
+      project: projectRow ? projectContext(projectRow) : null,
     });
   }
   for (const r of designs) {
@@ -61,6 +70,7 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
         creatorWallet: r.deployed_by_wallet,
         launchTxHash: null,
         design,
+        project: null,
       });
     }
   }

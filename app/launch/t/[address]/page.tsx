@@ -14,6 +14,7 @@ import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
 import { PoolActions, type PoolActionPool } from "@/components/launch/PoolActions";
 import { PoolCard } from "@/components/launch/PoolCard";
+import { ProjectCard } from "@/components/launch/ProjectCard";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
 import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
@@ -39,6 +40,7 @@ import {
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getLaunchProjectSummary } from "@/lib/launch-project";
 import { publicClient } from "@/lib/publicClient";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
@@ -216,8 +218,16 @@ export default async function TokenPage({
   // A graduated curve's pool belongs to the launcher, so it is found by id;
   // otherwise the creator's own pool (lib/indexer.ts getLaunchPool).
   const ammPool = await getLaunchPool(token, curve);
-  const [liveVesting, updates, metadata, swapData, designSnapshot, curveTrades, ...purchaseLists] =
-    await Promise.all([
+  const [
+    liveVesting,
+    updates,
+    metadata,
+    swapData,
+    designSnapshot,
+    curveTrades,
+    projectSummary,
+    ...purchaseLists
+  ] = await Promise.all([
       vesting ? getLiveVesting(vesting) : null,
       getVerifiedUpdates(token.address, token.creator),
       // The description text, only when it re-hashes to the on-chain value.
@@ -226,6 +236,8 @@ export default async function TokenPage({
       // Only consulted when the hash isn't a v1 journey — the design-deploy path.
       journey || !committed ? null : getSnapshot(token.journeyHash.toLowerCase()),
       curve ? getCurveTrades(token.address) : null,
+      // The studio project the token was launched from (M19d), or null.
+      getLaunchProjectSummary(token.address),
       ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
     ]);
   const purchases: Record<string, IndexedPurchase[]> = {};
@@ -532,6 +544,12 @@ export default async function TokenPage({
           </StatusChip>
         </div>
       )}
+
+      {projectSummary ? (
+        // This route runs without Clerk middleware, so no viewer is ever the
+        // owner here; a draft project shows its chips without its name.
+        <ProjectCard project={projectSummary.project} isOwner={false} />
+      ) : null}
 
       <McpConnectCard
         target={{ kind: "launch", address: token.address.toLowerCase(), committed }}

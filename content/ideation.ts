@@ -438,6 +438,15 @@ export const STUDIO_COPY = {
     busy: "Deleting",
     failed: "Could not delete this draft. Reload and try again.",
   },
+  /** The launch card on a project's studio page (M19d). */
+  launch: {
+    title: "Launch a token",
+    body: "Launch a token on Robinhood Chain Testnet from this project. The token page, your studio and your agent see the project's sectors and shapes beside it.",
+    cta: "Launch a token from this project",
+    launched: "Token launched",
+    again: "Launch another",
+    fromProject: "From",
+  },
 } as const;
 
 /** The three launch tracks, in launch order: tokens, then projects, then agents. */

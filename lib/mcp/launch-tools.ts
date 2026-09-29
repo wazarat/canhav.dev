@@ -120,7 +120,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "Get a token launch",
       description:
-        "Everything CanHav knows about one deployed token by address. Token metadata, the description text and Telegram handle verified against the on-chain description hash, the journey document verified against its on-chain hash, creator milestone updates, vesting, milestone escrow tranches, allocation sales, the launch's AMM pool (the creator's, or the locked one the curve seeded), the bonding curve state for a curve launch, and the linked published design when one exists.",
+        "Everything CanHav knows about one deployed token by address. Token metadata, the description text and Telegram handle verified against the on-chain description hash, the journey document verified against its on-chain hash, creator milestone updates, vesting, milestone escrow tranches, allocation sales, the launch's AMM pool (the creator's, or the locked one the curve seeded), the bonding curve state for a curve launch, the linked published design when one exists, and the studio project the token was launched from (its sectors and shapes always, its name only when published).",
       inputSchema: z.object({ address: ADDRESS }),
     },
     async ({ address }) => {
@@ -360,7 +360,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "My launches",
       description:
-        "The authenticated user's own launches. Tokens launched while signed in to CanHav plus tokens attached to the user's token designs, each joined with its live launch record.",
+        "The authenticated user's own launches. Tokens launched while signed in to CanHav plus tokens attached to the user's token designs, each joined with its live launch record and the studio project it was launched from.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -375,6 +375,7 @@ export function registerLaunchTools(server: McpServer): void {
         creatorWallet: entry.creatorWallet,
         launchTxHash: entry.launchTxHash,
         design: entry.design,
+        project: entry.project,
         launchUrl: launchUrl(entry.address),
         launch: entry.launch ? summarizeToken(entry.launch) : null,
       }));

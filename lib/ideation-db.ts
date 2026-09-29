@@ -88,6 +88,18 @@ export async function getMyProjects(ownerId: string): Promise<ProjectRow[] | nul
   return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
 }
 
+/**
+ * A project by id with no owner scope. Only lib/launch-project.ts calls it,
+ * to resolve the project a launch was started from; the caller decides what
+ * of it a viewer may see.
+ */
+export async function getProjectById(id: string): Promise<ProjectRow | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  const rows = await sql`select * from launchpad.projects where id = ${id}`;
+  return mapProjectRow(rows[0] as ProjectRow | undefined);
+}
+
 export async function getProject(id: string, ownerId: string): Promise<ProjectRow | null> {
   const sql = getDb();
   if (!sql) return null;

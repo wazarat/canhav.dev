@@ -225,6 +225,20 @@ await sql`
     on launchpad.launches (owner_id, created_at desc)
 `;
 
+// Launch from a project (M19d): the studio project a launch was started
+// from. Nullable, cleared if the project is deleted. entity_links cannot
+// carry it because its ends are uuids and a launch is keyed by address.
+await sql`
+  alter table launchpad.launches
+    add column if not exists project_id uuid references launchpad.projects(id) on delete set null
+`;
+
+await sql`
+  create index if not exists launches_project_idx
+    on launchpad.launches (project_id)
+    where project_id is not null
+`;
+
 // Launch metadata the chain only carries as a hash. description is the exact
 // string whose keccak256 is the on-chain descriptionHash, stored before the
 // launch tx like journeys are. telegram is not committed on-chain and is

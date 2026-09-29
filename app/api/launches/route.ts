@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authGate } from "@/lib/ideation-api";
+import { getProject } from "@/lib/ideation-db";
 import { getToken } from "@/lib/indexer";
 import { recordLaunch } from "@/lib/launches-db";
 
@@ -23,16 +24,23 @@ export async function POST(req: Request) {
 
   let tokenAddress: string;
   let txHash: string | null = null;
+  let projectId: string | null = null;
   try {
     const body = await req.json();
     tokenAddress = String(body.tokenAddress ?? "").toLowerCase();
     if (typeof body.txHash === "string" && /^0x[0-9a-fA-F]{64}$/.test(body.txHash))
       txHash = body.txHash.toLowerCase();
+    if (typeof body.projectId === "string" && /^[0-9a-f-]{36}$/.test(body.projectId))
+      projectId = body.projectId;
   } catch {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
   if (!/^0x[0-9a-f]{40}$/.test(tokenAddress))
     return NextResponse.json({ error: "Invalid token address." }, { status: 400 });
+
+  // A launch may only be attached to a project the same account owns.
+  if (projectId && !(await getProject(projectId, gate.id)))
+    return NextResponse.json({ error: "That project is not yours." }, { status: 403 });
 
   // The indexer may lag the receipt by a block or two. Retry once.
   let token = await getToken(tokenAddress);
@@ -55,6 +63,7 @@ export async function POST(req: Request) {
     ownerId: gate.id,
     creatorAddress: token.creator,
     txHash,
+    projectId,
   });
   if (result === null)
     return NextResponse.json({ error: "Storage not configured." }, { status: 503 });

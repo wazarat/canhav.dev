@@ -9,6 +9,7 @@ import { useAccount, useBalance, usePublicClient, useReadContract, useWriteContr
 import { Button } from "@/components/ui/Button";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
+import type { ProjectContext } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
 import { curveLauncherAbi } from "@/lib/abi/curveLauncher";
 import { formatCount, formatPriceEth } from "@/lib/format";
@@ -108,9 +109,12 @@ export interface DesignCommitment {
 export function LaunchForm({
   prefill,
   designCommitment,
+  project,
 }: {
   prefill?: LaunchPrefill;
   designCommitment?: DesignCommitment;
+  /** The studio project this launch was started from (?project=<id>). */
+  project?: ProjectContext;
 } = {}) {
   // Step 1 — token details
   const [name, setName] = useState(prefill?.name ?? "");
@@ -445,7 +449,12 @@ export function LaunchForm({
               : "Launched without a commitment."}
         </p>
         <p className="mt-4 break-all font-mono text-xs text-ink-400">{status.token}</p>
-        <AccountLink tokenAddress={status.token.toLowerCase()} txHash={status.txHash} />
+        <AccountLink
+          tokenAddress={status.token.toLowerCase()}
+          txHash={status.txHash}
+          projectId={project?.id}
+          projectName={project?.name}
+        />
         {status.devBuy ? (
           <div className="mt-4 space-y-2">
             <StatusChip tone="success" variant="pill">
@@ -758,6 +767,15 @@ export function LaunchForm({
                   {name.trim()} <span className="font-mono text-xs text-electric-300">${ticker}</span>
                 </span>
               </div>
+              {project ? (
+                <div className="flex justify-between gap-4 py-1">
+                  <span className="shrink-0 text-ink-500">Project</span>
+                  <span className="text-right text-ink-100">
+                    {project.name}
+                    {project.shapeLabels.length ? `, ${project.shapeLabels.join(" · ")}` : ""}
+                  </span>
+                </div>
+              ) : null}
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Supply</span>
                 <span className="tabular text-ink-100">
@@ -871,6 +889,7 @@ export function LaunchForm({
           launchFeeWei={launchFee}
           devBuyWei={devBuyError ? 0n : devBuyWei}
           openingPrice={devBuyError ? null : openingPrice}
+          project={project ?? null}
         />
       </div>
     </div>

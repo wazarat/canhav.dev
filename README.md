@@ -325,4 +325,10 @@ event window so judges can verify it.
   page shows the curve with a buy and sell form and then the locked pool, and
   Explore shows curve progress. A new Bonding curve page in the docs.
 
+- Sept 29, 2026. Launch from a project. A studio project has a Launch a token
+  card, the launch records the project, the token page shows the project's
+  sectors and shapes, the studio and the public project page show the token,
+  and agents get a `project` block on `get_launch` and `get_my_launches` plus
+  `launchedToken` on `get_project_status`.
+
 This list grows as work lands on the branch.

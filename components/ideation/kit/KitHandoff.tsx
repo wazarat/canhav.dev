@@ -1,6 +1,7 @@
 "use client";
 
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, Rocket } from "lucide-react";
 
 import { CopyLine } from "@/components/ui/CopyLine";
 import { HANDOFF_COPY } from "@/content/kits/copy";
@@ -29,6 +30,10 @@ export function KitHandoff({ projectId, name }: { projectId: string; name: strin
           <Download aria-hidden className="h-3 w-3" />
           {HANDOFF_COPY.agentsFile}
         </a>
+        <Link href={`/launch?project=${projectId}`} className={cls}>
+          <Rocket aria-hidden className="h-3 w-3" />
+          {HANDOFF_COPY.launch}
+        </Link>
         <span className="text-[11px] text-ink-600">{HANDOFF_COPY.gateNote}</span>
       </div>
       <div className="mt-4">

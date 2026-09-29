@@ -22,6 +22,7 @@ import {
 import { formatPriceEth } from "@/lib/format";
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getLaunchProjectSummary } from "@/lib/launch-project";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
 /**
@@ -178,6 +179,31 @@ export function summarizePool(pool: IndexedPool) {
   };
 }
 
+/**
+ * The studio project a launch was started from. Sectors, subsectors and
+ * shapes are public; the id, name and URL only when the project is
+ * published, or when the scoped (owner-only) server asks with
+ * `includePrivate`.
+ */
+export async function projectBlock(address: string, includePrivate = false) {
+  const summary = await getLaunchProjectSummary(address);
+  if (!summary) return null;
+  const p = summary.project;
+  const visible = p.status === "published" || includePrivate;
+  return {
+    id: visible ? p.id : null,
+    name: visible ? p.name : null,
+    published: p.status === "published",
+    publicUrl: p.publicUrl,
+    sectors: p.sectors,
+    sectorLabels: p.sectorLabels,
+    subsectors: p.subsectors,
+    subsectorLabels: p.subsectorLabels,
+    shapes: p.shapes,
+    shapeLabels: p.shapeLabels,
+  };
+}
+
 export async function linkedDesign(address: string) {
   const row = await getTokenDesignByAddress(address);
   if (!row || row.status !== "published" || !row.slug) return null;
@@ -225,7 +251,10 @@ export async function journeyBlock(token: IndexedToken) {
  * Everything CanHav knows about one deployed token. The global get_launch tool
  * and a project-scoped server bound to that token both return exactly this.
  */
-export async function launchView(address: string): Promise<View<unknown>> {
+export async function launchView(
+  address: string,
+  opts: { includePrivateProject?: boolean } = {},
+): Promise<View<unknown>> {
   // getTokenRead keeps "indexer down" apart from "no such token", so this no
   // longer needs a second getTokens() call purely as an offline probe.
   const read = await getTokenRead(address);
@@ -234,7 +263,7 @@ export async function launchView(address: string): Promise<View<unknown>> {
     return { ok: false, message: `No CanHav launch at ${address}.` };
   const token = read.value;
   const now = Math.floor(Date.now() / 1000);
-  const [journey, meta, vesting, escrows, sales, curve, design] = await Promise.all([
+  const [journey, meta, vesting, escrows, sales, curve, design, project] = await Promise.all([
     journeyBlock(token),
     getVerifiedTokenMetadata(token.descriptionHash, token.creator),
     getVesting(token.address),
@@ -242,6 +271,7 @@ export async function launchView(address: string): Promise<View<unknown>> {
     getSales(token.address),
     getCurve(token.address),
     linkedDesign(token.address),
+    projectBlock(token.address, opts.includePrivateProject),
   ]);
   // A graduated curve's pool belongs to the launcher, so it is found by id.
   const pool = await getLaunchPool(token, curve);
@@ -274,6 +304,8 @@ export async function launchView(address: string): Promise<View<unknown>> {
       // Null for factory launches. Fields are only ever added.
       curve: curve ? summarizeCurve(curve, now) : null,
       design,
+      // The studio project the launch was started from (M19d), or null.
+      project,
     },
   };
 }

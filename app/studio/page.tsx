@@ -82,6 +82,7 @@ function EntityList({
   empty,
   links,
   side,
+  launched,
 }: {
   title: string;
   rows: Array<ProjectRow | TokenDesignRow>;
@@ -90,6 +91,8 @@ function EntityList({
   empty: string;
   links: Map<string, EntityLinkSummary>;
   side: "project" | "design";
+  /** Project id to the address of the newest token launched from it. */
+  launched?: Map<string, string>;
 }) {
   return (
     <section className="space-y-3">
@@ -126,6 +129,17 @@ function EntityList({
                       </>
                     )}
                     {link && <LinkLine link={link} side={side} />}
+                    {launched?.get(row.id) && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`/launch/t/${launched.get(row.id)}`}
+                          className="text-electric-300 transition-colors hover:text-electric-200"
+                        >
+                          {STUDIO_COPY.launch.launched}
+                        </Link>
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
@@ -193,6 +207,11 @@ export default async function StudioPage() {
     getMyLaunches(user.id),
     getEntityLinks(user.id),
   ]);
+  // Newest first already, so the first hit per project wins.
+  const launchedByProject = new Map<string, string>();
+  for (const l of launches ?? []) {
+    if (l.project && !launchedByProject.has(l.project.id)) launchedByProject.set(l.project.id, l.address);
+  }
 
   return (
     <div className="container py-14 md:py-20">
@@ -232,6 +251,7 @@ export default async function StudioPage() {
               empty="No projects yet. A project is what you're building; token optional."
               links={links.byProject}
               side="project"
+              launched={launchedByProject}
             />
           </div>
         </div>

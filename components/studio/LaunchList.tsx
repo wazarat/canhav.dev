@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { StatusChip } from "@/components/ui/StatusChip";
+import { STUDIO_COPY } from "@/content/ideation";
 import { hasCommitment } from "@/lib/journey";
 import type { MyLaunch } from "@/lib/my-launches";
 
@@ -77,6 +78,17 @@ export function LaunchList({ launches }: { launches: MyLaunch[] | null }) {
                       {when ? `Launched ${when} · ` : ""}
                       {shortAddress(l.address)}
                     </p>
+                    {l.project ? (
+                      <p className="mt-0.5 truncate text-[11px] text-ink-500">
+                        {STUDIO_COPY.launch.fromProject}{" "}
+                        <span className="text-ink-300">{l.project.name}</span>
+                        {l.project.shapeLabels.length
+                          ? ` · ${l.project.shapeLabels.join(" · ")}`
+                          : l.project.sectorLabels.length
+                            ? ` · ${l.project.sectorLabels.join(" · ")}`
+                            : ""}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {!committed ? (

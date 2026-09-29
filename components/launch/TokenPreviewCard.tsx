@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { Globe, ImageIcon } from "lucide-react";
 import { formatEther } from "viem";
 
+import { StatusChip } from "@/components/ui/StatusChip";
 import { LAUNCH_COPY, LAUNCH_DEV_BUY, LAUNCH_FORM, LAUNCH_PARAMS } from "@/content/launch";
+import type { ProjectContext } from "@/lib/ideation";
 
 /**
  * Live preview of the token being drafted, plus the launch parameters that
@@ -40,6 +42,7 @@ export function TokenPreviewCard({
   launchFeeWei,
   devBuyWei,
   openingPrice,
+  project = null,
 }: {
   name: string;
   ticker: string;
@@ -54,6 +57,8 @@ export function TokenPreviewCard({
   devBuyWei: bigint;
   /** Preformatted ETH per token, null when there is no developer buy. */
   openingPrice: string | null;
+  /** The studio project the launch was started from, when there is one. */
+  project?: ProjectContext | null;
 }) {
   const initial = name.trim().charAt(0).toUpperCase();
   const L = LAUNCH_PARAMS.labels;
@@ -109,6 +114,20 @@ export function TokenPreviewCard({
       ) : (
         <p className="mt-3 text-sm text-ink-600">A short description of the token.</p>
       )}
+
+      {project ? (
+        <div className="mt-4 border-t border-ink-800/70 pt-4">
+          <p className="text-xs text-ink-500">Project</p>
+          <p className="mt-1 text-sm text-ink-100">{project.name}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[...project.sectorLabels, ...project.subsectorLabels, ...project.shapeLabels].map((label) => (
+              <StatusChip key={label} tone="neutral" className="px-2 py-0.5 text-[11px]">
+                {label}
+              </StatusChip>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-5 space-y-2.5 border-t border-ink-800/70 pt-4 text-xs">
         <Row label={L.totalSupply}>

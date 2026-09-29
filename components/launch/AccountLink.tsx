@@ -26,7 +26,15 @@ function SignedOutHint() {
   );
 }
 
-function Linker({ tokenAddress, txHash }: { tokenAddress: string; txHash: string }) {
+interface LinkerProps {
+  tokenAddress: string;
+  txHash: string;
+  /** The studio project the launch was started from, recorded on the row. */
+  projectId?: string;
+  projectName?: string;
+}
+
+function Linker({ tokenAddress, txHash, projectId, projectName }: LinkerProps) {
   const { isLoaded, isSignedIn } = useUser();
   const [state, setState] = useState<LinkState>("idle");
 
@@ -36,11 +44,11 @@ function Linker({ tokenAddress, txHash }: { tokenAddress: string; txHash: string
     fetch("/api/launches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tokenAddress, txHash }),
+      body: JSON.stringify({ tokenAddress, txHash, projectId: projectId ?? null }),
     })
       .then((res) => setState(res.ok || res.status === 409 ? "linked" : "failed"))
       .catch(() => setState("failed"));
-  }, [isLoaded, isSignedIn, state, tokenAddress, txHash]);
+  }, [isLoaded, isSignedIn, state, tokenAddress, txHash, projectId]);
 
   if (!isLoaded) return null;
   if (!isSignedIn) return <SignedOutHint />;
@@ -48,7 +56,9 @@ function Linker({ tokenAddress, txHash }: { tokenAddress: string; txHash: string
     return (
       <div className="mt-3">
         <StatusChip tone="success" variant="pill">
-          Linked to your CanHav account. get_my_launches will list it.
+          {projectName
+            ? `Linked to your CanHav account and to ${projectName}. get_my_launches will list it.`
+            : "Linked to your CanHav account. get_my_launches will list it."}
         </StatusChip>{" "}
         <Link
           href="/studio"
@@ -60,16 +70,19 @@ function Linker({ tokenAddress, txHash }: { tokenAddress: string; txHash: string
     );
   if (state === "failed")
     return (
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
         <StatusChip tone="neutral" variant="pill">
           Could not link this launch to your account. It is still readable by address.
+        </StatusChip>
+        <StatusChip tone="info" variant="pill" onClick={() => setState("idle")}>
+          Retry
         </StatusChip>
       </div>
     );
   return <p className="mt-3 text-xs text-ink-500">Linking to your account…</p>;
 }
 
-export function AccountLink(props: { tokenAddress: string; txHash: string }) {
+export function AccountLink(props: LinkerProps) {
   // Config is fixed per build, so the hook component mounts consistently.
   if (!isAuthConfiguredClient()) return null;
   return <Linker {...props} />;

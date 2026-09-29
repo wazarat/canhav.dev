@@ -22,6 +22,7 @@ import {
   designWarnings,
 } from "@/lib/mcp/design-views";
 import { getCurve } from "@/lib/indexer";
+import { getLaunchesByProject } from "@/lib/launches-db";
 import { curveState, launchUrl, launchView, summarizeCurve } from "@/lib/mcp/launch-views";
 import {
   errorResult,
@@ -56,9 +57,9 @@ const AUTH_HINT =
 const NOT_YOURS =
   "No CanHav project with this id belongs to you. Open the project in the studio and copy its MCP server URL again.";
 const NO_DESIGN =
-  "No token design is linked to this project. Link one from the project's page in the CanHav studio.";
+  "No token has been launched from this project and no token design is linked to it. Launch one from the project's page in the CanHav studio, or link a design there.";
 const NO_TOKEN =
-  "This project's token design has not been deployed yet. Launch it from canhav.com/launch to make the token readable here.";
+  "This project's token design has not been deployed and no token has been launched from the project yet. Launch it from the project's page in the CanHav studio.";
 
 interface ProjectCtx {
   project: ProjectRow;
@@ -149,23 +150,32 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const projectProblem = validateProjectDoc(project.draft_doc);
       const designProblem = design ? validateTokenDesignDoc(design.draft_doc) : null;
       const deployed = design?.deployed_token_address ?? null;
+      // A token launched from this project through the studio (M19d), the
+      // newest first. Independent of the design path.
+      const launched = (await getLaunchesByProject(project.id))?.[0] ?? null;
+      const tokenAddress = deployed ?? launched?.token_address ?? null;
+      // A curve launch's state rides along so an agent sees graduation
+      // progress without a second call. Null curve for factory launches.
+      const curve = tokenAddress ? await getCurve(tokenAddress) : null;
+      const launchHint = `Launch a token from canhav.com/launch?project=${project.id}.`;
       const nextAction = projectProblem
         ? "Fix the project draft in the studio."
         : project.status !== "published"
           ? "Publish the project."
-          : !design
-            ? "Link a token design to this project."
-            : designProblem
-              ? "Fix the token design draft in the studio."
-              : design.status !== "published"
-                ? "Publish the token design."
-                : !deployed
-                  ? "Launch the token from canhav.com/launch."
-                  : "Nothing left. The project is published and its token is deployed.";
+          : tokenAddress
+            ? curve && !curve.graduated
+              ? "The token is on its curve. Nothing left in the studio."
+              : curve?.graduated
+                ? "Nothing left. The project is published and its token has graduated."
+                : "Nothing left. The project is published and its token is deployed."
+            : !design
+              ? `Link a token design to this project, or launch a token from canhav.com/launch?project=${project.id}.`
+              : designProblem
+                ? "Fix the token design draft in the studio."
+                : design.status !== "published"
+                  ? "Publish the token design."
+                  : launchHint;
       const kit = project.draft_doc.kit;
-      // A curve launch's state rides along so an agent sees graduation
-      // progress without a second call. Null curve for factory launches.
-      const curve = deployed ? await getCurve(deployed) : null;
       const now = Math.floor(Date.now() / 1000);
       return jsonResult({
         project: {
@@ -198,13 +208,21 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             }
           : null,
         deployedTokenAddress: deployed,
-        deployedToken: deployed
+        deployedToken: tokenAddress
           ? {
-              address: deployed,
-              launchUrl: launchUrl(deployed),
+              address: tokenAddress,
+              launchUrl: launchUrl(tokenAddress),
               curve: curve
                 ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct }
                 : null,
+            }
+          : null,
+        launchedToken: launched
+          ? {
+              address: launched.token_address,
+              launchUrl: launchUrl(launched.token_address),
+              launchedAt: launched.created_at,
+              launchTxHash: launched.tx_hash,
             }
           : null,
         nextAction,
@@ -412,18 +430,19 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     server,
     "get_launch",
     {
-      title: "This project's deployed token",
+      title: "This project's token",
       description:
-        "Everything CanHav knows about the token deployed from this project's design. Token metadata, the commitment verified against its on-chain hash, milestone updates, vesting, escrow tranches, allocation sales and the creator's AMM pool. Takes no arguments.",
+        "Everything CanHav knows about the token deployed from this project's design, or launched from this project in the studio. Token metadata, the commitment verified against its on-chain hash, milestone updates, vesting, escrow tranches, allocation sales, the launch's AMM pool, the bonding curve for a curve launch and the project block. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
-      const { design } = loaded.value;
-      if (!design) return errorResult(NO_DESIGN);
-      if (!design.deployed_token_address) return errorResult(NO_TOKEN);
-      const view = await launchView(design.deployed_token_address);
+      const { project, design } = loaded.value;
+      const launched = (await getLaunchesByProject(project.id))?.[0] ?? null;
+      const address = design?.deployed_token_address ?? launched?.token_address ?? null;
+      if (!address) return errorResult(design ? NO_TOKEN : NO_DESIGN);
+      const view = await launchView(address, { includePrivateProject: true });
       return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
     scope,

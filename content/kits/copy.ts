@@ -182,6 +182,7 @@ export const HANDOFF_COPY = {
     "Download the pack as files for your repo, or let your coding agent pull it straight from this project's MCP server. Both follow your ticks and update as you change them.",
   resourcesFile: "Download RESOURCES.md",
   agentsFile: "Download AGENTS.md",
+  launch: "Launch a token",
   gateNote: "Free, sign-in required",
   footnote:
     "AGENTS.md carries the whole project record plus the pack. RESOURCES.md is the pack alone. Both are built from the current draft, not a published snapshot.",

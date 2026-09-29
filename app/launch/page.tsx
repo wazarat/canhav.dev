@@ -7,7 +7,10 @@ import {
   LaunchForm,
 } from "@/components/launch/LaunchForm";
 import { LAUNCH_COPY, LAUNCH_FORM, MCP_CONNECT } from "@/content/launch";
-import { getPublishedTokenDesignById } from "@/lib/ideation-db";
+import { getSessionUser, isAuthConfigured } from "@/lib/auth";
+import type { ProjectContext } from "@/lib/ideation";
+import { getLinkedTokenDesign, getProject, getPublishedTokenDesignById } from "@/lib/ideation-db";
+import { projectContext } from "@/lib/launch-project";
 
 export const metadata: Metadata = {
   title: "Launch a token",
@@ -46,13 +49,37 @@ async function loadDesign(designId: string | undefined): Promise<{
   };
 }
 
+/**
+ * ?project=<id>: the studio project the launch is started from. Owner
+ * scoped, so anyone else (and a session without Clerk) gets the plain form.
+ * When the project has a published linked design and no ?design was given,
+ * that design is committed too, so the launch carries both.
+ */
+async function loadProject(projectId: string | undefined): Promise<{
+  project?: ProjectContext;
+  designId?: string;
+}> {
+  if (!projectId || !/^[0-9a-f-]{36}$/.test(projectId) || !isAuthConfigured()) return {};
+  const user = await getSessionUser();
+  if (!user) return {};
+  const row = await getProject(projectId, user.id);
+  if (!row) return {};
+  const linked = await getLinkedTokenDesign(row.id);
+  const designId =
+    linked && linked.status === "published" && linked.published_hash && linked.slug
+      ? linked.id
+      : undefined;
+  return { project: projectContext(row), designId };
+}
+
 export default async function LaunchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ design?: string }>;
+  searchParams: Promise<{ design?: string; project?: string }>;
 }) {
-  const { design } = await searchParams;
-  const { prefill, designCommitment } = await loadDesign(design);
+  const params = await searchParams;
+  const { project, designId } = await loadProject(params.project);
+  const { prefill, designCommitment } = await loadDesign(params.design ?? designId);
 
   return (
     <div className="container py-14 md:py-20">
@@ -93,7 +120,7 @@ export default async function LaunchPage({
       </div>
 
       <div className="mt-10 md:mt-12">
-        <LaunchForm prefill={prefill} designCommitment={designCommitment} />
+        <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} />
       </div>
     </div>
   );

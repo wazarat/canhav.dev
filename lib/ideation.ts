@@ -1,6 +1,12 @@
 import { keccak256, stringToBytes } from "viem";
 
-import { kitsForSectors, normalizeProjectKit, type ProjectKit, validateProjectKit } from "@/lib/kits";
+import {
+  kitsForSectors,
+  normalizeProjectKit,
+  type ProductShape,
+  type ProjectKit,
+  validateProjectKit,
+} from "@/lib/kits";
 import { sortValue } from "@/lib/journey";
 import {
   LEGACY_SECTOR_MAP,
@@ -781,4 +787,26 @@ export function emptyTokenDesignDoc(name = ""): TokenDesignDoc {
     legal: { counsel: "" },
     postLaunch: {},
   };
+}
+
+/**
+ * What a launch carries about the studio project it was started from: the
+ * chosen sectors, subsectors and product shapes with their labels, and the
+ * public URL when the project is published. Built server-side by
+ * lib/launch-project.ts; shared with client components, so it lives here
+ * rather than in a server-only module.
+ */
+export interface ProjectContext {
+  id: string;
+  name: string;
+  status: "draft" | "published";
+  slug: string | null;
+  sectors: Sector[];
+  subsectors: Subsector[];
+  shapes: ProductShape[];
+  sectorLabels: string[];
+  subsectorLabels: string[];
+  shapeLabels: string[];
+  /** https://www.canhav.com/p/<slug> when published, else null. */
+  publicUrl: string | null;
 }
