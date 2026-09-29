@@ -305,4 +305,11 @@ event window so judges can verify it.
   value rows show the label muted instead of punctuated, and
   `npm run check:copy` fails when either comes back.
 
+- Sept 28, 2026. Bonding-curve launcher contract. `CurveLauncher` puts a
+  token's supply on a constant-product curve with virtual reserves, taxes buys
+  in the first minute and holds the tax for graduation, takes the developer's
+  first buy inside the launch transaction, and at 0.1 ETH raised seeds a
+  LaunchAMM pool whose shares it keeps forever, so that liquidity can never be
+  withdrawn. 51 tests including seven fuzz invariants; deploy script ready.
+
 This list grows as work lands on the branch.
