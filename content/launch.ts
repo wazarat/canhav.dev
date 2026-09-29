@@ -290,6 +290,116 @@ export const MCP_CONNECT = {
   landingPointer: "Every launch is readable over MCP.",
 } as const;
 
+/**
+ * The full connection guide, a popup opened from the project's MCP card.
+ * Reading and writing are separate sections because writing is a separate
+ * decision the owner makes per project (Agent changes on the project page).
+ */
+export const MCP_GUIDE = {
+  open: "Open the full guide",
+  title: "Connect your agent to this project",
+  lead: "Everything from a first install to an agent that fills in this project for you. Reading works as soon as you connect. Writing is a separate step that you switch on.",
+  close: "Close",
+  sections: {
+    before: {
+      title: "Before you start",
+      items: [
+        "A CanHav account, the one that owns this project.",
+        "Claude Code installed on your computer. The command below installs it on macOS and Linux.",
+        "A terminal open in the folder where you are building this project, so the agent can read your code too.",
+      ],
+    },
+    connect: {
+      title: "Connect",
+      add: "Add this project's server",
+      addNote: "Run this once in your terminal. It saves the server for the folder you are in.",
+      authTitle: "Sign in",
+      auth: [
+        "Start Claude Code by typing claude in the same folder.",
+        "Type /mcp and press enter.",
+        "Pick this project's server from the list, then pick Authenticate.",
+        "Your browser opens. Sign in with the CanHav account that owns this project and approve.",
+        "Back in the terminal the server shows as connected.",
+      ],
+      check: "Check that it is connected",
+      checkCommand: "claude mcp list",
+    },
+    read: {
+      title: "Read",
+      lead: "Reading needs no setting. These prompts are a good first three.",
+      status: "What is left before launch",
+      pack: "Load the resource pack",
+      packNone: "The resource pack opens once this project has a product shape, under What are you building in Basics.",
+      review: "Walk the pre-launch review",
+      reviewNote: "This one is a slash command. Type it in Claude Code.",
+    },
+    write: {
+      title: "Write",
+      lead: "An agent can fill in the project steps, tick build steps and edit the linked token design. It never publishes. You choose how it writes, and you can change your mind at any time.",
+      modeLabel: "Agent writes for this project",
+      loading: "Checking the setting",
+      unavailable: "Agent writes are not open on this project yet.",
+      off: "Writes are off, so the agent can only read. Pick a mode above to let it write.",
+      propose: "The agent proposes. Each change waits under Agent changes on this page until you accept or reject it.",
+      direct: "The agent writes straight into the draft. Each change is listed under Agent changes on this page.",
+      already: "Added the server before writing was available? You do not need to add it again. Type /mcp in Claude Code, pick the server and reconnect, and the write tools appear.",
+      fill: "Fill in the architecture step",
+      steps: "Tick the build steps that are done",
+      token: "Work on the linked token design",
+      review: "Review what the agent sent",
+      reviewBody: "Scroll to Agent changes on this page. Proposals show the current value next to the agent's value.",
+      goToChanges: "Go to Agent changes",
+      cannot: "What an agent cannot do",
+      cannotItems: [
+        "Publish or unpublish.",
+        "Choose sectors, subsectors or what you are building.",
+        "Tick the distribution acknowledgement.",
+        "Link or unlink a token design.",
+      ],
+    },
+    other: {
+      title: "Other apps",
+      body: "The Claude desktop app and other MCP clients can use the same server. Add it as a custom connector with this address and sign in with the same account.",
+      url: "Server address",
+    },
+    trouble: {
+      title: "If something goes wrong",
+      items: [
+        {
+          q: "Sign in fails or the browser never opens",
+          a: "Type /mcp, pick the server and choose Authenticate again. Make sure the browser is signed in to the CanHav account that owns this project.",
+        },
+        {
+          q: "The agent says the project does not belong to you",
+          a: "You are signed in with a different CanHav account. Sign out in the browser, then authenticate again with the right one.",
+        },
+        {
+          q: "The write tools are missing",
+          a: "Type /mcp, pick the server and reconnect. If they are still missing, restart Claude Code.",
+        },
+        {
+          q: "The agent says writes are off",
+          a: "Pick Propose changes or Write directly in the Write section of this guide.",
+        },
+        {
+          q: "You renamed the project and want a matching server name",
+          a: "Remove the old server with the command below, then add it again from this guide.",
+        },
+      ],
+      remove: "Remove this server",
+    },
+  },
+  removeCommand: (projectId: string, name: string) => `claude mcp remove ${mcpAlias(name, projectId)}`,
+  reviewCommand: (projectId: string, name: string) =>
+    `/mcp__${mcpAlias(name, projectId)}__prelaunch_review`,
+  fillPrompt: (projectId: string, name: string) =>
+    `Read this repository, then use the ${mcpAlias(name, projectId)} get_project tool to see the draft. Use update_project to fill in the architecture step from what the code actually does. Contracts, external dependencies, oracles, admin functions and upgradeability. Where nothing exists yet, say so plainly. Add a short note explaining each answer.`,
+  stepsPrompt: (projectId: string, name: string) =>
+    `Use the ${mcpAlias(name, projectId)} get_build_steps tool. For each step, check this repository for written evidence that it is done. Use set_build_steps to tick only the ones you can point to, and tell me which file proves each.`,
+  tokenPrompt: (projectId: string, name: string) =>
+    `Use the ${mcpAlias(name, projectId)} get_linked_token_design and get_design_constraints tools. Propose a supply, an allocation split that totals 100 and vesting for each cohort with update_linked_token_design, then run check_design and tell me the warnings.`,
+} as const;
+
 export const LAUNCH_COPY = {
   kicker: "Launchpad",
   title: "Launch a token",

@@ -1,9 +1,13 @@
 "use client";
 
-import { Cable } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Cable } from "lucide-react";
+
+import { McpGuideModal } from "@/components/launch/McpGuideModal";
+import { Button } from "@/components/ui/Button";
 
 import { CopyLine } from "@/components/ui/CopyLine";
-import { MCP_CONNECT } from "@/content/launch";
+import { MCP_CONNECT, MCP_GUIDE } from "@/content/launch";
 import { cn } from "@/lib/utils";
 
 /**
@@ -63,6 +67,7 @@ export function McpConnectCard({
   className?: string;
 }) {
   const l = lines(target);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   return (
     <div className={cn("glass rounded-2xl border border-ink-700/70 p-5 md:p-6", className)}>
@@ -86,6 +91,21 @@ export function McpConnectCard({
           <CopyLine label={l.kitLabel} text={l.kitPrompt} mono={false} />
         ) : null}
       </div>
+
+      {target.kind === "project" && !compact ? (
+        <div className="mt-4">
+          <Button size="sm" variant="outline" onClick={() => setGuideOpen(true)}>
+            <BookOpen aria-hidden className="h-3.5 w-3.5" /> {MCP_GUIDE.open}
+          </Button>
+          <McpGuideModal
+            open={guideOpen}
+            onClose={() => setGuideOpen(false)}
+            projectId={target.id}
+            name={target.name}
+            hasKit={target.hasKit === true}
+          />
+        </div>
+      ) : null}
 
       <p className="mt-4 text-xs leading-relaxed text-ink-500">
         {l.note}{" "}

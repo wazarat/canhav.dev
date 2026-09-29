@@ -90,6 +90,12 @@ export function AgentChangesPanel({
   }, [base]);
 
   useEffect(() => {
+    const onMode = () => void load();
+    window.addEventListener(AGENT_COPY.modeEvent, onMode);
+    return () => window.removeEventListener(AGENT_COPY.modeEvent, onMode);
+  }, [load]);
+
+  useEffect(() => {
     void load();
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") void load();
@@ -156,7 +162,8 @@ export function AgentChangesPanel({
 
   return (
     <section
-      className="glass mt-10 max-w-2xl rounded-2xl border border-ink-800/70 p-5"
+      id={AGENT_COPY.anchor}
+      className="glass mt-10 scroll-mt-24 max-w-2xl rounded-2xl border border-ink-800/70 p-5"
       aria-label={AGENT_COPY.title}
     >
       <h3 className="text-sm font-medium text-ink-100">{AGENT_COPY.title}</h3>

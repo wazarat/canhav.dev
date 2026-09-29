@@ -531,6 +531,10 @@ export const STUDIO_COPY = {
 /** Agent changes panel on a project's studio page, and the stale draft notice (M39). */
 export const AGENT_COPY = {
   title: "Agent changes",
+  /** Anchor the MCP guide scrolls to. */
+  anchor: "agent-changes",
+  /** Window event the MCP guide fires after it changes the mode. */
+  modeEvent: "canhav:agent-mode",
   body: "An agent connected to this project over MCP can fill in the project, tick build steps and edit the linked token design. You decide how. Agents never publish.",
   modeLabel: "How agents write",
   modes: [
