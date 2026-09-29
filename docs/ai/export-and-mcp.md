@@ -86,6 +86,30 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 
 The scoped server also registers one prompt, `prelaunch_review`. In Claude Code it appears as a slash command named after the server; it walks the passes against the open repository and reports a verdict with evidence for each. Clients that do not surface prompts get the same content through `get_prelaunch_review`.
 
+### Writing to a draft
+
+An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how on the project page in the studio, under Agent changes.
+
+| Mode | What happens to a change |
+|------|--------------------------|
+| Propose changes | It waits in the studio. The draft is unchanged until the owner accepts it. This is the default. |
+| Write directly | It lands in the draft at once and is listed in the studio. |
+| Off | The agent reads only. Write tools return an error that says so. |
+
+| Tool | What it does |
+|------|--------------|
+| `update_project` | Change fields of the project draft. Basics (name, what it does, personas, who pays, why this chain, stage), architecture, security, reality and the verification fields. Send only the fields being changed. Lists replace the stored list |
+| `get_build_steps` | The build steps for the project's product shapes with their ids and whether each is ticked |
+| `set_build_steps` | Tick or untick build steps by id |
+| `update_linked_token_design` | Change fields of the linked token design draft |
+| `get_agent_changes` | The owner's mode and the recent agent changes with their status (proposed, applied, accepted, rejected) |
+
+Every write tool takes an optional `note` for the owner and answers with `outcome`, either `proposed` or `applied`.
+
+What an agent cannot do. Publish or unpublish. Choose sectors, subsectors or product shapes. Tick the distribution acknowledgement. Link or unlink a token design. These stay with a person in the studio.
+
+If an agent writes while the editor is open, the editor takes the new draft when nothing is unsaved. If there is unsaved typing, saving pauses and the editor asks for a reload, so neither side overwrites the other without anyone seeing it.
+
 ### Resource pack fields
 
 `get_resource_pack` and `get_resource_catalog` share one vocabulary. A project is in one or more sectors; `sector` stays as the first of them for older readers and `sectors` lists all of them. A research kit opens for each sector that has one (`credit` for Credit, `liquidity` for Liquidity) once a subsector of that sector is chosen; `kit` is the first and `kits` lists all of them, and a catalog entry that belongs to one kit's own files carries `kits`. A product shape can be reached from subsectors of different sectors (Curated vault and Earn inside your app from both Lending and Vaults) and carries the same resources, build steps and review passes either way, minus the other kit's own files. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `uniswap`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain), `testnet_only` and `self_deploy` (the protocol has no deployment on testnet 46630, so the team deploys these contracts itself and records them in its own manifest). A project may build several shapes at once. `shape` and `shapeLabel` stay as the first of them for older readers; `shapes` and `shapeLabels` list all of them in table order, and the resources, environment families, build steps and review passes are the union across them, each once. `environment.families` lists, for Robinhood Chain and each protocol family the shapes rely on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. Rows exist for `robinhood`, `morpho`, `pendle`, `uniswap` and `boros`, each with its own `devPath` (Uniswap's starts with a self-deploy on testnet); a shape plan never includes `boros`, which runs on Arbitrum, but `get_resource_catalog` lists every row. `checklist` carries the ordered build steps for the shape with `done` and `total` and, per item, the step it informs, the resource ids that help and whether the team has ticked it; every one of the thirteen shapes has a list, 134 steps in all. `review` carries the passes for the shape with a progress block (`pass`, `fail`, `na`, `open`, `total`) and, per pass, the detail, the defining resources with URLs and the verdict or `null`. Fields are only ever added, never renamed.

@@ -10,7 +10,9 @@ import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/Option
 import { SelectField } from "@/components/ideation/SelectField";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
 import { TextField } from "@/components/ideation/TextField";
+import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
+import { useDraftSave } from "@/components/ideation/useDraftSave";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
@@ -206,6 +208,7 @@ export function TokenDesignEditor({
   initialStatus,
   initialSlug,
   deployedAddress,
+  initialRev,
   linkPanel,
 }: {
   id: string;
@@ -213,19 +216,15 @@ export function TokenDesignEditor({
   initialStatus: "draft" | "published";
   initialSlug: string | null;
   deployedAddress?: string | null;
+  /** The draft's agent revision at load. Undefined before the database update (M39). */
+  initialRev?: number;
   linkPanel?: React.ReactNode;
 }) {
   const { doc, patch, patchSection } = useDraftDoc(initialDoc);
   const [step, setStep] = useState(0);
 
-  const saveState = useAutosave(doc, async (d) => {
-    const res = await fetch(`/api/ideation/token-designs/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ doc: d }),
-    });
-    if (!res.ok) throw new Error("save failed");
-  });
+  const { save, stale } = useDraftSave("token-designs", id, initialRev);
+  const saveState = useAutosave(doc, save);
   const { status: publishStatus, publish, unpublish } = usePublish("token-designs", id);
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
@@ -276,6 +275,7 @@ export function TokenDesignEditor({
       onSelectStep={(i) => setStep(Math.max(0, Math.min(steps.length - 1, i)))}
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        {stale ? <StaleDraftNotice /> : null}
         <div className="max-w-2xl space-y-6">
           {step === 0 && (
             <>

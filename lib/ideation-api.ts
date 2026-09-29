@@ -30,6 +30,7 @@ import {
  */
 
 const MAX_DOC_BYTES = 200_000;
+const STALE_DRAFT = "This draft changed outside this editor. Reload to see the latest.";
 
 export async function authGate(): Promise<SessionUser | NextResponse> {
   if (!isAuthConfigured())
@@ -93,8 +94,11 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       if (raw.length > MAX_DOC_BYTES)
         return NextResponse.json({ error: "Document too large." }, { status: 413 });
       let doc: IdeationDoc;
+      let rev: number | undefined;
       try {
-        doc = JSON.parse(raw).doc;
+        const body = JSON.parse(raw);
+        doc = body.doc;
+        if (Number.isInteger(body.rev) && body.rev >= 0) rev = body.rev;
       } catch {
         return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
       }
@@ -102,11 +106,15 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       // envelope is checked so a stray payload can't change the doc type.
       if (!doc || doc.kind !== kind || doc.version !== 1)
         return NextResponse.json({ error: "Wrong document type." }, { status: 400 });
-      const ok =
+      const result =
         kind === "project"
-          ? await updateProjectDraft(id, gate.id, doc as never)
-          : await updateTokenDesignDraft(id, gate.id, doc as never);
-      if (!ok) return notFound();
+          ? await updateProjectDraft(id, gate.id, doc as never, rev)
+          : await updateTokenDesignDraft(id, gate.id, doc as never, rev);
+      if (result === "missing") return notFound();
+      // An agent write landed after this editor loaded. Refuse, so the
+      // editor's older copy does not overwrite it.
+      if (result === "stale")
+        return NextResponse.json({ error: STALE_DRAFT, stale: true }, { status: 409 });
       return NextResponse.json({ ok: true });
     },
 

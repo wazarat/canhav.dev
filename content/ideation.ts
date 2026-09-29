@@ -528,6 +528,47 @@ export const STUDIO_COPY = {
   },
 } as const;
 
+/** Agent changes panel on a project's studio page, and the stale draft notice (M39). */
+export const AGENT_COPY = {
+  title: "Agent changes",
+  body: "An agent connected to this project over MCP can fill in the project, tick build steps and edit the linked token design. You decide how. Agents never publish.",
+  modeLabel: "How agents write",
+  modes: [
+    { value: "propose", label: "Propose changes" },
+    { value: "direct", label: "Write directly" },
+    { value: "off", label: "Off" },
+  ],
+  modeHints: {
+    propose: "Each change waits here until you accept or reject it.",
+    direct: "Changes land in the draft at once and are listed here.",
+    off: "Agents can read this project and change nothing.",
+  },
+  unavailable: "Agent changes open once the database update for them has run.",
+  pending: "Waiting for you",
+  nonePending: "No changes are waiting.",
+  history: "Earlier changes",
+  accept: "Accept",
+  reject: "Reject",
+  busy: "Working",
+  was: "Was",
+  now: "Now",
+  empty: "Empty",
+  targets: { project: "Project", token_design: "Token design" },
+  kinds: { fields: "Fields", build_steps: "Build steps" },
+  statuses: {
+    proposed: "Proposed",
+    applied: "Written by agent",
+    accepted: "Accepted",
+    rejected: "Rejected",
+  },
+  failed: "Could not update this change. Reload and try again.",
+  modeFailed: "Could not save the setting. Reload and try again.",
+  tokenAccepted: "Accepted. The token design draft has the change.",
+  stale:
+    "This draft changed outside this editor, so saving is paused. Reload to see the latest. Edits made here since the change are not saved.",
+  reload: "Reload",
+} as const;
+
 /** The three launch tracks, in launch order: tokens, then projects, then agents. */
 export const STUDIO_TRACKS = {
   token: {

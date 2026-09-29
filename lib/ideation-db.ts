@@ -27,6 +27,9 @@ export interface ProjectRow {
   published_hash: string | null;
   verify_wallet: string | null;
   github_repo: string | null;
+  /** Absent on rows read before scripts/db-setup.mjs added the columns (M39). */
+  agent_write_mode?: "off" | "propose" | "direct";
+  agent_rev?: number;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +46,8 @@ export interface TokenDesignRow {
   deployed_by_wallet: string | null;
   deployed_snapshot_hash: string | null;
   deployed_at: string | null;
+  /** Absent on rows read before scripts/db-setup.mjs added the column (M39). */
+  agent_rev?: number;
   created_at: string;
   updated_at: string;
 }
@@ -109,23 +114,46 @@ export async function getProject(id: string, ownerId: string): Promise<ProjectRo
   return mapProjectRow(rows[0] as ProjectRow | undefined);
 }
 
+/** What a draft save came to. "stale" means an agent write landed after the editor loaded. */
+export type DraftSaveResult = "saved" | "stale" | "missing";
+
+/**
+ * Autosave from the editor. `rev` is the agent_rev the editor loaded with;
+ * when given, the save is refused if an agent write has landed since, so the
+ * editor's older copy cannot overwrite it. Omitted by editors that loaded a
+ * row from before the agent_rev column existed.
+ */
 export async function updateProjectDraft(
   id: string,
   ownerId: string,
   doc: ProjectDoc,
-): Promise<boolean> {
+  rev?: number,
+): Promise<DraftSaveResult> {
   const sql = getDb();
-  if (!sql) return false;
-  const rows = await sql`
-    update launchpad.projects
-    set draft_doc = ${JSON.stringify(doc)},
-        github_repo = ${doc.githubRepo ?? null},
-        verify_wallet = ${doc.verifyWallet ?? null},
-        updated_at = now()
-    where id = ${id} and owner_id = ${ownerId}
-    returning id
-  `;
-  return rows.length > 0;
+  if (!sql) return "missing";
+  const rows =
+    rev === undefined
+      ? await sql`
+          update launchpad.projects
+          set draft_doc = ${JSON.stringify(doc)},
+              github_repo = ${doc.githubRepo ?? null},
+              verify_wallet = ${doc.verifyWallet ?? null},
+              updated_at = now()
+          where id = ${id} and owner_id = ${ownerId}
+          returning id
+        `
+      : await sql`
+          update launchpad.projects
+          set draft_doc = ${JSON.stringify(doc)},
+              github_repo = ${doc.githubRepo ?? null},
+              verify_wallet = ${doc.verifyWallet ?? null},
+              updated_at = now()
+          where id = ${id} and owner_id = ${ownerId} and agent_rev = ${rev}
+          returning id
+        `;
+  if (rows.length > 0) return "saved";
+  if (rev === undefined) return "missing";
+  return (await getProject(id, ownerId)) ? "stale" : "missing";
 }
 
 export async function deleteProjectDraft(id: string, ownerId: string): Promise<boolean> {
@@ -219,16 +247,27 @@ export async function updateTokenDesignDraft(
   id: string,
   ownerId: string,
   doc: TokenDesignDoc,
-): Promise<boolean> {
+  rev?: number,
+): Promise<DraftSaveResult> {
   const sql = getDb();
-  if (!sql) return false;
-  const rows = await sql`
-    update launchpad.token_designs
-    set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
-    where id = ${id} and owner_id = ${ownerId}
-    returning id
-  `;
-  return rows.length > 0;
+  if (!sql) return "missing";
+  const rows =
+    rev === undefined
+      ? await sql`
+          update launchpad.token_designs
+          set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
+          where id = ${id} and owner_id = ${ownerId}
+          returning id
+        `
+      : await sql`
+          update launchpad.token_designs
+          set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
+          where id = ${id} and owner_id = ${ownerId} and agent_rev = ${rev}
+          returning id
+        `;
+  if (rows.length > 0) return "saved";
+  if (rev === undefined) return "missing";
+  return (await getTokenDesign(id, ownerId)) ? "stale" : "missing";
 }
 
 export async function deleteTokenDesignDraft(id: string, ownerId: string): Promise<boolean> {

@@ -1,6 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+
+import { AgentChangesPanel } from "@/components/ideation/AgentChangesPanel";
+import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
+import { useDraftSave } from "@/components/ideation/useDraftSave";
 
 import { EditorShell } from "@/components/ideation/EditorShell";
 import { SelectField } from "@/components/ideation/SelectField";
@@ -146,25 +150,46 @@ export function ProjectEditor({
   initialDoc,
   initialStatus,
   initialSlug,
+  initialRev,
   linkPanel,
 }: {
   id: string;
   initialDoc: ProjectDoc;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
+  /** The draft's agent revision at load. Undefined before the database update (M39). */
+  initialRev?: number;
   linkPanel?: React.ReactNode;
 }) {
-  const { doc, patch, patchSection } = useDraftDoc(initialDoc);
+  const { doc, patch, patchSection, setDoc } = useDraftDoc(initialDoc);
   const [step, setStep] = useState(0);
 
-  const saveState = useAutosave(doc, async (d) => {
-    const res = await fetch(`/api/ideation/projects/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ doc: d }),
-    });
-    if (!res.ok) throw new Error("save failed");
-  });
+  const { save, stale, adopt, rev } = useDraftSave("projects", id, initialRev);
+  const saveState = useAutosave(doc, save);
+  const [heldRev, setHeldRev] = useState(initialRev);
+
+  /**
+   * An agent wrote to this draft while the editor was open. With nothing
+   * unsaved here the editor takes the latest draft and carries on. With
+   * unsaved typing it leaves the page alone; the next save is refused and
+   * the stale notice explains.
+   */
+  const pullLatest = useCallback(async () => {
+    if (saveState === "saving" || saveState === "error") return;
+    try {
+      const res = await fetch(`/api/ideation/projects/${id}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const { row } = (await res.json()) as {
+        row: { draft_doc: ProjectDoc; agent_rev?: number };
+      };
+      if (typeof row.agent_rev !== "number" || row.agent_rev === rev.current) return;
+      adopt(row.agent_rev);
+      setHeldRev(row.agent_rev);
+      setDoc(row.draft_doc);
+    } catch {
+      // The next poll tries again.
+    }
+  }, [id, saveState, adopt, rev, setDoc]);
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
@@ -272,6 +297,7 @@ export function ProjectEditor({
           <div className="px-2 pb-2">{rail}</div>
         </details>
       ) : null}
+      {stale ? <StaleDraftNotice /> : null}
       <div className="max-w-2xl space-y-6">
         {step === 0 && (
           <>
@@ -710,6 +736,14 @@ export function ProjectEditor({
           </div>
         )}
       </div>
+      <AgentChangesPanel
+        projectId={id}
+        doc={doc}
+        rev={heldRev}
+        paused={stale}
+        onApply={setDoc}
+        onRemoteChange={pullLatest}
+      />
       {linkPanel}
       </div>
       {rail ? (

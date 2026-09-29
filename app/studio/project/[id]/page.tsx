@@ -37,6 +37,7 @@ export default async function ProjectEditorPage({
       initialDoc={row.draft_doc}
       initialStatus={row.status}
       initialSlug={row.slug}
+      initialRev={row.agent_rev}
       linkPanel={
         <>
           <LinkPanel

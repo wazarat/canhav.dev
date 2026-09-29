@@ -262,6 +262,46 @@ await sql`
     on launchpad.token_metadata (creator_address, created_at desc)
 `;
 
+// Agent writes (M39). agent_write_mode is the owner's choice per project:
+// off, propose (changes wait for the owner) or direct. agent_rev counts the
+// writes that reached a draft from outside the open editor, so an editor
+// holding an older copy is refused instead of overwriting them.
+await sql`
+  alter table launchpad.projects
+    add column if not exists agent_write_mode text not null default 'propose'
+      check (agent_write_mode in ('off','propose','direct')),
+    add column if not exists agent_rev int not null default 0
+`;
+
+await sql`
+  alter table launchpad.token_designs
+    add column if not exists agent_rev int not null default 0
+`;
+
+// Every change an agent sent through a project's MCP server, proposals and
+// direct writes alike. patch is the validated change, never a whole doc.
+// Rows go with their project.
+await sql`
+  create table if not exists launchpad.agent_changes (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    owner_id text not null,
+    target text not null check (target in ('project','token_design')),
+    target_id uuid not null,
+    kind text not null check (kind in ('fields','build_steps')),
+    patch jsonb not null,
+    note text check (note is null or char_length(note) <= 400),
+    status text not null check (status in ('proposed','applied','accepted','rejected')),
+    created_at timestamptz not null default now(),
+    resolved_at timestamptz
+  )
+`;
+
+await sql`
+  create index if not exists agent_changes_project_idx
+    on launchpad.agent_changes (project_id, created_at desc)
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

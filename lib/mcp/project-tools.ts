@@ -32,6 +32,15 @@ import {
   registerMeteredPrompt,
   registerMeteredTool,
 } from "@/lib/mcp/register";
+import {
+  AGENT_CHANGE_LIMITS,
+  buildStepsPatchSchema,
+  changeLines,
+  projectPatchSchema,
+  tokenDesignPatchSchema,
+} from "@/lib/agent-writes";
+import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
+import { submitAgentChange } from "@/lib/agent-writes-server";
 import { checklistFor } from "@/content/kits/checklists";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
@@ -324,6 +333,156 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         warnings: designWarnings(candidate),
         deployability: designDeployability(candidate),
       });
+    },
+    scope,
+  );
+
+  // -------------------------------------------------------------------------
+  // Writes (M39). Drafts only. The owner's mode on the project decides
+  // whether a change is proposed or written. Nothing here publishes.
+
+  const noteField = z
+    .string()
+    .max(AGENT_CHANGE_LIMITS.note.max)
+    .optional()
+    .describe("One or two sentences for the owner on why this change is right.");
+
+  const WRITE_RULES =
+    "Drafts only, nothing is published. The project owner chose in the studio whether agent changes are proposed for review or written at once, and the result says which happened. Send only the fields you are changing.";
+
+  registerMeteredTool(
+    server,
+    "update_project",
+    {
+      title: "Change this project's draft",
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, personas, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, testnetContracts, verifyWallet). Lists replace the stored list. Sectors, subsectors, product shapes and the distribution acknowledgement can only be set by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "project", kind: "fields", patch: args.changes },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({
+        outcome: result.outcome,
+        changeId: result.changeId,
+        message: result.message,
+        changed: changeLines(project.draft_doc, args.changes).map((l) => l.path),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_build_steps",
+    {
+      title: "This project's build steps",
+      description:
+        "The build steps for this project's product shapes, in order, each with its id, what done looks like, the editor step it informs, and whether it is ticked. Use the ids with set_build_steps. Takes no arguments.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const kit = loaded.value.project.draft_doc.kit;
+      const items = checklistFor(kitShapes(kit));
+      if (!kit || items.length === 0) return errorResult(NO_SHAPE_HINT);
+      return jsonResult({
+        progress: checklistProgress(items, kit),
+        steps: items.map((i) => ({
+          id: i.id,
+          title: i.title,
+          detail: i.detail,
+          editorStep: i.step,
+          done: kit.checklist?.[i.id] === true,
+        })),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "set_build_steps",
+    {
+      title: "Tick or untick build steps",
+      description: `Mark build steps of this project as done or not done, by id from get_build_steps. Tick a step when the work is written down and you can point to it, not when it is started. ${WRITE_RULES}`,
+      inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "project", kind: "build_steps", patch: { done: args.done, undone: args.undone } },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({
+        outcome: result.outcome,
+        changeId: result.changeId,
+        message: result.message,
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "update_linked_token_design",
+    {
+      title: "Change the linked token design's draft",
+      description: `Change fields of the token design linked to this project. Name and ticker, rationale, supply and allocations, vesting, distribution, market, governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. ${WRITE_RULES} Run check_design afterwards for warnings.`,
+      inputSchema: z.object({ changes: tokenDesignPatchSchema, note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "token_design", kind: "fields", patch: args.changes },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({
+        outcome: result.outcome,
+        changeId: result.changeId,
+        message: result.message,
+        changed: changeLines(design?.draft_doc, args.changes).map((l) => l.path),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_agent_changes",
+    {
+      title: "Agent changes on this project",
+      description:
+        "How the owner lets agents write to this project (off, propose or direct) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. Takes no arguments.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      const changes = await listAgentChanges(project.id, project.owner_id);
+      return jsonResult({ mode: agentStateOf(project).mode, changes });
     },
     scope,
   );

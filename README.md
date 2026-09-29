@@ -338,4 +338,11 @@ event window so judges can verify it.
   chain are optional. The waitlist is gone, anyone can sign up at `/sign-up`
   and log in at `/studio`, and `/waitlist` redirects to sign-up.
 
+- Sept 29, 2026. Agent writes. A project's MCP server can change the project
+  draft, tick build steps and change the linked token design. The owner picks
+  per project whether changes are proposed for review or written directly, in
+  a new Agent changes panel on the project page. Agents never publish.
+- Sept 29, 2026. Linked drafts open beside the project. Starting a token
+  design from a project creates and links the draft without leaving the page.
+
 This list grows as work lands on the branch.
