@@ -392,7 +392,7 @@ export function TokenDesignEditor({
                       className="glass rounded-xl border border-ink-800/70 p-4"
                     >
                       <p className="text-sm font-medium text-ink-100">
-                        {COHORT_LABELS[cohort]}: {doc.supply.allocations[cohort]}% of supply
+                        {COHORT_LABELS[cohort]}, {doc.supply.allocations[cohort]}% of supply
                       </p>
                       <div className="mt-3 grid grid-cols-2 gap-3">
                         <NumberField
@@ -777,7 +777,7 @@ export function TokenDesignEditor({
               )}
               {overall ? (
                 <StatusChip tone="warning" variant="block">
-                  Not ready to publish yet: {overall}
+                  Not ready to publish yet. {overall}
                 </StatusChip>
               ) : (
                 <StatusChip tone="success" variant="block">

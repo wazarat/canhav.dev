@@ -50,7 +50,7 @@ export function StatusDeclarationField({
         <Input
           value={value.note ?? ""}
           onChange={(e) => onChange({ status: "in_place", note: e.target.value })}
-          placeholder="One line: what's in place?"
+          placeholder="One line on what is in place"
           maxLength={200}
         />
       )}

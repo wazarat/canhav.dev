@@ -375,7 +375,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const list = view.passes
         .map(
           (p, i) =>
-            `${i + 1}. ${p.title} [${p.verdict ? REVIEW_VERDICT_LABELS[p.verdict] : "open"}]\n   ${p.detail}\n   Defined by: ${p.resources.map((r) => r.url).join(", ")}`,
+            `${i + 1}. ${p.title} [${p.verdict ? REVIEW_VERDICT_LABELS[p.verdict] : "open"}]\n   ${p.detail}\n   Defined by ${p.resources.map((r) => r.url).join(", ")}`,
         )
         .join("\n");
       const text = [

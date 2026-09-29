@@ -176,7 +176,7 @@ export const WORST_CASE_OPTIONS: Array<{ value: WorstCase; label: string }> = [
 export const WORST_CASE_PRESSURE: Record<WorstCase, string> = {
   lose_funds:
     "A bug can lose user funds. Read the declarations below with that " +
-    "sentence in mind: every \"not yet\" is a live risk you're choosing to " +
+    "sentence in mind. Every \"not yet\" is a live risk you're choosing to " +
     "publish, and readers will weigh it exactly that way.",
   lock_funds:
     "A bug can lock funds. Recovery plans and monitoring matter more than " +
@@ -204,7 +204,7 @@ export const ROBINHOOD_MYTH = {
     "customers. Deploying here puts your app in front of nobody by default. " +
     "CanHav is an independent project with no affiliation with Robinhood " +
     "Markets, Inc.; listing here is not a channel to its users either.",
-  ack: "I understand: no built-in distribution, no Robinhood affiliation.",
+  ack: "I understand there is no built-in distribution and no Robinhood affiliation.",
   followUp: "So where will your first hundred users actually come from?",
 } as const;
 
@@ -256,7 +256,7 @@ export const FOUNDER_LEAVES_OPTIONS: Array<{ value: FounderLeavesPolicy; label: 
 ];
 
 export const DISTRIBUTION_EVENT_OPTIONS: Array<{ value: DistributionEvent; label: string }> = [
-  { value: "none", label: "No distribution: creator holds supply" },
+  { value: "none", label: "No distribution, creator holds supply" },
   { value: "airdrop", label: "Airdrop" },
   { value: "fixed_price_sale", label: "Fixed-price sale" },
   { value: "auction", label: "Auction / batch" },
@@ -336,7 +336,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
   low_float: {
     title: "Float under 5%",
     body:
-      "A tiny circulating float makes the quoted price nearly meaningless: a " +
+      "A tiny circulating float makes the quoted price nearly meaningless. A " +
       "small buy moves it violently up, the first unlock moves it violently " +
       "down, and holders discover the fully-diluted valuation was the real " +
       "number all along. Low float + high FDV is the most common launch " +
@@ -344,7 +344,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
     example:
       "Worked example: 3% float at a $10M FDV means $300k of real tokens set " +
       "the price for the other $9.7M. When the month-6 cliff releases 15%, " +
-      "supply grows 6× at once. The chart does the rest. Compare: a 15% " +
+      "supply grows 6× at once. The chart does the rest. By comparison, a 15% " +
       "float absorbs the same unlock as a 2× change.",
   },
   team_cliff_short: {
@@ -356,7 +356,7 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
       "at least as long as investor terms.",
     example:
       "Worked example: team 6-month cliff / 24-month vest vs investors " +
-      "12-month cliff / 24-month vest: the team can sell for six months " +
+      "12-month cliff / 24-month vest. The team can sell for six months " +
       "while investors are still locked. Flip the cliffs (team 12, investors " +
       "6–12) and the signal reverses.",
   },
@@ -377,9 +377,9 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
     title: "Sale with no undersubscription plan",
     body:
       "If the sale doesn't fill, something happens by default, and default " +
-      "outcomes are the worst ones: a half-funded treasury, an accidental " +
+      "outcomes are the worst ones. A half-funded treasury, an accidental " +
       "low-float launch, or a quiet cancellation that burns trust. Decide " +
-      "now: proceed, refund, or postpone.",
+      "now whether to proceed, refund, or postpone.",
     example:
       "Worked example: a 1,000 ETH hard-cap sale raises 180 ETH. Proceed " +
       "anyway → you launch with 18% of planned runway and the same promises. " +
@@ -389,11 +389,11 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
   rationale_unsure: {
     title: "Does this actually need a token?",
     body:
-      "The honest fit test: if a database row, a Stripe account, or a " +
+      "The honest fit test. If a database row, a Stripe account, or a " +
       "points table would do the same job, the token adds regulatory " +
       "surface, sell pressure, and a second product to run, and removes " +
       "nothing. Loyalty-style rewards are the classic false positive. " +
-      "There is a respectable exit here: build the product, list it on " +
+      "There is a respectable exit here. Build the product, list it on " +
       "CanHav as a project, and skip the token until it earns its place.",
     example:
       "Worked example: \"users earn tokens for referrals\" is a points " +
@@ -409,13 +409,13 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
 export const GOVERNANCE_FACTS = [
   "Cannot be minted after deployment",
   "Cannot be paused, frozen, or blacklisted",
-  "Cannot be upgraded: no proxy, no owner",
-  "Source pre-verified: the factory clones a verified implementation",
+  "Cannot be upgraded. No proxy, no owner",
+  "Source pre-verified. The factory clones a verified implementation",
 ] as const;
 
 export const MARKET_FACTS = [
-  "Venue and pairing are platform-fixed: token ⇄ ETH on the launch AMM",
-  "Trading fee: 0.30% to LPs; the opt-in protocol fee is split 70/30 project/platform, enforced in bytecode",
+  "Venue and pairing are platform-fixed. Token ⇄ ETH on the launch AMM",
+  "Trading fee of 0.30% to LPs. The opt-in protocol fee is split 70/30 project/platform, enforced in bytecode",
   "A locked LP position still accrues trading fees to its owner",
 ] as const;
 

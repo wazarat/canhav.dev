@@ -160,7 +160,7 @@ export default async function ProjectPublicPage({
 
         <Section title="Distribution reality">
           <p className="text-sm leading-relaxed text-ink-400">
-            The team has acknowledged: {ROBINHOOD_MYTH.body}
+            The team has acknowledged this. {ROBINHOOD_MYTH.body}
           </p>
           <Prose label={ROBINHOOD_MYTH.followUp} text={doc.firstHundredUsers} />
         </Section>
@@ -207,7 +207,8 @@ export default async function ProjectPublicPage({
                 {optionLabel(UPGRADEABILITY_OPTIONS, doc.architecture.upgradeability)}
               </StatusChip>
               <StatusChip tone={doc.worstCase === "nothing_serious" ? "neutral" : "warning"}>
-                Worst case: {optionLabel(WORST_CASE_OPTIONS, doc.worstCase)}
+                <span className="text-ink-400">Worst case</span>{" "}
+                {optionLabel(WORST_CASE_OPTIONS, doc.worstCase)}
               </StatusChip>
             </div>
           </div>
@@ -219,7 +220,7 @@ export default async function ProjectPublicPage({
               const decl = doc.security[key];
               return (
                 <StatusChip key={key} tone={declTone(decl, doc.worstCase)}>
-                  {label}: {STATUS_DECL_LABELS[decl.status]}
+                  <span className="text-ink-400">{label}</span> {STATUS_DECL_LABELS[decl.status]}
                   {decl.note ? ` (${decl.note})` : ""}
                 </StatusChip>
               );
@@ -237,7 +238,7 @@ export default async function ProjectPublicPage({
               {deploys && (
                 <div>
                   <p className="text-[11px] uppercase tracking-wide text-ink-500">
-                    Factory deploys by {doc.verifyWallet?.slice(0, 10)}…: {deploys.totalCount}
+                    Factory deploys by {doc.verifyWallet?.slice(0, 10)}… ({deploys.totalCount})
                   </p>
                   <ul className="mt-2 space-y-1">
                     {deploys.items.map((t) => (
@@ -273,8 +274,8 @@ export default async function ProjectPublicPage({
                             rel="noreferrer"
                             className="transition-colors hover:text-ink-50"
                           >
-                            {check.name ?? `${check.address.slice(0, 10)}…`}:{" "}
-                            {check.verified ? "verified source" : "unverified"}
+                            {check.name ?? `${check.address.slice(0, 10)}…`}{" "}
+                            {check.verified ? "(verified source)" : "(unverified)"}
                           </a>
                         </StatusChip>
                       ),
@@ -289,7 +290,7 @@ export default async function ProjectPublicPage({
                     rel="noreferrer"
                     className="transition-colors hover:text-ink-50"
                   >
-                    {github.repo}: {commitsLast30Days} commits in the last 30 days
+                    {github.repo}, {commitsLast30Days} commits in the last 30 days
                     {github.pushedAt
                       ? ` · last push ${new Date(github.pushedAt).toLocaleDateString("en-US")}`
                       : ""}

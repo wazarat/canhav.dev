@@ -158,7 +158,7 @@ export default async function TokenDesignPublicPage({
     key: f.key,
     label:
       f.key === "other" && doc.supply.allocations.otherLabel
-        ? `Other: ${doc.supply.allocations.otherLabel}`
+        ? `Other (${doc.supply.allocations.otherLabel})`
         : f.label,
     pct: doc.supply.allocations[f.key] || 0,
   })).filter((a) => a.pct > 0);
@@ -223,7 +223,7 @@ export default async function TokenDesignPublicPage({
         />
         <StatTile label="Float at launch" value={fmtPct(d.floatAtLaunchPct)} />
         <StatTile
-          label="FDV : float"
+          label="FDV to float"
           value={
             d.fdvToFloat
               ? `${d.fdvToFloat % 1 === 0 ? d.fdvToFloat : d.fdvToFloat.toFixed(1)}×`
@@ -292,7 +292,8 @@ export default async function TokenDesignPublicPage({
                 <ul className="mt-3 space-y-2">
                   {doc.supply.policy === "fixed" ? (
                     <FactRow tone="success">
-                      Fixed supply: {doc.supply.total.toLocaleString("en-US")}
+                      <span className="text-ink-400">Fixed supply</span>{" "}
+                      {doc.supply.total.toLocaleString("en-US")}
                     </FactRow>
                   ) : (
                     <FactRow tone="warning">
@@ -319,7 +320,7 @@ export default async function TokenDesignPublicPage({
               <div>
                 <p className="text-xs font-medium text-ink-100">Stated by the team</p>
                 <p className="mt-1 text-xs text-ink-500">
-                  Published commitments: snapshotted and tamper-evident, but not
+                  Published commitments are snapshotted and tamper-evident, but not
                   enforced by the contract.
                 </p>
                 <ul className="mt-3 space-y-2">
@@ -327,14 +328,15 @@ export default async function TokenDesignPublicPage({
                   <FactRow tone="neutral">Distribution and market plans</FactRow>
                   {GOVERNANCE_FIELDS.map(({ key, label }) => (
                     <FactRow key={key} tone="neutral">
-                      {label}: {STATUS_DECL_LABELS[doc.governance[key].status]}
+                      <span className="text-ink-400">{label}</span>{" "}
+                      {STATUS_DECL_LABELS[doc.governance[key].status]}
                       {doc.governance[key].note ? (
                         <span className="text-ink-400"> ({doc.governance[key].note})</span>
                       ) : null}
                     </FactRow>
                   ))}
                   <FactRow tone="neutral">
-                    Legal: {optionLabel(COUNSEL_OPTIONS, doc.legal.counsel)}
+                    <span className="text-ink-400">Legal</span> {optionLabel(COUNSEL_OPTIONS, doc.legal.counsel)}
                   </FactRow>
                 </ul>
               </div>

@@ -43,7 +43,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: "Credit",
     monoLabel: "markets · util",
     description:
-      "Money markets and lending books: utilization, borrow and supply APRs, collateral health and bad-debt exposure.",
+      "Money markets and lending books. Utilization, borrow and supply APRs, collateral health and bad-debt exposure.",
     badge: "8 tracked",
     tags: ["lending", "cdp"],
     tint: "blue",
@@ -53,7 +53,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: "Staking",
     monoLabel: "staking · apr",
     description:
-      "Validator and liquid-staking flows: staked supply, real yield, unstaking queues and reward curves.",
+      "Validator and liquid-staking flows. Staked supply, real yield, unstaking queues and reward curves.",
     badge: "6 tracked",
     tags: ["liquid staking", "restaking"],
     tint: "violet",
@@ -63,7 +63,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: "Derivatives",
     monoLabel: "perps · live",
     description:
-      "Perps and options venues: open interest, funding rates, basis and liquidation depth.",
+      "Perps and options venues. Open interest, funding rates, basis and liquidation depth.",
     badge: "7 tracked",
     tags: ["perps", "options"],
     tint: "cyan",
@@ -73,7 +73,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: "RWAs",
     monoLabel: "rwa · tvl",
     description:
-      "Tokenized treasuries and off-chain assets: backing, attestation cadence, issuer and custody.",
+      "Tokenized treasuries and off-chain assets. Backing, attestation cadence, issuer and custody.",
     badge: "9 tracked",
     tags: ["treasuries", "private credit"],
     tint: "blue",
@@ -83,7 +83,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: "Liquidity",
     monoLabel: "tvl · 90d",
     description:
-      "DEX pools and routing: TVL, depth at price, fees, volume and impermanent-loss exposure.",
+      "DEX pools and routing. TVL, depth at price, fees, volume and impermanent-loss exposure.",
     badge: "8 tracked",
     tags: ["dex", "amm"],
     tint: "violet",
@@ -93,7 +93,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: "Governance & Underwriting",
     monoLabel: "gov · treasury",
     description:
-      "Protocol governance and on-chain cover: proposals, quorum and treasury allocation alongside cover capacity, premiums and claims history.",
+      "Protocol governance and on-chain cover. Proposals, quorum and treasury allocation alongside cover capacity, premiums and claims history.",
     badge: "5 tracked",
     tags: ["governance", "cover"],
     tint: "cyan",

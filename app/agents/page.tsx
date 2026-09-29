@@ -21,7 +21,7 @@ function shortAddress(addr: string): string {
 /** data: URIs are inlined registration files and can be kilobytes long. */
 function describeURI(uri: string | null): string {
   if (!uri) return "No registration file declared";
-  if (uri.startsWith("data:")) return "Inline registration file (data: URI)";
+  if (uri.startsWith("data:")) return "Inline registration file (data URI)";
   return uri;
 }
 

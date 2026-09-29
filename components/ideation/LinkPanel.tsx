@@ -119,7 +119,7 @@ export function LinkPanel({
       </h3>
       <p className="mt-1 text-xs text-ink-500">
         Neither track needs the other. Linked records reference each other on
-        their public pages: a card each way, no merged evidence.
+        their public pages, a card each way, with no merged evidence.
       </p>
       <div className="mt-4">
         {linked ? (

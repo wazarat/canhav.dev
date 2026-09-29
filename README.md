@@ -300,4 +300,9 @@ event window so judges can verify it.
   of the thirteen shapes across both sectors now has a guided list, a
   review, and an agent prompt that walks it.
 
+- Sept 28, 2026. Platform copy cleanup. Every user-facing string on the site
+  reads as short declarative sentences with no em dashes or colons, label and
+  value rows show the label muted instead of punctuated, and
+  `npm run check:copy` fails when either comes back.
+
 This list grows as work lands on the branch.

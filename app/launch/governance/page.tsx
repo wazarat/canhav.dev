@@ -117,7 +117,7 @@ function describeCall(op: IndexedTimelockOperation): string {
         case "unpause":
           return "Unpause launches";
         default:
-          return `Factory call: ${functionName}`;
+          return `Factory call ${functionName}`;
       }
     } catch {
       return `Factory call (selector ${op.data.slice(0, 10)})`;
@@ -132,7 +132,7 @@ function describeCall(op: IndexedTimelockOperation): string {
       if (functionName === "setDefaultProtocolFeeBps") {
         return `Set the AMM protocol fee for new pools to ${(Number(args[0]) / 100).toFixed(2)}%`;
       }
-      return `AMM call: ${functionName}`;
+      return `AMM call ${functionName}`;
     } catch {
       return `AMM call (selector ${op.data.slice(0, 10)})`;
     }
@@ -144,7 +144,7 @@ function describeCall(op: IndexedTimelockOperation): string {
         data: op.data as `0x${string}`,
       });
       if (functionName === "setPayees") return "Change the platform fee splitter's payees";
-      return `Splitter call: ${functionName}`;
+      return `Splitter call ${functionName}`;
     } catch {
       return `Splitter call (selector ${op.data.slice(0, 10)})`;
     }
@@ -201,10 +201,10 @@ function Term({
       </div>
       <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 text-xs">
         <span className="text-ink-500">
-          Ceiling: <span className="text-ink-300">{ceiling}</span>
+          Ceiling <span className="text-ink-300">{ceiling}</span>
         </span>
         <span className="text-ink-500">
-          Enforced by: <span className="text-ink-300">{enforced}</span>
+          Enforced by <span className="text-ink-300">{enforced}</span>
         </span>
       </div>
     </li>
@@ -237,7 +237,7 @@ export default async function GovernancePage() {
           Fees &amp; governance
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-400">
-          The factory&apos;s admin surface is owned by a timelock: every change is
+          The factory&apos;s admin surface is owned by a timelock. Every change is
           proposed publicly and can only execute after the delay below. The
           launch fee is capped by a constant no key can ever exceed.
         </p>
@@ -247,8 +247,8 @@ export default async function GovernancePage() {
         Economic terms
       </h2>
       <p className="mt-1 text-sm text-ink-400">
-        Everything the platform charges: current value, ceiling, and what
-        enforces it.
+        Everything the platform charges, with the current value, the ceiling,
+        and what enforces it.
       </p>
       <ul className="mt-4 space-y-2">
         <Term
@@ -472,7 +472,7 @@ export default async function GovernancePage() {
 
       <p className="mt-10 border-t border-ink-800/70 pt-6 text-xs leading-relaxed text-ink-500">
         The milestone escrow and journey updates contracts have no admin surface
-        at all: no owner, no attester, no pause. There is nothing about them to
+        at all. No owner, no attester, no pause. There is nothing about them to
         govern, which is the point.
       </p>
     </div>

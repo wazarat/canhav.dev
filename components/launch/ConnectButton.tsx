@@ -141,7 +141,7 @@ export function ConnectButton() {
           both state it where it is actually needed. */}
       {!onCorrectChain ? (
         <StatusChip tone="warning" onClick={() => void ensureChain()}>
-          Wrong network: switch to {LAUNCH_CHAIN.name}
+          Wrong network. Switch to {LAUNCH_CHAIN.name}
         </StatusChip>
       ) : null}
       <span className="rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 font-mono text-xs text-ink-200">

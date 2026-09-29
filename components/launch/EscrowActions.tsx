@@ -167,7 +167,7 @@ export function EscrowActions({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-300">
           {isCreator
-            ? "You created this token: lock supply against your milestones as a public commitment."
+            ? "You created this token. Lock supply against your milestones as a public commitment."
             : claimable.length > 0
               ? "Unlocked tranches can be claimed by anyone; tokens always go to the creator."
               : "Escrow actions"}
@@ -236,7 +236,7 @@ export function EscrowActions({
                 </Button>
               </div>
               <p className="text-xs text-ink-500">
-                Two transactions: an approval, then the escrow. Tranches unlock on
+                Two transactions, an approval, then the escrow. Tranches unlock on
                 their dates and can only ever be released to your address.
               </p>
             </div>

@@ -37,7 +37,7 @@ export async function RegistryStatusCard() {
       </p>
       {rpcError ? (
         <p className="mt-3 text-sm text-rose-400">
-          RPC unreachable — could not read the registry. Check AGENTS_RPC_URL.
+          RPC unreachable. Could not read the registry. Check AGENTS_RPC_URL.
         </p>
       ) : (
         <dl className="mt-3 space-y-1.5 text-sm">

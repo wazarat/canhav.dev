@@ -62,7 +62,7 @@ export function UnlockCalendarChart({
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         role="img"
-        aria-label="Unlock calendar: percent of supply unlocking per month"
+        aria-label="Unlock calendar, percent of supply unlocking per month"
         className="block w-full"
         preserveAspectRatio="none"
       >

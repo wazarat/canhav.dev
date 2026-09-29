@@ -343,8 +343,8 @@ export function PoolActions({
             />
             <span>
               {defaultFeeBps !== undefined
-                ? `Opt in to the protocol fee: ${(Number(defaultFeeBps) / 100).toFixed(2)}% of each swap in total, of which ${((Number(defaultFeeBps) * 0.7) / 100).toFixed(2)}% to you and ${((Number(defaultFeeBps) * 0.3) / 100).toFixed(2)}% to the platform. The 70/30 split is fixed in bytecode, the total is hard-capped at 0.50%, and your pool's rate is frozen at creation forever.`
-                : "Opt in to the protocol fee: split 70/30 in your favour (bytecode constant), total hard-capped at 0.50%, and frozen at creation forever."}
+                ? `Opt in to the protocol fee. ${(Number(defaultFeeBps) / 100).toFixed(2)}% of each swap in total, of which ${((Number(defaultFeeBps) * 0.7) / 100).toFixed(2)}% to you and ${((Number(defaultFeeBps) * 0.3) / 100).toFixed(2)}% to the platform. The 70/30 split is fixed in bytecode, the total is hard-capped at 0.50%, and your pool's rate is frozen at creation forever.`
+                : "Opt in to the protocol fee. Split 70/30 in your favour (bytecode constant), total hard-capped at 0.50%, and frozen at creation forever."}
             </span>
           </label>
           <Button size="sm" disabled={status.kind === "working"} onClick={createPool}>

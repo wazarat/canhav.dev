@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     const field = issue?.path[0];
-    const message = field ? `${String(field)}: ${issue.message}` : (issue?.message ?? "Invalid payload.");
+    const message = field ? `Check the ${String(field)} field. ${issue.message}` : (issue?.message ?? "Invalid payload.");
     return NextResponse.json({ error: message }, { status: 400 });
   }
   const lead = parsed.data;
@@ -129,17 +129,18 @@ async function sendLeadEmail(lead: Lead): Promise<boolean> {
   const subject =
     lead.kind === "waitlist"
       ? `New waitlist signup from ${who}`
-      : `New ${lead.leadType} lead: ${who}`;
+      : `New ${lead.leadType} lead from ${who}`;
 
   const lines = [
-    `Kind: ${lead.kind}`,
-    `Name: ${lead.fullName ?? "—"}`,
-    `Email: ${lead.email}`,
-    `Individual or team: ${lead.leadType ?? "—"}`,
-    `Source page: ${lead.sourcePage}`,
-    `Received: ${new Date().toISOString()}`,
+    // Plain-text operator email, label and value lines by convention. copy-ok
+    `Kind: ${lead.kind}`, // copy-ok
+    `Name: ${lead.fullName ?? "none"}`, // copy-ok
+    `Email: ${lead.email}`, // copy-ok
+    `Individual or team: ${lead.leadType ?? "none"}`, // copy-ok
+    `Source page: ${lead.sourcePage}`, // copy-ok
+    `Received: ${new Date().toISOString()}`, // copy-ok
     "",
-    "Comments:",
+    "Comments:", // copy-ok
     lead.comments || "(none)",
   ];
 

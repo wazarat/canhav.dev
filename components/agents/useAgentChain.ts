@@ -34,9 +34,9 @@ export function useAgentChain() {
       const known = connector?.id ? AGENTS_UNSUPPORTED_WALLETS[connector.id] : undefined;
       setSwitchError(
         known
-          ? `${known} — reconnect with MetaMask or Rabby to use ${AGENT_CHAIN.name}.`
+          ? `${known}. Reconnect with MetaMask or Rabby to use ${AGENT_CHAIN.name}.`
           : err instanceof Error
-            ? `Wallet refused the network switch: ${err.message.split("\n")[0].slice(0, 120)}`
+            ? `Wallet refused the network switch. ${err.message.split("\n")[0].slice(0, 120)}`
             : "Wallet refused the network switch.",
       );
       return false;

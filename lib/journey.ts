@@ -137,12 +137,12 @@ export function validateJourney(doc: JourneyDoc): string | null {
     return `At most ${L.milestones.max} milestones are allowed.`;
   for (const [i, m] of doc.milestones.entries()) {
     const n = i + 1;
-    if (!ISO_DATE.test(m.date)) return `Milestone ${n}: date must be YYYY-MM-DD.`;
-    if (!m.title.trim()) return `Milestone ${n}: title is required.`;
+    if (!ISO_DATE.test(m.date)) return `Milestone ${n} date must be YYYY-MM-DD.`;
+    if (!m.title.trim()) return `Milestone ${n} needs a title.`;
     if (m.title.length > L.milestones.titleMax)
-      return `Milestone ${n}: title is over ${L.milestones.titleMax} characters.`;
+      return `Milestone ${n} title is over ${L.milestones.titleMax} characters.`;
     if (m.description.length > L.milestones.descriptionMax)
-      return `Milestone ${n}: description is over ${L.milestones.descriptionMax} characters.`;
+      return `Milestone ${n} description is over ${L.milestones.descriptionMax} characters.`;
   }
   return null;
 }

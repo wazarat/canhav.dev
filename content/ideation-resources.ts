@@ -19,7 +19,7 @@ import type { DeployabilityCode, DeployabilityTier } from "@/lib/tokenDesign";
  * renderer is components/ideation/OptionResourceCard.tsx. Adding a resource
  * is an edit to this file only, no component changes.
  *
- * Copy rules: no em dashes; worked examples start with "Worked example: "
+ * Copy rules. No em dashes and no colons; worked examples start with "Worked example: "
  * (the WarningResourceCard precedent); protocol names are cited as evidence,
  * never as endorsements.
  */
@@ -56,14 +56,14 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
     tier: "canhav",
     text:
       "Fixed-price sales run through CanHav's sale contract in a separate " +
-      "transaction after launch: list the allocation, set price and window, " +
+      "transaction after launch. List the allocation, set price and window, " +
       "and proceeds lock into dated tranches.",
   },
   pool_second_tx: {
     tier: "canhav",
     text:
       "A launch market is created through CanHav's AMM in two post-launch " +
-      "transactions: create the pool, then add the ETH and token liquidity.",
+      "transactions. Create the pool, then add the ETH and token liquidity.",
   },
   escrow_release: {
     tier: "canhav",
@@ -85,7 +85,7 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
     tier: "canhav",
     text:
       "There is no dedicated airdrop contract. An airdrop executes as plain " +
-      "token transfers from the creator's wallet: workable, but with no " +
+      "token transfers from the creator's wallet. Workable, but with no " +
       "claim flow and no sybil protection.",
   },
 
@@ -93,7 +93,7 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
   inflationary_supply: {
     tier: "custom",
     text:
-      "The CanHav factory deploys fixed-supply tokens only: the entire " +
+      "The CanHav factory deploys fixed-supply tokens only. The entire " +
       "supply is minted once at launch and no mint function exists. An " +
       "inflationary token requires a custom contract outside CanHav.",
     fix:
@@ -138,7 +138,7 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
   sale_refund: {
     tier: "custom",
     text:
-      "The CanHav sale contract has no refund path: payments are exact and " +
+      "The CanHav sale contract has no refund path. Payments are exact and " +
       "final. Refunding an undersubscribed sale requires a custom contract " +
       "or an off-chain, trust-based process.",
     fix:
@@ -186,8 +186,8 @@ export const DEPLOYABILITY_COPY: Record<DeployabilityCode, DeployabilityNote> = 
   name_not_deployable: {
     tier: "custom",
     text:
-      "This token name cannot deploy through the launch form as written: 32 " +
-      "characters max, letters, numbers, and spaces only. Shorten it, or " +
+      "This token name cannot deploy through the launch form as written. The form allows 32 " +
+      "characters, with letters, numbers and spaces only. Shorten it, or " +
       "expect the on-chain name to differ from the design.",
   },
 
@@ -231,10 +231,10 @@ export const FIELD_RESOURCES = {
   "token.rationale.why": {
     token_is_product: {
       body:
-        "The strongest rationale: the token is literally the thing users buy " +
+        "The strongest rationale. The token is literally the thing users buy " +
         "or hold. Stablecoins (MakerDAO's DAI), liquid staking tokens " +
         "(Lido's stETH), and vault or receipt shares all work this way. " +
-        "Sectors where this fits naturally: stablecoins and payments, " +
+        "It fits naturally in sectors such as stablecoins and payments, " +
         "portfolio and vaults, RWA infrastructure.",
       example:
         "Worked example: Lido issues stETH as the product itself. Nobody " +
@@ -244,7 +244,7 @@ export const FIELD_RESOURCES = {
     bootstrap_supply: {
       body:
         "Pay a supply side into existence before demand revenue arrives. " +
-        "DePIN networks took this path: Helium paid hotspot operators in " +
+        "DePIN networks took this path. Helium paid hotspot operators in " +
         "HNT, Filecoin paid storage providers, Hivemapper paid drivers. It " +
         "works when supply is measurable and useful; it fails when " +
         "emissions outrun real demand.",
@@ -256,7 +256,7 @@ export const FIELD_RESOURCES = {
     },
     economic_security: {
       body:
-        "The token is staked and can be slashed to secure something: " +
+        "The token is staked and can be slashed to secure something such as " +
         "validators, oracles, restaking. Ethereum staking, Chainlink " +
         "staking, and EigenLayer restaking use the pattern. It requires " +
         "real slashing conditions; stake that cannot be lost secures " +
@@ -264,12 +264,12 @@ export const FIELD_RESOURCES = {
         "so that layer is your own contracts.",
       example:
         "Worked example: an oracle network where operators bond tokens and " +
-        "are slashed for bad data. The bond does economic work: it makes " +
+        "are slashed for bad data. The bond does economic work. It makes " +
         "lying expensive.",
     },
     governance: {
       body:
-        "A real rationale only when there is something real to govern: " +
+        "A real rationale only when there is something real to govern, such as " +
         "parameters, a treasury, upgrades. Uniswap's UNI and Compound's " +
         "COMP govern live protocols with real fee flows. Governance tokens " +
         "over nothing were the emptiest pattern of the last cycle. Note the " +
@@ -283,7 +283,7 @@ export const FIELD_RESOURCES = {
     fee_capture: {
       body:
         "Direct existing fees to token holders or stakers. Curve's veCRV " +
-        "and GMX staking capture real volume. The order matters: fees " +
+        "and GMX staking capture real volume. The order matters. Fees " +
         "first, token second. Capturing fees that do not exist yet is " +
         "bootstrapping in disguise. This option also draws the most " +
         "securities-law attention; weigh the Legal step accordingly.",
@@ -300,14 +300,14 @@ export const FIELD_RESOURCES = {
         "option here; pair it honestly with the Legal step.",
       example:
         "Worked example: Ethereum sold ETH in 2014 to fund the protocol " +
-        "that gives ETH meaning. The difference from a 2017 ICO: the " +
+        "that gives ETH meaning. The difference from a 2017 ICO is that the " +
         "token's utility was the network itself, not a promise stapled to " +
         "a whitepaper.",
     },
     not_sure: {
       body:
         "An honest answer, and the right moment for the cheapest advice in " +
-        "crypto: most products do not need a token. Blur, EigenLayer, and " +
+        "crypto. Most products do not need a token. Blur, EigenLayer, and " +
         "Hyperliquid all ran points programs for long stretches instead of " +
         "launching early. Build first; a token can always come later, and " +
         "can never be un-launched.",
@@ -333,7 +333,7 @@ export const FIELD_RESOURCES = {
     points_first: {
       body:
         "Run a non-transferable points ledger first, convert later. Blur, " +
-        "EigenLayer, and Hyperliquid made this the standard path: usage " +
+        "EigenLayer, and Hyperliquid made this the standard path. Usage " +
         "accrues points, the token arrives when there is something to price.",
       example:
         "Worked example: Blur's seasons ran on points with no token price " +
@@ -343,8 +343,8 @@ export const FIELD_RESOURCES = {
     },
     straight_to_market: {
       body:
-        "Deploy and list on day one. This is the CanHav-native path: " +
-        "factory launch, then a pool. Price discovery is immediate, and so " +
+        "Deploy and list on day one. This is the CanHav-native path, " +
+        "a factory launch, then a pool. Price discovery is immediate, and so " +
         "are sell pressure and the obligation to fund liquidity. Honest for " +
         "fair launches; brutal for products not ready to be priced daily.",
       example:
@@ -358,7 +358,7 @@ export const FIELD_RESOURCES = {
     fixed: {
       body:
         "One mint at deployment, never again. This is what the CanHav " +
-        "factory deploys: the total above is written into the contract and " +
+        "factory deploys. The total above is written into the contract and " +
         "enforced forever. Most serious launches since 2020 are fixed " +
         "supply with vesting, not inflation.",
       example:
@@ -368,7 +368,7 @@ export const FIELD_RESOURCES = {
     },
     inflationary: {
       body:
-        "Ongoing issuance funds rewards or security: Ethereum pays " +
+        "Ongoing issuance funds rewards or security. Ethereum pays " +
         "validators, Cosmos chains pay stakers. It requires a mint " +
         "function and a policy for who mints, how much, and when. That is " +
         "exactly the machinery the CanHav factory does not ship.",
@@ -383,7 +383,7 @@ export const FIELD_RESOURCES = {
   "token.vesting.release": {
     linear: {
       body:
-        "Standard vesting: at the cliff, the accrued fraction releases at " +
+        "Standard vesting. At the cliff, the accrued fraction releases at " +
         "once, then equal monthly releases through the duration. This is " +
         "exactly what the CanHav vesting wallet enforces on-chain " +
         "(OpenZeppelin's cliff wallet with catch-up).",
@@ -395,7 +395,7 @@ export const FIELD_RESOURCES = {
     milestone_conditional: {
       body:
         "Release tied to shipping, not just time. On CanHav this maps to " +
-        "the MilestoneEscrow contract: tranches labeled by milestone, " +
+        "the MilestoneEscrow contract, with tranches labeled by milestone, " +
         "enforced by date. The date is the enforceable part; hitting the " +
         "milestone is a public commitment.",
       example:
@@ -420,7 +420,7 @@ export const FIELD_RESOURCES = {
   "token.vesting.founderLeaves": {
     returns_to_treasury: {
       body:
-        "The standard investor-friendly answer: unvested tokens return to " +
+        "The standard investor-friendly answer. Unvested tokens return to " +
         "the treasury if a founder walks. Enforcement is off-chain " +
         "paperwork and the cap table, not the vesting wallet.",
       example:
@@ -432,14 +432,14 @@ export const FIELD_RESOURCES = {
     returns_to_team: {
       body:
         "Unvested tokens redistribute to the remaining team. Same " +
-        "enforcement reality as return-to-treasury: recorded here, executed " +
+        "enforcement reality as return-to-treasury. Recorded here, executed " +
         "by agreement, not by the contract.",
       deployability: DEPLOYABILITY_COPY.founder_clawback,
     },
     continues_vesting: {
       body:
         "The departed founder keeps vesting on schedule. This is also what " +
-        "the contract actually does by default: the vesting wallet pays its " +
+        "the contract actually does by default. The vesting wallet pays its " +
         "owner regardless of employment. Declaring it is at least honest " +
         "about the mechanism.",
       example:
@@ -461,7 +461,7 @@ export const FIELD_RESOURCES = {
   "token.distribution.event": {
     none: {
       body:
-        "No distribution event: the creator holds the whole supply, which " +
+        "No distribution event. The creator holds the whole supply, which " +
         "is the default state of a factory launch. Honest for pre-product " +
         "designs. Note that it defers distribution rather than solving it; " +
         "a token nobody holds does no economic work.",
@@ -474,7 +474,7 @@ export const FIELD_RESOURCES = {
       body:
         "Free distribution to earn users or reward past ones. Uniswap's " +
         "400 UNI set the template; Arbitrum's ARB scaled it. The sybil " +
-        "problem is unsolved: farms harvest most announced airdrops.",
+        "problem is unsolved. Farms harvest most announced airdrops.",
       example:
         "Worked example: Uniswap's 2020 airdrop rewarded genuine use " +
         "because the snapshot predated the announcement. Criteria announced " +
@@ -484,7 +484,7 @@ export const FIELD_RESOURCES = {
     fixed_price_sale: {
       body:
         "Sell part of the supply at a set price inside a time window. This " +
-        "is the sale CanHav supports on-chain: fixed price, hard window, " +
+        "is the sale CanHav supports on-chain. Fixed price, hard window, " +
         "optional per-wallet cap, and proceeds locked into milestone-dated " +
         "tranches. Ethereum's 2014 sale is the archetype.",
       example:
@@ -535,7 +535,7 @@ export const FIELD_RESOURCES = {
     proceed: {
       body:
         "Take what was raised and continue. This is also the on-chain " +
-        "default: raised ETH stays claimable in tranches and unsold tokens " +
+        "default. Raised ETH stays claimable in tranches and unsold tokens " +
         "return to you. Publish what a partial raise does to the plan.",
       example:
         "Worked example: a sale targeting 1,000 ETH raises 180. Proceeding " +
@@ -551,12 +551,12 @@ export const FIELD_RESOURCES = {
     postpone: {
       body:
         "Wait and re-run when conditions improve. Decide before creating " +
-        "the sale: once created, the window is fixed.",
+        "the sale. Once created, the window is fixed.",
       deployability: DEPLOYABILITY_COPY.sale_postpone,
     },
     no_plan: {
       body:
-        "The worst default: an undersubscribed sale that improvises in " +
+        "The worst default. An undersubscribed sale that improvises in " +
         "public. Default outcomes are half-funded treasuries, accidental " +
         "low-float launches, or quiet cancellations that burn trust.",
     },
@@ -587,7 +587,7 @@ export const FIELD_RESOURCES = {
   "token.market.antiSniping": {
     window: {
       body:
-        "A launch window gates the first minutes of trading: capped buys, " +
+        "A launch window gates the first minutes of trading. Capped buys, " +
         "gradual opening, or allowlisted early access.",
       deployability: DEPLOYABILITY_COPY.anti_sniping,
     },
@@ -616,7 +616,7 @@ export const FIELD_RESOURCES = {
   "project.architecture.upgradeability": {
     immutable: {
       body:
-        "No upgrade path, no owner: what is deployed runs forever. Uniswap " +
+        "No upgrade path, no owner. What is deployed runs forever. Uniswap " +
         "v2 and v3 core shipped this way. The strongest trust story and " +
         "the least forgiving of bugs; pair it with real audits.",
       example:
@@ -631,7 +631,7 @@ export const FIELD_RESOURCES = {
         "not whether it upgrades but who holds the key and what delays them.",
       example:
         "Worked example: a proxy owned by a 3-of-5 Safe behind a 48-hour " +
-        "timelock. The delay is the security: users can exit before a " +
+        "timelock. The delay is the security. Users can exit before a " +
         "malicious upgrade lands.",
     },
     partially: {
@@ -647,7 +647,7 @@ export const FIELD_RESOURCES = {
     undecided: {
       body:
         "Fine at the idea stage, and honest. It must resolve before an " +
-        "audit: auditors price upgradeability as attack surface, and users " +
+        "audit. Auditors price upgradeability as attack surface, and users " +
         "price it as trust.",
     },
   } satisfies Partial<Record<Upgradeability, OptionResource>>,
@@ -919,11 +919,11 @@ export const FIELD_INTROS = {
   "token.rationale.beyondDatabaseRow": {
     title: 'What "a database row" means',
     body:
-      "A database row is any balance your own backend could track: points, " +
+      "A database row is any balance your own backend could track. Points, " +
       "credits, referral balances, cashback, an internal ledger. If a " +
       "Postgres table plus a Stripe account delivers the same feature, the " +
       "token is overhead. A token earns its place when it does work a " +
-      "private ledger cannot: stake that can be slashed, collateral posted " +
+      "private ledger cannot. Stake that can be slashed, collateral posted " +
       "permissionlessly, an asset third parties can build on without asking " +
       "you.",
     example:
@@ -937,7 +937,7 @@ export const FIELD_INTROS = {
     body:
       "A market at launch means anyone can buy or sell at a public price on " +
       "day one; on CanHav, that is an AMM pool funded with your ETH and " +
-      "tokens. Three things start immediately: price discovery (a chart " +
+      "tokens. Three things start immediately. Price discovery (a chart " +
       "everyone sees), sell pressure (every unlocked token can hit the " +
       'pool), and a funding obligation (the ETH side comes from somewhere). ' +
       '"Later" and "never" pair naturally with issue-and-lock or ' +
@@ -950,7 +950,7 @@ export const FIELD_INTROS = {
   "token.governance.mechanism": {
     title: "Governance mechanism",
     body:
-      "How decisions get made: token voting (Governor-style, as Uniswap and " +
+      "How decisions get made. Token voting (Governor-style, as Uniswap and " +
       "Compound run), a multisig with a published mandate, or founders " +
       "deciding until decentralization is earned. Multisig-first with a " +
       "stated path is more honest than governance theater. The CanHav " +
@@ -965,7 +965,7 @@ export const FIELD_INTROS = {
     title: "Admin key custody",
     body:
       "Who holds the keys that can change things, and what stands between " +
-      "them and user funds. The norms: a Safe multisig rather than a " +
+      "them and user funds. The norms are a Safe multisig rather than a " +
       "single wallet, timelocks on privileged calls, named signer sets. A " +
       "single founder wallet is the classic red flag.",
     example:
@@ -989,7 +989,7 @@ export const FIELD_INTROS = {
     title: "Treasury runway",
     body:
       "How long the project operates without new money. Denominate runway " +
-      "in stables or fiat, never your own token: a treasury of your own " +
+      "in stables or fiat, never your own token. A treasury of your own " +
       "token shrinks exactly when you need it most.",
     example:
       'Worked example: "18 months in USDC" survives a drawdown. "18 months ' +
@@ -1006,7 +1006,7 @@ export const FIELD_INTROS = {
     title: "If the price collapses",
     body:
       "Assume a 90% drawdown, because most tokens see one. A real plan is " +
-      "operational: what gets cut, what ships anyway, what you say " +
+      "operational. What gets cut, what ships anyway, what you say " +
       "publicly. Panic buybacks are the classic anti-pattern; they spend " +
       "the treasury defending a chart.",
     example:
@@ -1017,7 +1017,7 @@ export const FIELD_INTROS = {
   "token.postLaunch.failureCriteria": {
     title: "Failure criteria",
     body:
-      "Pre-registered kill criteria: the observable outcome that makes you " +
+      "Pre-registered kill criteria. The observable outcome that makes you " +
       "stop, wind down, or return funds. Deciding now, in public, is the " +
       "credible version. Fei Protocol's orderly wind-down showed what an " +
       "adult ending looks like.",

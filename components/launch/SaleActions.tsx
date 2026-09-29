@@ -352,7 +352,7 @@ export function SaleActions({
               </div>
 
               <p className="text-xs text-ink-500">
-                Proceeds schedule: shares must sum to 100%; each unlocks on its
+                Proceeds schedule. Shares must sum to 100%; each unlocks on its
                 date, after the sale ends. You cannot withdraw outside this
                 schedule.
               </p>

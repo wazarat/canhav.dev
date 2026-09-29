@@ -33,9 +33,9 @@ export function useLaunchChain() {
       const known = connector?.id ? UNSUPPORTED_WALLETS[connector.id] : undefined;
       setSwitchError(
         known
-          ? `${known} — reconnect with MetaMask or Rabby to use ${LAUNCH_CHAIN.name}.`
+          ? `${known}. Reconnect with MetaMask or Rabby to use ${LAUNCH_CHAIN.name}.`
           : err instanceof Error
-            ? `Wallet refused the network switch: ${err.message.split("\n")[0].slice(0, 120)}`
+            ? `Wallet refused the network switch. ${err.message.split("\n")[0].slice(0, 120)}`
             : "Wallet refused the network switch.",
       );
       return false;

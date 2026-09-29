@@ -217,7 +217,7 @@ export function ContactModal({
 
                   {status === "error" && (
                     <StatusChip tone="error" variant="block" role="alert">
-                      {errorMessage} Your details are still here — try again.
+                      {errorMessage} Your details are still here. Try again.
                     </StatusChip>
                   )}
 

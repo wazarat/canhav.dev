@@ -61,13 +61,13 @@ function ChartCard({ metric }: { metric: ChartMetric }) {
           </p>
         </div>
         <div className="font-display text-xl font-semibold tracking-tight text-ink-50 tabular">
-          {hasData ? formatUnit(metric.latest, metric.unit) : "—"}
+          {hasData ? formatUnit(metric.latest, metric.unit) : "n/a"}
         </div>
       </div>
       <div className="mt-5">
         <BarChart
           points={points}
-          ariaLabel={`${metric.label} — ${range === "24h" ? "last 14 days" : "all time"}`}
+          ariaLabel={`${metric.label}, ${range === "24h" ? "last 14 days" : "all time"}`}
         />
       </div>
       <div className="mt-4">
@@ -81,7 +81,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
   const latestCompleteDay = data.charts.find((c) => c.daily14.length > 0)?.daily14.at(-1)?.date;
   const caption = data.updatedAt
     ? `Updated ${formatAsOf(data.updatedAt)}${latestCompleteDay ? `, latest complete day ${formatDayShort(latestCompleteDay)} UTC` : ""}`
-    : "Live data unavailable — showing last captured snapshot.";
+    : "Live data unavailable. Showing the last captured snapshot.";
 
   return (
     <section className="space-y-6">

@@ -549,7 +549,7 @@ export function ProjectEditor({
             </Field>
             <Field
               label="Testnet contract addresses"
-              hint="One 0x address per line. We read deploy history from the chain: the addresses are the claim, the chain is the evidence."
+              hint="One 0x address per line. We read deploy history from the chain. The addresses are the claim, the chain is the evidence."
             >
               <textarea
                 value={(doc.testnetContracts ?? []).join("\n")}
@@ -669,14 +669,18 @@ export function ProjectEditor({
               <ReviewRow
                 term="Security"
                 detail={PROJECT_SECURITY_FIELDS.map(
-                  ({ key, label }) =>
-                    `${label}: ${doc.security[key].status ? STATUS_DECL_LABELS[doc.security[key].status] : "Not set"}`,
+                  ({ key, label }) => {
+                    const v = doc.security[key].status
+                      ? STATUS_DECL_LABELS[doc.security[key].status]
+                      : "Not set";
+                    return `${label} ${v.charAt(0).toLowerCase()}${v.slice(1)}`;
+                  },
                 ).join(" · ")}
               />
             </dl>
             {overall ? (
               <StatusChip tone="warning" variant="block">
-                Not ready to publish yet: {overall}
+                Not ready to publish yet. {overall}
               </StatusChip>
             ) : (
               <StatusChip tone="success" variant="block">

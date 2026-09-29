@@ -78,7 +78,7 @@ export function NameTickerCheck({
     <div className="space-y-2">
       {result.chainMatches.map((t) => (
         <StatusChip key={t.address} tone="warning" variant="block">
-          Already in use on Robinhood Chain:{" "}
+          Already in use on Robinhood Chain by{" "}
           <a
             href={`/launch/t/${t.address}`}
             className="text-electric-300 transition-colors hover:text-electric-200"
@@ -91,7 +91,7 @@ export function NameTickerCheck({
       ))}
       {result.canhavMatches.map((m, i) => (
         <StatusChip key={`${m.slug ?? i}`} tone="warning" variant="block">
-          A published CanHav design already uses this identity:{" "}
+          A published CanHav design already uses this identity. See{" "}
           {m.slug ? (
             <a
               href={`/t/${m.slug}`}

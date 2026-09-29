@@ -109,7 +109,7 @@ export function EditorShell({
         </div>
       )}
       {!canPublish && publishProblem && (
-        <p className="mt-4 text-xs text-ink-500">To publish: {publishProblem}</p>
+        <p className="mt-4 text-xs text-ink-500">Publishing is blocked. {publishProblem}</p>
       )}
 
       <div className="mt-8">
@@ -129,7 +129,7 @@ export function EditorShell({
         </Button>
         {current < steps.length - 1 && (
           <Button size="sm" variant="outline" onClick={() => onSelectStep(current + 1)}>
-            Next: {steps[current + 1].label} →
+            Next, {steps[current + 1].label} →
           </Button>
         )}
       </div>

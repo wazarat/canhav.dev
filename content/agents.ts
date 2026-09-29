@@ -32,9 +32,9 @@ export const AGENT_CHAIN = {
  * subtree, taking down the one page that could explain what's wrong.
  */
 export const AGENT_CHAIN_ISSUE: string | null = !AGENT_CHAIN.identityRegistryAddress
-  ? "NEXT_PUBLIC_AGENTS_IDENTITY_REGISTRY is not set — add it to the environment and redeploy."
+  ? "NEXT_PUBLIC_AGENTS_IDENTITY_REGISTRY is not set. Add it to the environment and redeploy."
   : !AGENT_CHAIN.identityRegistryAddress.startsWith(TESTNET_REGISTRY_PREFIX)
-    ? `Identity registry ${AGENT_CHAIN.identityRegistryAddress} does not match the Base Sepolia deployment (${TESTNET_REGISTRY_PREFIX}…). The mainnet registry starts 0x8004A169 — testnet/mainnet mixup?`
+    ? `Identity registry ${AGENT_CHAIN.identityRegistryAddress} does not match the Base Sepolia deployment (${TESTNET_REGISTRY_PREFIX}…). The mainnet registry starts 0x8004A169. Testnet and mainnet mixed up?`
     : null;
 
 export const AGENTS_COPY = {
@@ -42,7 +42,7 @@ export const AGENTS_COPY = {
   title: "Agent Registry",
   subtitleLead: "Register an AI agent on ERC-8004, on Base Sepolia testnet.",
   subtitleDetail:
-    "Agents are ERC-721 identities on the public ERC-8004 Identity Registry. Registrations here will be limited to MCP endpoints — introspectable, so declared capabilities can be checked against reality.",
+    "Agents are ERC-721 identities on the public ERC-8004 Identity Registry. Registrations here will be limited to MCP endpoints. They are introspectable, so declared capabilities can be checked against reality.",
 } as const;
 
 /**

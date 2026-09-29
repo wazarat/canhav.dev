@@ -841,7 +841,7 @@ export function LaunchForm({
             {designCommitment ? (
               <div className="space-y-4">
                 <p className="text-sm leading-relaxed text-ink-300">
-                  This launch commits your published token design on-chain: the
+                  This launch commits your published token design on-chain. The
                   factory records the design&apos;s snapshot hash, so the
                   document behind this token can never be quietly rewritten.
                 </p>
@@ -937,7 +937,7 @@ export function LaunchForm({
             </div>
 
             <p className="break-all font-mono text-xs text-ink-500">
-              journeyHash:{" "}
+              <span className="text-ink-600">journeyHash</span>{" "}
               {designCommitment
                 ? designCommitment.snapshotHash
                 : !commitmentOn

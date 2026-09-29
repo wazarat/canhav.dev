@@ -463,7 +463,7 @@ function checkStatusDecl(label: string, decl: StatusDecl): string | null {
   const valid = ["in_place", "legal_ops", "planned_before_mainnet", "not_yet"];
   if (!valid.includes(decl.status)) return `${label} needs a status.`;
   if (decl.note && decl.status !== "in_place")
-    return `${label}: a note is only accepted for "already in place".`;
+    return `${label} accepts a note only for "already in place".`;
   if (decl.note && decl.note.length > 200) return `${label} note is over 200 characters.`;
   return null;
 }
@@ -591,7 +591,7 @@ export function validateTokenDesignDoc(doc: TokenDesignDoc): string | null {
   if (p) return p;
   if (!doc.ticker.trim()) return "Ticker is required.";
   if (doc.ticker.length > L.ticker.max) return `Ticker is over ${L.ticker.max} characters.`;
-  if (!L.ticker.pattern.test(doc.ticker)) return "Ticker: uppercase letters and numbers only.";
+  if (!L.ticker.pattern.test(doc.ticker)) return "Ticker must be uppercase letters and numbers only.";
 
   // §1 Rationale
   if (!doc.rationale.why) return "Answer why this needs a token.";
@@ -631,10 +631,10 @@ export function validateTokenDesignDoc(doc: TokenDesignDoc): string | null {
     const { cliffMonths, durationMonths } = row;
     const M = L.vestingMonths;
     if (!Number.isInteger(cliffMonths) || cliffMonths < M.min || cliffMonths > M.max)
-      return `${cohort}: cliff must be ${M.min}–${M.max} months.`;
+      return `${cohort} cliff must be ${M.min}–${M.max} months.`;
     if (!Number.isInteger(durationMonths) || durationMonths < M.min || durationMonths > M.max)
-      return `${cohort}: duration must be ${M.min}–${M.max} months.`;
-    if (cliffMonths > durationMonths) return `${cohort}: cliff cannot exceed the duration.`;
+      return `${cohort} duration must be ${M.min}–${M.max} months.`;
+    if (cliffMonths > durationMonths) return `${cohort} cliff cannot exceed the duration.`;
   }
   if (needed.length > 0) {
     if (!doc.vesting.release) return "Pick a release type.";

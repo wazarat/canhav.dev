@@ -473,7 +473,7 @@ export default async function TokenPage({
         // from a published design; the hash commits the design on-chain.
         <div className="mt-8 space-y-4">
           <StatusChip tone="success" variant="block">
-            Design committed on-chain: the launch transaction recorded this
+            Design committed on-chain. The launch transaction recorded this
             token design&apos;s snapshot hash (v{designSnapshot.version}); the
             document behind this token is tamper-evident.
           </StatusChip>

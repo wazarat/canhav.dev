@@ -64,7 +64,7 @@ export function AttachDeployFlow({ designId }: { designId: string }) {
   if (status.kind === "success") {
     return (
       <StatusChip tone="success" variant="block">
-        Attached. The design record now points at the deployed contract:{" "}
+        Attached. The design record now points at the deployed contract{" "}
         <Link
           href={`/studio/token/${designId}`}
           className="text-electric-300 transition-colors hover:text-electric-200"

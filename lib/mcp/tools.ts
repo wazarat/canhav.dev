@@ -160,7 +160,7 @@ export function registerAllTools(server: McpServer): void {
     {
       title: "Design constraints",
       description:
-        "A published token design's constraints as testable assertions: supply, allocations, per-cohort cliffs and durations, release type, and derived float/FDV — split into enforced-on-chain vs stated-by-team.",
+        "A published token design's constraints as testable assertions. Supply, allocations, per-cohort cliffs and durations, release type, and derived float and FDV, split into enforced-on-chain vs stated-by-team.",
       inputSchema: z.object({ slug: z.string().min(3).max(60) }),
     },
     async ({ slug }) => {

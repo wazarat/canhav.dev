@@ -50,7 +50,7 @@ export async function verifyAttachProof(
   if (!Number.isInteger(proof.signedAt)) return "Invalid signature timestamp.";
   const age = Math.abs(Math.floor(Date.now() / 1000) - proof.signedAt);
   if (age > ATTACH_PROOF_MAX_AGE_S)
-    return "Signature expired — sign again and submit within 10 minutes.";
+    return "Signature expired. Sign again and submit within 10 minutes.";
   try {
     const valid = await publicClient.verifyMessage({
       address: expectedSigner as `0x${string}`,

@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   if (!token)
     return NextResponse.json(
-      { error: "Token not indexed yet — try again shortly." },
+      { error: "Token not indexed yet. Try again shortly." },
       { status: 409 },
     );
 
@@ -72,7 +72,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json(
         {
           error:
-            "This deploy is not fresh — attaching requires a signature from the wallet that deployed it.",
+            "This deploy is not fresh. Attaching requires a signature from the wallet that deployed it.",
         },
         { status: 403 },
       );

@@ -33,7 +33,7 @@ export function ComputedPanel({ doc }: { doc: TokenDesignDoc }) {
         <div className="mt-4 grid grid-cols-3 gap-3">
           <Stat label="Float at launch" value={fmtPct(d.floatAtLaunchPct)} />
           <Stat
-            label="FDV : float"
+            label="FDV to float"
             value={d.fdvToFloat ? `${d.fdvToFloat % 1 === 0 ? d.fdvToFloat : d.fdvToFloat.toFixed(1)}×` : "n/a"}
           />
           <Stat label="Treasury" value={fmtPct(d.treasuryPct)} />
@@ -55,13 +55,13 @@ export function ComputedPanel({ doc }: { doc: TokenDesignDoc }) {
             <p className="text-[11px] uppercase tracking-wide text-ink-500">Team vs investors</p>
             {d.teamVsInvestors.team && (
               <p className="text-xs text-ink-300">
-                Team: {d.teamVsInvestors.team.cliffMonths}mo cliff ·{" "}
+                <span className="text-ink-500">Team</span> {d.teamVsInvestors.team.cliffMonths}mo cliff ·{" "}
                 {d.teamVsInvestors.team.durationMonths}mo total
               </p>
             )}
             {d.teamVsInvestors.investors && (
               <p className="text-xs text-ink-300">
-                Investors: {d.teamVsInvestors.investors.cliffMonths}mo cliff ·{" "}
+                <span className="text-ink-500">Investors</span> {d.teamVsInvestors.investors.cliffMonths}mo cliff ·{" "}
                 {d.teamVsInvestors.investors.durationMonths}mo total
               </p>
             )}
