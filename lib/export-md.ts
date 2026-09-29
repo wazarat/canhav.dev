@@ -11,10 +11,12 @@ import {
   LP_TREATMENT_OPTIONS,
   MARKET_FACTS,
   MARKET_TIMING_OPTIONS,
+  PERSONA_COPY,
   PROJECT_SECURITY_FIELDS,
   RATIONALE_WHY_OPTIONS,
   RELEASE_TYPE_OPTIONS,
   REPORTING_OPTIONS,
+  REVENUE_RANGE_OPTIONS,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
@@ -40,9 +42,11 @@ import { LAUNCH_CHAIN } from "@/content/launch";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
 import { KIT_PRIORITY_ORDER } from "@/lib/kits";
 import {
+  type Persona,
   type ProjectDoc,
   type StatusDecl,
   type TokenDesignDoc,
+  filledPersonas,
   isSaleEvent,
   vestedCohorts,
 } from "@/lib/ideation";
@@ -70,8 +74,44 @@ function orNotSet(text: string): string {
   return text.trim() ? text : "Not set";
 }
 
+/** Optional answers. An unanswered one is left out of the export. */
 function payerLine(doc: ProjectDoc): string {
-  return doc.payer === "user" ? "The user pays." : doc.whoPays;
+  if (doc.payer === "user") return "The user pays.";
+  if (doc.payer === "third_party") return doc.whoPays.trim() || "Someone else pays.";
+  return "";
+}
+
+/** The customer block: persona table, earlier free text, payer, chain. Empty answers drop. */
+function customerLines(doc: ProjectDoc): string[] {
+  const out: string[] = [];
+  const personas = filledPersonas(doc);
+  if (personas.length) {
+    const R = PERSONA_COPY.rows;
+    const cell = (v: string) => v.trim().replace(/\|/g, "/") || " ";
+    const row = (label: string, pick: (p: Persona) => string) =>
+      `| ${label} | ${personas.map((p) => cell(pick(p))).join(" | ")} |`;
+    out.push(
+      `**Who the user is**`,
+      "",
+      `| | ${personas.map((_, i) => PERSONA_COPY.column(i + 1)).join(" | ")} |`,
+      `|---|${personas.map(() => "---").join("|")}|`,
+      row(R.teamSize.label, (p) => p.teamSize),
+      row(R.geography.label, (p) => p.geography),
+      row(R.industry.label, (p) => p.industry),
+      row(R.primaryContact.label, (p) => p.primaryContact),
+      row(R.revenueRange.label, (p) =>
+        p.revenueRange ? optionLabel(REVENUE_RANGE_OPTIONS, p.revenueRange) : "",
+      ),
+      "",
+    );
+    if (doc.userIs.trim()) out.push(doc.userIs, "");
+  } else if (doc.userIs.trim()) {
+    out.push(`**Who the user is:** ${doc.userIs}`, "");
+  }
+  const payer = payerLine(doc);
+  if (payer) out.push(`**Who pays:** ${payer}`, "");
+  if (doc.whyThisChain.trim()) out.push(`**Why this chain:** ${doc.whyThisChain}`, "");
+  return out;
 }
 
 function externalDepsLine(a: ProjectDoc["architecture"]): string {
@@ -220,12 +260,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     doc.whatItDoes,
     "",
-    `**Who the user is:** ${doc.userIs}`,
-    "",
-    `**Who pays:** ${payerLine(doc)}`,
-    "",
-    `**Why this chain:** ${doc.whyThisChain}`,
-    "",
+    ...customerLines(doc),
     "## Distribution reality",
     "",
     `Acknowledged by the team: ${ROBINHOOD_MYTH.body}`,

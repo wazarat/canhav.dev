@@ -15,13 +15,14 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 | Field | Notes |
 |-------|-------|
 | Project name | Required |
-| Sector | Credit; Staking; Liquidity; Derivatives; RWAs; Other. Pick one or more. Credit and Liquidity can be chosen today; the other four are listed and marked "Coming soon". |
-| Subsector | Asked for each chosen sector that has subsectors, grouped under the sector name when more than one does. Credit offers Lending, Leveraged yield and Fixed income; Liquidity offers Vaults and Pools. All five are open. Pick one to three per sector. When a project is in more than one sector and a subsector shares product shapes with one under another chosen sector, that one is ticked too and a line under the chips says why; it can be unticked again. |
+| Sector | Credit and Liquidity. Each is a card with its name ("Credit sector application") and a sentence that starts "I am looking to". Pick every sentence that fits. More sectors are coming soon. |
+| Subsector | Asked for each chosen sector that has subsectors, grouped under the sector name when more than one does. Each subsector is a card with its name and a sentence. Credit offers Lending, Leveraged yield and Fixed income; Liquidity offers Vaults and Pools. All five are open. Pick one to three per sector. When a project is in more than one sector and a subsector shares product shapes with one under another chosen sector, that one is ticked too and a line under the cards says why; it can be unticked again. |
 | What are you building | Asked once a chosen sector has a subsector. Product shapes are grouped by subsector. Lending offers Curated vault, Earn inside your app and Collateral-backed loans; Fixed income offers Fixed-rate yield on your asset, Fixed-rate savings inside your app, Borrow against fixed-rate positions and Leveraged fixed-yield loop; Leveraged yield offers Leveraged fixed-yield loop and Yield-token products; Vaults offers Curated vault and Earn inside your app (the same two shapes reached through Lending), Liquidity allocator and Permissioned vault; Pools offers Basic AMM pool, Concentrated liquidity pool and Pool with custom hooks. Thirteen shapes in all. A shape that spans subsectors is offered whenever one of them is chosen and appears once, and the picker shows subsector headings only when more than one subsector is chosen. Picking a shape also ticks its subsectors under any other chosen sector. Pick as many as apply; the resource pack, build steps and review passes are the union across the chosen shapes. Optional, but the research kit that follows is filtered by it. Each option has a "Why this matters" card with a worked example. |
 | Starting point | Asked with the shape. From scratch; On top of an existing product (with an optional link or one line about what exists today). |
 | What it does | One paragraph |
-| Users and payers | Who the user is, and who pays (often not the same answer) |
-| Why this chain specifically | Free text |
+| Who the user is | Optional. An ideal customer persona table with one to three personas. Each persona has Team size (a number or a range), Geography (city, country, or continent), Industry, Primary contact (a role or title) and Revenue range. Starts with one persona; add up to three. |
+| Who pays | Optional. The user pays, or someone else pays (with a line about who) |
+| Why this chain specifically | Optional. Free text |
 | Current stage | Idea; design doc; prototype; testnet contracts deployed; live elsewhere |
 
 ### Computed / warnings

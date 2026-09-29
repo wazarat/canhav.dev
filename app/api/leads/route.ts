@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { createClerkClient } from "@clerk/nextjs/server";
-
-import { isAuthConfigured } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 /**
- * Lead capture for the marketing forms (For Teams contact modal, waitlist).
+ * Lead capture for the marketing forms (For Teams contact modal).
  * Public route — the Clerk middleware matcher does not cover /api/leads.
  *
  * Every accepted lead is written to launchpad.leads (system of record) and
@@ -17,14 +14,13 @@ export const runtime = "nodejs";
  * fails when BOTH channels fail, so a lead is never silently dropped while
  * one of them is down. A filled honeypot returns success and does nothing.
  *
- * Waitlist leads are also mirrored into Clerk's waitlist (access mode
- * "Waitlist" in the Clerk dashboard) so the owner can approve with one click;
- * Clerk then emails the invitation. Best effort, never blocks the response.
+ * `kind` is always "contact". The column also holds rows from the waitlist
+ * that ran until sign-up opened, which is why the table still allows both.
  */
 
 const LeadSchema = z
   .object({
-    kind: z.enum(["contact", "waitlist"]).default("contact"),
+    kind: z.enum(["contact"]).default("contact"),
     fullName: z.string().trim().min(1).max(120).optional(),
     email: z
       .string()
@@ -73,25 +69,7 @@ export async function POST(req: Request) {
   if (!stored && !emailed) {
     return NextResponse.json({ error: RETRY_MESSAGE }, { status: 503 });
   }
-  if (lead.kind === "waitlist") await mirrorToClerkWaitlist(lead.email);
   return NextResponse.json({ ok: true });
-}
-
-/**
- * Add the email to Clerk's waitlist so approval is one click in the Clerk
- * dashboard. Clerk returns the existing entry for a repeat email and, with
- * notify, sends the applicant a "you are on the waitlist" confirmation.
- */
-async function mirrorToClerkWaitlist(emailAddress: string): Promise<void> {
-  if (!isAuthConfigured()) return;
-  try {
-    // Standalone backend client: this route is outside the Clerk middleware,
-    // so it must not depend on request-scoped auth state.
-    const client = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-    await client.waitlistEntries.create({ emailAddress, notify: true });
-  } catch (err) {
-    console.error("[leads] clerk waitlist failed", err);
-  }
 }
 
 async function storeLead(lead: Lead, userAgent: string | null): Promise<boolean> {
@@ -126,10 +104,7 @@ async function sendLeadEmail(lead: Lead): Promise<boolean> {
 
   const from = process.env.LEADS_FROM_EMAIL || "CanHav Leads <onboarding@resend.dev>";
   const who = lead.fullName ?? lead.email;
-  const subject =
-    lead.kind === "waitlist"
-      ? `New waitlist signup from ${who}`
-      : `New ${lead.leadType} lead from ${who}`;
+  const subject = `New ${lead.leadType} lead from ${who}`;
 
   const lines = [
     // Plain-text operator email, label and value lines by convention. copy-ok

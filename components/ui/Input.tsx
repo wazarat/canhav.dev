@@ -25,7 +25,7 @@ TextArea.displayName = "TextArea";
 
 /**
  * Label + control + hint/error/counter wrapper. Mirrors the field markup of
- * the waitlist/contact modals so forms stay visually consistent.
+ * the contact modal so forms stay visually consistent.
  */
 export function Field({
   label,

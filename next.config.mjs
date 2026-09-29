@@ -7,6 +7,8 @@ const nextConfig = {
     return [
       { source: "/projects", destination: "/explore", permanent: false },
       { source: "/launch/explore", destination: "/explore", permanent: false },
+      // The waitlist closed when sign-up opened to everyone.
+      { source: "/waitlist", destination: "/sign-up", permanent: true },
     ];
   },
   webpack: (config) => {

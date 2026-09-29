@@ -3,37 +3,33 @@
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
-
-import { WaitlistCta } from "@/components/home/WaitlistCta";
 import { Button } from "@/components/ui/Button";
 import { isAuthConfiguredClient } from "@/components/studio/authConfig";
-import { WAITLIST_COPY } from "@/content/waitlist";
+import { AUTH_COPY } from "@/content/auth";
 
 /**
- * The nav's auth slot. Signed out it shows only the "Join waitlist" button
- * (accounts open in approved batches; approved users sign in at /studio via
- * the invitation email). Signed in it shows "Studio". Client-side Clerk
- * state, so marketing pages stay statically rendered. While Clerk loads (or
- * when unconfigured) it shows the signed-out look.
+ * The nav's auth slot. Signed out it shows "Log in" (to /studio, where the
+ * sign-in card lives) and "Sign up". On a phone only "Sign up" shows, the
+ * sign-up page links to log in. Signed in it shows "Studio". Client-side
+ * Clerk state, so marketing pages stay statically rendered. While Clerk loads
+ * (or when unconfigured) it shows the signed-out look.
  */
-function LogInButton() {
+function SignedOutButtons() {
   return (
-    <WaitlistCta
-      size="sm"
-      sourcePage="nav"
-      label={
-        <>
-          <span className="sm:hidden">{WAITLIST_COPY.navButtonShort}</span>
-          <span className="hidden sm:inline">{WAITLIST_COPY.navButton}</span>
-        </>
-      }
-    />
+    <div className="flex items-center gap-2">
+      <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
+        <Link href={AUTH_COPY.signInPath}>{AUTH_COPY.logIn}</Link>
+      </Button>
+      <Button asChild size="sm">
+        <Link href={AUTH_COPY.signUpPath}>{AUTH_COPY.signUp}</Link>
+      </Button>
+    </div>
   );
 }
 
 function AuthAwareButton() {
   const { isLoaded, isSignedIn } = useUser();
-  if (!isLoaded || !isSignedIn) return <LogInButton />;
+  if (!isLoaded || !isSignedIn) return <SignedOutButtons />;
   return (
     <Button asChild size="sm" variant="outline">
       <Link href="/studio">Studio</Link>
@@ -43,6 +39,6 @@ function AuthAwareButton() {
 
 export function NavAuthButton() {
   // Config is fixed per build, so the hook component mounts consistently.
-  if (!isAuthConfiguredClient()) return <LogInButton />;
+  if (!isAuthConfiguredClient()) return <SignedOutButtons />;
   return <AuthAwareButton />;
 }

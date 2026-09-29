@@ -50,7 +50,8 @@ Clerk user id — no FK, no user data mirrored). One-time dashboard steps:
 - **Hero headline & subline**: `app/page.tsx`
 - **Section copy**: `components/home/ProductLines.tsx`, `components/home/BuiltForBuilders.tsx`
 - **Launchpad + ideation copy/limits**: `content/launch.ts`, `content/ideation.ts` (limits live in `lib/journey.ts` / `lib/ideation.ts`)
-- **Waitlist and contact forms**: `content/waitlist.ts`, `components/waitlist/WaitlistForm.tsx`, `components/home/ContactModal.tsx`. Both post to `/api/leads` (Neon + Resend); waitlist leads are also mirrored into Clerk's waitlist for approval
+- **Contact form**: `components/home/ContactModal.tsx`, posts to `/api/leads` (Neon + Resend)
+- **Sign up and log in copy**: `content/auth.ts`. Sign-up lives at `/sign-up`, log in at `/studio`
 
 ## Deploy
 
@@ -330,5 +331,11 @@ event window so judges can verify it.
   sectors and shapes, the studio and the public project page show the token,
   and agents get a `project` block on `get_launch` and `get_my_launches` plus
   `launchedToken` on `get_project_status`.
+
+- Sept 29, 2026. Project basics and open sign-up. Sector and subsector choices
+  are sentence cards under the sector name, who the user is became an ideal
+  customer persona table with up to three personas, and who pays and why this
+  chain are optional. The waitlist is gone, anyone can sign up at `/sign-up`
+  and log in at `/studio`, and `/waitlist` redirects to sign-up.
 
 This list grows as work lands on the branch.

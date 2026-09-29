@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import { AnalyticsSection } from "@/components/home/AnalyticsSection";
 import { BuiltForBuilders } from "@/components/home/BuiltForBuilders";
 import { ContactCta } from "@/components/home/ContactCta";
-import { WaitlistCta } from "@/components/home/WaitlistCta";
 import { HeroVideo } from "@/components/home/HeroVideo";
 import { Button } from "@/components/ui/Button";
+import { AUTH_COPY } from "@/content/auth";
 
 export default function LandingPage() {
   return (
@@ -65,7 +66,12 @@ export default function LandingPage() {
               on-chain versus what is merely stated.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <WaitlistCta sourcePage="home-hero" withArrow />
+              <Button asChild>
+                <Link href={AUTH_COPY.signUpPath}>
+                  {AUTH_COPY.signUp}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                </Link>
+              </Button>
               <ContactCta variant="secondary" sourcePage="home-hero" />
             </div>
           </div>

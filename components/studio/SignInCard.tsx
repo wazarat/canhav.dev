@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { SignIn } from "@clerk/nextjs";
 
-import { WaitlistCta } from "@/components/home/WaitlistCta";
+import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { isAuthConfiguredClient } from "@/components/studio/authConfig";
-import { WAITLIST_COPY } from "@/content/waitlist";
+import { AUTH_COPY } from "@/content/auth";
 
 /**
  * Clerk sign-in, hash-routed so no catch-all route is needed. Clerk reads
@@ -14,8 +15,7 @@ import { WAITLIST_COPY } from "@/content/waitlist";
  * fallbackRedirectUrl keeps everyone else on /studio; Clerk's own default is
  * "/", and the nav has no Studio link until the session hydrates, so a
  * successful sign-in used to look like a failure. Email-first by design: no
- * wallet anywhere in the studio. Accounts open in approved batches, so the
- * card also offers the waitlist to visitors without an invitation.
+ * wallet anywhere in the studio. Sign-up is open, at /sign-up.
  */
 export function SignInCard() {
   if (!isAuthConfiguredClient()) {
@@ -28,10 +28,12 @@ export function SignInCard() {
   }
   return (
     <div className="max-w-md">
-      <SignIn routing="hash" fallbackRedirectUrl="/studio" />
+      <SignIn routing="hash" signUpUrl={AUTH_COPY.signUpPath} fallbackRedirectUrl="/studio" />
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <span className="text-sm text-ink-400">{WAITLIST_COPY.signInPrompt}</span>
-        <WaitlistCta variant="outline" size="sm" sourcePage="sign-in" />
+        <span className="text-sm text-ink-400">{AUTH_COPY.noAccount}</span>
+        <Button asChild variant="outline" size="sm">
+          <Link href={AUTH_COPY.signUpPath}>{AUTH_COPY.signUp}</Link>
+        </Button>
       </div>
     </div>
   );

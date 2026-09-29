@@ -14,7 +14,7 @@ export const SITE = {
   footerLegal: "Research preview, not financial advice.",
 } as const;
 
-/** Primary nav links, rendered right-aligned before the Join waitlist button. */
+/** Primary nav links, rendered right-aligned before the log in and sign up buttons. */
 export const NAV_LINKS: ReadonlyArray<{ label: string; href: string; soon?: boolean }> = [
   { label: "Launch", href: "/launch" },
   { label: "Tokens", href: "/tokens" },

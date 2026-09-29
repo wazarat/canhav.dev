@@ -19,6 +19,7 @@ export function SelectField<V extends string>({
   onChange,
   options,
   placeholder = "Choose…",
+  clearable = false,
 }: {
   label: string;
   required?: boolean;
@@ -27,6 +28,8 @@ export function SelectField<V extends string>({
   onChange: (value: V | "") => void;
   options: ReadonlyArray<{ value: V; label: string; available?: boolean }>;
   placeholder?: string;
+  /** Optional answers can go back to unset, so the blank choice stays selectable. */
+  clearable?: boolean;
 }) {
   return (
     <Field label={label} required={required} hint={hint}>
@@ -35,7 +38,7 @@ export function SelectField<V extends string>({
         onChange={(e) => onChange(e.target.value as V | "")}
         className={cn(inputClasses, "appearance-none", !value && "text-ink-500")}
       >
-        <option value="" disabled>
+        <option value="" disabled={!clearable}>
           {placeholder}
         </option>
         {options.map((opt) => {

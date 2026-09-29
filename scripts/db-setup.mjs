@@ -168,7 +168,8 @@ await sql`
     on launchpad.entity_links (b_id) where a_type = 'project' and b_type = 'token_design'
 `;
 
-// Marketing leads (For Teams contact form + waitlist). Anonymous,
+// Marketing leads (For Teams contact form). `kind` still allows "waitlist"
+// for rows from the waitlist that ran until sign-up opened. Anonymous,
 // insert-only, one table discriminated by `kind`. No IP address on purpose
 // (no consent/retention story for it); user_agent is kept, coarse, for
 // spotting bot bursts. Repeat contacts from one email are legitimate, so

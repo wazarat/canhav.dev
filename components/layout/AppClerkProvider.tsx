@@ -12,7 +12,8 @@ export function AppClerkProvider({ children }: { children: React.ReactNode }) {
   if (!isAuthConfigured()) return <>{children}</>;
   return (
     <ClerkProvider
-      waitlistUrl="/waitlist"
+      signInUrl="/studio"
+      signUpUrl="/sign-up"
       appearance={{
         variables: {
           colorBackground: "#0B0E14",

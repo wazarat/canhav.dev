@@ -6,6 +6,7 @@ import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { CurveProgress } from "@/components/launch/CurveProgress";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import {
+  PERSONA_COPY,
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
@@ -13,6 +14,7 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
+  personaCells,
   sectorLabels,
   subsectorLabels,
 } from "@/content/ideation";
@@ -20,7 +22,7 @@ import { checklistFor } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { checklistProgress, kitShapes } from "@/lib/kits";
 import { explorerAddressUrl } from "@/lib/explorer";
-import type { ProjectDoc, StatusDecl } from "@/lib/ideation";
+import { type ProjectDoc, type StatusDecl, filledPersonas } from "@/lib/ideation";
 import { getLaunchesByProject } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
@@ -155,14 +157,53 @@ export default async function ProjectPublicPage({
         <Section title="The product">
           <div className="space-y-4">
             <Prose label="What it does" text={doc.whatItDoes} />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Prose label="Who the user is" text={doc.userIs} />
-              <Prose
-                label="Who pays"
-                text={doc.payer === "user" ? "The user pays." : doc.whoPays}
-              />
-            </div>
-            <Prose label="Why this chain" text={doc.whyThisChain} />
+            {filledPersonas(doc).length > 0 ? (
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-ink-500">
+                  {PERSONA_COPY.label}
+                </p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                  {filledPersonas(doc).map((persona, i) => (
+                    <div key={i} className="glass rounded-xl border border-ink-700/60 p-4">
+                      <p className="text-xs font-medium text-ink-400">
+                        {PERSONA_COPY.column(i + 1)}
+                      </p>
+                      <dl className="mt-2 space-y-2">
+                        {personaCells(persona).map((cell) => (
+                          <div key={cell.label}>
+                            <dt className="text-[11px] text-ink-500">{cell.label}</dt>
+                            <dd className="text-sm text-ink-200">{cell.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {doc.userIs.trim() || doc.payer ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {doc.userIs.trim() ? (
+                  <Prose
+                    label={filledPersonas(doc).length ? PERSONA_COPY.legacyLabel : PERSONA_COPY.label}
+                    text={doc.userIs}
+                  />
+                ) : null}
+                {doc.payer ? (
+                  <Prose
+                    label="Who pays"
+                    text={
+                      doc.payer === "user"
+                        ? "The user pays."
+                        : doc.whoPays.trim() || "Someone else pays."
+                    }
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            {doc.whyThisChain.trim() ? (
+              <Prose label="Why this chain" text={doc.whyThisChain} />
+            ) : null}
             {doc.kit && startingPointLabel(doc.kit) ? (
               <Prose label="Starting from" text={startingPointLabel(doc.kit) ?? ""} />
             ) : null}

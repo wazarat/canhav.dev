@@ -16,6 +16,10 @@ export interface ChipOption<V extends string> {
   value: V;
   label: string;
   available?: boolean;
+  /** Card heading in CardMultiSelectGroups. Falls back to `label`. */
+  title?: string;
+  /** Sentence under the card heading in CardMultiSelectGroups. */
+  sentence?: string;
 }
 
 const CHIP_BASE =
@@ -202,5 +206,110 @@ export function ChipMultiSelectGroups<V extends string>({
         {children}
       </div>
     </Field>
+  );
+}
+
+const CARD_BASE = "block w-full rounded-xl border px-4 py-3 text-left transition-colors";
+
+/**
+ * ChipMultiSelectGroups as full-width sentence cards: each option shows its
+ * title, then a first-person sentence. Same selection rules (`max`,
+ * `maxPerGroup`, extra clicks ignored). Options with `available: false` are
+ * left out, the caller says what is coming in `children`.
+ */
+export function CardMultiSelectGroups<V extends string>({
+  label,
+  required,
+  hint,
+  value,
+  onChange,
+  groups,
+  max,
+  maxPerGroup,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  value: readonly V[];
+  onChange: (value: V[]) => void;
+  groups: ReadonlyArray<ChipGroupSection<V>>;
+  max?: number;
+  maxPerGroup?: number;
+  /** Rendered under the cards. */
+  children?: React.ReactNode;
+}) {
+  const headed = groups.length > 1;
+  const chosen = new Set(value);
+  // Not a Field: a <label> around several buttons would forward clicks on the
+  // heading to the first card.
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-ink-200">
+        {label} {required ? <span className="text-rose-400">*</span> : null}
+      </p>
+      <div className="space-y-3" role="group" aria-label={label}>
+        {groups.map((group) => {
+          const options = group.options.filter((o) => o.available !== false);
+          const inGroup = options.filter((o) => chosen.has(o.value)).length;
+          return (
+            <div
+              key={group.key}
+              role={headed ? "group" : undefined}
+              aria-label={headed ? group.heading : undefined}
+            >
+              {headed ? (
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-400">
+                  {group.heading}
+                </p>
+              ) : null}
+              <div className="space-y-2">
+                {options.map((opt) => {
+                  const selected = chosen.has(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={selected}
+                      onClick={() => {
+                        if (selected) onChange(value.filter((v) => v !== opt.value));
+                        else if (
+                          (max === undefined || value.length < max) &&
+                          (maxPerGroup === undefined || inGroup < maxPerGroup)
+                        )
+                          onChange([...value, opt.value]);
+                      }}
+                      className={cn(CARD_BASE, selected ? CHIP_ON : CHIP_OFF)}
+                    >
+                      <span
+                        className={cn(
+                          "block text-[11px] font-medium uppercase tracking-wide",
+                          selected ? "text-electric-200" : "text-ink-400",
+                        )}
+                      >
+                        {opt.title ?? opt.label}
+                      </span>
+                      {opt.sentence ? (
+                        <span
+                          className={cn(
+                            "mt-1 block text-sm leading-relaxed",
+                            selected ? "text-ink-50" : "text-ink-200",
+                          )}
+                        >
+                          {opt.sentence}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        {children}
+      </div>
+      {hint ? <p className="text-xs text-ink-500">{hint}</p> : null}
+    </div>
   );
 }

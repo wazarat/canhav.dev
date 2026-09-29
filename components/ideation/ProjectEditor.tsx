@@ -14,13 +14,19 @@ import { KitRail } from "@/components/ideation/kit/KitRail";
 import { EnvironmentBlock } from "@/components/ideation/kit/EnvironmentBlock";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
-import { ChipMultiSelect, ChipMultiSelectGroups, ChipRadioGroup } from "@/components/ui/ChipGroup";
+import {
+  CardMultiSelectGroups,
+  ChipMultiSelectGroups,
+  ChipRadioGroup,
+} from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
+import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import {
   ORACLE_USE_OPTIONS,
   PAYER_OPTIONS,
+  PERSONA_COPY,
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
   SECTOR_COPY,
@@ -31,6 +37,7 @@ import {
   WORST_CASE_OPTIONS,
   WORST_CASE_PRESSURE,
   optionLabel,
+  personaCells,
   sectorLabel,
   subsectorLabel,
   subsectorLabels,
@@ -47,7 +54,12 @@ import {
   shapeLabels,
   startingPointLabel,
 } from "@/content/kits/copy";
-import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
+import {
+  PROJECT_LIMITS,
+  type ProjectDoc,
+  filledPersonas,
+  validateProjectDoc,
+} from "@/lib/ideation";
 import {
   SECTOR_SUBSECTORS,
   type Sector,
@@ -98,10 +110,6 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
         subsectors.filter((v) => SECTOR_SUBSECTORS[sec].includes(v)).length < L.subsectors.min,
     ) ||
     short(doc.whatItDoes, L.whatItDoes.min) ||
-    short(doc.userIs, L.userIs.min) ||
-    !doc.payer ||
-    (doc.payer === "third_party" && short(doc.whoPays, L.whoPays.min)) ||
-    short(doc.whyThisChain, L.whyThisChain.min) ||
     !doc.stage
       ? "Basics incomplete"
       : null;
@@ -217,7 +225,7 @@ export function ProjectEditor({
     .filter((sec) => subsectorOptionsFor(sec).length > 0)
     .map((sec) => ({
       key: sec,
-      heading: optionLabel(SECTOR_OPTIONS, sec),
+      heading: SECTOR_OPTIONS.find((o) => o.value === sec)?.title ?? optionLabel(SECTOR_OPTIONS, sec),
       options: subsectorOptionsFor(sec),
     }));
   const kitStep = step === 4 ? null : KIT_STEPS[step];
@@ -276,15 +284,17 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.name.max}
               placeholder="What is this called?"
             />
-            <ChipMultiSelect
+            <CardMultiSelectGroups
               label={SECTOR_COPY.label}
               required
               hint={SECTOR_COPY.hint}
               value={sectors}
               onChange={onSectors}
-              options={SECTOR_OPTIONS}
+              groups={[{ key: "sectors", heading: SECTOR_COPY.label, options: SECTOR_OPTIONS }]}
               max={PROJECT_LIMITS.sectors.max}
-            />
+            >
+              <p className="text-xs text-ink-400">{SECTOR_COPY.moreSoon}</p>
+            </CardMultiSelectGroups>
             {sectors.includes("other") && (
               <TextField
                 label="Which sector?"
@@ -295,7 +305,7 @@ export function ProjectEditor({
               />
             )}
             {subsectorGroups.length > 0 && (
-              <ChipMultiSelectGroups
+              <CardMultiSelectGroups
                 label={SECTOR_COPY.subsectorLabel}
                 required
                 hint={SECTOR_COPY.subsectorHint}
@@ -305,9 +315,9 @@ export function ProjectEditor({
                 maxPerGroup={PROJECT_LIMITS.subsectors.max}
               >
                 {overlapHints.length > 0 ? (
-                  <p className="mt-2 text-xs leading-relaxed text-ink-400">{overlapHints.join(" ")}</p>
+                  <p className="text-xs leading-relaxed text-ink-400">{overlapHints.join(" ")}</p>
                 ) : null}
-              </ChipMultiSelectGroups>
+              </CardMultiSelectGroups>
             )}
             {showRail && (
               <>
@@ -374,30 +384,32 @@ export function ProjectEditor({
               rows={5}
               placeholder="One paragraph. What does it actually do?"
             />
-            <TextField
-              label="Who the user is"
-              required
-              value={doc.userIs}
-              onChange={(v) => patch({ userIs: v })}
-              min={PROJECT_LIMITS.userIs.min}
-              max={PROJECT_LIMITS.userIs.max}
-              rows={2}
+            <PersonaTableEditor
+              personas={doc.personas}
+              onChange={(personas) => patch({ personas })}
             />
+            {(initialDoc.userIs.trim() || doc.userIs.trim()) && (
+              <TextField
+                label={PERSONA_COPY.legacyLabel}
+                value={doc.userIs}
+                onChange={(v) => patch({ userIs: v })}
+                max={PROJECT_LIMITS.userIs.max}
+                rows={2}
+              />
+            )}
             <SelectField
               label="Who pays"
-              required
               hint="Often not the same answer as who the user is."
               value={doc.payer}
               onChange={(v) => patch({ payer: v })}
               options={PAYER_OPTIONS}
+              clearable
             />
             {doc.payer === "third_party" && (
               <TextField
                 label="Who pays, exactly?"
-                required
                 value={doc.whoPays}
                 onChange={(v) => patch({ whoPays: v })}
-                min={PROJECT_LIMITS.whoPays.min}
                 max={PROJECT_LIMITS.whoPays.max}
                 rows={2}
                 placeholder="The counterparty, protocol, or business that actually pays."
@@ -405,10 +417,8 @@ export function ProjectEditor({
             )}
             <TextField
               label="Why this chain specifically"
-              required
               value={doc.whyThisChain}
               onChange={(v) => patch({ whyThisChain: v })}
-              min={PROJECT_LIMITS.whyThisChain.min}
               max={PROJECT_LIMITS.whyThisChain.max}
               rows={3}
             />
@@ -632,16 +642,25 @@ export function ProjectEditor({
                 </>
               )}
               <ReviewRow term="Stage" detail={optionLabel(STAGE_OPTIONS, doc.stage)} />
-              <ReviewRow
-                term="Who pays"
-                detail={
-                  doc.payer === "user"
-                    ? "The user pays"
-                    : doc.payer === "third_party"
-                      ? doc.whoPays.trim() || "Someone else pays"
-                      : "Not set"
-                }
-              />
+              {filledPersonas(doc).map((persona, i) => (
+                <ReviewRow
+                  key={i}
+                  term={PERSONA_COPY.column(i + 1)}
+                  detail={personaCells(persona)
+                    .map((c) => `${c.label} ${c.value}`)
+                    .join(" · ")}
+                />
+              ))}
+              {doc.payer ? (
+                <ReviewRow
+                  term="Who pays"
+                  detail={
+                    doc.payer === "user"
+                      ? "The user pays"
+                      : doc.whoPays.trim() || "Someone else pays"
+                  }
+                />
+              ) : null}
               <ReviewRow
                 term="Dependencies"
                 detail={

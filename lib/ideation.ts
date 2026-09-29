@@ -86,6 +86,51 @@ export type Payer = "user" | "third_party";
 
 export type OracleUse = "none" | "uses";
 
+export const REVENUE_RANGE_VALUES = [
+  "pre_revenue",
+  "under_1m",
+  "1m_10m",
+  "10m_50m",
+  "50m_250m",
+  "over_250m",
+] as const;
+
+export type RevenueRange = (typeof REVENUE_RANGE_VALUES)[number];
+
+/** One ideal customer persona. Every cell is optional. */
+export interface Persona {
+  /** Digits, or a digit range like 10-50. */
+  teamSize: string;
+  /** City, country, or continent. */
+  geography: string;
+  industry: string;
+  /** Role or title of the primary contact, not a named person. */
+  primaryContact: string;
+  revenueRange: RevenueRange | "";
+}
+
+export const TEAM_SIZE_PATTERN = /^\d+(\s*-\s*\d+)?$/;
+
+export function emptyPersona(): Persona {
+  return { teamSize: "", geography: "", industry: "", primaryContact: "", revenueRange: "" };
+}
+
+/** True when no cell of the persona is filled. */
+export function isEmptyPersona(p: Persona): boolean {
+  return !(
+    p.teamSize.trim() ||
+    p.geography.trim() ||
+    p.industry.trim() ||
+    p.primaryContact.trim() ||
+    p.revenueRange
+  );
+}
+
+/** Personas with at least one filled cell, for the public page, review and export. */
+export function filledPersonas(doc: { personas?: Persona[] }): Persona[] {
+  return (doc.personas ?? []).filter((p) => !isEmptyPersona(p));
+}
+
 /** One external dependency, optionally linked per contract/protocol. */
 export interface ExternalDep {
   name: string;
@@ -121,9 +166,17 @@ export interface ProjectDoc {
   kit?: ProjectKit;
   /** What it does, one paragraph. */
   whatItDoes: string;
-  /** Who the user is. Payment is asked separately, gated on `payer`. */
+  /**
+   * Who the user is, as free text. Superseded by `personas`; kept for
+   * documents written before the persona table. Optional answer.
+   */
   userIs: string;
-  /** Gate: whoPays text is required only when someone other than the user pays. */
+  /**
+   * Ideal customer personas, one to three. Optional so normalizeProjectDoc
+   * never injects the key into older documents.
+   */
+  personas?: Persona[];
+  /** Optional answer. whoPays text is asked only when someone other than the user pays. */
   payer: Payer | "";
   whoPays: string;
   whyThisChain: string;
@@ -173,9 +226,13 @@ export const PROJECT_LIMITS = {
   /** Per sector that asks for them. */
   subsectors: { min: 1, max: 3 },
   whatItDoes: { min: 80, max: 1200 },
-  userIs: { min: 20, max: 400 },
-  whoPays: { min: 20, max: 400 },
-  whyThisChain: { min: 40, max: 800 },
+  /** Optional answers, so no minimum. */
+  userIs: { max: 400 },
+  whoPays: { max: 400 },
+  whyThisChain: { max: 800 },
+  personas: { min: 1, max: 3 },
+  personaText: { max: 80 },
+  personaTeamSize: { max: 12 },
   architectureField: { min: 4, max: 800 },
   externalDeps: { max: 12 },
   externalDepName: { min: 2, max: 80 },
@@ -266,6 +323,27 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     subsectorPatch = { subsectors: [...seen] };
   }
 
+  // Personas: only present when the stored doc has the key. Cells coerce to
+  // strings, an unknown revenue range clears, extra columns drop.
+  let personasPatch: { personas?: Persona[] } = {};
+  if (Array.isArray(doc.personas)) {
+    const text = (v: unknown) => (typeof v === "string" ? v : "");
+    personasPatch = {
+      personas: (doc.personas as unknown[])
+        .filter((v): v is Record<string, unknown> => typeof v === "object" && v !== null)
+        .slice(0, PROJECT_LIMITS.personas.max)
+        .map((v) => ({
+          teamSize: text(v.teamSize),
+          geography: text(v.geography),
+          industry: text(v.industry),
+          primaryContact: text(v.primaryContact),
+          revenueRange: REVENUE_RANGE_VALUES.includes(v.revenueRange as RevenueRange)
+            ? (v.revenueRange as RevenueRange)
+            : "",
+        })),
+    };
+  }
+
   // Research kit: coerced when the key exists, dropped when it is garbage,
   // never invented.
   const { kit: rawKit, ...rest } = doc as ProjectDoc & { kit?: unknown };
@@ -279,6 +357,7 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     ...sectorsPatch,
     ...(sectorOther !== undefined ? { sectorOther } : {}),
     ...subsectorPatch,
+    ...personasPatch,
     payer,
     whoPays,
     architecture: {
@@ -511,7 +590,21 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     checkText("What it does", doc.whatItDoes, L.whatItDoes) ??
     checkText("Who the user is", doc.userIs, L.userIs);
   if (p) return p;
-  if (!doc.payer) return "Answer who pays.";
+  if (doc.personas) {
+    if (doc.personas.length > L.personas.max) return `At most ${L.personas.max} personas.`;
+    for (const persona of doc.personas) {
+      p =
+        checkText("Persona team size", persona.teamSize, L.personaTeamSize) ??
+        checkText("Persona geography", persona.geography, L.personaText) ??
+        checkText("Persona industry", persona.industry, L.personaText) ??
+        checkText("Persona primary contact", persona.primaryContact, L.personaText);
+      if (p) return p;
+      if (persona.teamSize.trim() && !TEAM_SIZE_PATTERN.test(persona.teamSize.trim()))
+        return "Persona team size must be a number or a range like 10-50.";
+      if (persona.revenueRange && !REVENUE_RANGE_VALUES.includes(persona.revenueRange))
+        return "Unknown persona revenue range.";
+    }
+  }
   if (doc.payer === "third_party") {
     p = checkText("Who pays", doc.whoPays, L.whoPays);
     if (p) return p;

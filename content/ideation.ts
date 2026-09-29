@@ -8,9 +8,11 @@ import type {
   MarketTiming,
   OracleUse,
   Payer,
+  Persona,
   ProjectDoc,
   ProjectStage,
   RationaleWhy,
+  RevenueRange,
   ReleaseType,
   Sector,
   StatusDecl,
@@ -64,6 +66,10 @@ export interface GatedOption<V extends string> {
   value: V;
   label: string;
   available?: boolean;
+  /** Card heading in the sentence pickers. Falls back to `label`. */
+  title?: string;
+  /** First-person sentence under the card heading. */
+  sentence?: string;
 }
 
 /**
@@ -73,9 +79,19 @@ export interface GatedOption<V extends string> {
  * lib/ideation.ts.
  */
 export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
-  { value: "credit_lending", label: "Credit" },
+  {
+    value: "credit_lending",
+    label: "Credit",
+    title: "Credit sector application",
+    sentence: "I am looking to let users lend, borrow, or earn yield on their assets.",
+  },
   { value: "staking", label: "Staking", available: false },
-  { value: "liquidity_infra", label: "Liquidity" },
+  {
+    value: "liquidity_infra",
+    label: "Liquidity",
+    title: "Liquidity sector application",
+    sentence: "I am looking to put assets to work through vaults and pools.",
+  },
   { value: "perps_derivatives", label: "Derivatives", available: false },
   { value: "rwa_infra", label: "RWAs", available: false },
   { value: "other", label: "Other", available: false },
@@ -84,13 +100,33 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
 /** Subsectors per sector, in SECTOR_SUBSECTORS order. Pick one to three per sector. All are open. */
 export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOption<Subsector>>>> = {
   credit_lending: [
-    { value: "lending", label: "Lending" },
-    { value: "leveraged_yield", label: "Leveraged yield" },
-    { value: "fixed_income", label: "Fixed income" },
+    {
+      value: "lending",
+      label: "Lending",
+      sentence: "I am looking to let users lend and borrow against collateral.",
+    },
+    {
+      value: "leveraged_yield",
+      label: "Leveraged yield",
+      sentence: "I am looking to offer amplified yield through looped positions.",
+    },
+    {
+      value: "fixed_income",
+      label: "Fixed income",
+      sentence: "I am looking to offer fixed-rate returns over a set term.",
+    },
   ],
   liquidity_infra: [
-    { value: "vaults", label: "Vaults" },
-    { value: "pools", label: "Pools" },
+    {
+      value: "vaults",
+      label: "Vaults",
+      sentence: "I am looking to run managed vaults that allocate deposits.",
+    },
+    {
+      value: "pools",
+      label: "Pools",
+      sentence: "I am looking to set up pools that traders swap against.",
+    },
   ],
 };
 
@@ -106,9 +142,11 @@ export function subsectorOptionsFor(sector: Sector): Array<GatedOption<Subsector
 
 export const SECTOR_COPY = {
   label: "Sector",
-  hint: "Pick one or more.",
+  hint: "Pick every sentence that fits.",
+  /** Under the sector cards, in place of listing sectors that are not open yet. */
+  moreSoon: "We have more features coming soon.",
   subsectorLabel: "Subsector",
-  subsectorHint: "Pick one or more per sector. Each opens its own research workflow.",
+  subsectorHint: "Pick every sentence that fits, up to three per sector. Each opens its own research workflow.",
   /** Under the subsector chips when the overlap rule ticked something. */
   overlapHint: (added: string, because: string) =>
     `${added} is ticked because it shares product shapes with ${because}.`,
@@ -146,6 +184,47 @@ export const STAGE_OPTIONS: Array<{ value: ProjectStage; label: string }> = [
   { value: "testnet_deployed", label: "Testnet contracts deployed" },
   { value: "live_elsewhere", label: "Live elsewhere" },
 ];
+
+export const REVENUE_RANGE_OPTIONS: Array<{ value: RevenueRange; label: string }> = [
+  { value: "pre_revenue", label: "Pre revenue" },
+  { value: "under_1m", label: "Under $1M" },
+  { value: "1m_10m", label: "$1M to $10M" },
+  { value: "10m_50m", label: "$10M to $50M" },
+  { value: "50m_250m", label: "$50M to $250M" },
+  { value: "over_250m", label: "Over $250M" },
+];
+
+/** The ideal customer persona table. Row order is the order of `rows`. */
+export const PERSONA_COPY = {
+  label: "Who the user is",
+  note: "Ideal customer personas. Up to three.",
+  column: (n: number) => `Persona ${n}`,
+  add: "Add persona",
+  remove: (n: number) => `Remove persona ${n}`,
+  legacyLabel: "Earlier description",
+  rows: {
+    teamSize: { label: "Team size", placeholder: "25 or 10-50" },
+    geography: { label: "Geography", placeholder: "City, country, or continent" },
+    industry: { label: "Industry", placeholder: "Fintech, asset management" },
+    primaryContact: { label: "Primary contact", placeholder: "Head of Treasury" },
+    revenueRange: { label: "Revenue range", placeholder: "Choose…" },
+  },
+} as const;
+
+/** The cells of one persona as label and value pairs, empty cells left out. */
+export function personaCells(p: Persona): Array<{ label: string; value: string }> {
+  const R = PERSONA_COPY.rows;
+  return [
+    { label: R.teamSize.label, value: p.teamSize.trim() },
+    { label: R.geography.label, value: p.geography.trim() },
+    { label: R.industry.label, value: p.industry.trim() },
+    { label: R.primaryContact.label, value: p.primaryContact.trim() },
+    {
+      label: R.revenueRange.label,
+      value: p.revenueRange ? optionLabel(REVENUE_RANGE_OPTIONS, p.revenueRange) : "",
+    },
+  ].filter((c) => c.value);
+}
 
 export const PAYER_OPTIONS: Array<{ value: Payer; label: string }> = [
   { value: "user", label: "The user pays" },
