@@ -312,4 +312,10 @@ event window so judges can verify it.
   LaunchAMM pool whose shares it keeps forever, so that liquidity can never be
   withdrawn. 51 tests including seven fuzz invariants; deploy script ready.
 
+- Sept 29, 2026. Curve launcher deployed and indexed. `CurveLauncher` is live
+  on Robinhood Chain Testnet, the indexer reads its launches through the same
+  event as the factory plus two curve tables, every launch surface resolves a
+  graduated pool by id, and agents get `get_curve_status` plus curve blocks on
+  `get_launch`, `list_launches` and `get_project_status`.
+
 This list grows as work lands on the branch.

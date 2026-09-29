@@ -4,11 +4,12 @@ import { EmptyCard } from "@/components/explore/EmptyCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { formatCount, formatPriceEth } from "@/lib/format";
 import {
+  type IndexedPool,
   formatSupply,
   getActiveSaleTokens,
+  getCurves,
   getPools,
   getTokens,
-  type IndexedPool,
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
 
@@ -33,10 +34,11 @@ function liquidityEth(pool: IndexedPool): string {
 
 /** Deployed tokens, read from the on-chain event log via the indexer. */
 export async function TokensGrid() {
-  const [tokens, liveSaleTokens, pools] = await Promise.all([
+  const [tokens, liveSaleTokens, pools, curves] = await Promise.all([
     getTokens(),
     getActiveSaleTokens(),
     getPools(),
+    getCurves(),
   ]);
   if (tokens === null)
     return <EmptyCard>Token data is temporarily unavailable. Try again shortly.</EmptyCard>;
@@ -47,9 +49,14 @@ export async function TokensGrid() {
         const liveSale = liveSaleTokens?.has(t.address.toLowerCase()) ?? false;
         const committed = hasCommitment(t.journeyHash);
         // Pools are per (token, creator) and only the creator's own pool is
-        // shown, the same authorship rule the token page applies.
-        const pool =
-          pools?.get(`${t.address.toLowerCase()}:${t.creator.toLowerCase()}`) ?? null;
+        // shown, the same authorship rule the token page applies. A curve
+        // launch's pool belongs to the launcher, so it is found by the id the
+        // curve row carries (the same rule as lib/indexer.ts getLaunchPool).
+        const curve = curves?.get(t.address.toLowerCase()) ?? null;
+        const pool = curve?.poolId
+          ? (pools?.byPoolId.get(curve.poolId) ?? null)
+          : (pools?.byTokenCreator.get(`${t.address.toLowerCase()}:${t.creator.toLowerCase()}`) ??
+            null);
         return (
           <Link
             key={t.address}

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { getCurve } from "@/lib/indexer";
+
 import { getSessionUser } from "@/lib/auth";
 import { buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
 import { gateExport, markdownResponse } from "@/lib/export-route";
@@ -38,6 +40,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         token: linked?.draft_doc,
         deployedAddress: linked?.deployed_token_address,
         draft: true,
+        curve: linked?.deployed_token_address ? await getCurve(linked?.deployed_token_address) : null,
       }),
     );
   }

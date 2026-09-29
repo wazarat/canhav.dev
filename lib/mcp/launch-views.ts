@@ -3,16 +3,23 @@ import "server-only";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { getTokenDesignByAddress } from "@/lib/ideation-db";
 import {
+  curveProgressPct,
+  curveWindowOpen,
   formatSupply,
+  getCurve,
   getEscrows,
-  getPool,
+  getLaunchPool,
   getSales,
   getTokenRead,
   getVesting,
+  isCurveLaunch,
+  type IndexedCurve,
   type IndexedEscrow,
+  type IndexedPool,
   type IndexedSale,
   type IndexedToken,
 } from "@/lib/indexer";
+import { formatPriceEth } from "@/lib/format";
 import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
@@ -55,6 +62,10 @@ export function summarizeToken(t: IndexedToken) {
     website: t.website || null,
     journeyHash: t.journeyHash,
     factoryVersion: t.version,
+    // "curve" when the CurveLauncher emitted the launch, "factory" for the
+    // TokenFactory versions. `launcher` is the emitting contract.
+    launchedVia: isCurveLaunch(t) ? "curve" : "factory",
+    launcher: t.factory,
     launchedAt: isoTime(t.blockTimestamp),
     launchTxHash: t.txHash,
     chainId: LAUNCH_CHAIN.chainId,
@@ -107,6 +118,63 @@ export function summarizeEscrow(e: IndexedEscrow) {
       claimedAt: t.claimedAt ? isoTime(t.claimedAt) : null,
       claimedTxHash: t.claimedTxHash,
     })),
+  };
+}
+
+export type CurveState = "live" | "window" | "graduated";
+
+export function curveState(c: IndexedCurve, now: number): CurveState {
+  if (c.graduated) return "graduated";
+  return curveWindowOpen(c, now) ? "window" : "live";
+}
+
+/** The bonding curve behind a launch, in the shape every tool returns. */
+export function summarizeCurve(c: IndexedCurve, now: number) {
+  return {
+    state: curveState(c, now),
+    developer: c.developer,
+    launcherContract: LAUNCH_CHAIN.curveAddress,
+    supplyWei: c.supply,
+    curveSupplyWei: c.curveSupply,
+    poolSupplyWei: c.poolSupply,
+    virtualEthReserveWei: c.virtualEthReserve,
+    ethReserveWei: c.ethReserve,
+    tokenReserveWei: c.tokenReserve,
+    priceEthPerToken: formatPriceEth(BigInt(c.ethReserve), BigInt(c.tokenReserve)),
+    raisedWei: c.raisedWei,
+    thresholdWei: c.thresholdWei,
+    progressPct: curveProgressPct(c),
+    taxPotWei: c.taxPotWei,
+    snipeTaxBps: c.snipeTaxBps,
+    windowEndsAt: isoTime(c.windowEnd),
+    windowOpen: curveWindowOpen(c, now),
+    buyCount: c.buyCount,
+    sellCount: c.sellCount,
+    ethVolumeWei: c.ethVolume,
+    graduated: c.graduated,
+    poolId: c.poolId,
+    ethSeededWei: c.ethSeeded,
+    tokensSeededWei: c.tokensSeeded,
+    sharesLocked: c.sharesLocked,
+    graduatedAt: c.graduatedAt ? isoTime(c.graduatedAt) : null,
+    graduationTxHash: c.graduationTxHash,
+    createdTxHash: c.txHash,
+  };
+}
+
+/** Pool block shared by launchView and get_pool_status. `lockedLiquidity` is
+ *  true for a pool the curve launcher seeded: it holds the shares and has no
+ *  path to remove them. */
+export function summarizePool(pool: IndexedPool) {
+  return {
+    poolId: pool.poolId,
+    creator: pool.creator,
+    lockedLiquidity: pool.creator.toLowerCase() === LAUNCH_CHAIN.curveAddress.toLowerCase(),
+    ethReserveWei: pool.ethReserve,
+    tokenReserveWei: pool.tokenReserve,
+    totalShares: pool.totalShares,
+    protocolFeeBps: pool.protocolFeeBps,
+    txHash: pool.txHash,
   };
 }
 
@@ -166,15 +234,17 @@ export async function launchView(address: string): Promise<View<unknown>> {
     return { ok: false, message: `No CanHav launch at ${address}.` };
   const token = read.value;
   const now = Math.floor(Date.now() / 1000);
-  const [journey, meta, vesting, escrows, sales, pool, design] = await Promise.all([
+  const [journey, meta, vesting, escrows, sales, curve, design] = await Promise.all([
     journeyBlock(token),
     getVerifiedTokenMetadata(token.descriptionHash, token.creator),
     getVesting(token.address),
     getEscrows(token.address),
     getSales(token.address),
-    getPool(token.address, token.creator),
+    getCurve(token.address),
     linkedDesign(token.address),
   ]);
+  // A graduated curve's pool belongs to the launcher, so it is found by id.
+  const pool = await getLaunchPool(token, curve);
   return {
     ok: true,
     value: {
@@ -200,16 +270,9 @@ export async function launchView(address: string): Promise<View<unknown>> {
         : null,
       escrows: (escrows ?? []).map(summarizeEscrow),
       sales: (sales ?? []).map((s) => summarizeSale(s, now)),
-      pool: pool
-        ? {
-            poolId: pool.poolId,
-            ethReserveWei: pool.ethReserve,
-            tokenReserveWei: pool.tokenReserve,
-            totalShares: pool.totalShares,
-            protocolFeeBps: pool.protocolFeeBps,
-            txHash: pool.txHash,
-          }
-        : null,
+      pool: pool ? summarizePool(pool) : null,
+      // Null for factory launches. Fields are only ever added.
+      curve: curve ? summarizeCurve(curve, now) : null,
       design,
     },
   };

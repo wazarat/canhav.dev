@@ -12,6 +12,21 @@ Both factories are watched with the v2 ABI from start block `95600880`:
 - v1 `0x1dAaa8294806d216Df36dc07B3803ED26584c909` (paused; never emits VestingCreated)
 - v2 `0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0` (vesting-capable, block 95922560)
 
+The fee-era factories v3 and v4 share the `TokenFactoryV3` entry. The
+bonding-curve launcher `CurveLauncher` `0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981`
+(block 126200516, 2026-09-29) is its own entry: its `TokenLaunched` is
+byte-identical to v3/v4 (selector
+`0xbbc593d7859ca347e90db47a2b647c2eae32b5c1d196753a8b7a0c295a65d6da` checked
+against both ABIs before the deploy, see `lib/abi` and the M19b evidence), so
+its launches land in `token` through a shared insert with `factory` set to the
+launcher, and its lifecycle events fill two more tables: `CurveCreated` →
+`curve` (reserves, raised versus threshold, tax pot, window end as a
+timestamp, graduation fields) and `CurveBuy` / `CurveSell` → `curve_trade`,
+with `Graduated` flipping the curve row. The pool a graduation seeds arrives
+through the ordinary `LaunchAMM` handlers with `creator` = the launcher, which
+is why the site resolves a curve launch's pool by `curve.poolId` rather than
+by creator.
+
 ## Production (Fly.io)
 
 The previous host was a Render web service plus its own Render Postgres. That
@@ -180,15 +195,18 @@ That's the entire migration story in dev: change `ponder.schema.ts` /
 `src/index.ts`, wipe, replay. In production the same rule holds — reindex from
 zero, never hand-patch rows. To force it there, set `DATABASE_SCHEMA` to a new
 name and redeploy; the old schema can be dropped once the new one is ready
-(`DROP SCHEMA <old> CASCADE`).
+(`DROP SCHEMA <old> CASCADE`). The `ponder_sync` RPC cache survives, so a
+replay of the existing contracts takes minutes; only a new contract's own
+range is fetched cold. Schemas used so far: `launchpad` (2026-09-23 to
+2026-09-29), `launchpad_m19` (from 2026-09-29, the curve tables).
 
 ## Site integration
 
 The Next app reads this API server-side via `lib/indexer.ts` (`INDEXER_URL`
 env var, defaults to `http://localhost:42069`). It feeds `/explore`, every
 `/launch/t/[address]` page, the governance timelock list, the deploy history on
-`/p/[slug]`, the studio's name-collision check, and the eight launch tools on
-the MCP server.
+`/p/[slug]`, the studio's name-collision check, and the nine launch tools on
+the MCP server (`get_curve_status` reads `curve` and `curve_trade`).
 
 Everything degrades rather than failing. `lib/indexer.ts` returns null on any
 error, `/explore` says token data is unavailable, and a token page says the

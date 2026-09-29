@@ -1,5 +1,7 @@
 import "server-only";
 
+import { LAUNCH_CHAIN } from "@/content/launch";
+
 /**
  * Data layer for the launchpad indexer (Ponder GraphQL API). Local-first: the
  * indexer runs in indexer/ (`npm run dev`, port 42069). Every fetch degrades
@@ -11,6 +13,10 @@ const INDEXER_URL = process.env.INDEXER_URL ?? "http://localhost:42069";
 
 export interface IndexedToken {
   address: string;
+  /** The contract that emitted TokenLaunched: a TokenFactory or the
+   *  CurveLauncher. Version numbers are per-factory, so this is the
+   *  discriminator (see isCurveLaunch). */
+  factory: string;
   creator: string;
   name: string;
   symbol: string;
@@ -32,7 +38,7 @@ export interface IndexedToken {
 }
 
 const TOKEN_FIELDS =
-  "address creator name symbol totalSupply imageURI xHandle website " +
+  "address factory creator name symbol totalSupply imageURI xHandle website " +
   "descriptionHash journeyHash salt version launchFee treasury " +
   "blockNumber blockTimestamp txHash";
 
@@ -381,20 +387,26 @@ export async function getPool(
  * a whole board, where getPool would be one round trip per card. The caller
  * supplies each token's creator so the same authorship filter applies.
  */
-export async function getPools(): Promise<Map<string, IndexedPool> | null> {
+export async function getPools(): Promise<{
+  byTokenCreator: Map<string, IndexedPool>;
+  byPoolId: Map<string, IndexedPool>;
+} | null> {
   const data = await query<{ pools: { items: IndexedPool[] } }>(
     `{ pools(limit: 100) { items {
       poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
     } } }`,
   );
   if (!data) return null;
-  const byToken = new Map<string, IndexedPool>();
+  const byTokenCreator = new Map<string, IndexedPool>();
+  const byPoolId = new Map<string, IndexedPool>();
   for (const pool of data.pools.items) {
-    // Keyed by token alone; the creator match happens at the call site, which
-    // is the only place that knows who launched the token.
-    byToken.set(`${pool.tokenAddress.toLowerCase()}:${pool.creator.toLowerCase()}`, pool);
+    // The creator match happens at the call site, which is the only place
+    // that knows who launched the token; a graduated curve's pool is looked
+    // up by the id the curve row carries instead.
+    byTokenCreator.set(`${pool.tokenAddress.toLowerCase()}:${pool.creator.toLowerCase()}`, pool);
+    byPoolId.set(pool.poolId, pool);
   }
-  return byToken;
+  return { byTokenCreator, byPoolId };
 }
 
 export interface IndexedSwap {
@@ -425,6 +437,134 @@ export async function getRecentSwaps(
     0n,
   );
   return { swaps: all.slice(0, limit), count: data.swaps.totalCount, ethVolume };
+}
+
+/** True when the token was launched through the bonding-curve launcher. */
+export function isCurveLaunch(token: Pick<IndexedToken, "factory">): boolean {
+  return token.factory.toLowerCase() === LAUNCH_CHAIN.curveAddress.toLowerCase();
+}
+
+/** A pool by id, whoever created it. Graduated curves seed a pool whose
+ *  creator is the launcher, so the creator filter cannot find it. */
+export async function getPoolById(poolId: string): Promise<IndexedPool | null> {
+  if (!/^[0-9]+$/.test(poolId)) return null;
+  const data = await query<{ pool: IndexedPool | null }>(
+    `{ pool(poolId: "${poolId}") {
+      poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
+    } }`,
+  );
+  return data?.pool ?? null;
+}
+
+export interface IndexedCurve {
+  token: string;
+  developer: string;
+  supply: string;
+  curveSupply: string;
+  poolSupply: string;
+  virtualEthReserve: string;
+  /** Virtual ETH reserve x (real ETH held is x minus virtualEthReserve). */
+  ethReserve: string;
+  /** Virtual token reserve y. */
+  tokenReserve: string;
+  raisedWei: string;
+  taxPotWei: string;
+  thresholdWei: string;
+  snipeTaxBps: number;
+  /** Unix seconds. The window is timestamp based on this chain. */
+  windowEnd: string;
+  graduated: boolean;
+  poolId: string | null;
+  buyCount: number;
+  sellCount: number;
+  ethVolume: string;
+  ethSeeded: string | null;
+  tokensSeeded: string | null;
+  sharesLocked: string | null;
+  graduatedAt: string | null;
+  graduationTxHash: string | null;
+  blockNumber: string;
+  blockTimestamp: string;
+  txHash: string;
+}
+
+const CURVE_FIELDS =
+  "token developer supply curveSupply poolSupply virtualEthReserve ethReserve tokenReserve " +
+  "raisedWei taxPotWei thresholdWei snipeTaxBps windowEnd graduated poolId buyCount sellCount " +
+  "ethVolume ethSeeded tokensSeeded sharesLocked graduatedAt graduationTxHash " +
+  "blockNumber blockTimestamp txHash";
+
+/** The bonding curve behind a token, or null when the token was not launched
+ *  through the launcher (or the indexer is unreachable). */
+export async function getCurve(tokenAddress: string): Promise<IndexedCurve | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const data = await query<{ curve: IndexedCurve | null }>(
+    `{ curve(token: "${tokenAddress.toLowerCase()}") { ${CURVE_FIELDS} } }`,
+  );
+  return data?.curve ?? null;
+}
+
+/** Every curve, keyed by lowercase token address. One query for a board. */
+export async function getCurves(): Promise<Map<string, IndexedCurve> | null> {
+  const data = await query<{ curves: { items: IndexedCurve[] } }>(
+    `{ curves(limit: 100) { items { ${CURVE_FIELDS} } } }`,
+  );
+  if (!data) return null;
+  return new Map(data.curves.items.map((c) => [c.token.toLowerCase(), c]));
+}
+
+export interface IndexedCurveTrade {
+  trader: string;
+  side: "buy" | "sell";
+  ethWei: string;
+  taxWei: string;
+  tokensWei: string;
+  blockTimestamp: string;
+  txHash: string;
+}
+
+/** Recent trades on a curve (newest first) plus the total count. */
+export async function getCurveTrades(
+  tokenAddress: string,
+  limit = 10,
+): Promise<{ trades: IndexedCurveTrade[]; count: number } | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const data = await query<{ curveTrades: { items: IndexedCurveTrade[]; totalCount: number } }>(
+    `{ curveTrades(where: { token: "${tokenAddress.toLowerCase()}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: ${limit}) { totalCount items {
+      trader side ethWei taxWei tokensWei blockTimestamp txHash
+    } } }`,
+  );
+  if (!data) return null;
+  return { trades: data.curveTrades.items, count: data.curveTrades.totalCount };
+}
+
+/**
+ * The one pool a launch page shows. A graduated curve's pool belongs to the
+ * launcher, so it is found by id; otherwise the creator-authored pool. Every
+ * surface (token page, board, MCP views and tools) resolves through here.
+ */
+export async function getLaunchPool(
+  token: Pick<IndexedToken, "address" | "creator">,
+  curve: IndexedCurve | null,
+): Promise<IndexedPool | null> {
+  if (curve?.poolId) return getPoolById(curve.poolId);
+  return getPool(token.address, token.creator);
+}
+
+/** Graduation progress in whole percent, clamped to 100. */
+export function curveProgressPct(c: Pick<IndexedCurve, "raisedWei" | "thresholdWei">): number {
+  const threshold = BigInt(c.thresholdWei);
+  if (threshold === 0n) return 0;
+  const pct = Number((BigInt(c.raisedWei) * 10_000n) / threshold) / 100;
+  return Math.min(100, Math.max(0, pct));
+}
+
+/** Whether buys still pay the snipe tax at `nowSeconds`. */
+export function curveWindowOpen(
+  c: Pick<IndexedCurve, "windowEnd" | "graduated">,
+  nowSeconds: number,
+): boolean {
+  return !c.graduated && nowSeconds < Number(c.windowEnd);
 }
 
 /** Whole-token supply (assumes 18 decimals) for display. */

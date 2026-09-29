@@ -455,10 +455,36 @@ function computedSection(d: DerivedTokenomics): string[] {
 // ---------------------------------------------------------------------------
 // AGENTS.md — context for an AI IDE
 
+/** The subset of a curve row the Market line needs. */
+export interface AgentsCurve {
+  graduated: boolean;
+  raisedWei: string;
+  thresholdWei: string;
+  poolId: string | null;
+}
+
+function marketLine(c: AgentsCurve): string {
+  if (c.graduated)
+    return `Market: graduated to LaunchAMM pool #${c.poolId ?? "?"}, liquidity locked forever in the curve launcher.`;
+  const raised = formatEth(c.raisedWei);
+  const threshold = formatEth(c.thresholdWei);
+  const pct = BigInt(c.thresholdWei) === 0n ? 0 : Number((BigInt(c.raisedWei) * 10_000n) / BigInt(c.thresholdWei)) / 100;
+  return `Market: on the bonding curve, ${raised} of ${threshold} ETH raised toward graduation (${pct}%).`;
+}
+
+function formatEth(wei: string): string {
+  const w = BigInt(wei);
+  const whole = w / 10n ** 18n;
+  const frac = (w % 10n ** 18n).toString().padStart(18, "0").replace(/0+$/, "");
+  return frac ? `${whole}.${frac.slice(0, 6)}` : whole.toString();
+}
+
 export function buildAgentsMd(input: {
   project?: ProjectDoc;
   token?: TokenDesignDoc;
   deployedAddress?: string | null;
+  /** The token's bonding curve, when it was launched through the launcher. */
+  curve?: AgentsCurve | null;
   /** True when built from the current draft rather than a published snapshot. */
   draft?: boolean;
 }): string {
@@ -478,6 +504,8 @@ export function buildAgentsMd(input: {
     `- Network: ${LAUNCH_CHAIN.name} (chain id ${LAUNCH_CHAIN.chainId})`,
     `- Explorer: ${LAUNCH_CHAIN.explorerUrl}`,
     `- CanHav token factory (v4): ${LAUNCH_CHAIN.factoryAddress}`,
+    `- CanHav curve launcher: ${LAUNCH_CHAIN.curveAddress}`,
+    `- CanHav AMM: ${LAUNCH_CHAIN.ammAddress}`,
   ];
 
   if (project) {
@@ -519,6 +547,7 @@ export function buildAgentsMd(input: {
       input.deployedAddress
         ? `Deployed at ${input.deployedAddress} (${LAUNCH_CHAIN.explorerUrl}/address/${input.deployedAddress}).`
         : "Not deployed yet.",
+      ...(input.deployedAddress && input.curve ? ["", marketLine(input.curve)] : []),
       "",
       "### Design constraints (testable assertions)",
       "",

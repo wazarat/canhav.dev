@@ -7,8 +7,11 @@ import { LAUNCH_CHAIN } from "@/content/launch";
 import {
   formatSupply,
   getActiveSaleTokens,
+  getCurve,
+  getCurves,
+  getCurveTrades,
   getEscrows,
-  getPool,
+  getLaunchPool,
   getRecentPurchases,
   getRecentSwaps,
   getSales,
@@ -21,13 +24,16 @@ import { hasCommitment } from "@/lib/journey";
 import { getVerifiedJourney } from "@/lib/journey-db";
 import { getMyLaunches } from "@/lib/my-launches";
 import {
+  curveState,
   INDEXER_HINT,
   isoTime,
   journeyBlock,
   launchUrl,
   launchView,
   salePhase,
+  summarizeCurve,
   summarizeEscrow,
+  summarizePool,
   summarizeSale,
   summarizeToken,
 } from "@/lib/mcp/launch-views";
@@ -62,7 +68,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "List token launches",
       description:
-        "Newest-first list of tokens launched through the CanHav factory on Robinhood Chain Testnet, with a flag for launches that have a sale open right now. Pass creator to see one wallet's launches.",
+        "Newest-first list of tokens launched through CanHav on Robinhood Chain Testnet (the factory or the bonding-curve launcher), with a flag for launches that have a sale open right now and, for curve launches, the curve state and graduation progress. Pass creator to see one wallet's launches.",
       inputSchema: z.object({
         limit: z.number().int().min(1).max(100).optional(),
         creator: ADDRESS.optional(),
@@ -85,14 +91,25 @@ export function registerLaunchTools(server: McpServer): void {
           })),
         });
       }
-      const [tokens, active] = await Promise.all([getTokens(), getActiveSaleTokens()]);
+      const [tokens, active, curves] = await Promise.all([
+        getTokens(),
+        getActiveSaleTokens(),
+        getCurves(),
+      ]);
       if (!tokens) return errorResult(INDEXER_HINT);
+      const now = Math.floor(Date.now() / 1000);
       return jsonResult({
         totalReturned: Math.min(tokens.length, max),
-        launches: tokens.slice(0, max).map((t) => ({
-          ...summarizeToken(t),
-          saleOpen: active?.has(t.address.toLowerCase()) ?? null,
-        })),
+        launches: tokens.slice(0, max).map((t) => {
+          const curve = curves?.get(t.address.toLowerCase()) ?? null;
+          return {
+            ...summarizeToken(t),
+            saleOpen: active?.has(t.address.toLowerCase()) ?? null,
+            curve: curve
+              ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct }
+              : null,
+          };
+        }),
       });
     },
   );
@@ -103,7 +120,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "Get a token launch",
       description:
-        "Everything CanHav knows about one deployed token by address. Token metadata, the description text and Telegram handle verified against the on-chain description hash, the journey document verified against its on-chain hash, creator milestone updates, vesting, milestone escrow tranches, allocation sales, the creator's AMM pool, and the linked published design when one exists.",
+        "Everything CanHav knows about one deployed token by address. Token metadata, the description text and Telegram handle verified against the on-chain description hash, the journey document verified against its on-chain hash, creator milestone updates, vesting, milestone escrow tranches, allocation sales, the launch's AMM pool (the creator's, or the locked one the curve seeded), the bonding curve state for a curve launch, and the linked published design when one exists.",
       inputSchema: z.object({ address: ADDRESS }),
     },
     async ({ address }) => {
@@ -220,7 +237,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "Get pool status",
       description:
-        "The creator's AMM pool for a launch with reserves, LP shares, protocol fee, swap count, ETH volume, and the most recent swaps.",
+        "The launch's AMM pool with reserves, LP shares, protocol fee, swap count, ETH volume, and the most recent swaps. For a curve launch this is the pool the launcher seeded at graduation, whose liquidity is locked; otherwise the creator's own pool.",
       inputSchema: z.object({
         address: ADDRESS,
         recentLimit: z.number().int().min(1).max(50).optional(),
@@ -229,7 +246,7 @@ export function registerLaunchTools(server: McpServer): void {
     async ({ address, recentLimit }) => {
       const token = await getToken(address);
       if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
-      const pool = await getPool(token.address, token.creator);
+      const pool = await getLaunchPool(token, await getCurve(token.address));
       if (!pool) {
         return jsonResult({ address: token.address, ammContract: LAUNCH_CHAIN.ammAddress, pool: null });
       }
@@ -238,12 +255,7 @@ export function registerLaunchTools(server: McpServer): void {
         address: token.address,
         ammContract: LAUNCH_CHAIN.ammAddress,
         pool: {
-          poolId: pool.poolId,
-          creator: pool.creator,
-          ethReserveWei: pool.ethReserve,
-          tokenReserveWei: pool.tokenReserve,
-          totalShares: pool.totalShares,
-          protocolFeeBps: pool.protocolFeeBps,
+          ...summarizePool(pool),
           swapCount: swaps?.count ?? null,
           ethVolumeWei: swaps ? swaps.ethVolume.toString() : null,
           recentSwaps: (swaps?.swaps ?? []).map((x) => ({
@@ -256,6 +268,46 @@ export function registerLaunchTools(server: McpServer): void {
             txHash: x.txHash,
           })),
         },
+      });
+    },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_curve_status",
+    {
+      title: "Get bonding curve status",
+      description:
+        "The bonding curve for a launch made through the CanHav curve launcher. Reserves and price, ETH raised against the graduation threshold with progress, the snipe tax window and the tax held for graduation, trade counts and volume, the most recent trades, and after graduation the locked pool id and what was seeded. Null curve for a factory launch.",
+      inputSchema: z.object({
+        address: ADDRESS,
+        recentLimit: z.number().int().min(1).max(50).optional(),
+      }),
+    },
+    async ({ address, recentLimit }) => {
+      const token = await getToken(address);
+      if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
+      const curve = await getCurve(token.address);
+      if (!curve) {
+        return jsonResult({ address: token.address, launcherContract: LAUNCH_CHAIN.curveAddress, curve: null, recentTrades: [] });
+      }
+      const trades = await getCurveTrades(token.address, recentLimit ?? 10);
+      const now = Math.floor(Date.now() / 1000);
+      return jsonResult({
+        address: token.address,
+        launcherContract: LAUNCH_CHAIN.curveAddress,
+        curve: summarizeCurve(curve, now),
+        tradeCount: trades?.count ?? null,
+        recentTrades: (trades?.trades ?? []).map((x) => ({
+          trader: x.trader,
+          side: x.side,
+          ethWei: x.ethWei,
+          taxWei: x.taxWei,
+          tokensWei: x.tokensWei,
+          developerBuy: x.side === "buy" && x.txHash.toLowerCase() === curve.txHash.toLowerCase(),
+          at: isoTime(x.blockTimestamp),
+          txHash: x.txHash,
+        })),
       });
     },
   );

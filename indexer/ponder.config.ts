@@ -1,6 +1,7 @@
 import { createConfig } from "ponder";
 
 import { AllocationSaleAbi } from "./abis/AllocationSaleAbi";
+import { CurveLauncherAbi } from "./abis/CurveLauncherAbi";
 import { FeeSplitterAbi } from "./abis/FeeSplitterAbi";
 import { JourneyUpdatesAbi } from "./abis/JourneyUpdatesAbi";
 import { LaunchAMMAbi } from "./abis/LaunchAMMAbi";
@@ -9,7 +10,7 @@ import { TimelockControllerAbi } from "./abis/TimelockControllerAbi";
 import { TokenFactoryAbi } from "./abis/TokenFactoryAbi";
 import { TokenFactoryV3Abi } from "./abis/TokenFactoryV3Abi";
 
-// Deployment records: contracts/broadcast/{Deploy,DeployV2,DeployV3}.s.sol/46630/run-latest.json
+// Deployment records: contracts/broadcast/{Deploy,DeployV2,DeployV3,DeployCurve}.s.sol/46630/run-latest.json
 // v1 factory (paused after v2 migration) deployed at block 95600880 (2026-07-31);
 // v2 factory (vesting support) at block 95922560 (2026-08-01). Both watched with
 // the v2 ABI — a superset; the v1 address simply never emits VestingCreated.
@@ -111,6 +112,19 @@ export default createConfig({
       abi: FeeSplitterAbi,
       address: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
       startBlock: 96235052,
+    },
+    // Bonding-curve launcher (2026-09-29, M19a). Emits the same TokenLaunched
+    // as v3/v4 (selector checked byte-identical, see README) so its launches
+    // land in `token` through a shared insert, plus CurveCreated, CurveBuy,
+    // CurveSell and Graduated into `curve` and `curve_trade`. Its own entry
+    // rather than a third address on TokenFactoryV3, so one log reaches one
+    // handler and the start block is its own. Deployment record:
+    // broadcast/DeployCurve.s.sol.
+    CurveLauncher: {
+      chain: "robinhoodTestnet",
+      abi: CurveLauncherAbi,
+      address: "0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981",
+      startBlock: 126200516,
     },
   },
 });

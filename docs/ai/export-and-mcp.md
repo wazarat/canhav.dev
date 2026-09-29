@@ -50,12 +50,13 @@ These read the same launch indexer and journey tables as the launch pages, so an
 
 | Tool | Purpose |
 |------|---------|
-| `list_launches` | Newest-first tokens launched through the CanHav factory, with a flag for launches that have a sale open right now. Pass `creator` for one wallet |
-| `get_launch` | Everything about one deployed token by address. Metadata, the description text and Telegram handle verified against the on-chain description hash, verified journey, milestone updates, vesting, escrow tranches, sales, the creator's pool, and the linked design |
+| `list_launches` | Newest-first tokens launched through CanHav (the factory or the bonding-curve launcher), with a flag for launches that have a sale open right now and, for curve launches, a `curve` block with `state` and `progressPct`. Pass `creator` for one wallet |
+| `get_launch` | Everything about one deployed token by address. Metadata (with `launchedVia`, `curve` or `factory`, and `launcher`), the description text and Telegram handle verified against the on-chain description hash, verified journey, milestone updates, vesting, escrow tranches, sales, the launch's pool (the creator's, or the locked one the curve seeded, with `lockedLiquidity`), the bonding `curve` block for a curve launch, and the linked design |
 | `get_launch_journey` | The journey document with the on-chain hash, the recomputed hash, and whether they match |
 | `get_milestone_updates` | Creator-authored progress updates whose stored body matches the anchored hash, grouped by milestone |
 | `get_sale_status` | Allocation sales with phase (upcoming, open, closed, reclaimed), amounts, proceeds tranches, and recent purchases |
-| `get_pool_status` | The creator's AMM pool with reserves, fees, swap count, volume, and recent swaps |
+| `get_pool_status` | The launch's AMM pool with reserves, fees, swap count, volume, and recent swaps. For a curve launch this is the pool the launcher seeded at graduation, flagged `lockedLiquidity` |
+| `get_curve_status` | The bonding curve behind a launch made through the curve launcher. Reserves and price, ETH raised against the graduation threshold with `progressPct`, the snipe tax window and the tax held for graduation, trade counts and volume, recent trades (the developer buy flagged), and after graduation the locked pool id and what was seeded. `curve` is null for a factory launch |
 | `get_launch_governance` | Contract addresses on Robinhood Chain Testnet and the timelock queue gating admin changes |
 | `get_my_launches` | Deployed tokens attached to your own token designs, joined with their live launch records |
 
@@ -74,14 +75,14 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | Tool | Purpose |
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
-| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them) |
+| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). When the linked design's token is deployed, `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct` |
 | `get_linked_token_design` | The token design linked to this project, with derived tokenomics and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
 | `check_project` | Validate the project draft against the project rules and report the first problem |
 | `get_resource_pack` | The reading list the team ticked for this project's product shapes (the union when it builds several), in read-first order, with fetchable `rawUrl`s, the family each resource comes from, caveat flags and an `environment` block. Pass `includeUnselected` for everything, or narrow with `step`, `priority` or `family` |
 | `get_prelaunch_review` | The review passes for this project's product shapes, each once, each with what a reviewer checks, the resources that define it and the team's recorded verdict |
-| `get_launch` | The token deployed from this project's design, in the same shape the shared server returns |
+| `get_launch` | The token deployed from this project's design, in the same shape the shared server returns, including the `curve` block for a curve launch |
 
 The scoped server also registers one prompt, `prelaunch_review`. In Claude Code it appears as a slash command named after the server; it walks the passes against the open repository and reports a verdict with evidence for each. Clients that do not surface prompts get the same content through `get_prelaunch_review`.
 

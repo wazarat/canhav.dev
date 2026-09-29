@@ -28,7 +28,59 @@ export const LAUNCH_CHAIN = {
   // FeeSplitter. Both knobs owned by the timelock.
   ammAddress: "0xDd070b1f8e000D27491A3d38543ef0D72C758Df4",
   splitterAddress: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
+  // Bonding-curve launcher (M19a, 2026-09-29, block 126200516). Clones the
+  // same LaunchToken implementation, holds the supply on a constant-product
+  // curve with virtual reserves, taxes buys in the first minute and holds
+  // the tax for graduation, and at the threshold seeds a LaunchAMM pool whose
+  // shares it keeps forever. Fee and pause owned by the timelock.
+  curveAddress: "0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981",
 } as const;
+
+/**
+ * Mirrors of CurveLauncher's immutables (contracts/src/CurveLauncher.sol),
+ * read once at build time for copy and client maths. scripts/preflight-
+ * curve.mjs compares every value against the deployed contract, so a
+ * redeploy with different numbers fails loudly here rather than quietly on
+ * the card.
+ */
+export const LAUNCH_CURVE = {
+  /** CurveLauncher.graduationEth, real ETH raised that triggers graduation. */
+  thresholdWei: 100_000_000_000_000_000n,
+  thresholdEth: "0.1",
+  /** CurveLauncher.snipeWindowSeconds. Timestamp based: block.number on
+   *  Arbitrum Nitro chains reports the parent chain. */
+  windowSeconds: 60,
+  /** CurveLauncher.snipeTaxBps on buys inside the window. */
+  snipeTaxBps: 2000,
+  /** CurveLauncher.curveShareBps, share of supply sold on the curve; the
+   *  rest seeds the pool at graduation. */
+  curveShareBps: 8000,
+  /** CurveLauncher.virtualEthReserve, derived so the curve's end price equals
+   *  the pool's opening price. */
+  virtualEthWei: 33_333_333_333_333_333n,
+  /** CurveLauncher.maxDevBuy, the cap on the developer buy inside launch(). */
+  devBuyMaxWei: 5_000_000_000_000_000n,
+  /** Slippage choices for the token page buy and sell form, in percent. */
+  slippageOptions: [1, 3, 5],
+  labels: {
+    title: "Bonding curve",
+    live: "On the curve",
+    window: "Snipe tax window",
+    graduated: "Graduated",
+    raised: "Raised",
+    taxPot: "Tax held for graduation",
+    price: "Price",
+    trades: "Trades",
+    buy: "Buy with ETH",
+    sell: "Sell for ETH",
+    slippage: "Slippage",
+    locked: "Liquidity locked",
+  },
+} as const;
+
+/** Whole-number percents for copy. */
+export const LAUNCH_CURVE_SHARE_PCT = LAUNCH_CURVE.curveShareBps / 100;
+export const LAUNCH_CURVE_TAX_PCT = LAUNCH_CURVE.snipeTaxBps / 100;
 
 /**
  * Supply the factory mints when the launcher does not bring their own number.

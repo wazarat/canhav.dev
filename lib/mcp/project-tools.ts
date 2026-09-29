@@ -21,7 +21,8 @@ import {
   designDeployability,
   designWarnings,
 } from "@/lib/mcp/design-views";
-import { launchView } from "@/lib/mcp/launch-views";
+import { getCurve } from "@/lib/indexer";
+import { curveState, launchUrl, launchView, summarizeCurve } from "@/lib/mcp/launch-views";
 import {
   errorResult,
   jsonResult,
@@ -162,6 +163,10 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                   ? "Launch the token from canhav.com/launch."
                   : "Nothing left. The project is published and its token is deployed.";
       const kit = project.draft_doc.kit;
+      // A curve launch's state rides along so an agent sees graduation
+      // progress without a second call. Null curve for factory launches.
+      const curve = deployed ? await getCurve(deployed) : null;
+      const now = Math.floor(Date.now() / 1000);
       return jsonResult({
         project: {
           id: project.id,
@@ -193,6 +198,15 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             }
           : null,
         deployedTokenAddress: deployed,
+        deployedToken: deployed
+          ? {
+              address: deployed,
+              launchUrl: launchUrl(deployed),
+              curve: curve
+                ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct }
+                : null,
+            }
+          : null,
         nextAction,
       });
     },

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { getCurve } from "@/lib/indexer";
+
 import { buildAgentsMd, buildTokenDesignMarkdown } from "@/lib/export-md";
 import { gateExport, markdownResponse } from "@/lib/export-route";
 import { getLinkedProject, getSnapshot, getTokenDesignBySlug } from "@/lib/ideation-db";
@@ -35,6 +37,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
         project: linkedSnap?.doc.kind === "project" ? linkedSnap.doc : undefined,
         token: snapshot.doc,
         deployedAddress: row.deployed_token_address,
+        curve: row.deployed_token_address ? await getCurve(row.deployed_token_address) : null,
       }),
     );
   }

@@ -265,3 +265,60 @@ export const vesting = onchainTable("vesting", (t) => ({
   blockTimestamp: t.bigint().notNull(),
   txHash: t.hex().notNull(),
 }));
+
+/** One row per CurveCreated event (CurveLauncher). Reserves, raised and the
+ *  counters are kept current by CurveBuy/CurveSell; the graduation fields by
+ *  Graduated. `raisedWei` is the launcher's progress().ethRaised, that is
+ *  ethReserve minus virtualEthReserve. `windowEnd` is a timestamp: the launch
+ *  window is timestamp based because block.number on Arbitrum Nitro chains
+ *  reports the parent chain. */
+export const curve = onchainTable("curve", (t) => ({
+  token: t.hex().primaryKey(),
+  developer: t.hex().notNull(),
+  supply: t.bigint().notNull(),
+  curveSupply: t.bigint().notNull(),
+  poolSupply: t.bigint().notNull(),
+  virtualEthReserve: t.bigint().notNull(),
+  ethReserve: t.bigint().notNull(),
+  tokenReserve: t.bigint().notNull(),
+  raisedWei: t.bigint().notNull(),
+  taxPotWei: t.bigint().notNull(),
+  thresholdWei: t.bigint().notNull(),
+  snipeTaxBps: t.integer().notNull(),
+  windowEnd: t.bigint().notNull(),
+  graduated: t.boolean().notNull(),
+  poolId: t.bigint(),
+  buyCount: t.integer().notNull(),
+  sellCount: t.integer().notNull(),
+  ethVolume: t.bigint().notNull(),
+  ethSeeded: t.bigint(),
+  tokensSeeded: t.bigint(),
+  sharesLocked: t.bigint(),
+  graduatedAt: t.bigint(),
+  graduationTxHash: t.hex(),
+  blockNumber: t.bigint().notNull(),
+  blockTimestamp: t.bigint().notNull(),
+  txHash: t.hex().notNull(),
+}));
+
+/** One row per CurveBuy or CurveSell event. The developer buy is the "buy"
+ *  row whose txHash equals the curve's txHash. `ethWei` is ethIn (net plus
+ *  tax) on a buy and ethOut on a sell; `taxWei` is 0 on sells. */
+export const curveTrade = onchainTable(
+  "curve_trade",
+  (t) => ({
+    txHash: t.hex().notNull(),
+    logIndex: t.integer().notNull(),
+    token: t.hex().notNull(),
+    trader: t.hex().notNull(),
+    side: t.text().notNull(), // "buy" | "sell"
+    ethWei: t.bigint().notNull(),
+    taxWei: t.bigint().notNull(),
+    tokensWei: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.txHash, table.logIndex] }),
+  }),
+);
