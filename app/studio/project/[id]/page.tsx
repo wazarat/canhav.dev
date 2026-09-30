@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { ProjectEditor } from "@/components/ideation/ProjectEditor";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
-import { LaunchFromProject } from "@/components/studio/LaunchFromProject";
 import { getSessionUser } from "@/lib/auth";
 import { getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 
@@ -50,12 +49,6 @@ export default async function ProjectEditorPage({
                 : null
             }
             candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
-          />
-          <LaunchFromProject
-            projectId={row.id}
-            designId={
-              linked && linked.status === "published" && linked.published_hash ? linked.id : null
-            }
           />
           <McpConnectCard
             target={{

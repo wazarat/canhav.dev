@@ -344,5 +344,10 @@ event window so judges can verify it.
   a new Agent changes panel on the project page. Agents never publish.
 - Sept 29, 2026. Linked drafts open beside the project. Starting a token
   design from a project creates and links the draft without leaving the page.
+- Sept 30, 2026. One prompt for the agent. A project's MCP card and its full
+  guide lead with one prompt to paste into Claude that connects, signs in,
+  reads the project and reports what is left, with a last step that follows
+  the project's agent write setting. The Launch a token card leaves the
+  project page, and signed-out visitors see one Log in or sign up button.
 
 This list grows as work lands on the branch.

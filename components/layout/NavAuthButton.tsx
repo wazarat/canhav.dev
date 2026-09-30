@@ -8,22 +8,21 @@ import { isAuthConfiguredClient } from "@/components/studio/authConfig";
 import { AUTH_COPY } from "@/content/auth";
 
 /**
- * The nav's auth slot. Signed out it shows "Log in" (to /studio, where the
- * sign-in card lives) and "Sign up". On a phone only "Sign up" shows, the
- * sign-up page links to log in. Signed in it shows "Studio". Client-side
- * Clerk state, so marketing pages stay statically rendered. While Clerk loads
- * (or when unconfigured) it shows the signed-out look.
+ * The nav's auth slot. Signed out it shows one "Log in or sign up" button to
+ * /studio, where the sign-in card lives and links on to sign-up (M40). On a
+ * phone the same button reads "Log in" so the four nav links still fit.
+ * Signed in it shows "Studio". Client-side Clerk state, so marketing pages
+ * stay statically rendered. While Clerk loads (or when unconfigured) it
+ * shows the signed-out look.
  */
 function SignedOutButtons() {
   return (
-    <div className="flex items-center gap-2">
-      <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
-        <Link href={AUTH_COPY.signInPath}>{AUTH_COPY.logIn}</Link>
-      </Button>
-      <Button asChild size="sm">
-        <Link href={AUTH_COPY.signUpPath}>{AUTH_COPY.signUp}</Link>
-      </Button>
-    </div>
+    <Button asChild size="sm">
+      <Link href={AUTH_COPY.signInPath}>
+        <span className="sm:hidden">{AUTH_COPY.logIn}</span>
+        <span className="hidden sm:inline">{AUTH_COPY.logInOrSignUp}</span>
+      </Link>
+    </Button>
   );
 }
 

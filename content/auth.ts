@@ -2,6 +2,7 @@
 export const AUTH_COPY = {
   logIn: "Log in",
   signUp: "Sign up",
+  logInOrSignUp: "Log in or sign up",
   signUpKicker: "Accounts",
   signUpTitle: "Create your account",
   signUpLead:

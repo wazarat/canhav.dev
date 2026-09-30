@@ -4,6 +4,8 @@
  */
 import { formatEther } from "viem";
 
+import type { AgentWriteMode } from "@/lib/agent-writes";
+
 /** Chain metadata — single source for the hidden launchpad pages and the
  *  future wallet layer's hard network guard. */
 export const LAUNCH_CHAIN = {
@@ -298,8 +300,13 @@ export const MCP_CONNECT = {
 export const MCP_GUIDE = {
   open: "Open the full guide",
   title: "Connect your agent to this project",
-  lead: "Everything from a first install to an agent that fills in this project for you. Reading works as soon as you connect. Writing is a separate step that you switch on.",
+  lead: "One prompt does the whole thing. Paste it into Claude Code or the Claude desktop app and the agent connects, signs in, reads this project and tells you what is left. Writing is a separate setting, chosen here.",
   close: "Close",
+  paste: "Paste this into Claude",
+  pasteHint:
+    "One prompt that connects, signs in, reads the project and reports what is left. Works in Claude Code and in the Claude desktop app.",
+  pasteModeHint: "The last step of the prompt follows the setting above.",
+  stepsToggle: "Read the steps yourself",
   sections: {
     before: {
       title: "Before you start",
@@ -340,6 +347,7 @@ export const MCP_GUIDE = {
       loading: "Checking the setting",
       unavailable: "Agent writes are not open on this project yet.",
       off: "Writes are off, so the agent can only read. Pick a mode above to let it write.",
+      pickAbove: "The setting at the top of this guide decides whether these prompts work. Writes are off right now.",
       propose: "The agent proposes. Each change waits under Agent changes on this page until you accept or reject it.",
       direct: "The agent writes straight into the draft. Each change is listed under Agent changes on this page.",
       already: "Added the server before writing was available? You do not need to add it again. Type /mcp in Claude Code, pick the server and reconnect, and the write tools appear.",
@@ -379,7 +387,7 @@ export const MCP_GUIDE = {
         },
         {
           q: "The agent says writes are off",
-          a: "Pick Propose changes or Write directly in the Write section of this guide.",
+          a: "Pick Propose changes or Write directly at the top of this guide, then paste the prompt again.",
         },
         {
           q: "You renamed the project and want a matching server name",
@@ -398,6 +406,40 @@ export const MCP_GUIDE = {
     `Use the ${mcpAlias(name, projectId)} get_build_steps tool. For each step, check this repository for written evidence that it is done. Use set_build_steps to tick only the ones you can point to, and tell me which file proves each.`,
   tokenPrompt: (projectId: string, name: string) =>
     `Use the ${mcpAlias(name, projectId)} get_linked_token_design and get_design_constraints tools. Propose a supply, an allocation split that totals 100 and vesting for each cohort with update_linked_token_design, then run check_design and tell me the warnings.`,
+  /**
+   * The one prompt a builder pastes into Claude. `mode` undefined is the
+   * read-only version on the card; the guide passes the project's live
+   * setting so the last step matches it. Numbered paragraphs, plain words,
+   * no colon before whitespace and no em dash (check:copy scans this file).
+   */
+  pastePrompt: (
+    projectId: string,
+    name: string,
+    opts: { hasKit: boolean; mode?: AgentWriteMode },
+  ): string => {
+    const alias = mcpAlias(name, projectId);
+    const title = name.trim() ? `my CanHav project "${name.trim()}"` : "my CanHav project";
+    const read = opts.hasKit
+      ? `Then call get_resource_pack, fetch the rawUrl of every core resource in readFirst order and read them before you suggest any code. Respect the flags. mainnet_only, not_on_robinhood and self_deploy decide where things can run.`
+      : `There is no resource pack yet because the project has no product shape. Skip get_resource_pack until I pick what I am building in Basics.`;
+    const last =
+      opts.mode === "propose"
+        ? `6. Agent writes are set to propose on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. Each change waits under Agent changes on the project page until I accept it, so tell me when to look.`
+        : opts.mode === "direct"
+          ? `6. Agent writes are set to direct on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. Each change lands in the draft at once, so list what you changed and why.`
+          : opts.mode === "off"
+            ? `6. Agent writes are off on this project, so read only. If I ask you to fill something in, remind me to pick Propose changes or Write directly under Agent changes on the project page, then reconnect with /mcp.`
+            : `6. Do not change the project in this run. The full guide on the project page has the version of this prompt that lets you write.`;
+    return [
+      `I want you to connect to ${title} over MCP and help me finish it.`,
+      `1. Add the project's MCP server. In Claude Code run\n${MCP_CONNECT.projectAddCommand(projectId, name)}\nIn the Claude desktop app add a custom connector at ${MCP_CONNECT.projectServerUrl(projectId)} instead.`,
+      `2. When the server needs a sign-in, ask me to type /mcp, pick ${alias} and choose Authenticate. I sign in with the CanHav account that owns the project. Wait for me to say it is done.`,
+      `3. Run claude mcp list and check that ${alias} is connected.`,
+      `4. Call get_project_status and read the whole answer. ${read}`,
+      `5. Tell me in plain words what is left before this project can publish and launch, and which studio step each item lives in.`,
+      last,
+    ].join("\n\n");
+  },
 } as const;
 
 export const LAUNCH_COPY = {

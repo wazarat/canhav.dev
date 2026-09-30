@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { CopyBlock } from "@/components/ui/CopyBlock";
 import { CopyLine } from "@/components/ui/CopyLine";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
@@ -26,10 +27,10 @@ const MODE_TONE: Record<AgentWriteMode, StatusTone> = {
 
 /**
  * The full guide to connecting an agent to one project, opened from the
- * project's MCP card. Reading and writing are separate sections. The write
- * section reads the owner's current mode and lets them set it in place, so
- * someone who connected before writes existed, or who left them off, sees
- * exactly what is missing.
+ * project's MCP card. It leads with the write-mode switch and one prompt to
+ * paste into Claude whose last step follows that mode (M40). The six
+ * step-by-step sections sit under a "Read the steps yourself" toggle for
+ * anyone who wants to do it by hand.
  */
 export function McpGuideModal({
   open,
@@ -128,7 +129,43 @@ export function McpGuideModal({
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-300">{MCP_GUIDE.lead}</p>
 
-        <div className="mt-6 space-y-8">
+        <div className="mt-6 space-y-4">
+          {write.kind === "loading" ? (
+            <StatusChip tone="neutral">{S.write.loading}</StatusChip>
+          ) : write.kind === "unavailable" ? (
+            <StatusChip tone="neutral" variant="block">
+              {S.write.unavailable}
+            </StatusChip>
+          ) : (
+            <>
+              <ChipRadioGroup
+                label={S.write.modeLabel}
+                value={write.mode}
+                onChange={setMode}
+                options={AGENT_COPY.modes}
+              />
+              <StatusChip tone={MODE_TONE[write.mode]} variant="block">
+                {S.write[write.mode]}
+              </StatusChip>
+            </>
+          )}
+          {error ? <p className="text-xs text-rose-400">{error}</p> : null}
+
+          <CopyBlock
+            label={MCP_GUIDE.paste}
+            text={MCP_GUIDE.pastePrompt(projectId, name, {
+              hasKit,
+              mode: write.kind === "ready" ? write.mode : undefined,
+            })}
+            hint={write.kind === "ready" ? MCP_GUIDE.pasteModeHint : MCP_GUIDE.pasteHint}
+          />
+        </div>
+
+        <details className="glass mt-6 rounded-2xl">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-ink-100">
+            {MCP_GUIDE.stepsToggle}
+          </summary>
+        <div className="space-y-8 px-4 pb-5 pt-2">
           <GuideSection n={1} title={S.before.title}>
             <Bullets items={S.before.items} />
             <CopyLine label={MCP_CONNECT.steps.install} text={MCP_CONNECT.installCommand} />
@@ -170,27 +207,9 @@ export function McpGuideModal({
 
           <GuideSection n={4} title={S.write.title}>
             <p className="text-sm leading-relaxed text-ink-300">{S.write.lead}</p>
-
-            {write.kind === "loading" ? (
-              <StatusChip tone="neutral">{S.write.loading}</StatusChip>
-            ) : write.kind === "unavailable" ? (
-              <StatusChip tone="neutral" variant="block">
-                {S.write.unavailable}
-              </StatusChip>
-            ) : (
-              <>
-                <ChipRadioGroup
-                  label={S.write.modeLabel}
-                  value={write.mode}
-                  onChange={setMode}
-                  options={AGENT_COPY.modes}
-                />
-                <StatusChip tone={MODE_TONE[write.mode]} variant="block">
-                  {S.write[write.mode]}
-                </StatusChip>
-              </>
-            )}
-            {error ? <p className="text-xs text-rose-400">{error}</p> : null}
+            {!canWrite ? (
+              <p className="text-xs leading-relaxed text-ink-500">{S.write.pickAbove}</p>
+            ) : null}
 
             {canWrite ? (
               <>
@@ -245,8 +264,9 @@ export function McpGuideModal({
             <CopyLine label={S.trouble.remove} text={MCP_GUIDE.removeCommand(projectId, name)} />
           </GuideSection>
         </div>
+        </details>
 
-        <p className="mt-8 text-xs leading-relaxed text-ink-500">
+        <p className="mt-6 text-xs leading-relaxed text-ink-500">
           {MCP_CONNECT.projectNote}{" "}
           <a
             href={MCP_CONNECT.docsUrl}
