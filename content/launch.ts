@@ -279,6 +279,8 @@ export const MCP_CONNECT = {
     `claude mcp add --transport http ${mcpAlias(name, projectId)} ${MCP_BASE}/mcp/p/${projectId}`,
   projectPrompt: (projectId: string, name: string) =>
     `Use the ${mcpAlias(name, projectId)} get_project_status tool and tell me what is left before this project can launch.`,
+  tokenStatusPrompt: (projectId: string, name: string) =>
+    `Use the ${mcpAlias(name, projectId)} get_launch and get_curve_status tools and tell me where the token launched from this project stands. Curve progress, pool depth, sales and milestone updates.`,
   kitPrompt: (projectId: string, name: string) =>
     `Use the ${mcpAlias(name, projectId)} get_resource_pack tool, fetch every core resource in readFirst order, and tell me what each one requires of this project before we write code. Respect the mainnet_only, not_on_robinhood and self_deploy flags when you propose where to deploy.`,
   projectTitle: "Read this project from your agent",
@@ -333,9 +335,10 @@ export const MCP_GUIDE = {
     },
     read: {
       title: "Read",
-      lead: "Reading needs no setting. These prompts are a good first three.",
+      lead: "Reading needs no setting. These prompts are a good first few.",
       status: "What is left before launch",
       pack: "Load the resource pack",
+      token: "Where the token stands",
       packNone: "The resource pack opens once this project has a product shape, under What are you building in Basics.",
       review: "Walk the pre-launch review",
       reviewNote: "This one is a slash command. Type it in Claude Code.",
@@ -435,7 +438,7 @@ export const MCP_GUIDE = {
       `1. Add the project's MCP server. In Claude Code run\n${MCP_CONNECT.projectAddCommand(projectId, name)}\nIn the Claude desktop app add a custom connector at ${MCP_CONNECT.projectServerUrl(projectId)} instead.`,
       `2. When the server needs a sign-in, ask me to type /mcp, pick ${alias} and choose Authenticate. I sign in with the CanHav account that owns the project. Wait for me to say it is done.`,
       `3. Run claude mcp list and check that ${alias} is connected.`,
-      `4. Call get_project_status and read the whole answer. ${read}`,
+      `4. Call get_project_status and read the whole answer. ${read} If the answer carries a deployedToken or a launchedToken, also call get_launch and get_curve_status and say where the token stands.`,
       `5. Tell me in plain words what is left before this project can publish and launch, and which studio step each item lives in.`,
       last,
     ].join("\n\n");

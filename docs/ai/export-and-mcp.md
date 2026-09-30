@@ -75,14 +75,21 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | Tool | Purpose |
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
-| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). When a token exists (deployed from the linked design or launched from the project), `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct`; `launchedToken` carries the newest launch made from the project in the studio |
-| `get_linked_token_design` | The token design linked to this project, with derived tokenomics and the deployed address when it has one |
+| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). The `tokenDesign` block carries a `derived` summary (`floatAtLaunchPct`, `fdvToFloat`, `treasuryPct`) and the `warnings` codes. When a token exists (deployed from the linked design or launched from the project), `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct`; `launchedToken` carries the newest launch made from the project in the studio with the same `curve` block |
+| `get_linked_token_design` | The token design linked to this project, with derived tokenomics, `warnings` (code, title, body), `deployability` (what the CanHav contracts can deploy of it) and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
 | `check_project` | Validate the project draft against the project rules and report the first problem |
 | `get_resource_pack` | The reading list the team ticked for this project's product shapes (the union when it builds several), in read-first order, with fetchable `rawUrl`s, the family each resource comes from, caveat flags and an `environment` block. Pass `includeUnselected` for everything, or narrow with `step`, `priority` or `family` |
 | `get_prelaunch_review` | The review passes for this project's product shapes, each once, each with what a reviewer checks, the resources that define it and the team's recorded verdict |
 | `get_launch` | The token deployed from this project's design or launched from the project in the studio, in the same shape the shared server returns, including the `curve` block and the full `project` block (the scoped server is owner-only, so the name and id are always present) |
+| `get_curve_status` | The shared tool bound to this project's token. No address. The curve with progress, the tax window, trade counts and recent trades |
+| `get_pool_status` | The shared tool bound to this project's token. No address. The pool with reserves, LP shares, swap count, volume and recent swaps |
+| `get_sale_status` | The shared tool bound to this project's token. No address. Allocation sales with phase, amounts, tranches and recent purchases |
+| `get_launch_journey` | The shared tool bound to this project's token. No arguments. The committed document with the on-chain and recomputed hashes |
+| `get_milestone_updates` | The shared tool bound to this project's token. No arguments. Creator updates grouped by milestone |
+
+The five activity tools answer with an error until a token has been launched from the project or deployed from its linked design. Their names match the shared server's on purpose, so a prompt written for `canhav` reads the same on `canhav-<project>`; Claude Code keeps the two apart by server name.
 
 The scoped server also registers one prompt, `prelaunch_review`. In Claude Code it appears as a slash command named after the server; it walks the passes against the open repository and reports a verdict with evidence for each. Clients that do not surface prompts get the same content through `get_prelaunch_review`.
 

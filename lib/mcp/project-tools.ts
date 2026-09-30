@@ -21,9 +21,20 @@ import {
   designDeployability,
   designWarnings,
 } from "@/lib/mcp/design-views";
-import { getCurve } from "@/lib/indexer";
-import { getLaunchesByProject } from "@/lib/launches-db";
-import { curveState, launchUrl, launchView, summarizeCurve } from "@/lib/mcp/launch-views";
+import { type IndexedCurve, getCurve } from "@/lib/indexer";
+import { type LaunchRow, getLaunchesByProject } from "@/lib/launches-db";
+import {
+  type View,
+  curveState,
+  curveStatusView,
+  journeyView,
+  launchUrl,
+  launchView,
+  milestoneUpdatesView,
+  poolStatusView,
+  saleStatusView,
+  summarizeCurve,
+} from "@/lib/mcp/launch-views";
 import {
   errorResult,
   jsonResult,
@@ -97,6 +108,28 @@ async function withProject(
   return { ok: true, value: loaded };
 }
 
+/** The one token a project server speaks for (M45). */
+interface ProjectToken {
+  /** The linked design's deployed address, else the newest launch from the project, else null. */
+  address: string | null;
+  deployed: string | null;
+  launched: LaunchRow | null;
+}
+
+async function projectTokenAddress(ctx: ProjectCtx): Promise<ProjectToken> {
+  const deployed = ctx.design?.deployed_token_address ?? null;
+  const launched = (await getLaunchesByProject(ctx.project.id))?.[0] ?? null;
+  return { address: deployed ?? launched?.token_address ?? null, deployed, launched };
+}
+
+function noTokenMessage(ctx: ProjectCtx): string {
+  return ctx.design ? NO_TOKEN : NO_DESIGN;
+}
+
+function curveSummary(curve: IndexedCurve | null, now: number) {
+  return curve ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct } : null;
+}
+
 function publicUrl(base: "p" | "t", row: { slug: string | null; status: string }) {
   return row.status === "published" && row.slug
     ? `https://www.canhav.com/${base}/${row.slug}`
@@ -149,7 +182,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's status",
       description:
-        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked, whether each side is published, whether a token is deployed, the research kit's build progress when the project has a product shape, and the next action. Takes no arguments.",
+        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked with its float, FDV to float, treasury share and warning codes, whether each side is published, whether a token is deployed or launched with the curve state of either, the research kit's build progress when the project has a product shape, and the next action. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -158,14 +191,18 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project, design } = loaded.value;
       const projectProblem = validateProjectDoc(project.draft_doc);
       const designProblem = design ? validateTokenDesignDoc(design.draft_doc) : null;
-      const deployed = design?.deployed_token_address ?? null;
-      // A token launched from this project through the studio (M19d), the
-      // newest first. Independent of the design path.
-      const launched = (await getLaunchesByProject(project.id))?.[0] ?? null;
-      const tokenAddress = deployed ?? launched?.token_address ?? null;
+      // The design's deployed token, else a token launched from this project
+      // through the studio (M19d), the newest first.
+      const { address: tokenAddress, deployed, launched } = await projectTokenAddress(loaded.value);
       // A curve launch's state rides along so an agent sees graduation
-      // progress without a second call. Null curve for factory launches.
-      const curve = tokenAddress ? await getCurve(tokenAddress) : null;
+      // progress without a second call. Null curve for factory launches. A
+      // separate studio launch beside a design deployed elsewhere gets its own read.
+      const launchedAddress = launched?.token_address ?? null;
+      const [curve, launchedCurve] = await Promise.all([
+        tokenAddress ? getCurve(tokenAddress) : null,
+        launchedAddress && launchedAddress !== tokenAddress ? getCurve(launchedAddress) : null,
+      ]);
+      const derived = design ? deriveTokenomics(design.draft_doc) : null;
       const launchHint = `Launch a token from canhav.com/launch?project=${project.id}.`;
       const nextAction = projectProblem
         ? "Fix the project draft in the studio."
@@ -214,6 +251,16 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               slug: design.slug,
               firstProblem: designProblem,
               publicUrl: publicUrl("t", design),
+              // A summary of the tokenomics (M45). The full picture and the
+              // warning text are on get_linked_token_design and check_design.
+              derived: derived
+                ? {
+                    floatAtLaunchPct: derived.floatAtLaunchPct,
+                    fdvToFloat: derived.fdvToFloat,
+                    treasuryPct: derived.treasuryPct,
+                  }
+                : null,
+              warnings: derived?.warnings ?? [],
             }
           : null,
         deployedTokenAddress: deployed,
@@ -221,9 +268,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           ? {
               address: tokenAddress,
               launchUrl: launchUrl(tokenAddress),
-              curve: curve
-                ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct }
-                : null,
+              curve: curveSummary(curve, now),
             }
           : null,
         launchedToken: launched
@@ -232,6 +277,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               launchUrl: launchUrl(launched.token_address),
               launchedAt: launched.created_at,
               launchTxHash: launched.tx_hash,
+              curve: curveSummary(launched.token_address === tokenAddress ? curve : launchedCurve, now),
             }
           : null,
         nextAction,
@@ -246,7 +292,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's token design",
       description:
-        "The token design linked to this project, with its derived tokenomics and its deployed token address when it has one. Takes no arguments.",
+        "The token design linked to this project, with its derived tokenomics, its warnings, what the CanHav contracts can deploy of it, and its deployed token address when it has one. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -265,6 +311,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         publicUrl: publicUrl("t", design),
         draft: design.draft_doc,
         derived: deriveTokenomics(design.draft_doc),
+        warnings: designWarnings(design.draft_doc),
+        deployability: designDeployability(design.draft_doc),
       });
     },
     scope,
@@ -602,13 +650,91 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     async (_args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
-      const { project, design } = loaded.value;
-      const launched = (await getLaunchesByProject(project.id))?.[0] ?? null;
-      const address = design?.deployed_token_address ?? launched?.token_address ?? null;
-      if (!address) return errorResult(design ? NO_TOKEN : NO_DESIGN);
+      const { address } = await projectTokenAddress(loaded.value);
+      if (!address) return errorResult(noTokenMessage(loaded.value));
       const view = await launchView(address, { includePrivateProject: true });
       return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
     scope,
+  );
+
+  // The five activity tools of the shared server, bound to this project's
+  // token (M45). Same names, so a prompt written for one server reads on the
+  // other; no address argument, and an error until a token exists.
+  const RECENT = z.object({ recentLimit: z.number().int().min(1).max(50).optional() });
+  function registerTokenActivity<S extends z.ZodType>(
+    name: string,
+    config: { title: string; description: string; inputSchema: S },
+    build: (address: string, args: z.infer<S>) => Promise<View<unknown>>,
+  ): void {
+    registerMeteredTool(
+      server,
+      name,
+      config,
+      async (args, ctx) => {
+        const loaded = await withProject(projectId, ctx);
+        if (!loaded.ok) return errorResult(loaded.message);
+        const { address } = await projectTokenAddress(loaded.value);
+        if (!address) return errorResult(noTokenMessage(loaded.value));
+        const view = await build(address, args);
+        return view.ok ? jsonResult(view.value) : errorResult(view.message);
+      },
+      scope,
+    );
+  }
+
+  registerTokenActivity(
+    "get_curve_status",
+    {
+      title: "This project's token on its curve",
+      description:
+        "The bonding curve behind the token launched from this project. Reserves and price, ETH raised against the graduation threshold with progress, the snipe tax window, trade counts, the most recent trades and after graduation the locked pool. Null curve for a factory launch. Takes no address and answers with an error until a token has been launched from this project.",
+      inputSchema: RECENT,
+    },
+    (address, { recentLimit }) => curveStatusView(address, recentLimit),
+  );
+
+  registerTokenActivity(
+    "get_pool_status",
+    {
+      title: "This project's token pool",
+      description:
+        "The AMM pool behind this project's token with reserves, LP shares, protocol fee, swap count, ETH volume and the most recent swaps. For a curve launch this is the locked pool the launcher seeded at graduation. Takes no address.",
+      inputSchema: RECENT,
+    },
+    (address, { recentLimit }) => poolStatusView(address, recentLimit),
+  );
+
+  registerTokenActivity(
+    "get_sale_status",
+    {
+      title: "This project's token sales",
+      description:
+        "Allocation sales for this project's token with their phase, amounts sold and raised, proceeds tranches and the most recent purchases. Takes no address.",
+      inputSchema: RECENT,
+    },
+    (address, { recentLimit }) => saleStatusView(address, recentLimit),
+  );
+
+  registerTokenActivity(
+    "get_launch_journey",
+    {
+      title: "This project's token commitment",
+      description:
+        "The journey document committed at launch for this project's token, with the on-chain hash, the recomputed hash and whether they match. Takes no arguments.",
+      inputSchema: z.object({}),
+    },
+    (address) => journeyView(address),
+  );
+
+  registerTokenActivity(
+    "get_milestone_updates",
+    {
+      title: "This project's milestone updates",
+      description:
+        "Progress updates the creator anchored on-chain for this project's token, grouped by milestone. Takes no arguments.",
+      inputSchema: z.object({}),
+    },
+    (address) => milestoneUpdatesView(address),
   );
 }

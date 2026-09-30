@@ -197,6 +197,11 @@ export function McpGuideModal({
                   text={MCP_CONNECT.kitPrompt(projectId, name)}
                   mono={false}
                 />
+                <CopyLine
+                  label={S.read.token}
+                  text={MCP_CONNECT.tokenStatusPrompt(projectId, name)}
+                  mono={false}
+                />
                 <CopyLine label={S.read.review} text={MCP_GUIDE.reviewCommand(projectId, name)} />
                 <p className="text-xs leading-relaxed text-ink-500">{S.read.reviewNote}</p>
               </>

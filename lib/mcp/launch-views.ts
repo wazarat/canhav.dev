@@ -7,9 +7,13 @@ import {
   curveWindowOpen,
   formatSupply,
   getCurve,
+  getCurveTrades,
   getEscrows,
   getLaunchPool,
+  getRecentPurchases,
+  getRecentSwaps,
   getSales,
+  getToken,
   getTokenRead,
   getVesting,
   isCurveLaunch,
@@ -306,6 +310,157 @@ export async function launchView(
       design,
       // The studio project the launch was started from (M19d), or null.
       project,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// The five activity views (M45). Address keyed, shared by the global tools
+// and the project server, which binds them to the project's own token.
+
+export function noLaunchMessage(address: string): string {
+  return `No CanHav launch at ${address}, or the indexer is unreachable.`;
+}
+
+export async function journeyView(address: string): Promise<View<unknown>> {
+  const token = await getToken(address);
+  if (!token) return { ok: false, message: noLaunchMessage(address) };
+  if (!hasCommitment(token.journeyHash)) {
+    return {
+      ok: true,
+      value: {
+        address: token.address,
+        onChainHash: token.journeyHash,
+        committed: false,
+        stored: false,
+        verified: false,
+        doc: null,
+        note: "This token was launched without a commitment.",
+      },
+    };
+  }
+  const journey = await getVerifiedJourney(token.journeyHash);
+  if (!journey) {
+    return {
+      ok: true,
+      value: {
+        address: token.address,
+        onChainHash: token.journeyHash,
+        committed: true,
+        stored: false,
+        verified: false,
+        doc: null,
+        note: "No journey document is stored for this hash. The launch may have been made from a published design snapshot rather than the quick launch form.",
+      },
+    };
+  }
+  return {
+    ok: true,
+    value: {
+      address: token.address,
+      onChainHash: token.journeyHash,
+      committed: true,
+      stored: true,
+      verified: journey.verified,
+      doc: journey.doc,
+    },
+  };
+}
+
+export async function milestoneUpdatesView(address: string): Promise<View<unknown>> {
+  const token = await getToken(address);
+  if (!token) return { ok: false, message: noLaunchMessage(address) };
+  const block = await journeyBlock(token);
+  return {
+    ok: true,
+    value: {
+      address: token.address,
+      creator: token.creator,
+      milestones: block.doc?.milestones ?? null,
+      milestoneUpdates: block.milestoneUpdates,
+    },
+  };
+}
+
+export async function saleStatusView(address: string, recentLimit = 10): Promise<View<unknown>> {
+  const sales = await getSales(address);
+  if (sales === null) return { ok: false, message: INDEXER_HINT };
+  const now = Math.floor(Date.now() / 1000);
+  const withPurchases = await Promise.all(
+    sales.map(async (s) => ({
+      ...summarizeSale(s, now),
+      recentPurchases: ((await getRecentPurchases(s.saleId, recentLimit)) ?? []).map((p) => ({
+        buyer: p.buyer,
+        tokenAmountWei: p.tokenAmount,
+        costWei: p.cost,
+        at: isoTime(p.blockTimestamp),
+        txHash: p.txHash,
+      })),
+    })),
+  );
+  return { ok: true, value: { address, saleContract: LAUNCH_CHAIN.saleAddress, sales: withPurchases } };
+}
+
+export async function poolStatusView(address: string, recentLimit = 10): Promise<View<unknown>> {
+  const token = await getToken(address);
+  if (!token) return { ok: false, message: noLaunchMessage(address) };
+  const pool = await getLaunchPool(token, await getCurve(token.address));
+  if (!pool) {
+    return { ok: true, value: { address: token.address, ammContract: LAUNCH_CHAIN.ammAddress, pool: null } };
+  }
+  const swaps = await getRecentSwaps(pool.poolId, recentLimit);
+  return {
+    ok: true,
+    value: {
+      address: token.address,
+      ammContract: LAUNCH_CHAIN.ammAddress,
+      pool: {
+        ...summarizePool(pool),
+        swapCount: swaps?.count ?? null,
+        ethVolumeWei: swaps ? swaps.ethVolume.toString() : null,
+        recentSwaps: (swaps?.swaps ?? []).map((x) => ({
+          trader: x.trader,
+          direction: x.ethToToken ? "eth_to_token" : "token_to_eth",
+          amountInWei: x.amountIn,
+          amountOutWei: x.amountOut,
+          protocolFeePaidWei: x.protocolFeePaid,
+          at: isoTime(x.blockTimestamp),
+          txHash: x.txHash,
+        })),
+      },
+    },
+  };
+}
+
+export async function curveStatusView(address: string, recentLimit = 10): Promise<View<unknown>> {
+  const token = await getToken(address);
+  if (!token) return { ok: false, message: noLaunchMessage(address) };
+  const curve = await getCurve(token.address);
+  if (!curve) {
+    return {
+      ok: true,
+      value: { address: token.address, launcherContract: LAUNCH_CHAIN.curveAddress, curve: null, recentTrades: [] },
+    };
+  }
+  const trades = await getCurveTrades(token.address, recentLimit);
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    ok: true,
+    value: {
+      address: token.address,
+      launcherContract: LAUNCH_CHAIN.curveAddress,
+      curve: summarizeCurve(curve, now),
+      tradeCount: trades?.count ?? null,
+      recentTrades: (trades?.trades ?? []).map((x) => ({
+        trader: x.trader,
+        side: x.side,
+        ethWei: x.ethWei,
+        taxWei: x.taxWei,
+        tokensWei: x.tokensWei,
+        developerBuy: x.side === "buy" && x.txHash.toLowerCase() === curve.txHash.toLowerCase(),
+        at: isoTime(x.blockTimestamp),
+        txHash: x.txHash,
+      })),
     },
   };
 }

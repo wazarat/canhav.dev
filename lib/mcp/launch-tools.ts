@@ -25,12 +25,16 @@ import { getVerifiedJourney } from "@/lib/journey-db";
 import { getMyLaunches } from "@/lib/my-launches";
 import {
   curveState,
+  curveStatusView,
   INDEXER_HINT,
   isoTime,
-  journeyBlock,
+  journeyView,
   launchUrl,
   launchView,
+  milestoneUpdatesView,
+  poolStatusView,
   salePhase,
+  saleStatusView,
   summarizeCurve,
   summarizeEscrow,
   summarizePool,
@@ -139,39 +143,8 @@ export function registerLaunchTools(server: McpServer): void {
       inputSchema: z.object({ address: ADDRESS }),
     },
     async ({ address }) => {
-      const token = await getToken(address);
-      if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
-      if (!hasCommitment(token.journeyHash)) {
-        return jsonResult({
-          address: token.address,
-          onChainHash: token.journeyHash,
-          committed: false,
-          stored: false,
-          verified: false,
-          doc: null,
-          note: "This token was launched without a commitment.",
-        });
-      }
-      const journey = await getVerifiedJourney(token.journeyHash);
-      if (!journey) {
-        return jsonResult({
-          address: token.address,
-          onChainHash: token.journeyHash,
-          committed: true,
-          stored: false,
-          verified: false,
-          doc: null,
-          note: "No journey document is stored for this hash. The launch may have been made from a published design snapshot rather than the quick launch form.",
-        });
-      }
-      return jsonResult({
-        address: token.address,
-        onChainHash: token.journeyHash,
-        committed: true,
-        stored: true,
-        verified: journey.verified,
-        doc: journey.doc,
-      });
+      const view = await journeyView(address);
+      return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
   );
 
@@ -185,15 +158,8 @@ export function registerLaunchTools(server: McpServer): void {
       inputSchema: z.object({ address: ADDRESS }),
     },
     async ({ address }) => {
-      const token = await getToken(address);
-      if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
-      const block = await journeyBlock(token);
-      return jsonResult({
-        address: token.address,
-        creator: token.creator,
-        milestones: block.doc?.milestones ?? null,
-        milestoneUpdates: block.milestoneUpdates,
-      });
+      const view = await milestoneUpdatesView(address);
+      return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
   );
 
@@ -210,24 +176,8 @@ export function registerLaunchTools(server: McpServer): void {
       }),
     },
     async ({ address, recentLimit }) => {
-      const sales = await getSales(address);
-      if (sales === null) return errorResult(INDEXER_HINT);
-      const now = Math.floor(Date.now() / 1000);
-      const withPurchases = await Promise.all(
-        sales.map(async (s) => ({
-          ...summarizeSale(s, now),
-          recentPurchases: ((await getRecentPurchases(s.saleId, recentLimit ?? 10)) ?? []).map(
-            (p) => ({
-              buyer: p.buyer,
-              tokenAmountWei: p.tokenAmount,
-              costWei: p.cost,
-              at: isoTime(p.blockTimestamp),
-              txHash: p.txHash,
-            }),
-          ),
-        })),
-      );
-      return jsonResult({ address, saleContract: LAUNCH_CHAIN.saleAddress, sales: withPurchases });
+      const view = await saleStatusView(address, recentLimit);
+      return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
   );
 
@@ -244,31 +194,8 @@ export function registerLaunchTools(server: McpServer): void {
       }),
     },
     async ({ address, recentLimit }) => {
-      const token = await getToken(address);
-      if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
-      const pool = await getLaunchPool(token, await getCurve(token.address));
-      if (!pool) {
-        return jsonResult({ address: token.address, ammContract: LAUNCH_CHAIN.ammAddress, pool: null });
-      }
-      const swaps = await getRecentSwaps(pool.poolId, recentLimit ?? 10);
-      return jsonResult({
-        address: token.address,
-        ammContract: LAUNCH_CHAIN.ammAddress,
-        pool: {
-          ...summarizePool(pool),
-          swapCount: swaps?.count ?? null,
-          ethVolumeWei: swaps ? swaps.ethVolume.toString() : null,
-          recentSwaps: (swaps?.swaps ?? []).map((x) => ({
-            trader: x.trader,
-            direction: x.ethToToken ? "eth_to_token" : "token_to_eth",
-            amountInWei: x.amountIn,
-            amountOutWei: x.amountOut,
-            protocolFeePaidWei: x.protocolFeePaid,
-            at: isoTime(x.blockTimestamp),
-            txHash: x.txHash,
-          })),
-        },
-      });
+      const view = await poolStatusView(address, recentLimit);
+      return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
   );
 
@@ -285,30 +212,8 @@ export function registerLaunchTools(server: McpServer): void {
       }),
     },
     async ({ address, recentLimit }) => {
-      const token = await getToken(address);
-      if (!token) return errorResult(`No CanHav launch at ${address}, or the indexer is unreachable.`);
-      const curve = await getCurve(token.address);
-      if (!curve) {
-        return jsonResult({ address: token.address, launcherContract: LAUNCH_CHAIN.curveAddress, curve: null, recentTrades: [] });
-      }
-      const trades = await getCurveTrades(token.address, recentLimit ?? 10);
-      const now = Math.floor(Date.now() / 1000);
-      return jsonResult({
-        address: token.address,
-        launcherContract: LAUNCH_CHAIN.curveAddress,
-        curve: summarizeCurve(curve, now),
-        tradeCount: trades?.count ?? null,
-        recentTrades: (trades?.trades ?? []).map((x) => ({
-          trader: x.trader,
-          side: x.side,
-          ethWei: x.ethWei,
-          taxWei: x.taxWei,
-          tokensWei: x.tokensWei,
-          developerBuy: x.side === "buy" && x.txHash.toLowerCase() === curve.txHash.toLowerCase(),
-          at: isoTime(x.blockTimestamp),
-          txHash: x.txHash,
-        })),
-      });
+      const view = await curveStatusView(address, recentLimit);
+      return view.ok ? jsonResult(view.value) : errorResult(view.message);
     },
   );
 

@@ -372,5 +372,9 @@ event window so judges can verify it.
   so the owner accepts some lines, edits others and drops the rest. What
   was applied is recorded beside the proposal and shown in the history and
   on the agent's own changes tool.
+- Sept 30, 2026. The linked token over the project server. A project's MCP
+  server answers for its own token with the curve, pool, sale, journey and
+  milestone update tools, no address needed, and the status and design
+  tools carry the design's warnings, deployability and tokenomics summary.
 
 This list grows as work lands on the branch.
