@@ -21,6 +21,7 @@ import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/Option
 import {
   CardMultiSelectGroups,
   ChipMultiSelectGroups,
+  type ChipOption,
   ChipRadioGroup,
 } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
@@ -49,15 +50,18 @@ import {
 } from "@/content/ideation";
 import { kitsForDoc } from "@/content/kits";
 import {
+  GATE_COPY,
   KIT_COPY,
   STARTING_POINT_OPTIONS,
   offeredShapes,
   shapeBlurb,
+  shapeExamples,
   shapeGroupsFor,
   shapeLabel,
   shapeLabels,
   startingPointLabel,
 } from "@/content/kits/copy";
+import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import {
   PROJECT_LIMITS,
   type ProjectDoc,
@@ -79,6 +83,10 @@ import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   KIT_LIMITS,
+  type ProductShape,
+  blockedShapesIn,
+  blockedShapes,
+  blockedSubsectors,
   checklistProgress,
   reviewPassesFor,
   reviewProgress,
@@ -98,6 +106,10 @@ import {
 
 const STEP_LABELS = ["Basics", "Architecture", "Security", "Reality", "Review"] as const;
 
+/** The testnet gate (M41), fixed per build from the environment rows. */
+const BLOCKED_SHAPES = new Set(blockedShapes(KIT_ENVIRONMENTS));
+const BLOCKED_SUBSECTORS = new Set(blockedSubsectors(KIT_ENVIRONMENTS));
+
 function stepProblems(doc: ProjectDoc): Array<string | null> {
   const L = PROJECT_LIMITS;
   const short = (v: string, min: number) => v.trim().length < min;
@@ -116,7 +128,9 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
     short(doc.whatItDoes, L.whatItDoes.min) ||
     !doc.stage
       ? "Basics incomplete"
-      : null;
+      : blockedShapesIn(kitShapes(doc.kit), KIT_ENVIRONMENTS).length
+        ? GATE_COPY.stepProblem
+        : null;
 
   const a = doc.architecture;
   const architecture =
@@ -225,11 +239,16 @@ export function ProjectEditor({
     });
   };
   const onSubsectors = (v: Subsector[]) => {
-    const nextSubs = withImpliedSubsectors(v, sectors, v.filter((s) => !subsectors.includes(s)));
+    const implied = withImpliedSubsectors(v, sectors, v.filter((s) => !subsectors.includes(s)));
+    // The gate. A blocked subsector can only stay if the doc already had it.
+    const nextSubs = implied.filter((s) => !BLOCKED_SUBSECTORS.has(s) || subsectors.includes(s));
     patch({ subsectors: nextSubs, ...kitAfter(sectors, nextSubs) });
   };
   const onShapes = (shapes: readonly string[]) => {
-    const list = shapes as ProjectKit["shapes"];
+    const held = kitShapes(kit);
+    const list = (shapes as ProjectKit["shapes"] ?? []).filter(
+      (s) => !BLOCKED_SHAPES.has(s) || held.includes(s),
+    ) as ProjectKit["shapes"];
     const nextSubs = withShapeSubsectors(subsectors, list, sectors);
     const kits = kitsForSectors(sectors, nextSubs);
     const base = kit ?? emptyProjectKit(kitIds);
@@ -251,8 +270,25 @@ export function ProjectEditor({
     .map((sec) => ({
       key: sec,
       heading: SECTOR_OPTIONS.find((o) => o.value === sec)?.title ?? optionLabel(SECTOR_OPTIONS, sec),
-      options: subsectorOptionsFor(sec),
+      options: subsectorOptionsFor(sec).map((o): ChipOption<Subsector> =>
+        BLOCKED_SUBSECTORS.has(o.value) && !subsectors.includes(o.value)
+          ? { ...o, disabled: true, disabledNote: GATE_COPY.chipSuffix }
+          : o,
+      ),
     }));
+  const subsectorGated = subsectorGroups.some((g) => g.options.some((o) => o.disabled));
+  const shapeGroups = shapeGroupsFor(subsectors).map((g) => ({
+    key: g.subsector,
+    heading: g.heading,
+    options: g.options.map((o): ChipOption<ProductShape> =>
+      BLOCKED_SHAPES.has(o.value) && !kitShapes(kit).includes(o.value)
+        ? { ...o, disabled: true, disabledNote: GATE_COPY.chipSuffix }
+        : o,
+    ),
+  }));
+  const shapeGated = shapeGroups.some((g) => g.options.some((o) => o.disabled));
+  const heldBlocked = blockedShapesIn(kitShapes(kit), KIT_ENVIRONMENTS);
+  const removeBlocked = () => onShapes(kitShapes(kit).filter((s) => !BLOCKED_SHAPES.has(s)));
   const kitStep = step === 4 ? null : KIT_STEPS[step];
   const railCounts = useMemo(() => {
     if (!kit?.shape) return null;
@@ -343,6 +379,9 @@ export function ProjectEditor({
                 {overlapHints.length > 0 ? (
                   <p className="text-xs leading-relaxed text-ink-400">{overlapHints.join(" ")}</p>
                 ) : null}
+                {subsectorGated ? (
+                  <p className="text-xs leading-relaxed text-ink-500">{GATE_COPY.note}</p>
+                ) : null}
               </CardMultiSelectGroups>
             )}
             {showRail && (
@@ -353,21 +392,40 @@ export function ProjectEditor({
                   value={kitShapes(kit)}
                   onChange={onShapes}
                   max={KIT_LIMITS.shapes.max}
-                  groups={shapeGroupsFor(subsectors).map((g) => ({
-                    key: g.subsector,
-                    heading: g.heading,
-                    options: g.options,
-                  }))}
-                />
+                  groups={shapeGroups}
+                >
+                  {shapeGated ? (
+                    <p className="mt-2 text-xs leading-relaxed text-ink-500">{GATE_COPY.note}</p>
+                  ) : null}
+                </ChipMultiSelectGroups>
+                {heldBlocked.length ? (
+                  <StatusChip tone="warning" variant="block" onClick={removeBlocked}>
+                    {GATE_COPY.warning(heldBlocked.map((s) => shapeLabel(s) ?? s))}
+                  </StatusChip>
+                ) : null}
                 {kitShapes(kit).length ? (
-                  <div className="-mt-3 space-y-1.5 text-sm leading-relaxed text-ink-300">
+                  <div className="-mt-3 space-y-4 text-sm leading-relaxed text-ink-300">
                     {kitShapes(kit).map((s) => (
-                      <p key={s}>
-                        {kitShapes(kit).length > 1 ? (
-                          <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
+                      <div key={s}>
+                        <p>
+                          {kitShapes(kit).length > 1 ? (
+                            <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
+                          ) : null}
+                          {shapeBlurb(s)}
+                        </p>
+                        {shapeExamples(s).length ? (
+                          <>
+                            <p className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-400">
+                              {KIT_COPY.examplesTitle}
+                            </p>
+                            <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-xs leading-relaxed text-ink-400">
+                              {shapeExamples(s).map((line) => (
+                                <li key={line}>{line}</li>
+                              ))}
+                            </ul>
+                          </>
                         ) : null}
-                        {shapeBlurb(s)}
-                      </p>
+                      </div>
                     ))}
                   </div>
                 ) : null}

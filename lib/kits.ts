@@ -526,10 +526,7 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
 };
 
 /** Environment rows for the given shapes, Robinhood first, each family once, from whatever rows exist. */
-export function environmentPlanFor(
-  shapes: ShapeInput,
-  rows: Partial<Record<FamilyEnvironment["family"], FamilyEnvironment>>,
-): FamilyEnvironment[] {
+export function environmentPlanFor(shapes: ShapeInput, rows: EnvironmentRows): FamilyEnvironment[] {
   const list = toShapeList(shapes);
   if (!list.length) return [];
   const out: FamilyEnvironment[] = [];
@@ -545,6 +542,46 @@ export function environmentPlanFor(
       }
     }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// The testnet gate (M41). A shape can only be picked when every protocol
+// family it relies on has a deployment on Robinhood Chain testnet 46630,
+// official or community. Pendle and Uniswap have none today, so their shapes
+// wait until one lands or another testnet is added. Rows are passed in so
+// this file keeps no content import; the editor and the validator pass
+// KIT_ENVIRONMENTS.
+
+export type EnvironmentRows = Partial<Record<FamilyEnvironment["family"], FamilyEnvironment>>;
+
+export const TESTNET_LIVE_STATUSES: readonly DeploymentStatus[] = ["official", "community"];
+
+/** True when every family the shape relies on runs on testnet 46630. A missing row counts as not live. */
+export function shapeRunsOnTestnet(shape: ProductShape, rows: EnvironmentRows): boolean {
+  return SHAPE_FAMILIES[shape].every((f) => {
+    const row = rows[f];
+    return row !== undefined && TESTNET_LIVE_STATUSES.includes(row.testnet.status);
+  });
+}
+
+/** Every shape the gate closes, in table order. */
+export function blockedShapes(rows: EnvironmentRows): ProductShape[] {
+  return PRODUCT_SHAPE_VALUES.filter((s) => !shapeRunsOnTestnet(s, rows));
+}
+
+/** The blocked shapes among the given ones, in table order. */
+export function blockedShapesIn(shapes: ShapeInput, rows: EnvironmentRows): ProductShape[] {
+  const list = new Set(toShapeList(shapes));
+  return blockedShapes(rows).filter((s) => list.has(s));
+}
+
+/** Subsectors whose every shape is blocked, in table order. */
+export function blockedSubsectors(rows: EnvironmentRows): Subsector[] {
+  const blocked = new Set(blockedShapes(rows));
+  return SUBSECTOR_VALUES.filter((sub) => {
+    const shapes = shapesFor([sub]);
+    return shapes.length > 0 && shapes.every((s) => blocked.has(s));
+  });
 }
 
 // ---------------------------------------------------------------------------

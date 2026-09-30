@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 /**
  * Pill choosers in the StatusDeclarationField styling, lifted into ui so the
  * project and token editors share one look. An option with
- * `available: false` renders dimmed, disabled, and carries a SoonBadge.
+ * `available: false` renders dimmed, disabled, and carries a SoonBadge. An
+ * option with `disabled: true` renders dimmed and disabled with its
+ * `disabledNote` beside it, and stays on the cards (the testnet gate, M41).
  *
  * ChipMultiSelect: zero or more values, optional `max` (extra clicks are
  * ignored, never an error). ChipRadioGroup: exactly one value or "".
@@ -20,6 +22,9 @@ export interface ChipOption<V extends string> {
   title?: string;
   /** Sentence under the card heading in CardMultiSelectGroups. */
   sentence?: string;
+  /** Shown but not clickable, with `disabledNote` beside it (the testnet gate). Unlike `available: false` it stays on the cards. */
+  disabled?: boolean;
+  disabledNote?: string;
 }
 
 const CHIP_BASE =
@@ -31,27 +36,36 @@ const CHIP_SOON = "cursor-not-allowed border-ink-800/70 text-ink-500 opacity-60"
 function Chip({
   selected,
   soon,
+  disabled = false,
+  note,
   label,
   onToggle,
   role,
 }: {
   selected: boolean;
   soon: boolean;
+  disabled?: boolean;
+  note?: string;
   label: string;
   onToggle: () => void;
   role: "checkbox" | "radio";
 }) {
+  const off = soon || disabled;
   return (
     <button
       type="button"
       role={role}
       aria-checked={selected}
-      disabled={soon}
-      onClick={soon ? undefined : onToggle}
-      className={cn(CHIP_BASE, soon ? CHIP_SOON : selected ? CHIP_ON : CHIP_OFF)}
+      aria-disabled={off || undefined}
+      disabled={off}
+      onClick={off ? undefined : onToggle}
+      className={cn(CHIP_BASE, off ? CHIP_SOON : selected ? CHIP_ON : CHIP_OFF)}
     >
       {label}
       {soon ? <SoonBadge label="Coming soon" className="ml-0.5" /> : null}
+      {!soon && disabled && note ? (
+        <span className="text-[10px] font-normal text-ink-500">{note}</span>
+      ) : null}
     </button>
   );
 }
@@ -85,6 +99,8 @@ export function ChipMultiSelect<V extends string>({
               role="checkbox"
               label={opt.label}
               soon={opt.available === false}
+              disabled={opt.disabled}
+              note={opt.disabledNote}
               selected={selected}
               onToggle={() => {
                 if (selected) onChange(value.filter((v) => v !== opt.value));
@@ -122,6 +138,8 @@ export function ChipRadioGroup<V extends string>({
             role="radio"
             label={opt.label}
             soon={opt.available === false}
+            disabled={opt.disabled}
+            note={opt.disabledNote}
             selected={value === opt.value}
             onToggle={() => onChange(opt.value)}
           />
@@ -188,6 +206,8 @@ export function ChipMultiSelectGroups<V extends string>({
                     role="checkbox"
                     label={opt.label}
                     soon={opt.available === false}
+                    disabled={opt.disabled}
+                    note={opt.disabledNote}
                     selected={selected}
                     onToggle={() => {
                       if (selected) onChange(value.filter((v) => v !== opt.value));
@@ -266,13 +286,17 @@ export function CardMultiSelectGroups<V extends string>({
               <div className="space-y-2">
                 {options.map((opt) => {
                   const selected = chosen.has(opt.value);
+                  const disabled = opt.disabled === true;
                   return (
                     <button
                       key={opt.value}
                       type="button"
                       role="checkbox"
                       aria-checked={selected}
+                      aria-disabled={disabled || undefined}
+                      disabled={disabled}
                       onClick={() => {
+                        if (disabled) return;
                         if (selected) onChange(value.filter((v) => v !== opt.value));
                         else if (
                           (max === undefined || value.length < max) &&
@@ -280,12 +304,12 @@ export function CardMultiSelectGroups<V extends string>({
                         )
                           onChange([...value, opt.value]);
                       }}
-                      className={cn(CARD_BASE, selected ? CHIP_ON : CHIP_OFF)}
+                      className={cn(CARD_BASE, disabled ? CHIP_SOON : selected ? CHIP_ON : CHIP_OFF)}
                     >
                       <span
                         className={cn(
                           "block text-[11px] font-medium uppercase tracking-wide",
-                          selected ? "text-electric-200" : "text-ink-400",
+                          disabled ? "text-ink-500" : selected ? "text-electric-200" : "text-ink-400",
                         )}
                       >
                         {opt.title ?? opt.label}
@@ -294,11 +318,14 @@ export function CardMultiSelectGroups<V extends string>({
                         <span
                           className={cn(
                             "mt-1 block text-sm leading-relaxed",
-                            selected ? "text-ink-50" : "text-ink-200",
+                            disabled ? "text-ink-500" : selected ? "text-ink-50" : "text-ink-200",
                           )}
                         >
                           {opt.sentence}
                         </span>
+                      ) : null}
+                      {disabled && opt.disabledNote ? (
+                        <span className="mt-1 block text-[11px] text-ink-500">{opt.disabledNote}</span>
                       ) : null}
                     </button>
                   );

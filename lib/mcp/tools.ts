@@ -17,9 +17,9 @@ import {
   designWarnings,
 } from "@/lib/mcp/design-views";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
+import { GATE_COPY, SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
-import { SHAPE_SUBSECTORS, type ProductShape } from "@/lib/kits";
+import { SHAPE_SUBSECTORS, type ProductShape, blockedShapes, shapeRunsOnTestnet } from "@/lib/kits";
 import { docSectors, sectorOfSubsector } from "@/lib/sectors";
 import { registerLaunchTools } from "@/lib/mcp/launch-tools";
 import { deriveTokenomics } from "@/lib/tokenDesign";
@@ -215,7 +215,7 @@ export function registerAllTools(server: McpServer): void {
     {
       title: "Resource catalog",
       description:
-        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain (Morpho, Pendle, Uniswap, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags and where each protocol family runs today. Filter by shape, family or priority. No sign-in needed.",
+        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain (Morpho, Pendle, Uniswap, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags, where each protocol family runs today and which shapes the studio blocks because their protocol has no deployment on Robinhood Chain testnet (runsOnTestnet per shape, testnetGate at the top). Filter by shape, family or priority. No sign-in needed.",
       inputSchema: z.object({
         shape: z
           .enum([
@@ -271,7 +271,10 @@ export function registerAllTools(server: McpServer): void {
           label: o.label,
           subsectors: SHAPE_SUBSECTORS[o.value],
           sectors: [...new Set(SHAPE_SUBSECTORS[o.value].map(sectorOfSubsector))],
+          runsOnTestnet: shapeRunsOnTestnet(o.value, KIT_ENVIRONMENTS),
+          examples: o.examples,
         })),
+        testnetGate: { blockedShapes: blockedShapes(KIT_ENVIRONMENTS), rule: GATE_COPY.catalogRule },
         environments: Object.values(KIT_ENVIRONMENTS),
         total: resources.length,
         resources,

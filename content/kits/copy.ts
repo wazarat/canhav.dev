@@ -32,6 +32,8 @@ import {
 export interface ShapeOption extends ChipOption<ProductShape> {
   /** One line under the chips once this shape is chosen. */
   blurb: string;
+  /** Two or three things a team could build with it, one line each (M41). */
+  examples: readonly string[];
 }
 
 /** Every shape option, in SHAPE_SUBSECTORS (picker) order. */
@@ -50,6 +52,7 @@ export const STARTING_POINT_OPTIONS: ReadonlyArray<ChipOption<StartingPoint>> = 
 export const KIT_COPY = {
   shapeLabel: "What are you building",
   shapeHint: "Pick every layer your users touch. The research kit merges the packs for what you choose.",
+  examplesTitle: "What you could build",
   startingPointLabel: "Starting point",
   existingProductLabel: "What exists today",
   existingProductHint: "A link or one line. Optional.",
@@ -209,6 +212,38 @@ export function shapeLabels(kit: Pick<ProjectKit, "shape" | "shapes"> | undefine
 export function shapeBlurb(shape: ProductShape | ""): string | null {
   if (!shape) return null;
   return SHAPE_OPTIONS.find((o) => o.value === shape)?.blurb ?? null;
+}
+
+export function shapeExamples(shape: ProductShape | ""): readonly string[] {
+  if (!shape) return [];
+  return SHAPE_OPTIONS.find((o) => o.value === shape)?.examples ?? [];
+}
+
+/**
+ * The testnet gate (M41). Shapes whose protocol has no deployment on
+ * Robinhood Chain testnet are shown greyed and cannot be picked; a stored
+ * one is kept, warned about and blocks publishing.
+ */
+export const GATE_COPY = {
+  chipSuffix: "Not on Robinhood testnet yet",
+  note: "Greyed options rely on a protocol with no deployment on Robinhood Chain testnet. They open when one lands.",
+  publishBlock: (labels: readonly string[]) =>
+    labels.length === 1
+      ? `${labels[0]} is not on Robinhood testnet yet. Remove it in Basics to publish.`
+      : `${joinAnd(labels)} are not on Robinhood testnet yet. Remove them in Basics to publish.`,
+  warning: (labels: readonly string[]) =>
+    labels.length === 1
+      ? `${labels[0]} is not on Robinhood testnet yet, so this project cannot publish. Click to remove it.`
+      : `${joinAnd(labels)} are not on Robinhood testnet yet, so this project cannot publish. Click to remove them.`,
+  stepProblem: "A shape is not on Robinhood testnet",
+  catalogRule:
+    "A shape is blocked when a protocol family it relies on has no official or community deployment on testnet 46630.",
+} as const;
+
+/** "A", "A and B", "A, B and C". */
+export function joinAnd(items: readonly string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
 /** "From scratch" or "On top of an existing product (note)". Null when unset. */

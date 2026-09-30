@@ -1,6 +1,8 @@
 import { keccak256, stringToBytes } from "viem";
 
 import {
+  blockedShapesIn,
+  kitShapes,
   kitsForSectors,
   normalizeProjectKit,
   type ProductShape,
@@ -19,6 +21,8 @@ import {
   sectorOfSubsector,
   withSectors,
 } from "@/lib/sectors";
+import { GATE_COPY, shapeLabel } from "@/content/kits/copy";
+import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { LAUNCH_FORM } from "@/content/launch";
 
 export {
@@ -585,6 +589,9 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.kit) {
     p = validateProjectKit(doc.kit, kitsForSectors(sectors, subsectors));
     if (p) return p;
+    // The testnet gate (M41). A stored shape is kept, but it cannot publish.
+    const gated = blockedShapesIn(kitShapes(doc.kit), KIT_ENVIRONMENTS);
+    if (gated.length) return GATE_COPY.publishBlock(gated.map((g) => shapeLabel(g) ?? g));
   }
   p =
     checkText("What it does", doc.whatItDoes, L.whatItDoes) ??

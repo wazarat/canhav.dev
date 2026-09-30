@@ -349,5 +349,11 @@ event window so judges can verify it.
   reads the project and reports what is left, with a last step that follows
   the project's agent write setting. The Launch a token card leaves the
   project page, and signed-out visitors see one Log in or sign up button.
+- Sept 30, 2026. Shape examples and the testnet gate. Every product shape
+  lists three things you could build with it, and shapes whose protocol has
+  no deployment on Robinhood Chain testnet (the Pendle and Uniswap shapes
+  today, with Morpho's community deployment counting as launched) are shown
+  greyed in Basics, cannot be picked, block publishing when an older project
+  still holds one, and are flagged on the resource catalog tool.
 
 This list grows as work lands on the branch.
