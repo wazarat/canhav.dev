@@ -63,6 +63,12 @@ export interface AgentChange {
   status: AgentChangeStatus;
   createdAt: string;
   resolvedAt: string | null;
+  /**
+   * What the owner let through on accept (M44), the proposal narrowed to
+   * the lines they kept with any edits. Equals `patch` on a full accept and
+   * is null on rejected rows, direct writes and rows decided before M44.
+   */
+  appliedPatch: unknown | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -346,6 +352,10 @@ export interface ChangeLine {
   path: string;
   before: string;
   after: string;
+  /** On a decided change, false when the owner dropped this line (M44). */
+  applied?: boolean;
+  /** On a decided change, true when the owner changed the value before accepting. */
+  edited?: boolean;
 }
 
 function show(v: unknown): string {
@@ -394,4 +404,201 @@ export function buildStepLines(patch: BuildStepsPatch): ChangeLine[] {
     ...patch.done.map((id) => ({ path: id, before: "Not done", after: "Done" })),
     ...patch.undone.map((id) => ({ path: id, before: "Done", after: "Not done" })),
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Deciding a proposal line by line (M44)
+
+/** True for the values changeLines shows as one line. Arrays and status declarations count as one leaf. */
+function isLeaf(v: unknown): boolean {
+  return !isPlain(v) || "status" in v;
+}
+
+/** Every leaf path of a patch, the same walk changeLines takes. */
+export function leafPaths(patch: unknown, prefix = ""): string[] {
+  if (!isPlain(patch)) return [];
+  const out: string[] = [];
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (isLeaf(v)) out.push(path);
+    else out.push(...leafPaths(v, path));
+  }
+  return out;
+}
+
+/** The raw value at a dotted path, undefined when the path is not there. */
+export function valueAt(patch: unknown, path: string): unknown {
+  let cur: unknown = patch;
+  for (const part of path.split(".")) {
+    if (!isPlain(cur)) return undefined;
+    cur = cur[part];
+  }
+  return cur;
+}
+
+/** The patch with only the leaves in `keep`, parents that empty out dropped with them. */
+export function subsetPatch(patch: unknown, keep: ReadonlySet<string>, prefix = ""): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!isPlain(patch)) return out;
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (isLeaf(v)) {
+      if (keep.has(path)) out[k] = v;
+    } else {
+      const inner = subsetPatch(v, keep, path);
+      if (Object.keys(inner).length) out[k] = inner;
+    }
+  }
+  return out;
+}
+
+/** The patch with leaf values replaced at paths that exist. Unknown paths are ignored, never added. */
+export function withEdits(
+  patch: unknown,
+  edits: Readonly<Record<string, unknown>>,
+  prefix = "",
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!isPlain(patch)) return out;
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (isLeaf(v)) out[k] = path in edits ? edits[path] : v;
+    else out[k] = withEdits(v, edits, path);
+  }
+  return out;
+}
+
+/** True when `decided` is non-empty and every leaf of it is a leaf of `stored`. An owner may drop or edit, never add. */
+export function patchNarrows(stored: unknown, decided: unknown): boolean {
+  const allowed = new Set(leafPaths(stored));
+  const paths = leafPaths(decided);
+  return paths.length > 0 && paths.every((p) => allowed.has(p));
+}
+
+export function subsetBuildSteps(patch: BuildStepsPatch, keep: ReadonlySet<string>): BuildStepsPatch {
+  return { done: patch.done.filter((id) => keep.has(id)), undone: patch.undone.filter((id) => keep.has(id)) };
+}
+
+export function buildStepsNarrow(stored: BuildStepsPatch, decided: BuildStepsPatch): boolean {
+  const n = decided.done.length + decided.undone.length;
+  return (
+    n > 0 &&
+    decided.done.every((id) => stored.done.includes(id)) &&
+    decided.undone.every((id) => stored.undone.includes(id))
+  );
+}
+
+export interface Decision {
+  /** Leaf paths (or build step ids) the owner unticked. */
+  dropped: ReadonlySet<string>;
+  /** Leaf path to the owner's replacement value. Ignored for build steps. */
+  edits: Readonly<Record<string, unknown>>;
+}
+
+/** The patch the owner decided on. Build steps are per step, fields are per leaf with edits applied. */
+export function decidePatch(kind: AgentChangeKind, patch: unknown, decision: Decision): unknown {
+  if (kind === "build_steps") {
+    const parsed = buildStepsPatchSchema.safeParse(patch);
+    if (!parsed.success) return patch;
+    const keep = new Set([...parsed.data.done, ...parsed.data.undone].filter((id) => !decision.dropped.has(id)));
+    return subsetBuildSteps(parsed.data as BuildStepsPatch, keep);
+  }
+  const keep = new Set(leafPaths(patch).filter((p) => !decision.dropped.has(p)));
+  return withEdits(subsetPatch(patch, keep), decision.edits);
+}
+
+/** How the panel edits one leaf, read off the zod schema so the two never drift. */
+export type LeafSpec =
+  | { kind: "string"; max?: number }
+  | { kind: "number"; min?: number; max?: number; int?: boolean }
+  | { kind: "enum"; options: readonly string[] }
+  | { kind: "boolean" }
+  | { kind: "structured" };
+
+type ZodLike = { _zod?: { def?: Record<string, unknown> } };
+
+function unwrapZod(schema: unknown): unknown {
+  let cur = schema;
+  for (let i = 0; i < 8; i++) {
+    const def = (cur as ZodLike)?._zod?.def;
+    if (!def) return cur;
+    const t = def.type as string | undefined;
+    if (t === "optional" || t === "default" || t === "nullable" || t === "readonly" || t === "nonoptional")
+      cur = def.innerType;
+    else if (t === "pipe") cur = def.in;
+    else return cur;
+  }
+  return cur;
+}
+
+/**
+ * The leaf kind at a dotted path of a patch schema. Falls back to a plain
+ * string editor when the schema cannot be read, so an unknown zod shape
+ * never hides a line.
+ */
+export function leafSpec(schema: unknown, path: string): LeafSpec {
+  try {
+    let cur = unwrapZod(schema);
+    for (const part of path.split(".")) {
+      const def = (cur as ZodLike)?._zod?.def;
+      if (!def || def.type !== "object") return { kind: "structured" };
+      const shape = def.shape as Record<string, unknown> | undefined;
+      if (!shape || !(part in shape)) return { kind: "string" };
+      cur = unwrapZod(shape[part]);
+    }
+    const def = (cur as ZodLike)?._zod?.def;
+    if (!def) return { kind: "string" };
+    const t = def.type as string;
+    if (t === "string") {
+      const max = (cur as { maxLength?: number | null }).maxLength;
+      return { kind: "string", ...(typeof max === "number" ? { max } : {}) };
+    }
+    if (t === "number") {
+      const n = cur as { minValue?: number | null; maxValue?: number | null; isInt?: boolean };
+      return {
+        kind: "number",
+        ...(typeof n.minValue === "number" && Number.isFinite(n.minValue) ? { min: n.minValue } : {}),
+        ...(typeof n.maxValue === "number" && Number.isFinite(n.maxValue) ? { max: n.maxValue } : {}),
+        ...(n.isInt ? { int: true } : {}),
+      };
+    }
+    if (t === "enum") {
+      const entries = def.entries as Record<string, string> | undefined;
+      const options = (cur as { options?: readonly string[] }).options ?? (entries ? Object.values(entries) : []);
+      return { kind: "enum", options };
+    }
+    if (t === "boolean") return { kind: "boolean" };
+    return { kind: "structured" };
+  } catch {
+    return { kind: "string" };
+  }
+}
+
+/**
+ * History lines for a decided change. One per leaf of the proposal; a leaf
+ * missing from the applied patch is marked not applied, a leaf whose value
+ * differs shows the agent's value as before and the applied one as after.
+ */
+export function decisionLines(patch: unknown, appliedPatch: unknown): ChangeLine[] {
+  return leafPaths(patch).map((path) => {
+    const proposed = valueAt(patch, path);
+    const applied = valueAt(appliedPatch, path);
+    const kept = applied !== undefined;
+    const edited = kept && JSON.stringify(applied) !== JSON.stringify(proposed);
+    return {
+      path,
+      before: edited ? show(proposed) : "",
+      after: show(kept ? applied : proposed),
+      applied: kept,
+      edited,
+    };
+  });
+}
+
+export function buildStepDecisionLines(patch: BuildStepsPatch, applied: BuildStepsPatch | null): ChangeLine[] {
+  const kept = applied ? new Set([...applied.done, ...applied.undone]) : null;
+  return buildStepLines(patch).map((l) => ({ ...l, applied: kept ? kept.has(l.path) : true }));
 }

@@ -88,7 +88,7 @@ The scoped server also registers one prompt, `prelaunch_review`. In Claude Code 
 
 ### Writing to a draft
 
-An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how on the project page in the studio, under Agent changes.
+An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how on the project page in the studio, under Agent changes. A proposal is decided line by line there: the owner can drop a line, edit a value before accepting it, or accept and reject the whole change. Only the lines the owner kept reach the draft, and `get_agent_changes` shows them as `appliedPatch` beside the original `patch`.
 
 | Mode | What happens to a change |
 |------|--------------------------|
@@ -102,7 +102,7 @@ An agent on a project's server can change that project's draft, tick build steps
 | `get_build_steps` | The build steps for the project's product shapes with their ids, their shape, whether each is ticked and `sharedWith`, the ids of the same step under the project's other shapes. Progress counts a shared step once, so tick every id in `sharedWith` together |
 | `set_build_steps` | Tick or untick build steps by id |
 | `update_linked_token_design` | Change fields of the linked token design draft |
-| `get_agent_changes` | The owner's mode and the recent agent changes with their status (proposed, applied, accepted, rejected) |
+| `get_agent_changes` | The owner's mode and the recent agent changes with their status (proposed, applied, accepted, rejected). An accepted row carries `appliedPatch`, the part of the proposal the owner let through, possibly edited line by line |
 
 Every write tool takes an optional `note` for the owner and answers with `outcome`, either `proposed` or `applied`.
 

@@ -632,8 +632,21 @@ export const AGENT_COPY = {
   pending: "Waiting for you",
   nonePending: "No changes are waiting.",
   history: "Earlier changes",
-  accept: "Accept",
-  reject: "Reject",
+  acceptAll: "Accept all",
+  acceptSelected: (n: number, m: number) => `Accept ${n} of ${m}`,
+  rejectAll: "Reject all",
+  nothingSelected: "Nothing is selected. Tick a line to accept it, or reject all.",
+  lineHint: "Untick a line to leave it out. Edit a value before you accept it.",
+  notApplied: "Not applied",
+  proposed: "Proposed",
+  applied: "Applied",
+  edited: "Edited",
+  decision: (applied: number, total: number, edited: number) =>
+    applied === total && edited === 0
+      ? "Applied as proposed"
+      : `${applied} of ${total} applied${edited ? `, ${edited} edited` : ""}`,
+  unparseable: "This proposal no longer matches what agents may change, so it can only be rejected.",
+  invalidDecision: "This decision cannot be applied.",
   busy: "Working",
   was: "Was",
   now: "Now",

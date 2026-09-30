@@ -367,5 +367,10 @@ event window so judges can verify it.
   is the same work across several shapes is listed once with a note, ticked
   once and counted once everywhere, from the studio row to the exports and
   the agent tools.
+- Sept 30, 2026. Agent proposals decided line by line. Each line of a
+  proposal has its own checkbox and, for a plain value, an inline editor,
+  so the owner accepts some lines, edits others and drops the rest. What
+  was applied is recorded beside the proposal and shown in the history and
+  on the agent's own changes tool.
 
 This list grows as work lands on the branch.

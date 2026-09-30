@@ -293,9 +293,13 @@ await sql`
     note text check (note is null or char_length(note) <= 400),
     status text not null check (status in ('proposed','applied','accepted','rejected')),
     created_at timestamptz not null default now(),
-    resolved_at timestamptz
+    resolved_at timestamptz,
+    applied_patch jsonb
   )
 `;
+
+// M44. The part of a proposal the owner let through, possibly edited.
+await sql`alter table launchpad.agent_changes add column if not exists applied_patch jsonb`;
 
 await sql`
   create index if not exists agent_changes_project_idx

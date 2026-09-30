@@ -6,8 +6,11 @@ import {
   type AgentChange,
   type BuildStepsPatch,
   type ChangeLine,
+  buildStepDecisionLines,
   buildStepLines,
+  buildStepsPatchSchema,
   changeLines,
+  decisionLines,
   isAgentWriteMode,
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges, setAgentWriteMode } from "@/lib/agent-writes-db";
@@ -41,11 +44,16 @@ export async function GET(_req: Request, { params }: Ctx) {
   );
 
   const lines = (c: AgentChange): ChangeLine[] => {
-    if (c.kind === "build_steps")
-      return buildStepLines(c.patch as BuildStepsPatch).map((l) => ({
-        ...l,
-        path: titles.get(l.path) ?? l.path,
-      }));
+    const decided = c.status === "accepted" && c.appliedPatch !== null;
+    if (c.kind === "build_steps") {
+      const applied = decided ? buildStepsPatchSchema.safeParse(c.appliedPatch) : null;
+      const raw = decided
+        ? buildStepDecisionLines(c.patch as BuildStepsPatch, applied?.success ? (applied.data as BuildStepsPatch) : null)
+        : buildStepLines(c.patch as BuildStepsPatch);
+      return raw.map((l) => ({ ...l, path: titles.get(l.path) ?? l.path }));
+    }
+    // A decided change shows what the owner let through (M44).
+    if (decided) return decisionLines(c.patch, c.appliedPatch);
     const doc = c.target === "project" ? project.draft_doc : design?.draft_doc;
     // A resolved change is already in the draft, so there is no "before" left to show.
     return changeLines(c.status === "proposed" ? doc : undefined, c.patch);

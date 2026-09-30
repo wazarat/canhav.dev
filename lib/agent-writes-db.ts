@@ -28,6 +28,7 @@ interface ChangeRow {
   status: AgentChangeStatus;
   created_at: string;
   resolved_at: string | null;
+  applied_patch?: unknown;
 }
 
 function mapChange(r: ChangeRow): AgentChange {
@@ -40,6 +41,7 @@ function mapChange(r: ChangeRow): AgentChange {
     status: r.status,
     createdAt: r.created_at,
     resolvedAt: r.resolved_at,
+    appliedPatch: r.applied_patch ?? null,
   };
 }
 
@@ -81,7 +83,7 @@ export async function listAgentChanges(
   if (!sql) return [];
   try {
     const rows = await sql`
-      select id, target, kind, patch, note, status, created_at, resolved_at
+      select id, target, kind, patch, note, status, created_at, resolved_at, applied_patch
       from launchpad.agent_changes
       where project_id = ${projectId} and owner_id = ${ownerId}
       order by (status = 'proposed') desc, created_at desc
@@ -117,7 +119,7 @@ export async function getAgentChange(
   if (!sql) return null;
   try {
     const rows = await sql`
-      select id, target, target_id, kind, patch, note, status, created_at, resolved_at
+      select id, target, target_id, kind, patch, note, status, created_at, resolved_at, applied_patch
       from launchpad.agent_changes
       where id = ${changeId} and project_id = ${projectId} and owner_id = ${ownerId}
     `;
@@ -164,13 +166,16 @@ export async function resolveAgentChange(
   projectId: string,
   ownerId: string,
   status: "accepted" | "rejected",
+  /** What was applied on accept (M44). Stored as applied_patch, null on reject. */
+  appliedPatch: unknown = null,
 ): Promise<boolean> {
   const sql = getDb();
   if (!sql) return false;
   try {
+    const applied = status === "accepted" && appliedPatch !== null ? JSON.stringify(appliedPatch) : null;
     const rows = await sql`
       update launchpad.agent_changes
-      set status = ${status}, resolved_at = now()
+      set status = ${status}, resolved_at = now(), applied_patch = ${applied}
       where id = ${changeId} and project_id = ${projectId} and owner_id = ${ownerId}
         and status = 'proposed'
       returning id

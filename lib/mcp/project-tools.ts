@@ -479,7 +479,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Agent changes on this project",
       description:
-        "How the owner lets agents write to this project (off, propose or direct) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. Takes no arguments.",
+        "How the owner lets agents write to this project (off, propose or direct) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
