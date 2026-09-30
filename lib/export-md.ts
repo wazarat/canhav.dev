@@ -11,12 +11,13 @@ import {
   LP_TREATMENT_OPTIONS,
   MARKET_FACTS,
   MARKET_TIMING_OPTIONS,
+  AUDIENCE_OPTIONS,
   PERSONA_COPY,
+  type PersonaRowSpec,
   PROJECT_SECURITY_FIELDS,
   RATIONALE_WHY_OPTIONS,
   RELEASE_TYPE_OPTIONS,
   REPORTING_OPTIONS,
-  REVENUE_RANGE_OPTIONS,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
@@ -24,6 +25,7 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
+  personaRows,
   sectorLabels,
   subsectorLabels,
 } from "@/content/ideation";
@@ -42,10 +44,11 @@ import { LAUNCH_CHAIN } from "@/content/launch";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
 import { KIT_PRIORITY_ORDER } from "@/lib/kits";
 import {
-  type Persona,
   type ProjectDoc,
   type StatusDecl,
   type TokenDesignDoc,
+  docAudience,
+  filledConsumerPersonas,
   filledPersonas,
   isSaleEvent,
   vestedCohorts,
@@ -81,29 +84,37 @@ function payerLine(doc: ProjectDoc): string {
   return "";
 }
 
-/** The customer block: persona table, earlier free text, payer, chain. Empty answers drop. */
+/** One persona table, rows from the spec, selects shown as their option label. */
+function personaTable<T extends { [K in keyof T]: string }>(
+  rows: ReadonlyArray<PersonaRowSpec<keyof T & string>>,
+  personas: readonly T[],
+): string[] {
+  const cell = (v: string) => v.trim().replace(/\|/g, "/") || " ";
+  const shown = (row: PersonaRowSpec<keyof T & string>, p: T) => {
+    const raw = (p[row.key] as string).trim();
+    return row.kind === "select" && raw ? (row.options?.find((o) => o.value === raw)?.label ?? raw) : raw;
+  };
+  return [
+    `| | ${personas.map((_, i) => PERSONA_COPY.column(i + 1)).join(" | ")} |`,
+    `|---|${personas.map(() => "---").join("|")}|`,
+    ...rows.map((row) => `| ${row.label} | ${personas.map((p) => cell(shown(row, p))).join(" | ")} |`),
+  ];
+}
+
+/** The customer block: audience, persona table, earlier free text, payer, chain. Empty answers drop. */
 function customerLines(doc: ProjectDoc): string[] {
   const out: string[] = [];
-  const personas = filledPersonas(doc);
-  if (personas.length) {
-    const R = PERSONA_COPY.rows;
-    const cell = (v: string) => v.trim().replace(/\|/g, "/") || " ";
-    const row = (label: string, pick: (p: Persona) => string) =>
-      `| ${label} | ${personas.map((p) => cell(pick(p))).join(" | ")} |`;
-    out.push(
-      `**Who the user is**`,
-      "",
-      `| | ${personas.map((_, i) => PERSONA_COPY.column(i + 1)).join(" | ")} |`,
-      `|---|${personas.map(() => "---").join("|")}|`,
-      row(R.teamSize.label, (p) => p.teamSize),
-      row(R.geography.label, (p) => p.geography),
-      row(R.industry.label, (p) => p.industry),
-      row(R.primaryContact.label, (p) => p.primaryContact),
-      row(R.revenueRange.label, (p) =>
-        p.revenueRange ? optionLabel(REVENUE_RANGE_OPTIONS, p.revenueRange) : "",
-      ),
-      "",
-    );
+  const audience = docAudience(doc);
+  const table =
+    audience === "b2c"
+      ? personaTable(personaRows("b2c"), filledConsumerPersonas(doc))
+      : audience === "b2b"
+        ? personaTable(personaRows("b2b"), filledPersonas(doc))
+        : [];
+  if (table.length > 2) {
+    out.push(`**Who the user is**`, "");
+    if (audience) out.push(`**Who you sell to:** ${optionLabel(AUDIENCE_OPTIONS, audience)}`, "");
+    out.push(...table, "");
     if (doc.userIs.trim()) out.push(doc.userIs, "");
   } else if (doc.userIs.trim()) {
     out.push(`**Who the user is:** ${doc.userIs}`, "");

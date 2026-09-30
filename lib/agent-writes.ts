@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { checklistFor } from "@/content/kits/checklists";
 import {
+  AUDIENCE_VALUES,
+  CRYPTO_EXPERIENCE_VALUES,
   PROJECT_LIMITS,
   REVENUE_RANGE_VALUES,
   TEAM_SIZE_PATTERN,
@@ -86,11 +88,25 @@ const persona = z.strictObject({
   revenueRange: z.enum(["", ...REVENUE_RANGE_VALUES]).default(""),
 });
 
+const consumerPersona = z.strictObject({
+  ageRange: z
+    .string()
+    .max(L.personaAgeRange.max)
+    .refine((v) => !v.trim() || TEAM_SIZE_PATTERN.test(v.trim()), "A number or a range like 25-40")
+    .default(""),
+  geography: z.string().max(L.personaText.max).default(""),
+  cryptoExperience: z.enum(["", ...CRYPTO_EXPERIENCE_VALUES]).default(""),
+  howTheyFindYou: z.string().max(L.personaText.max).default(""),
+  holdings: z.string().max(L.personaText.max).default(""),
+});
+
 export const projectPatchSchema = z
   .strictObject({
     name: z.string().max(L.name.max),
     whatItDoes: z.string().max(L.whatItDoes.max),
+    audience: z.enum(AUDIENCE_VALUES),
     personas: z.array(persona).max(L.personas.max),
+    consumerPersonas: z.array(consumerPersona).max(L.personas.max),
     payer: z.enum(["", "user", "third_party"]),
     whoPays: z.string().max(L.whoPays.max),
     whyThisChain: z.string().max(L.whyThisChain.max),

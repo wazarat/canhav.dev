@@ -29,6 +29,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import {
+  AUDIENCE_OPTIONS,
   ORACLE_USE_OPTIONS,
   PAYER_OPTIONS,
   PERSONA_COPY,
@@ -41,8 +42,9 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   WORST_CASE_PRESSURE,
+  audiencePersonaCards,
   optionLabel,
-  personaCells,
+  personaRows,
   sectorLabel,
   subsectorLabel,
   subsectorLabels,
@@ -65,7 +67,9 @@ import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import {
   PROJECT_LIMITS,
   type ProjectDoc,
-  filledPersonas,
+  docAudience,
+  emptyConsumerPersona,
+  emptyPersona,
   validateProjectDoc,
 } from "@/lib/ideation";
 import {
@@ -289,6 +293,7 @@ export function ProjectEditor({
   const shapeGated = shapeGroups.some((g) => g.options.some((o) => o.disabled));
   const heldBlocked = blockedShapesIn(kitShapes(kit), KIT_ENVIRONMENTS);
   const removeBlocked = () => onShapes(kitShapes(kit).filter((s) => !BLOCKED_SHAPES.has(s)));
+  const audience = docAudience(doc);
   const kitStep = step === 4 ? null : KIT_STEPS[step];
   const railCounts = useMemo(() => {
     if (!kit?.shape) return null;
@@ -468,10 +473,30 @@ export function ProjectEditor({
               rows={5}
               placeholder="One paragraph. What does it actually do?"
             />
-            <PersonaTableEditor
-              personas={doc.personas}
-              onChange={(personas) => patch({ personas })}
+            <ChipRadioGroup
+              label={PERSONA_COPY.audienceLabel}
+              hint={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
+              value={audience}
+              onChange={(v) => patch({ audience: v })}
+              options={AUDIENCE_OPTIONS}
             />
+            {audience === "b2b" ? (
+              <PersonaTableEditor
+                rows={personaRows("b2b")}
+                personas={doc.personas}
+                onChange={(personas) => patch({ personas })}
+                empty={emptyPersona}
+                note={PERSONA_COPY.note}
+              />
+            ) : audience === "b2c" ? (
+              <PersonaTableEditor
+                rows={personaRows("b2c")}
+                personas={doc.consumerPersonas}
+                onChange={(consumerPersonas) => patch({ consumerPersonas })}
+                empty={emptyConsumerPersona}
+                note={PERSONA_COPY.note}
+              />
+            ) : null}
             {(initialDoc.userIs.trim() || doc.userIs.trim()) && (
               <TextField
                 label={PERSONA_COPY.legacyLabel}
@@ -726,13 +751,14 @@ export function ProjectEditor({
                 </>
               )}
               <ReviewRow term="Stage" detail={optionLabel(STAGE_OPTIONS, doc.stage)} />
-              {filledPersonas(doc).map((persona, i) => (
+              {audience ? (
+                <ReviewRow term={PERSONA_COPY.audienceLabel} detail={optionLabel(AUDIENCE_OPTIONS, audience)} />
+              ) : null}
+              {audiencePersonaCards(doc).map((cells, i) => (
                 <ReviewRow
                   key={i}
                   term={PERSONA_COPY.column(i + 1)}
-                  detail={personaCells(persona)
-                    .map((c) => `${c.label} ${c.value}`)
-                    .join(" · ")}
+                  detail={cells.map((c) => `${c.label} ${c.value}`).join(" · ")}
                 />
               ))}
               {doc.payer ? (

@@ -6,7 +6,9 @@ import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { CurveProgress } from "@/components/launch/CurveProgress";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import {
+  AUDIENCE_OPTIONS,
   PERSONA_COPY,
+  audiencePersonaCards,
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
@@ -14,7 +16,6 @@ import {
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
   optionLabel,
-  personaCells,
   sectorLabels,
   subsectorLabels,
 } from "@/content/ideation";
@@ -22,7 +23,7 @@ import { checklistFor } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { checklistProgress, kitShapes } from "@/lib/kits";
 import { explorerAddressUrl } from "@/lib/explorer";
-import { type ProjectDoc, type StatusDecl, filledPersonas } from "@/lib/ideation";
+import { type ProjectDoc, type StatusDecl, docAudience } from "@/lib/ideation";
 import { getLaunchesByProject } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
@@ -85,6 +86,8 @@ export default async function ProjectPublicPage({
   const snapshot = await getSnapshot(row.published_hash);
   if (!snapshot || snapshot.doc.kind !== "project") notFound();
   const doc = snapshot.doc;
+  const audience = docAudience(doc);
+  const personaCards = audiencePersonaCards(doc);
 
   const [linked, deploys, txCount, github, contractChecks, projectLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
@@ -157,19 +160,25 @@ export default async function ProjectPublicPage({
         <Section title="The product">
           <div className="space-y-4">
             <Prose label="What it does" text={doc.whatItDoes} />
-            {filledPersonas(doc).length > 0 ? (
+            {personaCards.length > 0 ? (
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-ink-500">
                   {PERSONA_COPY.label}
                 </p>
+                {audience ? (
+                  <p className="mt-1 text-sm text-ink-300">
+                    <span className="text-ink-500">{PERSONA_COPY.audienceLabel} </span>
+                    {optionLabel(AUDIENCE_OPTIONS, audience)}
+                  </p>
+                ) : null}
                 <div className="mt-2 grid gap-3 sm:grid-cols-3">
-                  {filledPersonas(doc).map((persona, i) => (
+                  {personaCards.map((cells, i) => (
                     <div key={i} className="glass rounded-xl border border-ink-700/60 p-4">
                       <p className="text-xs font-medium text-ink-400">
                         {PERSONA_COPY.column(i + 1)}
                       </p>
                       <dl className="mt-2 space-y-2">
-                        {personaCells(persona).map((cell) => (
+                        {cells.map((cell) => (
                           <div key={cell.label}>
                             <dt className="text-[11px] text-ink-500">{cell.label}</dt>
                             <dd className="text-sm text-ink-200">{cell.value}</dd>
@@ -185,7 +194,7 @@ export default async function ProjectPublicPage({
               <div className="grid gap-4 sm:grid-cols-2">
                 {doc.userIs.trim() ? (
                   <Prose
-                    label={filledPersonas(doc).length ? PERSONA_COPY.legacyLabel : PERSONA_COPY.label}
+                    label={personaCards.length ? PERSONA_COPY.legacyLabel : PERSONA_COPY.label}
                     text={doc.userIs}
                   />
                 ) : null}

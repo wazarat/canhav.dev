@@ -101,6 +101,15 @@ export const REVENUE_RANGE_VALUES = [
 
 export type RevenueRange = (typeof REVENUE_RANGE_VALUES)[number];
 
+/** Who the project sells to (M42). Businesses get the B2B persona table, individuals the B2C one. */
+export const AUDIENCE_VALUES = ["b2b", "b2c"] as const;
+
+export type Audience = (typeof AUDIENCE_VALUES)[number];
+
+export const CRYPTO_EXPERIENCE_VALUES = ["new", "some", "active", "professional"] as const;
+
+export type CryptoExperience = (typeof CRYPTO_EXPERIENCE_VALUES)[number];
+
 /** One ideal customer persona. Every cell is optional. */
 export interface Persona {
   /** Digits, or a digit range like 10-50. */
@@ -113,7 +122,51 @@ export interface Persona {
   revenueRange: RevenueRange | "";
 }
 
+/** Digits or a digit range, shared by team size (B2B) and age range (B2C). */
 export const TEAM_SIZE_PATTERN = /^\d+(\s*-\s*\d+)?$/;
+
+/** One ideal consumer persona (B2C, M42). Every cell is optional. */
+export interface ConsumerPersona {
+  /** Digits, or a digit range like 25-40. */
+  ageRange: string;
+  geography: string;
+  cryptoExperience: CryptoExperience | "";
+  /** The channel. Twitter, Discord, referrals, an app store. */
+  howTheyFindYou: string;
+  /** What they hold today. ETH, stablecoins, stocks. */
+  holdings: string;
+}
+
+export function emptyConsumerPersona(): ConsumerPersona {
+  return { ageRange: "", geography: "", cryptoExperience: "", howTheyFindYou: "", holdings: "" };
+}
+
+export function isEmptyConsumerPersona(p: ConsumerPersona): boolean {
+  return !(
+    p.ageRange.trim() ||
+    p.geography.trim() ||
+    p.cryptoExperience ||
+    p.howTheyFindYou.trim() ||
+    p.holdings.trim()
+  );
+}
+
+export function filledConsumerPersonas(doc: { consumerPersonas?: ConsumerPersona[] }): ConsumerPersona[] {
+  return (doc.consumerPersonas ?? []).filter((p) => !isEmptyConsumerPersona(p));
+}
+
+/**
+ * The audience in force. The stored answer when there is one, else whichever
+ * table has a filled persona (an M38 document is B2B), else nothing chosen.
+ */
+export function docAudience(
+  doc: { audience?: Audience; personas?: Persona[]; consumerPersonas?: ConsumerPersona[] },
+): Audience | "" {
+  if (doc.audience) return doc.audience;
+  if (filledPersonas(doc).length) return "b2b";
+  if (filledConsumerPersonas(doc).length) return "b2c";
+  return "";
+}
 
 export function emptyPersona(): Persona {
   return { teamSize: "", geography: "", industry: "", primaryContact: "", revenueRange: "" };
@@ -180,6 +233,14 @@ export interface ProjectDoc {
    * never injects the key into older documents.
    */
   personas?: Persona[];
+  /**
+   * Who the project sells to (M42). Optional and never injected. b2b shows
+   * `personas`, b2c shows `consumerPersonas`; the other list stays stored
+   * and hidden so a builder who switches back finds their typing.
+   */
+  audience?: Audience;
+  /** Ideal consumer personas, one to three, for a b2c audience. Optional, never injected. */
+  consumerPersonas?: ConsumerPersona[];
   /** Optional answer. whoPays text is asked only when someone other than the user pays. */
   payer: Payer | "";
   whoPays: string;
@@ -237,6 +298,7 @@ export const PROJECT_LIMITS = {
   personas: { min: 1, max: 3 },
   personaText: { max: 80 },
   personaTeamSize: { max: 12 },
+  personaAgeRange: { max: 12 },
   architectureField: { min: 4, max: 800 },
   externalDeps: { max: 12 },
   externalDepName: { min: 2, max: 80 },
@@ -348,9 +410,34 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     };
   }
 
+  // Consumer personas (M42): the same rule as personas.
+  let consumerPatch: { consumerPersonas?: ConsumerPersona[] } = {};
+  if (Array.isArray(doc.consumerPersonas)) {
+    const text = (v: unknown) => (typeof v === "string" ? v : "");
+    consumerPatch = {
+      consumerPersonas: (doc.consumerPersonas as unknown[])
+        .filter((v): v is Record<string, unknown> => typeof v === "object" && v !== null)
+        .slice(0, PROJECT_LIMITS.personas.max)
+        .map((v) => ({
+          ageRange: text(v.ageRange),
+          geography: text(v.geography),
+          cryptoExperience: CRYPTO_EXPERIENCE_VALUES.includes(v.cryptoExperience as CryptoExperience)
+            ? (v.cryptoExperience as CryptoExperience)
+            : "",
+          howTheyFindYou: text(v.howTheyFindYou),
+          holdings: text(v.holdings),
+        })),
+    };
+  }
+  // Audience (M42): kept when it is one of the two values, dropped when it is garbage.
+  const { audience: rawAudience, ...withoutAudience } = doc as ProjectDoc & { audience?: unknown };
+  const audiencePatch = AUDIENCE_VALUES.includes(rawAudience as Audience)
+    ? { audience: rawAudience as Audience }
+    : {};
+
   // Research kit: coerced when the key exists, dropped when it is garbage,
   // never invented.
-  const { kit: rawKit, ...rest } = doc as ProjectDoc & { kit?: unknown };
+  const { kit: rawKit, ...rest } = withoutAudience as ProjectDoc & { kit?: unknown };
   const kits = kitsForSectors(docSectors({ sector, ...sectorsPatch }), subsectorPatch.subsectors ?? []);
   const kit = rawKit === undefined ? null : normalizeProjectKit(rawKit, kits);
 
@@ -362,6 +449,8 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     ...(sectorOther !== undefined ? { sectorOther } : {}),
     ...subsectorPatch,
     ...personasPatch,
+    ...consumerPatch,
+    ...audiencePatch,
     payer,
     whoPays,
     architecture: {
@@ -610,6 +699,22 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
         return "Persona team size must be a number or a range like 10-50.";
       if (persona.revenueRange && !REVENUE_RANGE_VALUES.includes(persona.revenueRange))
         return "Unknown persona revenue range.";
+    }
+  }
+  if (doc.audience !== undefined && !AUDIENCE_VALUES.includes(doc.audience)) return "Unknown audience.";
+  if (doc.consumerPersonas) {
+    if (doc.consumerPersonas.length > L.personas.max) return `At most ${L.personas.max} personas.`;
+    for (const persona of doc.consumerPersonas) {
+      p =
+        checkText("Persona age range", persona.ageRange, L.personaAgeRange) ??
+        checkText("Persona geography", persona.geography, L.personaText) ??
+        checkText("Persona how they find you", persona.howTheyFindYou, L.personaText) ??
+        checkText("Persona holdings", persona.holdings, L.personaText);
+      if (p) return p;
+      if (persona.ageRange.trim() && !TEAM_SIZE_PATTERN.test(persona.ageRange.trim()))
+        return "Persona age range must be a number or a range like 25-40.";
+      if (persona.cryptoExperience && !CRYPTO_EXPERIENCE_VALUES.includes(persona.cryptoExperience))
+        return "Unknown persona crypto experience.";
     }
   }
   if (doc.payer === "third_party") {

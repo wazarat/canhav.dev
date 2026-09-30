@@ -1,6 +1,9 @@
 import type {
   AntiSniping,
+  Audience,
+  ConsumerPersona,
   CounselStatus,
+  CryptoExperience,
   DistributionEvent,
   FounderLeavesPolicy,
   IssuancePath,
@@ -22,6 +25,9 @@ import type {
   Upgradeability,
   WorstCase,
 } from "@/lib/ideation";
+// Values, used only inside functions. lib/ideation reaches this file through
+// content/kits/copy, so nothing here may read them at module load.
+import { PROJECT_LIMITS, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
 import { docSectors } from "@/lib/sectors";
 import type { DesignWarning } from "@/lib/tokenDesign";
 
@@ -194,9 +200,28 @@ export const REVENUE_RANGE_OPTIONS: Array<{ value: RevenueRange; label: string }
   { value: "over_250m", label: "Over $250M" },
 ];
 
-/** The ideal customer persona table. Row order is the order of `rows`. */
+export const CRYPTO_EXPERIENCE_OPTIONS: Array<{ value: CryptoExperience; label: string }> = [
+  { value: "new", label: "New to crypto" },
+  { value: "some", label: "Some experience" },
+  { value: "active", label: "Active user" },
+  { value: "professional", label: "Professional" },
+];
+
+/** Who the project sells to (M42). Chosen above the persona table. */
+export const AUDIENCE_OPTIONS: Array<{ value: Audience; label: string }> = [
+  { value: "b2b", label: "Businesses (B2B)" },
+  { value: "b2c", label: "Individuals (B2C)" },
+];
+
+/** The ideal customer persona tables. Row order is the order in PERSONA_ROWS. */
 export const PERSONA_COPY = {
   label: "Who the user is",
+  audienceLabel: "Who you sell to",
+  audienceHint: "Pick one. The persona table follows.",
+  audienceHints: {
+    b2b: "Ideal customer personas for the businesses you sell to. Up to three.",
+    b2c: "Ideal personas for the individuals you reach. Up to three.",
+  },
   note: "Ideal customer personas. Up to three.",
   column: (n: number) => `Persona ${n}`,
   add: "Add persona",
@@ -209,21 +234,81 @@ export const PERSONA_COPY = {
     primaryContact: { label: "Primary contact", placeholder: "Head of Treasury" },
     revenueRange: { label: "Revenue range", placeholder: "Choose…" },
   },
+  consumerRows: {
+    ageRange: { label: "Age range", placeholder: "30 or 25-40" },
+    geography: { label: "Geography", placeholder: "City, country, or continent" },
+    cryptoExperience: { label: "Crypto experience", placeholder: "Choose…" },
+    howTheyFindYou: { label: "How they find you", placeholder: "Twitter, Discord, referrals" },
+    holdings: { label: "What they hold", placeholder: "ETH, stablecoins, stocks" },
+  },
 } as const;
 
-/** The cells of one persona as label and value pairs, empty cells left out. */
-export function personaCells(p: Persona): Array<{ label: string; value: string }> {
+/** One row of a persona table. `max` comes from PROJECT_LIMITS, `options` only for a select. */
+export interface PersonaRowSpec<K extends string> {
+  key: K;
+  label: string;
+  placeholder: string;
+  kind: "text" | "digits" | "select";
+  max: number;
+  options?: ReadonlyArray<{ value: string; label: string }>;
+}
+
+/** The single row order for the editor, the export, the public page and Review. A function so the limits are read after every module has loaded. */
+export function personaRows(audience: "b2b"): ReadonlyArray<PersonaRowSpec<keyof Persona>>;
+export function personaRows(audience: "b2c"): ReadonlyArray<PersonaRowSpec<keyof ConsumerPersona>>;
+export function personaRows(
+  audience: Audience,
+): ReadonlyArray<PersonaRowSpec<keyof Persona>> | ReadonlyArray<PersonaRowSpec<keyof ConsumerPersona>> {
+  const L = PROJECT_LIMITS;
   const R = PERSONA_COPY.rows;
+  const C = PERSONA_COPY.consumerRows;
+  if (audience === "b2b")
+    return [
+      { key: "teamSize", ...R.teamSize, kind: "digits", max: L.personaTeamSize.max },
+      { key: "geography", ...R.geography, kind: "text", max: L.personaText.max },
+      { key: "industry", ...R.industry, kind: "text", max: L.personaText.max },
+      { key: "primaryContact", ...R.primaryContact, kind: "text", max: L.personaText.max },
+      { key: "revenueRange", ...R.revenueRange, kind: "select", max: 20, options: REVENUE_RANGE_OPTIONS },
+    ] satisfies ReadonlyArray<PersonaRowSpec<keyof Persona>>;
   return [
-    { label: R.teamSize.label, value: p.teamSize.trim() },
-    { label: R.geography.label, value: p.geography.trim() },
-    { label: R.industry.label, value: p.industry.trim() },
-    { label: R.primaryContact.label, value: p.primaryContact.trim() },
-    {
-      label: R.revenueRange.label,
-      value: p.revenueRange ? optionLabel(REVENUE_RANGE_OPTIONS, p.revenueRange) : "",
-    },
-  ].filter((c) => c.value);
+    { key: "ageRange", ...C.ageRange, kind: "digits", max: L.personaAgeRange.max },
+    { key: "geography", ...C.geography, kind: "text", max: L.personaText.max },
+    { key: "cryptoExperience", ...C.cryptoExperience, kind: "select", max: 20, options: CRYPTO_EXPERIENCE_OPTIONS },
+    { key: "howTheyFindYou", ...C.howTheyFindYou, kind: "text", max: L.personaText.max },
+    { key: "holdings", ...C.holdings, kind: "text", max: L.personaText.max },
+  ] satisfies ReadonlyArray<PersonaRowSpec<keyof ConsumerPersona>>;
+}
+
+/** The cells of one persona as label and value pairs, empty cells left out. Selects show their option label. */
+export function personaRowCells<T extends { [K in keyof T]: string }>(
+  rows: ReadonlyArray<PersonaRowSpec<keyof T & string>>,
+  p: T,
+): Array<{ label: string; value: string }> {
+  return rows
+    .map((row) => {
+      const raw = (p[row.key] as string).trim();
+      const value = row.kind === "select" && raw ? (row.options?.find((o) => o.value === raw)?.label ?? raw) : raw;
+      return { label: row.label, value };
+    })
+    .filter((c) => c.value);
+}
+
+export function personaCells(p: Persona): Array<{ label: string; value: string }> {
+  return personaRowCells(personaRows("b2b"), p);
+}
+
+export function consumerPersonaCells(p: ConsumerPersona): Array<{ label: string; value: string }> {
+  return personaRowCells(personaRows("b2c"), p);
+}
+
+/** The filled persona cards for the audience in force, one cell list per card. */
+export function audiencePersonaCards(
+  doc: Pick<ProjectDoc, "audience" | "personas" | "consumerPersonas">,
+): Array<Array<{ label: string; value: string }>> {
+  const audience = docAudience(doc);
+  if (audience === "b2c") return filledConsumerPersonas(doc).map(consumerPersonaCells);
+  if (audience === "b2b") return filledPersonas(doc).map(personaCells);
+  return [];
 }
 
 export const PAYER_OPTIONS: Array<{ value: Payer; label: string }> = [

@@ -98,7 +98,7 @@ An agent on a project's server can change that project's draft, tick build steps
 
 | Tool | What it does |
 |------|--------------|
-| `update_project` | Change fields of the project draft. Basics (name, what it does, personas, who pays, why this chain, stage), architecture, security, reality and the verification fields. Send only the fields being changed. Lists replace the stored list |
+| `update_project` | Change fields of the project draft. Basics (name, what it does, audience b2b or b2c, personas for B2B, consumerPersonas for B2C, who pays, why this chain, stage), architecture, security, reality and the verification fields. Send only the fields being changed. Lists replace the stored list |
 | `get_build_steps` | The build steps for the project's product shapes with their ids and whether each is ticked |
 | `set_build_steps` | Tick or untick build steps by id |
 | `update_linked_token_design` | Change fields of the linked token design draft |

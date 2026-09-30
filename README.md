@@ -355,5 +355,11 @@ event window so judges can verify it.
   today, with Morpho's community deployment counting as launched) are shown
   greyed in Basics, cannot be picked, block publishing when an older project
   still holds one, and are flagged on the resource catalog tool.
+- Sept 30, 2026. Who you sell to. A project says whether it sells to
+  businesses or individuals, and the persona table follows. B2B keeps team
+  size, geography, industry, primary contact and revenue range; B2C asks for
+  age range, geography, crypto experience, how they find you and what they
+  hold. Both reach the public page, the exports and the agent tools, and
+  older projects are unchanged.
 
 This list grows as work lands on the branch.
