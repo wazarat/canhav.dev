@@ -10,7 +10,7 @@
 | Token Launch | Testnet launchpad on Robinhood Chain Testnet for creating fixed-supply tokens with optional vesting, journeys, sales, and AMM liquidity. Available now. |
 | Projects | Ideation studio with independent Product and Token design tracks, computed outputs, and public pages. Available now. |
 | Agent Launch | Intended ERC-8004 agent identity track. **Not started.** |
-| Journey | Off-chain document describing a token's plan and milestones. Its hash is committed on-chain at launch. |
+| Journey | Off-chain document describing a token's plan and milestones. Its hash is committed on-chain at launch. A launch from a published design commits the design's snapshot instead, and the design's milestones play the same role. |
 | Research preview | Content and software that is experimental, testnet-only, and not financial advice. |
 | Status declaration | Team-stated status for legal, governance, or security work (already in place, handled by legal/ops, planned before mainnet, not yet). Not enforced by the token contract. |
 
@@ -37,7 +37,7 @@
 | LaunchToken | Fixed-supply ERC20 implementation cloned per launch. No mint after initialize; no owner; not upgradeable. |
 | Launch fee | ETH paid to the launcher (or the factory) on launch, on top of any developer buy. Hard-capped in bytecode (`MAX_LAUNCH_FEE`); current documented testnet value 0.0002 ETH. |
 | userSalt | Creator-chosen salt. Combined with `msg.sender` so predicted addresses cannot be front-run by others. |
-| journeyHash | On-chain commitment to the full journey document. |
+| journeyHash | On-chain commitment to the full journey document, or to a published token design's snapshot when the launch was made from a design. |
 | descriptionHash | On-chain commitment to the short form description field. The text itself is stored off-chain and displayed only when it re-hashes to this value. |
 | Vesting wallet | Clone that locks a percent of supply for a beneficiary with duration and optional cliff. |
 | MilestoneEscrow | Admin-less singleton for milestone-dated token lockups. |

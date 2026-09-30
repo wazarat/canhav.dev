@@ -387,5 +387,10 @@ event window so judges can verify it.
   whether a token fits, which reasons hold up, what to lock and an example,
   and a warning fires when the chosen reason is one every shape says to
   avoid. Advisory only. The launch is unchanged.
+- Sept 30, 2026. Design milestones. A token design can carry two to five
+  dated milestones in its Post-launch section. A launch that commits the
+  design's published snapshot reads them as its commitment, so the creator
+  gets allocation sales, milestone escrow and anchored progress updates
+  exactly as a journey launch does. Nothing on chain changed.
 
 This list grows as work lands on the branch.

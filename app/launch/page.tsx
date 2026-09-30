@@ -7,9 +7,15 @@ import {
   LaunchForm,
 } from "@/components/launch/LaunchForm";
 import { LAUNCH_COPY, LAUNCH_FORM, MCP_CONNECT } from "@/content/launch";
+import { designMilestones } from "@/lib/launch-commitment";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import type { ProjectContext } from "@/lib/ideation";
-import { getLinkedTokenDesign, getProject, getPublishedTokenDesignById } from "@/lib/ideation-db";
+import {
+  getLinkedTokenDesign,
+  getProject,
+  getPublishedTokenDesignById,
+  getSnapshot,
+} from "@/lib/ideation-db";
 import { projectContext } from "@/lib/launch-project";
 
 export const metadata: Metadata = {
@@ -29,6 +35,10 @@ async function loadDesign(designId: string | undefined): Promise<{
   const row = await getPublishedTokenDesignById(designId);
   if (!row?.published_hash || !row.slug) return {};
   const doc = row.draft_doc;
+  // The milestones the launch will commit come from the published snapshot, not the draft (M48).
+  const snapshot = await getSnapshot(row.published_hash);
+  const milestoneCount =
+    snapshot && snapshot.doc.kind === "token_design" ? (designMilestones(snapshot.doc)?.length ?? 0) : 0;
   const team = doc.vesting.cohorts.find((c) => c.cohort === "team");
   return {
     prefill: {
@@ -45,6 +55,7 @@ async function loadDesign(designId: string | undefined): Promise<{
       slug: row.slug,
       snapshotHash: row.published_hash as `0x${string}`,
       name: doc.name,
+      milestoneCount,
     },
   };
 }

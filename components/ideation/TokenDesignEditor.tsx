@@ -14,19 +14,23 @@ import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftSave } from "@/components/ideation/useDraftSave";
 import { ShapeAdviceCard } from "@/components/ideation/ShapeAdviceCard";
+import { MilestoneListFields } from "@/components/launch/MilestoneListFields";
 import { TokenStepSection } from "@/components/ideation/TokenStepSection";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import {
   DEPLOYABILITY_COPY,
   DEPLOYABILITY_TIER_LABELS,
   type ResourceIntroKey,
 } from "@/content/ideation-resources";
+import { POST_LAUNCH_MILESTONE_COPY } from "@/content/ideation";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { TOKEN_STEPS_COPY, tokenBuildProgressOf } from "@/content/token-steps";
 import type { IndexedCurve } from "@/lib/indexer";
+import { validateMilestones } from "@/lib/journey";
 import type { ProductShape } from "@/lib/kits";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { LAUNCH_CHAIN, LAUNCH_FORM } from "@/content/launch";
@@ -208,7 +212,10 @@ function stepProblems(doc: TokenDesignDoc): Array<string | null> {
     market,
     governance,
     legal,
-    null, // post-launch is all optional
+    // Post-launch is optional, but a half filled milestone list is a problem (M48).
+    doc.postLaunch.milestones !== undefined && validateMilestones(doc.postLaunch.milestones)
+      ? POST_LAUNCH_MILESTONE_COPY.stepProblem
+      : null,
     validateTokenDesignDoc(doc),
   ];
 }
@@ -222,6 +229,7 @@ export function TokenDesignEditor({
   initialRev,
   linkedProjectId = null,
   linkedShapes = [],
+  publishedMilestoneCount = null,
   curve = null,
   linkPanel,
 }: {
@@ -236,6 +244,8 @@ export function TokenDesignEditor({
   linkedProjectId?: string | null;
   /** The linked project's product shapes, for the shape advice and the fit warning (M47). */
   linkedShapes?: readonly ProductShape[];
+  /** How many milestones the published snapshot carries, null when unpublished (M48). */
+  publishedMilestoneCount?: number | null;
   /** The deployed token's curve, for the computed build steps (M46). */
   curve?: Pick<IndexedCurve, "graduated" | "windowEnd"> | null;
   linkPanel?: React.ReactNode;
@@ -265,6 +275,16 @@ export function TokenDesignEditor({
     [published, linkedProjectId, deployedAddress, curve],
   );
   const build = tokenBuildProgressOf(doc, facts);
+  // Review hint about milestones (M48). Draft has none; draft has them but the
+  // published snapshot does not; the launched token committed a snapshot without them.
+  const draftMilestones = doc.postLaunch.milestones?.length ?? 0;
+  const milestoneHint = !draftMilestones
+    ? POST_LAUNCH_MILESTONE_COPY.missing
+    : deployedAddress && (publishedMilestoneCount ?? 0) === 0
+      ? POST_LAUNCH_MILESTONE_COPY.launched
+      : published && (publishedMilestoneCount ?? 0) !== draftMilestones
+        ? POST_LAUNCH_MILESTONE_COPY.republish
+        : null;
   const steps = [
     ...STEP_LABELS.slice(0, 8).map((label, i) => ({ key: label, label, problem: problems[i] })),
     {
@@ -778,6 +798,39 @@ export function TokenDesignEditor({
                 max={TOKEN_DESIGN_LIMITS.failureCriteria.max}
                 rows={3}
               />
+              <FieldIntroCard intro="token.postLaunch.milestones" />
+              {doc.postLaunch.milestones ? (
+                <div className="space-y-3">
+                  <MilestoneListFields
+                    heading={POST_LAUNCH_MILESTONE_COPY.heading}
+                    required={false}
+                    milestones={doc.postLaunch.milestones}
+                    onChange={(milestones) => patchSection("postLaunch", { milestones })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => patchSection("postLaunch", { milestones: undefined })}
+                    className="text-xs text-ink-400 transition-colors hover:text-rose-400"
+                  >
+                    {POST_LAUNCH_MILESTONE_COPY.remove}
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    patchSection("postLaunch", {
+                      milestones: [
+                        { date: "", title: "", description: "" },
+                        { date: "", title: "", description: "" },
+                      ],
+                    })
+                  }
+                >
+                  {POST_LAUNCH_MILESTONE_COPY.add}
+                </Button>
+              )}
             </>
           )}
 
@@ -801,6 +854,11 @@ export function TokenDesignEditor({
                 design tamper-evident forever.
               </p>
               <p className="text-xs text-ink-400">{TOKEN_STEPS_COPY.reviewRow(build.done, build.total)}</p>
+              {milestoneHint ? (
+                <StatusChip tone="info" variant="block">
+                  {milestoneHint}
+                </StatusChip>
+              ) : null}
               {TIER_ORDER.map((tier) => {
                 const inTier = findings.filter(
                   (code) => DEPLOYABILITY_COPY[code].tier === tier,

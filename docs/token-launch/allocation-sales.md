@@ -21,3 +21,7 @@ Sales should not depend on an operator to “release” proceeds at will. Milest
 
 - [Milestone escrow](milestone-escrow.md)
 - [AMM and fees](amm-and-fees.md)
+
+## Design launches
+
+A token launched from a published design commits the design's snapshot hash instead of a journey. The milestones in the design's Post-launch section are the launch's milestones, verified the same way (the snapshot re-hashes to the on-chain value), so everything on this page that references the journey's milestones applies to them by index. A design published without milestones gives the launch nothing to schedule against.

@@ -131,11 +131,20 @@ export function validateJourney(doc: JourneyDoc): string | null {
   if (supply.length > L.supplyRationale.max)
     return `Supply rationale is over ${L.supplyRationale.max} characters.`;
 
-  if (doc.milestones.length < L.milestones.min)
+  return validateMilestones(doc.milestones);
+}
+
+/**
+ * The milestone rules on their own (M48), shared by the journey and by a
+ * token design that carries milestones in its Post-launch section.
+ */
+export function validateMilestones(milestones: readonly JourneyMilestone[]): string | null {
+  const L = JOURNEY_LIMITS;
+  if (milestones.length < L.milestones.min)
     return `At least ${L.milestones.min} milestones are required.`;
-  if (doc.milestones.length > L.milestones.max)
+  if (milestones.length > L.milestones.max)
     return `At most ${L.milestones.max} milestones are allowed.`;
-  for (const [i, m] of doc.milestones.entries()) {
+  for (const [i, m] of milestones.entries()) {
     const n = i + 1;
     if (!ISO_DATE.test(m.date)) return `Milestone ${n} date must be YYYY-MM-DD.`;
     if (!m.title.trim()) return `Milestone ${n} needs a title.`;

@@ -104,6 +104,8 @@ export interface DesignCommitment {
   slug: string;
   snapshotHash: `0x${string}`;
   name: string;
+  /** Milestones in the published snapshot (M48). Zero means no sales, escrow or updates after launch. */
+  milestoneCount: number;
 }
 
 export function LaunchForm({
@@ -751,6 +753,25 @@ export function LaunchForm({
                     code.
                   </p>
                 </div>
+                {designCommitment.milestoneCount > 0 ? (
+                  <StatusChip tone="success" variant="block">
+                    {designCommitment.milestoneCount} milestones from the published design. After
+                    launch you can sell an allocation, lock supply in escrow and post updates
+                    against them.
+                  </StatusChip>
+                ) : (
+                  <StatusChip tone="neutral" variant="block">
+                    This design has no milestones, so the launch will not offer sales, escrow or
+                    progress updates. Add them in the Post-launch step of the design and publish
+                    again first.{" "}
+                    <Link
+                      href={`/studio/token/${designCommitment.id}`}
+                      className="text-electric-300 transition-colors hover:text-electric-200"
+                    >
+                      Open the design
+                    </Link>
+                  </StatusChip>
+                )}
                 {prefill?.designVesting ? (
                   <StatusChip tone="neutral" variant="block">
                     This design sets a team vesting schedule. Vesting is not
@@ -786,7 +807,7 @@ export function LaunchForm({
                 <span className="text-ink-500">{designCommitment ? "Design" : "Commitment"}</span>
                 <span className="text-ink-100">
                   {designCommitment
-                    ? `/t/${designCommitment.slug}, snapshot hash committed on-chain`
+                    ? `/t/${designCommitment.slug}, ${designCommitment.milestoneCount} milestones, snapshot hash committed on-chain`
                     : commitmentOn
                       ? `${milestones.length} milestones, hash committed on-chain`
                       : "None"}

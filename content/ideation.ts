@@ -674,6 +674,21 @@ export const AGENT_COPY = {
   reload: "Reload",
 } as const;
 
+/** The milestone list on the Post-launch step of a token design (M48). */
+export const POST_LAUNCH_MILESTONE_COPY = {
+  add: "Add milestones",
+  remove: "Remove the milestones",
+  heading: "Milestones",
+  stepProblem: "Milestones incomplete",
+  /** Review step hints. */
+  missing:
+    "Add milestones in the Post-launch step so a launch from this design can hold sales, escrow and progress updates.",
+  republish:
+    "The published snapshot does not carry these milestones. Publish again so it does. A launch commits the published snapshot, not the draft.",
+  launched:
+    "The launched token committed a snapshot without milestones. Publishing again changes the design page, not the launch.",
+} as const;
+
 /** The three launch tracks, in launch order: tokens, then projects, then agents. */
 export const STUDIO_TRACKS = {
   token: {

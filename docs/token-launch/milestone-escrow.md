@@ -26,3 +26,7 @@ Escrow pairs with [journey hashes](journey-and-credibility.md) and [journey upda
 
 - [Allocation sales](allocation-sales.md) (proceeds also use milestone-dated unlocks)
 - [Contract addresses](contract-addresses.md)
+
+## Design launches
+
+A token launched from a published design commits the design's snapshot hash instead of a journey. The milestones in the design's Post-launch section are the launch's milestones, verified the same way (the snapshot re-hashes to the on-chain value), so everything on this page that references the journey's milestones applies to them by index. A design published without milestones gives the launch nothing to schedule against.

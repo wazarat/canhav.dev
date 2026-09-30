@@ -25,7 +25,7 @@ import {
 } from "@/lib/indexer";
 import { formatPriceEth } from "@/lib/format";
 import { hasCommitment } from "@/lib/journey";
-import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getLaunchCommitment, getVerifiedUpdates } from "@/lib/journey-db";
 import { getLaunchProjectSummary } from "@/lib/launch-project";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
@@ -225,21 +225,38 @@ export async function journeyBlock(token: IndexedToken) {
       committed: false,
       stored: false,
       verified: false,
+      source: null,
       doc: null,
+      milestones: null,
+      design: null,
       milestoneUpdates: [],
       note: "Launched without a commitment. No journey document, no milestones.",
     };
   }
-  const [journey, updates] = await Promise.all([
-    getVerifiedJourney(token.journeyHash),
+  const [commitment, updates] = await Promise.all([
+    getLaunchCommitment(token.journeyHash),
     getVerifiedUpdates(token.address, token.creator),
   ]);
   return {
     onChainHash: token.journeyHash,
     committed: true,
-    stored: journey !== null,
-    verified: journey?.verified ?? false,
-    doc: journey?.doc ?? null,
+    stored: commitment !== null,
+    verified: commitment?.verified ?? false,
+    // "journey" for the quick launch form, "design" for a launch that committed a published design (M48).
+    source: commitment?.source ?? null,
+    doc: commitment?.source === "journey" ? commitment.doc : null,
+    // The milestones of either document, so sales, escrow and updates read the same list.
+    milestones: commitment?.milestones ?? null,
+    design:
+      commitment?.source === "design"
+        ? {
+            slug: commitment.slug,
+            name: commitment.name,
+            version: commitment.version,
+            snapshotHash: commitment.snapshotHash,
+            designUrl: `https://www.canhav.com/t/${commitment.slug}`,
+          }
+        : null,
     milestoneUpdates: Object.entries(updates).map(([milestoneIndex, list]) => ({
       milestoneIndex: Number(milestoneIndex),
       updates: list.map((u) => ({
@@ -339,8 +356,8 @@ export async function journeyView(address: string): Promise<View<unknown>> {
       },
     };
   }
-  const journey = await getVerifiedJourney(token.journeyHash);
-  if (!journey) {
+  const commitment = await getLaunchCommitment(token.journeyHash);
+  if (!commitment) {
     return {
       ok: true,
       value: {
@@ -349,8 +366,33 @@ export async function journeyView(address: string): Promise<View<unknown>> {
         committed: true,
         stored: false,
         verified: false,
+        source: null,
         doc: null,
-        note: "No journey document is stored for this hash. The launch may have been made from a published design snapshot rather than the quick launch form.",
+        milestones: null,
+        note: "Nothing on this site is stored for this hash, neither a journey document nor a published design snapshot.",
+      },
+    };
+  }
+  if (commitment.source === "design") {
+    return {
+      ok: true,
+      value: {
+        address: token.address,
+        onChainHash: token.journeyHash,
+        committed: true,
+        stored: true,
+        verified: commitment.verified,
+        source: "design",
+        doc: null,
+        milestones: commitment.milestones,
+        design: {
+          slug: commitment.slug,
+          name: commitment.name,
+          version: commitment.version,
+          snapshotHash: commitment.snapshotHash,
+          designUrl: `https://www.canhav.com/t/${commitment.slug}`,
+        },
+        note: "This token committed a published design snapshot. Its milestones, when the design carries them, are the launch's milestones.",
       },
     };
   }
@@ -361,8 +403,10 @@ export async function journeyView(address: string): Promise<View<unknown>> {
       onChainHash: token.journeyHash,
       committed: true,
       stored: true,
-      verified: journey.verified,
-      doc: journey.doc,
+      verified: commitment.verified,
+      source: "journey",
+      doc: commitment.doc,
+      milestones: commitment.milestones,
     },
   };
 }
@@ -376,7 +420,7 @@ export async function milestoneUpdatesView(address: string): Promise<View<unknow
     value: {
       address: token.address,
       creator: token.creator,
-      milestones: block.doc?.milestones ?? null,
+      milestones: block.milestones,
       milestoneUpdates: block.milestoneUpdates,
     },
   };

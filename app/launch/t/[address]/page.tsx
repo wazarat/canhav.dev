@@ -9,6 +9,7 @@ import { CurveActions } from "@/components/launch/CurveActions";
 import { CurveCard } from "@/components/launch/CurveCard";
 import { EscrowActions, type EscrowActionTranche } from "@/components/launch/EscrowActions";
 import { EscrowCard } from "@/components/launch/EscrowCard";
+import { DesignCommitmentCard } from "@/components/launch/DesignCommitmentCard";
 import { JourneyCard } from "@/components/launch/JourneyCard";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
@@ -18,10 +19,8 @@ import { ProjectCard } from "@/components/launch/ProjectCard";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
 import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
-import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { LAUNCH_CHAIN } from "@/content/launch";
-import { getSnapshot } from "@/lib/ideation-db";
 import { formatCount } from "@/lib/format";
 import {
   formatSupply,
@@ -39,7 +38,7 @@ import {
   type IndexedVesting,
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
-import { getVerifiedJourney, getVerifiedUpdates } from "@/lib/journey-db";
+import { getLaunchCommitment, getVerifiedUpdates } from "@/lib/journey-db";
 import { getLaunchProjectSummary } from "@/lib/launch-project";
 import { publicClient } from "@/lib/publicClient";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
@@ -208,8 +207,9 @@ export default async function TokenPage({
   const token = read.value;
 
   const committed = hasCommitment(token.journeyHash);
-  const [journey, vesting, escrows, sales, curve] = await Promise.all([
-    committed ? getVerifiedJourney(token.journeyHash) : null,
+  // The journey document or the design snapshot the launch committed (M48).
+  const [commitment, vesting, escrows, sales, curve] = await Promise.all([
+    committed ? getLaunchCommitment(token.journeyHash) : null,
     getVesting(token.address),
     getEscrows(token.address),
     getSales(token.address),
@@ -223,7 +223,6 @@ export default async function TokenPage({
     updates,
     metadata,
     swapData,
-    designSnapshot,
     curveTrades,
     projectSummary,
     ...purchaseLists
@@ -233,8 +232,6 @@ export default async function TokenPage({
       // The description text, only when it re-hashes to the on-chain value.
       getVerifiedTokenMetadata(token.descriptionHash, token.creator),
       ammPool ? getRecentSwaps(ammPool.poolId) : null,
-      // Only consulted when the hash isn't a v1 journey — the design-deploy path.
-      journey || !committed ? null : getSnapshot(token.journeyHash.toLowerCase()),
       curve ? getCurveTrades(token.address) : null,
       // The studio project the token was launched from (M19d), or null.
       getLaunchProjectSummary(token.address),
@@ -246,7 +243,8 @@ export default async function TokenPage({
   });
   const explorer = LAUNCH_CHAIN.explorerUrl;
 
-  const milestones = journey?.verified ? journey.doc.milestones : null;
+  // Verified milestones from either document gate sales, escrow and updates.
+  const milestones = commitment?.milestones ?? null;
   const actionTranches: EscrowActionTranche[] = (escrows ?? []).flatMap((e) =>
     e.tranches.map((t) => ({
       escrowId: e.escrowId,
@@ -498,7 +496,7 @@ export default async function TokenPage({
         milestoneTitles={(milestones ?? []).map((m) => m.title)}
       />
 
-      {journey ? (
+      {commitment?.source === "journey" ? (
         // journeyHash resolves in launchpad.journeys ⇒ the quick-deploy path.
         <>
           <div className="mt-8">
@@ -508,24 +506,13 @@ export default async function TokenPage({
               it.
             </StatusChip>
           </div>
-          <JourneyCard doc={journey.doc} verified={journey.verified} updates={updates} />
+          <JourneyCard doc={commitment.doc} verified={commitment.verified} updates={updates} />
         </>
-      ) : designSnapshot && designSnapshot.doc.kind === "token_design" ? (
+      ) : commitment?.source === "design" ? (
         // journeyHash resolves in launchpad.ideation_snapshots ⇒ launched
-        // from a published design; the hash commits the design on-chain.
-        <div className="mt-8 space-y-4">
-          <StatusChip tone="success" variant="block">
-            Design committed on-chain. The launch transaction recorded this
-            token design&apos;s snapshot hash (v{designSnapshot.version}); the
-            document behind this token is tamper-evident.
-          </StatusChip>
-          <LinkedEntityCard
-            type="token_design"
-            name={designSnapshot.doc.name}
-            slug={designSnapshot.doc.slug}
-            summary={designSnapshot.doc.rationale.beyondDatabaseRow}
-          />
-        </div>
+        // from a published design; the hash commits the design on-chain, and
+        // the design's milestones (M48) are the launch's milestones.
+        <DesignCommitmentCard commitment={commitment} updates={updates} />
       ) : !committed ? (
         <div className="mt-8">
           <StatusChip tone="neutral" variant="block">
@@ -558,9 +545,9 @@ export default async function TokenPage({
 
       <p className="mt-4 text-xs text-ink-500">
         Token fields are read from the on-chain TokenLaunched event via the
-        indexer. The description text and the journey document are stored
-        off-chain; each keccak256 hash is recomputed on every page load and
-        compared to the hash in the event. The Telegram link is stored with the
+        indexer. The description text and the committed document, a journey
+        or a design snapshot, are stored off-chain; each keccak256 hash is
+        recomputed on every page load and compared to the hash in the event. The Telegram link is stored with the
         description and is not committed on-chain.
       </p>
     </div>

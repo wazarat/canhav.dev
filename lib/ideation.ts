@@ -9,7 +9,7 @@ import {
   type ProjectKit,
   validateProjectKit,
 } from "@/lib/kits";
-import { sortValue } from "@/lib/journey";
+import { type JourneyMilestone, sortValue, validateMilestones } from "@/lib/journey";
 import {
   LEGACY_SECTOR_MAP,
   SECTOR_SUBSECTORS,
@@ -587,6 +587,13 @@ export interface TokenDesignDoc {
     reporting?: "monthly" | "quarterly" | "ad_hoc" | "none_yet";
     priceCollapsePlan?: string;
     failureCriteria?: string;
+    /**
+     * Two to five dated milestones (M48). A launch that commits this
+     * design's snapshot reads them as its commitment, so the creator can
+     * run sales, escrow and milestone updates against them. Optional and
+     * never injected, so older published hashes hold.
+     */
+    milestones?: JourneyMilestone[];
   };
   /**
    * Token build steps ticked (M46), a map of true entries keyed by step id.
@@ -941,6 +948,10 @@ export function validateTokenDesignDoc(doc: TokenDesignDoc): string | null {
     return `Price-collapse response is over ${L.priceCollapsePlan.max} characters.`;
   if (pl.failureCriteria && pl.failureCriteria.length > L.failureCriteria.max)
     return `Failure criteria is over ${L.failureCriteria.max} characters.`;
+  if (pl.milestones !== undefined) {
+    p = validateMilestones(pl.milestones);
+    if (p) return p;
+  }
   if (doc.checklist && Object.keys(doc.checklist).length > L.checklist.max)
     return "Too many build step entries.";
 

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { ExportButtons } from "@/components/ideation/ExportButtons";
 import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
+import { MilestoneList } from "@/components/launch/MilestoneList";
 import { UnlockCalendarChart } from "@/components/ideation/UnlockCalendarChart";
 import { WarningResourceCard } from "@/components/ideation/WarningResourceCard";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -507,6 +508,17 @@ export default async function TokenDesignPublicPage({
                     </p>
                   </div>
                 )}
+                {doc.postLaunch.milestones?.length ? (
+                  <div className="pt-1">
+                    <p className="text-[11px] uppercase tracking-wide text-ink-500">
+                      Milestones
+                    </p>
+                    <p className="mt-1 text-xs text-ink-400">
+                      A launch from this design reads these as its commitment.
+                    </p>
+                    <MilestoneList milestones={doc.postLaunch.milestones} />
+                  </div>
+                ) : null}
               </div>
             </Panel>
           )}

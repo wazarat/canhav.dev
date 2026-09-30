@@ -1,13 +1,16 @@
 import "server-only";
 
 import { getDb } from "@/lib/db";
+import { getSnapshot } from "@/lib/ideation-db";
 import { getMilestoneUpdates } from "@/lib/indexer";
 import {
+  hasCommitment,
   hashJourney,
   hashMilestoneUpdate,
   type JourneyDoc,
   type MilestoneUpdateDoc,
 } from "@/lib/journey";
+import { type LaunchCommitment, resolveLaunchCommitment } from "@/lib/launch-commitment";
 
 /**
  * Verified reads over the journey tables in Neon. Shared by the token launch
@@ -43,6 +46,20 @@ export async function getVerifiedJourney(journeyHash: string): Promise<VerifiedJ
   } catch {
     return null;
   }
+}
+
+/**
+ * The launch commitment behind a journeyHash (M48). The journeys table
+ * first, then a token design snapshot with that hash. Null when the hash is
+ * the zero hash or resolves to nothing.
+ */
+export async function getLaunchCommitment(journeyHash: string): Promise<LaunchCommitment> {
+  if (!hasCommitment(journeyHash)) return null;
+  const journey = await getVerifiedJourney(journeyHash);
+  if (journey) return resolveLaunchCommitment(journeyHash, journey.doc, null);
+  const snapshot = await getSnapshot(journeyHash.toLowerCase());
+  if (!snapshot || snapshot.doc.kind !== "token_design") return null;
+  return resolveLaunchCommitment(journeyHash, null, { doc: snapshot.doc, version: snapshot.version });
 }
 
 /**

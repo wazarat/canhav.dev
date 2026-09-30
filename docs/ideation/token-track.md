@@ -228,6 +228,7 @@ All optional.
 | Reporting cadence | Monthly; quarterly; ad hoc; none yet |
 | If the price collapses | Free text plan |
 | What would make you call this a failure | Free text |
+| Milestones | Optional, two to five dated milestones with a title and an optional description, the same rules as a launch journey. A launch that commits this design's published snapshot reads them as its commitment, so the creator can sell an allocation with proceeds locked to milestone dates, lock supply in escrow against them and post progress updates anchored to each one. The Review step says when the draft has none, when the published snapshot lags the draft (publish again, a launch commits the snapshot, not the draft) and when a launched token committed a snapshot without them. |
 
 ### Computed / warnings
 

@@ -434,6 +434,12 @@ export function buildTokenDesignMarkdown(
     pl.reporting ? `- **Reporting cadence:** ${optionLabel(REPORTING_OPTIONS, pl.reporting)}` : null,
     pl.priceCollapsePlan ? `- **If the price collapses:** ${pl.priceCollapsePlan}` : null,
     pl.failureCriteria ? `- **Failure criteria:** ${pl.failureCriteria}` : null,
+    ...(pl.milestones?.length
+      ? [
+          `- **Milestones:** ${pl.milestones.length}, the launch's commitment when this design is launched on CanHav`,
+          ...pl.milestones.map((m, i) => `  ${i + 1}. ${m.date} ${m.title}${m.description ? `. ${m.description}` : ""}`),
+        ]
+      : []),
   ].filter((l): l is string => l !== null);
   lines.push(...(plLines.length ? plLines : ["Not answered (all optional)."]));
 

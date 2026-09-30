@@ -22,9 +22,9 @@ Use `/launch?design=<id>` from a **published** token design (or an equivalent en
 
 1. The form prefills from the design (name, ticker and supply; a team vesting cohort is shown as a published commitment, not applied).
 2. Step 2 becomes a design commitment card instead of a free-form journey editor.
-3. The launch commits the design **snapshot hash** as `journeyHash`. The journeys POST for a classic JourneyDoc is skipped.
+3. The launch commits the design **snapshot hash** as `journeyHash`. The journeys POST for a classic JourneyDoc is skipped. The milestones in the design's Post-launch section, as published in that snapshot, become the launch's milestones; the Launch step says how many it carries, or that it carries none.
 4. On success, attach-deploy links the on-chain token to the design (server re-verifies via indexer `journeyHash` match).
-5. On `/launch/t/[address]`, when that hash resolves in `ideation_snapshots`, the page shows **Design committed on-chain** and links to the design.
+5. On `/launch/t/[address]`, when that hash resolves in `ideation_snapshots`, the page shows **Design committed on-chain**, links to the design, re-hashes the snapshot against the on-chain value and lists its milestones with their updates. With verified milestones the creator gets the same sale, escrow and milestone update actions as a journey launch; without them the page says so and those actions stay off.
 
 Publishing a design does not deploy. Deploying is a separate wallet transaction.
 

@@ -12,6 +12,7 @@ import {
   type ProjectDoc,
   type TokenDesignDoc,
 } from "@/lib/ideation";
+import { JOURNEY_LIMITS } from "@/lib/journey";
 import { kitShapes, toggleChecklistItem } from "@/lib/kits";
 import { manualTokenStepIds, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
 
@@ -268,6 +269,16 @@ export const tokenDesignPatchSchema = z
         reporting: z.enum(["monthly", "quarterly", "ad_hoc", "none_yet"]),
         priceCollapsePlan: z.string().max(T.priceCollapsePlan.max),
         failureCriteria: z.string().max(T.failureCriteria.max),
+        milestones: z
+          .array(
+            z.strictObject({
+              date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+              title: z.string().min(1).max(JOURNEY_LIMITS.milestones.titleMax),
+              description: z.string().max(JOURNEY_LIMITS.milestones.descriptionMax).default(""),
+            }),
+          )
+          .min(JOURNEY_LIMITS.milestones.min)
+          .max(JOURNEY_LIMITS.milestones.max),
       })
       .partial(),
   })

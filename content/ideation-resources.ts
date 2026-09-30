@@ -1016,6 +1016,20 @@ export const FIELD_INTROS = {
       'of stables untouched" is a plan. "We will support the price" is how ' +
       "treasuries die.",
   },
+  "token.postLaunch.milestones": {
+    title: "Milestones",
+    body:
+      "Two to five dated milestones. A launch from this design on CanHav " +
+      "commits the design's snapshot on chain and reads these as its " +
+      "commitment, so you can sell an allocation with the proceeds locked to " +
+      "milestone dates, lock supply in escrow against them and post progress " +
+      "updates anchored to each one. Without them a launch from this design " +
+      "has nothing to schedule against.",
+    example:
+      'Worked example: "2027-01-31 Testnet vault live with the first three ' +
+      'markets", "2027-04-30 Audit published and mainnet vault open behind a ' +
+      'cap", "2027-09-30 Fee switch on with the first distribution to stakers".',
+  },
   "token.postLaunch.failureCriteria": {
     title: "Failure criteria",
     body:
