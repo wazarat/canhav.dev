@@ -28,7 +28,10 @@ import {
   DEPLOYABILITY_COPY,
   DEPLOYABILITY_TIER_LABELS,
 } from "@/content/ideation-resources";
+import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { LAUNCH_CHAIN } from "@/content/launch";
+import { tokenBuildProgressOf } from "@/content/token-steps";
+import { getCurve } from "@/lib/indexer";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { isSaleEvent, vestedCohorts } from "@/lib/ideation";
 import { getLinkedProject, getSnapshot, getTokenDesignByAddress, getTokenDesignBySlug } from "@/lib/ideation-db";
@@ -151,6 +154,14 @@ export default async function TokenDesignPublicPage({
   const d = deriveTokenomics(doc);
   const fmtPct = (n: number) => `${n % 1 === 0 ? n : n.toFixed(1)}%`;
   const deployed = row.deployed_token_address;
+  // Token build steps (M46). Ticks live on the draft, the launch rows on the row and the curve.
+  const build = tokenBuildProgressOf(row.draft_doc, {
+    published: true,
+    linked: linked !== null,
+    deployedAddress: deployed ?? null,
+    curve: deployed ? await getCurve(deployed) : null,
+    now: Math.floor(Date.now() / 1000),
+  });
   const onChainCommitIsOlder =
     deployed && row.deployed_snapshot_hash && row.deployed_snapshot_hash !== row.published_hash;
 
@@ -190,6 +201,9 @@ export default async function TokenDesignPublicPage({
             ) : (
               <StatusChip tone="neutral">Not deployed</StatusChip>
             )}
+            {build.total > 0 ? (
+              <StatusChip tone="info">{CHECKLIST_COPY.rowChip(build.done, build.total)}</StatusChip>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">

@@ -9,6 +9,8 @@ import { SignOutButton } from "@/components/studio/SignOutButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
+import { tokenBuildProgressOf } from "@/content/token-steps";
+import { type IndexedCurve, getCurves } from "@/lib/indexer";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import {
   type EntityLinkSummary,
@@ -59,10 +61,37 @@ function LinkLine({ link, side }: { link: EntityLinkSummary; side: "project" | "
   );
 }
 
-/** "Build 4 of 12" for a project with a product shape, nothing otherwise. Shared steps count once (M43). */
-function buildChip(row: ProjectRow | TokenDesignRow) {
+/** What the studio knows about every design's launch, for the token build chips (M46). */
+interface TokenChipFacts {
+  linkedDesignIds: Set<string>;
+  curves: Map<string, IndexedCurve> | null;
+  now: number;
+}
+
+/**
+ * "Build 4 of 12" for a project with a product shape (shared steps count
+ * once, M43) or for a token design (computed launch rows read from the
+ * row and the curve, M46), nothing otherwise.
+ */
+function buildChip(row: ProjectRow | TokenDesignRow, token?: TokenChipFacts) {
   const doc = row.draft_doc;
-  if (doc.kind !== "project" || !doc.kit?.shape) return null;
+  if (doc.kind === "token_design") {
+    if (!token) return null;
+    const address = (row as TokenDesignRow).deployed_token_address ?? null;
+    const p = tokenBuildProgressOf(doc, {
+      published: row.status === "published",
+      linked: token.linkedDesignIds.has(row.id),
+      deployedAddress: address,
+      curve: address ? (token.curves?.get(address.toLowerCase()) ?? null) : null,
+      now: token.now,
+    });
+    return (
+      <StatusChip tone="info" className="hidden sm:inline-flex">
+        {CHECKLIST_COPY.rowChip(p.done, p.total)}
+      </StatusChip>
+    );
+  }
+  if (!doc.kit?.shape) return null;
   const p = buildProgress(doc.kit);
   if (p.total === 0) return null;
   return (
@@ -81,6 +110,7 @@ function EntityList({
   links,
   side,
   launched,
+  token,
 }: {
   title: string;
   rows: Array<ProjectRow | TokenDesignRow>;
@@ -91,6 +121,8 @@ function EntityList({
   side: "project" | "design";
   /** Project id to the address of the newest token launched from it. */
   launched?: Map<string, string>;
+  /** Launch facts for token design rows (M46). */
+  token?: TokenChipFacts;
 }) {
   return (
     <section className="space-y-3">
@@ -141,7 +173,7 @@ function EntityList({
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-                  {buildChip(row)}
+                  {buildChip(row, token)}
                   <StatusChip tone={row.status === "published" ? "success" : "neutral"}>
                     {row.status === "published" ? "Published" : "Draft"}
                   </StatusChip>
@@ -205,6 +237,13 @@ export default async function StudioPage() {
     getMyLaunches(user.id),
     getEntityLinks(user.id),
   ]);
+  // Token build chips (M46). One curve read for every deployed design.
+  const deployedAny = (designs ?? []).some((d) => d.deployed_token_address);
+  const token: TokenChipFacts = {
+    linkedDesignIds: new Set(links.byDesign.keys()),
+    curves: deployedAny ? await getCurves() : null,
+    now: Math.floor(Date.now() / 1000),
+  };
   // Newest first already, so the first hit per project wins.
   const launchedByProject = new Map<string, string>();
   for (const l of launches ?? []) {
@@ -237,6 +276,7 @@ export default async function StudioPage() {
               rows={designs}
               hrefBase="/studio/token"
               publicBase="/t"
+              token={token}
               empty="No token designs yet. A design is what you're issuing; product optional."
               links={links.byDesign}
               side="design"

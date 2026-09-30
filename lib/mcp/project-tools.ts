@@ -53,6 +53,8 @@ import {
 import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
 import { submitAgentChange } from "@/lib/agent-writes-server";
 import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
+import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
+import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { kitShapes } from "@/lib/kits";
@@ -126,6 +128,20 @@ function noTokenMessage(ctx: ProjectCtx): string {
   return ctx.design ? NO_TOKEN : NO_DESIGN;
 }
 
+/** What the platform knows about the linked design's launch, for the token build steps (M46). */
+async function tokenFacts(design: TokenDesignRow, curve?: IndexedCurve | null): Promise<TokenLaunchFacts> {
+  const address = design.deployed_token_address ?? null;
+  const read = curve === undefined ? (address ? await getCurve(address) : null) : curve;
+  return {
+    published: design.status === "published",
+    // The design is linked to this project by construction.
+    linked: true,
+    deployedAddress: address,
+    curve: read,
+    now: Math.floor(Date.now() / 1000),
+  };
+}
+
 function curveSummary(curve: IndexedCurve | null, now: number) {
   return curve ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct } : null;
 }
@@ -138,6 +154,16 @@ function publicUrl(base: "p" | "t", row: { slug: string | null; status: string }
 
 export function registerProjectTools(server: McpServer, projectId: string): void {
   const scope = { scope: `project:${projectId}` };
+
+  // Shared by every write tool (M39). Declared first because the token build
+  // step tools (M46) sit beside the design tools, above the M39 block.
+  const noteField = z
+    .string()
+    .max(AGENT_CHANGE_LIMITS.note.max)
+    .optional()
+    .describe("One or two sentences for the owner on why this change is right.");
+  const WRITE_RULES =
+    "Drafts only, nothing is published. The project owner chose in the studio whether agent changes are proposed for review or written at once, and the result says which happened. Send only the fields you are changing.";
 
   registerMeteredTool(
     server,
@@ -261,6 +287,10 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                   }
                 : null,
               warnings: derived?.warnings ?? [],
+              build: tokenBuildProgressOf(
+                design.draft_doc,
+                await tokenFacts(design, deployed && deployed === tokenAddress ? curve : undefined),
+              ),
             }
           : null,
         deployedTokenAddress: deployed,
@@ -313,7 +343,66 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         derived: deriveTokenomics(design.draft_doc),
         warnings: designWarnings(design.draft_doc),
         deployability: designDeployability(design.draft_doc),
+        build: tokenBuildProgressOf(design.draft_doc, await tokenFacts(design)),
       });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_token_build_steps",
+    {
+      title: "The linked design's build steps",
+      description:
+        "The token build steps for the design linked to this project, in order. Eight design steps and eight launch stages, each with its id, phase, what done looks like, the editor step it informs and its state. Rows marked computed are read from the platform (publish, link, launch, the snipe window, graduation) and cannot be ticked; a row that does not apply is left out of the progress count. Use the manual ids with set_token_build_steps. Takes no arguments.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { design } = loaded.value;
+      if (!design) return errorResult(NO_DESIGN);
+      const facts = await tokenFacts(design);
+      return jsonResult({
+        progress: tokenBuildProgressOf(design.draft_doc, facts),
+        facts,
+        steps: tokenBuildRowsOf(design.draft_doc, facts).map((r) => ({
+          id: r.step.id,
+          title: r.step.title,
+          detail: r.step.detail,
+          phase: r.step.phase,
+          editorStep: r.step.step,
+          state: r.state,
+          done: r.state === "done",
+          computed: r.computed,
+        })),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "set_token_build_steps",
+    {
+      title: "Tick or untick the linked design's build steps",
+      description: `Mark token build steps of the linked design as done or not done, by id from get_token_build_steps. Only the manual steps, the computed ones are refused. Tick a step when the work is written down and you can point to it, not when it is started. ${WRITE_RULES}`,
+      inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "token_design", kind: "build_steps", patch: { done: args.done, undone: args.undone } },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
     },
     scope,
   );
@@ -388,15 +477,6 @@ export function registerProjectTools(server: McpServer, projectId: string): void
   // -------------------------------------------------------------------------
   // Writes (M39). Drafts only. The owner's mode on the project decides
   // whether a change is proposed or written. Nothing here publishes.
-
-  const noteField = z
-    .string()
-    .max(AGENT_CHANGE_LIMITS.note.max)
-    .optional()
-    .describe("One or two sentences for the owner on why this change is right.");
-
-  const WRITE_RULES =
-    "Drafts only, nothing is published. The project owner chose in the studio whether agent changes are proposed for review or written at once, and the result says which happened. Send only the fields you are changing.";
 
   registerMeteredTool(
     server,

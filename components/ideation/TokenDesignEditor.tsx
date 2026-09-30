@@ -13,6 +13,7 @@ import { TextField } from "@/components/ideation/TextField";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftSave } from "@/components/ideation/useDraftSave";
+import { TokenStepSection } from "@/components/ideation/TokenStepSection";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
@@ -22,6 +23,10 @@ import {
   DEPLOYABILITY_TIER_LABELS,
   type ResourceIntroKey,
 } from "@/content/ideation-resources";
+import { CHECKLIST_COPY } from "@/content/kits/copy";
+import { TOKEN_STEPS_COPY, tokenBuildProgressOf } from "@/content/token-steps";
+import type { IndexedCurve } from "@/lib/indexer";
+import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { LAUNCH_CHAIN, LAUNCH_FORM } from "@/content/launch";
 import {
   ALLOCATION_ENFORCEMENT_NOTE,
@@ -76,6 +81,10 @@ const STEP_LABELS = [
   "Post-launch",
   "Review",
 ] as const;
+
+/** Index of the Build section (M46), between Post-launch and Review, and of Review after it. */
+const BUILD_STEP = 8;
+const REVIEW_STEP = 9;
 
 const COHORT_LABELS: Record<VestedCohort, string> = {
   team: "Team",
@@ -209,6 +218,8 @@ export function TokenDesignEditor({
   initialSlug,
   deployedAddress,
   initialRev,
+  linkedProjectId = null,
+  curve = null,
   linkPanel,
 }: {
   id: string;
@@ -218,6 +229,10 @@ export function TokenDesignEditor({
   deployedAddress?: string | null;
   /** The draft's agent revision at load. Undefined before the database update (M39). */
   initialRev?: number;
+  /** The linked project, for the token build steps (M46). */
+  linkedProjectId?: string | null;
+  /** The deployed token's curve, for the computed build steps (M46). */
+  curve?: Pick<IndexedCurve, "graduated" | "windowEnd"> | null;
   linkPanel?: React.ReactNode;
 }) {
   const { doc, patch, patchSection } = useDraftDoc(initialDoc);
@@ -229,7 +244,33 @@ export function TokenDesignEditor({
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
   const overall = problems[8];
-  const steps = STEP_LABELS.map((label, i) => ({ label, problem: problems[i] }));
+  // Published in this session counts, so the computed publish row ticks at once.
+  const published =
+    publishStatus.kind === "published" ||
+    (initialStatus === "published" && publishStatus.kind !== "unpublished");
+  const slug = publishStatus.kind === "published" ? publishStatus.slug : initialSlug;
+  const facts = useMemo<TokenLaunchFacts>(
+    () => ({
+      published,
+      linked: linkedProjectId !== null,
+      deployedAddress: deployedAddress ?? null,
+      curve,
+      now: Math.floor(Date.now() / 1000),
+    }),
+    [published, linkedProjectId, deployedAddress, curve],
+  );
+  const build = tokenBuildProgressOf(doc, facts);
+  const steps = [
+    ...STEP_LABELS.slice(0, 8).map((label, i) => ({ key: label, label, problem: problems[i] })),
+    {
+      key: "build",
+      label: TOKEN_STEPS_COPY.pillLabel(doc.ticker),
+      variant: "product" as const,
+      kicker: CHECKLIST_COPY.productKicker,
+      problem: build.done === build.total ? null : TOKEN_STEPS_COPY.openProblem,
+    },
+    { key: "Review", label: "Review", problem: problems[8] },
+  ];
   const findings = useMemo(() => deployabilityFindings(doc), [doc]);
 
   const needed = vestedCohorts(doc.supply.allocations);
@@ -734,13 +775,26 @@ export function TokenDesignEditor({
             </>
           )}
 
-          {step === 8 && (
+          {step === BUILD_STEP && (
+            <TokenStepSection
+              doc={doc}
+              facts={facts}
+              designId={id}
+              slug={slug}
+              linkedProjectId={linkedProjectId}
+              onPatch={(partial) => patch(partial)}
+              onJump={setStep}
+            />
+          )}
+
+          {step === REVIEW_STEP && (
             <div className="space-y-5">
               <p className="text-sm leading-relaxed text-ink-400">
                 Publishing makes this design public and snapshots it. Deploying
                 from a published design commits its hash on-chain, making the
                 design tamper-evident forever.
               </p>
+              <p className="text-xs text-ink-400">{TOKEN_STEPS_COPY.reviewRow(build.done, build.total)}</p>
               {TIER_ORDER.map((tier) => {
                 const inTier = findings.filter(
                   (code) => DEPLOYABILITY_COPY[code].tier === tier,

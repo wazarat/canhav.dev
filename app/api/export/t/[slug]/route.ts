@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { tokenBuildRowsOf } from "@/content/token-steps";
 import { getCurve } from "@/lib/indexer";
 
 import { buildAgentsMd, buildTokenDesignMarkdown } from "@/lib/export-md";
@@ -43,8 +44,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   }
 
   const publishedAt = new Date(snapshot.created_at).toISOString().slice(0, 10);
+  // Build steps (M46). Ticks come from the draft, the launch rows from the row and the curve.
+  const linkedForBuild = await getLinkedProject(row.id);
+  const build = tokenBuildRowsOf(row.draft_doc, {
+    published: true,
+    linked: linkedForBuild !== null,
+    deployedAddress: row.deployed_token_address ?? null,
+    curve: row.deployed_token_address ? await getCurve(row.deployed_token_address) : null,
+    now: Math.floor(Date.now() / 1000),
+  });
   return markdownResponse(
     `canhav-${slug}.md`,
-    buildTokenDesignMarkdown(snapshot.doc, publishedAt),
+    buildTokenDesignMarkdown(snapshot.doc, publishedAt, build),
   );
 }

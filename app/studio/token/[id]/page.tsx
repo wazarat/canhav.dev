@@ -5,6 +5,7 @@ import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { TokenDesignEditor } from "@/components/ideation/TokenDesignEditor";
 import { getSessionUser } from "@/lib/auth";
 import { getLinkedProject, getMyProjects, getTokenDesign } from "@/lib/ideation-db";
+import { getCurve } from "@/lib/indexer";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -24,9 +25,11 @@ export default async function TokenDesignEditorPage({
   const row = await getTokenDesign(id, user.id);
   if (!row) notFound();
 
-  const [linked, myProjects] = await Promise.all([
+  const [linked, myProjects, curve] = await Promise.all([
     getLinkedProject(row.id),
     getMyProjects(user.id),
+    // The deployed token's curve feeds the computed build steps (M46).
+    row.deployed_token_address ? getCurve(row.deployed_token_address) : null,
   ]);
 
   return (
@@ -37,6 +40,8 @@ export default async function TokenDesignEditorPage({
       initialSlug={row.slug}
       initialRev={row.agent_rev}
       deployedAddress={row.deployed_token_address}
+      linkedProjectId={linked?.id ?? null}
+      curve={curve ? { graduated: curve.graduated, windowEnd: curve.windowEnd } : null}
       linkPanel={
         <LinkPanel
           selfType="token_design"

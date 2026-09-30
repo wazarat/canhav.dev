@@ -12,6 +12,7 @@ import {
   changeLines,
   decisionLines,
   isAgentWriteMode,
+  tokenStepTitles,
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges, setAgentWriteMode } from "@/lib/agent-writes-db";
 import { authGate } from "@/lib/ideation-api";
@@ -37,11 +38,13 @@ export async function GET(_req: Request, { params }: Ctx) {
   const { mode, rev } = agentStateOf(project);
   const changes = await listAgentChanges(project.id, gate.id);
   // One title can sit under several shapes since M43, so the shape label follows it.
-  const titles = new Map(
-    checklistFor(kitShapes(project.draft_doc.kit)).map(
+  const titles = new Map([
+    ...checklistFor(kitShapes(project.draft_doc.kit)).map(
       (i) => [i.id, `${i.title} (${shapeLabel(i.id.slice(0, i.id.indexOf(".")) as ProductShape) ?? ""})`] as const,
     ),
-  );
+    // Token build steps (M46) share the kind; their ids are disjoint by prefix.
+    ...tokenStepTitles(),
+  ]);
 
   const lines = (c: AgentChange): ChangeLine[] => {
     const decided = c.status === "accepted" && c.appliedPatch !== null;

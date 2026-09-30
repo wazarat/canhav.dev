@@ -9,10 +9,12 @@ import {
   type TokenDesignPatch,
   applyBuildSteps,
   applyProjectPatch,
+  applyTokenBuildSteps,
   applyTokenDesignPatch,
   buildStepsPatchSchema,
   buildStepsProblem,
   projectPatchSchema,
+  tokenBuildStepsProblem,
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
 import {
@@ -55,7 +57,8 @@ const APPLIED =
 type Input =
   | { target: "project"; kind: "fields"; patch: ProjectPatch }
   | { target: "project"; kind: "build_steps"; patch: BuildStepsPatch }
-  | { target: "token_design"; kind: "fields"; patch: TokenDesignPatch };
+  | { target: "token_design"; kind: "fields"; patch: TokenDesignPatch }
+  | { target: "token_design"; kind: "build_steps"; patch: BuildStepsPatch };
 
 /** The project draft with one change applied. Shared with the studio's accept. */
 export function nextProjectDoc(
@@ -77,8 +80,16 @@ export function nextProjectDoc(
 
 export function nextTokenDesignDoc(
   row: TokenDesignRow,
+  kind: AgentChangeKind,
   patch: unknown,
 ): { ok: true; doc: TokenDesignRow["draft_doc"] } | { ok: false; message: string } {
+  if (kind === "build_steps") {
+    const parsed = buildStepsPatchSchema.safeParse(patch);
+    if (!parsed.success) return { ok: false, message: "The build step change is not valid." };
+    const problem = tokenBuildStepsProblem(parsed.data);
+    if (problem) return { ok: false, message: problem };
+    return { ok: true, doc: applyTokenBuildSteps(row.draft_doc, parsed.data) };
+  }
   const parsed = tokenDesignPatchSchema.safeParse(patch);
   if (!parsed.success) return { ok: false, message: "The change is not valid." };
   return { ok: true, doc: applyTokenDesignPatch(row.draft_doc, parsed.data) };
@@ -110,7 +121,7 @@ export async function writeChange(
     if (!design || design.owner_id !== ownerId) return { ok: false, message: NO_DESIGN };
     const rev = typeof design.agent_rev === "number" ? design.agent_rev : null;
     if (rev === null) return { ok: false, message: NOT_READY };
-    const next = nextTokenDesignDoc(design, patch);
+    const next = nextTokenDesignDoc(design, kind, patch);
     if (!next.ok) return next;
     if (await writeTokenDesignDraftAsAgent(design.id, ownerId, next.doc, rev)) return { ok: true };
   }
@@ -132,6 +143,10 @@ export async function submitAgentChange(
   if (input.target === "token_design") {
     if (!design || design.owner_id !== ownerId) return { ok: false, message: NO_DESIGN };
     targetId = design.id;
+    if (input.kind === "build_steps") {
+      const problem = tokenBuildStepsProblem(input.patch);
+      if (problem) return { ok: false, message: problem };
+    }
   } else if (input.kind === "build_steps") {
     const problem = buildStepsProblem(project.draft_doc, input.patch);
     if (problem) return { ok: false, message: problem };

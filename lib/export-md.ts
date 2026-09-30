@@ -43,6 +43,8 @@ import {
   startingPointLabel,
 } from "@/content/kits/copy";
 import { LAUNCH_CHAIN } from "@/content/launch";
+import { TOKEN_STEPS_COPY, TOKEN_STEP_LABELS } from "@/content/token-steps";
+import type { TokenBuildRow } from "@/lib/token-steps";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
 import { KIT_PRIORITY_ORDER, type ProductShape } from "@/lib/kits";
 import {
@@ -325,7 +327,12 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
 // ---------------------------------------------------------------------------
 // canhav-[slug].md — token design
 
-export function buildTokenDesignMarkdown(doc: TokenDesignDoc, publishedAt?: string): string {
+export function buildTokenDesignMarkdown(
+  doc: TokenDesignDoc,
+  publishedAt?: string,
+  /** The token build steps (M46), when the caller has the launch facts. */
+  build?: readonly TokenBuildRow[],
+): string {
   const d = deriveTokenomics(doc);
   const al = doc.supply.allocations;
 
@@ -429,6 +436,27 @@ export function buildTokenDesignMarkdown(doc: TokenDesignDoc, publishedAt?: stri
     pl.failureCriteria ? `- **Failure criteria:** ${pl.failureCriteria}` : null,
   ].filter((l): l is string => l !== null);
   lines.push(...(plLines.length ? plLines : ["Not answered (all optional)."]));
+
+  if (build && build.length) {
+    const counted = build.filter((r) => r.state !== "na");
+    lines.push(
+      "",
+      "## 9. Build steps",
+      "",
+      `${counted.filter((r) => r.state === "done").length} of ${counted.length} done. In order.`,
+    );
+    for (const phase of ["design", "launch"] as const) {
+      lines.push("", `### ${TOKEN_STEPS_COPY.phases[phase]}`, "");
+      build
+        .filter((r) => r.step.phase === phase)
+        .forEach((r, n) => {
+          const tag = r.state === "na" ? ` (${TOKEN_STEPS_COPY.naTag})` : r.computed ? ` (${TOKEN_STEPS_COPY.computedTag})` : "";
+          lines.push(
+            `${n + 1}. [${r.state === "done" ? "x" : " "}] **${r.step.title}**${tag} (${TOKEN_STEP_LABELS[r.step.step]}). ${r.step.detail}`,
+          );
+        });
+    }
+  }
 
   lines.push("", ...deployabilitySection(doc));
   lines.push("", ...computedSection(d), "");

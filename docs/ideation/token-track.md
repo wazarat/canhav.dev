@@ -14,6 +14,7 @@ The Token track is a design document for a token you may or may not deploy. Publ
 6. [Governance](#6-governance)
 7. [Legal](#7-legal)
 8. [Post-launch](#8-post-launch)
+9. [Build steps](#9-build-steps)
 
 Computed panel (float, unlock calendar, warnings) updates as you answer. See [Computed outputs](computed-outputs.md) and [Warnings](warnings.md).
 
@@ -228,6 +229,10 @@ All optional.
 None.
 
 ---
+
+## 9. Build steps
+
+The editor ends with a Build section before Review, a violet pill labelled with the ticker. It lists sixteen steps in the order a small team takes a token from design to a launched, graduated market. Eight design steps, one per section above, are ticked when the answer is written down; the badge on each jumps to its section. Eight launch stages follow. Publish, link to a project, launch with the design committed, the snipe window and graduation are read from the platform (the row, the entity link, the deployed address and the curve) and cannot be ticked; a row that does not apply, such as the curve rows for a contract deployed elsewhere, is left out of the count. The last three, creating the sale or escrow the design promised, posting the first milestone update and starting the reporting cadence, are ticked by the team. Ticks live on the draft and never enter the published snapshot, so ticking after launch cannot change the hash the launch committed. None of this blocks publishing. Progress shows on the studio row, the public page, the markdown export (section 9) and, for a design linked to a project, on that project's MCP server, where an agent can read and tick the manual steps.
 
 ## Related
 

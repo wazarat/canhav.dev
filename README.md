@@ -376,5 +376,11 @@ event window so judges can verify it.
   server answers for its own token with the curve, pool, sale, journey and
   milestone update tools, no address needed, and the status and design
   tools carry the design's warnings, deployability and tokenomics summary.
+- Sept 30, 2026. Token build steps. A token design gains a Build section
+  with sixteen steps, eight for the design and eight for the launch stages.
+  Publishing, linking, launching, the snipe window and graduation are read
+  from the platform; the rest are ticked, by the builder or by an agent on
+  the linked project. Progress shows on the studio row, the public page,
+  the export and the project's MCP server.
 
 This list grows as work lands on the branch.

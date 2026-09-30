@@ -76,7 +76,7 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
 | `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). The `tokenDesign` block carries a `derived` summary (`floatAtLaunchPct`, `fdvToFloat`, `treasuryPct`) and the `warnings` codes. When a token exists (deployed from the linked design or launched from the project), `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct`; `launchedToken` carries the newest launch made from the project in the studio with the same `curve` block |
-| `get_linked_token_design` | The token design linked to this project, with derived tokenomics, `warnings` (code, title, body), `deployability` (what the CanHav contracts can deploy of it) and the deployed address when it has one |
+| `get_linked_token_design` | The token design linked to this project, with derived tokenomics, `warnings` (code, title, body), `deployability` (what the CanHav contracts can deploy of it), `build` (token build step progress) and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
 | `check_project` | Validate the project draft against the project rules and report the first problem |
@@ -108,6 +108,8 @@ An agent on a project's server can change that project's draft, tick build steps
 | `update_project` | Change fields of the project draft. Basics (name, what it does, audience b2b or b2c, personas for B2B, consumerPersonas for B2C, who pays, why this chain, stage), architecture, security, reality and the verification fields. Send only the fields being changed. Lists replace the stored list |
 | `get_build_steps` | The build steps for the project's product shapes with their ids, their shape, whether each is ticked and `sharedWith`, the ids of the same step under the project's other shapes. Progress counts a shared step once, so tick every id in `sharedWith` together |
 | `set_build_steps` | Tick or untick build steps by id |
+| `get_token_build_steps` | The linked design's token build steps, eight design steps and eight launch stages, each with its id, phase, state and whether it is computed from the platform (publish, link, launch, the snipe window, graduation). Rows that do not apply leave the progress count |
+| `set_token_build_steps` | Tick or untick the linked design's manual token build steps by id. Computed ids are refused. Rides the same proposal flow as the design's fields |
 | `update_linked_token_design` | Change fields of the linked token design draft |
 | `get_agent_changes` | The owner's mode and the recent agent changes with their status (proposed, applied, accepted, rejected). An accepted row carries `appliedPatch`, the part of the proposal the owner let through, possibly edited line by line |
 

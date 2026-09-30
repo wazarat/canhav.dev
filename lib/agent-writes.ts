@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { checklistFor } from "@/content/kits/checklists";
+import { TOKEN_STEPS } from "@/content/token-steps";
 import {
   AUDIENCE_VALUES,
   CRYPTO_EXPERIENCE_VALUES,
@@ -12,6 +13,7 @@ import {
   type TokenDesignDoc,
 } from "@/lib/ideation";
 import { kitShapes, toggleChecklistItem } from "@/lib/kits";
+import { manualTokenStepIds, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
 
 /**
  * Agent writes (M39). An agent connected to a project's MCP server may change
@@ -342,6 +344,42 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   for (const id of patch.done) kit = { ...kit, ...toggleChecklistItem(kit, id, true) };
   for (const id of patch.undone) kit = { ...kit, ...toggleChecklistItem(kit, id, false) };
   return { ...doc, kit };
+}
+
+// ---------------------------------------------------------------------------
+// Token build steps (M46). Same patch shape, target token_design.
+
+/** Null when every id is a manual token step, else the problem. */
+export function tokenBuildStepsProblem(patch: BuildStepsPatch): string | null {
+  if (patch.done.length + patch.undone.length === 0) return "Name at least one build step.";
+  const known = tokenStepIds(TOKEN_STEPS);
+  const manual = manualTokenStepIds(TOKEN_STEPS);
+  const all = [...patch.done, ...patch.undone];
+  const unknown = all.filter((id) => !known.has(id));
+  if (unknown.length)
+    return `Unknown build step ${unknown.slice(0, 3).join(", ")}. Read get_token_build_steps for the ids.`;
+  const computed = all.filter((id) => !manual.has(id));
+  if (computed.length) return `${computed[0]} is read from the platform and cannot be ticked.`;
+  const both = patch.done.filter((id) => patch.undone.includes(id));
+  if (both.length) return `${both[0]} is in both done and undone.`;
+  return null;
+}
+
+export function applyTokenBuildSteps(doc: TokenDesignDoc, patch: BuildStepsPatch): TokenDesignDoc {
+  let next = doc;
+  for (const id of patch.done) next = { ...next, ...toggleTokenStep(next, id, true) };
+  for (const id of patch.undone) next = { ...next, ...toggleTokenStep(next, id, false) };
+  if (next.checklist === undefined) {
+    const { checklist: _dropped, ...rest } = next;
+    void _dropped;
+    return rest as TokenDesignDoc;
+  }
+  return next;
+}
+
+/** Step id to title, for the studio's change lines. */
+export function tokenStepTitles(): Map<string, string> {
+  return new Map(TOKEN_STEPS.map((s) => [s.id, s.title] as const));
 }
 
 // ---------------------------------------------------------------------------

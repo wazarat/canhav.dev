@@ -588,6 +588,12 @@ export interface TokenDesignDoc {
     priceCollapsePlan?: string;
     failureCriteria?: string;
   };
+  /**
+   * Token build steps ticked (M46), a map of true entries keyed by step id.
+   * Optional, never injected, and stripped from the published snapshot so a
+   * tick after launch never changes the hash the launch committed.
+   */
+  checklist?: Record<string, true>;
 }
 
 export const TOKEN_DESIGN_LIMITS = {
@@ -603,7 +609,34 @@ export const TOKEN_DESIGN_LIMITS = {
   runwayMonths: { min: 0, max: 120 },
   priceCollapsePlan: { max: 800 },
   failureCriteria: { max: 800 },
+  /** Token build step ticks. */
+  checklist: { max: 200 },
 } as const;
+
+/** Only true entries survive, capped. Undefined when nothing is left. */
+export function normalizeTokenChecklist(raw: unknown): Record<string, true> | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return undefined;
+  const out: Record<string, true> = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (v !== true) continue;
+    if (n >= TOKEN_DESIGN_LIMITS.checklist.max) break;
+    out[k] = true;
+    n += 1;
+  }
+  return n ? out : undefined;
+}
+
+/**
+ * The read side normaliser for token designs (M46). Touches only the build
+ * step ticks, dropped when garbage or empty and never added, so a document
+ * without the key is byte identical and every published hash holds.
+ */
+export function normalizeTokenDesignDoc(raw: TokenDesignDoc): TokenDesignDoc {
+  const { checklist, ...rest } = raw as TokenDesignDoc & { checklist?: unknown };
+  const clean = normalizeTokenChecklist(checklist);
+  return clean ? { ...(rest as TokenDesignDoc), checklist: clean } : (rest as TokenDesignDoc);
+}
 
 export type IdeationDoc = ProjectDoc | TokenDesignDoc;
 
@@ -908,6 +941,8 @@ export function validateTokenDesignDoc(doc: TokenDesignDoc): string | null {
     return `Price-collapse response is over ${L.priceCollapsePlan.max} characters.`;
   if (pl.failureCriteria && pl.failureCriteria.length > L.failureCriteria.max)
     return `Failure criteria is over ${L.failureCriteria.max} characters.`;
+  if (doc.checklist && Object.keys(doc.checklist).length > L.checklist.max)
+    return "Too many build step entries.";
 
   return null;
 }

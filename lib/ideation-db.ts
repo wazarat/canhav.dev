@@ -9,6 +9,7 @@ import {
   canonicalizeIdeationDoc,
   hashIdeationDoc,
   normalizeProjectDoc,
+  normalizeTokenDesignDoc,
   validateIdeationDoc,
 } from "@/lib/ideation";
 
@@ -69,6 +70,12 @@ export interface SnapshotRow {
 function mapProjectRow(row: ProjectRow | undefined): ProjectRow | null {
   if (!row) return null;
   return { ...row, draft_doc: normalizeProjectDoc(row.draft_doc) };
+}
+
+/** The read choke point for token designs (M46). Only the build step ticks are normalised. */
+function mapTokenDesignRow(row: TokenDesignRow | undefined): TokenDesignRow | null {
+  if (!row) return null;
+  return { ...row, draft_doc: normalizeTokenDesignDoc(row.draft_doc) };
 }
 
 export async function createProject(ownerId: string, doc: ProjectDoc): Promise<ProjectRow | null> {
@@ -231,7 +238,7 @@ export async function getMyTokenDesigns(ownerId: string): Promise<TokenDesignRow
     where owner_id = ${ownerId}
     order by updated_at desc
   `;
-  return rows as TokenDesignRow[];
+  return (rows as TokenDesignRow[]).map((r) => mapTokenDesignRow(r) as TokenDesignRow);
 }
 
 export async function getTokenDesign(id: string, ownerId: string): Promise<TokenDesignRow | null> {
@@ -240,7 +247,7 @@ export async function getTokenDesign(id: string, ownerId: string): Promise<Token
   const rows = await sql`
     select * from launchpad.token_designs where id = ${id} and owner_id = ${ownerId}
   `;
-  return (rows[0] as TokenDesignRow) ?? null;
+  return mapTokenDesignRow(rows[0] as TokenDesignRow | undefined);
 }
 
 export async function updateTokenDesignDraft(
@@ -289,7 +296,7 @@ export async function getTokenDesignBySlug(slug: string): Promise<TokenDesignRow
   const rows = await sql`
     select * from launchpad.token_designs where slug = ${slug} and status = 'published'
   `;
-  return (rows[0] as TokenDesignRow) ?? null;
+  return mapTokenDesignRow(rows[0] as TokenDesignRow | undefined);
 }
 
 export async function getTokenDesignByAddress(address: string): Promise<TokenDesignRow | null> {
@@ -299,7 +306,7 @@ export async function getTokenDesignByAddress(address: string): Promise<TokenDes
     select * from launchpad.token_designs
     where deployed_token_address = ${address.toLowerCase()}
   `;
-  return (rows[0] as TokenDesignRow) ?? null;
+  return mapTokenDesignRow(rows[0] as TokenDesignRow | undefined);
 }
 
 /** Published design by id — public data, used to prefill the launch form. */
@@ -309,7 +316,7 @@ export async function getPublishedTokenDesignById(id: string): Promise<TokenDesi
   const rows = await sql`
     select * from launchpad.token_designs where id = ${id} and status = 'published'
   `;
-  return (rows[0] as TokenDesignRow) ?? null;
+  return mapTokenDesignRow(rows[0] as TokenDesignRow | undefined);
 }
 
 export async function getPublishedTokenDesigns(limit = 60): Promise<TokenDesignRow[] | null> {
@@ -440,7 +447,12 @@ export async function publishEntity(
   const latestSnap = (latest[0] as SnapshotRow) ?? null;
   const version = (latestSnap?.version ?? 0) + 1;
 
-  const stamped = { ...row.draft_doc, slug, publishVersion: version } as IdeationDoc;
+  // Token build step ticks (M46) stay on the draft and out of the snapshot,
+  // so ticking after launch never changes the hash the launch committed.
+  const { checklist: ticks, ...draftBody } = row.draft_doc as TokenDesignDoc & { checklist?: unknown };
+  const base = table === "projects" ? row.draft_doc : (draftBody as IdeationDoc);
+  const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
+  const draftOut = table === "projects" || ticks === undefined ? stamped : { ...stamped, checklist: ticks };
   const problem = validateIdeationDoc(stamped);
   if (problem) return { ok: false, error: problem, status: 400 };
 
@@ -476,7 +488,7 @@ export async function publishEntity(
     await sql`
       update launchpad.token_designs
       set slug = ${slug}, status = 'published', published_hash = ${hash},
-          draft_doc = ${JSON.stringify(stamped)}, updated_at = now()
+          draft_doc = ${JSON.stringify(draftOut)}, updated_at = now()
       where id = ${id} and owner_id = ${ownerId}
     `;
   }
