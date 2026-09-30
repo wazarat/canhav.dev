@@ -46,6 +46,14 @@ Related: [Computed outputs](computed-outputs.md) (4% float → 25× FDV:float).
 
 **Worked example:** “Users earn tokens for referrals” is a points column. “LPs stake the token to underwrite risk and get slashed on bad debt” cannot be a database row. The token is doing economic work a ledger entry cannot.
 
+## The reason does not fit the product shape
+
+**Trigger:** The design is linked to a project with a product shape, and the rationale "why" is a reason every one of that project's shapes lists under "reasons to avoid" (for example Fundraising for a curated vault, or Bootstrapping a supply side for an earn feature inside an app). Fires only through the linked project; the public design page and an unlinked design never show it.
+
+**Meaning:** Each product shape carries advice on whether a token fits, which reasons hold up and what a token for that shape should lock. The advice block on the Rationale step lists them. Pick a reason that fits, or write down in the "beyond a database row" field why this product is the exception. Advisory only; it never blocks publishing and never changes the launch.
+
+**Worked example:** An earn feature inside a wallet picks Bootstrapping a supply side. The vaults it routes to already have suppliers, so the emissions would pay for nothing. Fee capture on the cut the app keeps is the reason that fits.
+
 ## Related
 
 - [Computed outputs](computed-outputs.md)

@@ -6,6 +6,7 @@ import { UnlockCalendarChart } from "@/components/ideation/UnlockCalendarChart";
 import { WarningResourceCard } from "@/components/ideation/WarningResourceCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import type { TokenDesignDoc } from "@/lib/ideation";
+import type { ProductShape } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -22,8 +23,15 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
  * The computed-outputs rail: everything here is derived from the doc and
  * shown back — never asked. Recomputes on every keystroke.
  */
-export function ComputedPanel({ doc }: { doc: TokenDesignDoc }) {
-  const d = useMemo(() => deriveTokenomics(doc), [doc]);
+export function ComputedPanel({
+  doc,
+  shapes = [],
+}: {
+  doc: TokenDesignDoc;
+  /** The linked project's product shapes, for the rationale fit warning (M47). */
+  shapes?: readonly ProductShape[];
+}) {
+  const d = useMemo(() => deriveTokenomics(doc, { shapes }), [doc, shapes]);
   const fmtPct = (n: number) => `${n % 1 === 0 ? n : n.toFixed(1)}%`;
 
   return (

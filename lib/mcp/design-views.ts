@@ -3,7 +3,7 @@ import "server-only";
 import { IDEATION_RESOURCES } from "@/content/ideation";
 import { DEPLOYABILITY_COPY } from "@/content/ideation-resources";
 import { type TokenDesignDoc, vestedCohorts } from "@/lib/ideation";
-import { deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
+import { type DesignContext, deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
 
 /**
  * Read-only views over a token design document, shared by the global MCP
@@ -11,8 +11,8 @@ import { deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
  * (lib/mcp/project-tools.ts, bound to one design). Pure functions over a doc.
  */
 
-export function designWarnings(doc: TokenDesignDoc) {
-  const derived = deriveTokenomics(doc);
+export function designWarnings(doc: TokenDesignDoc, ctx: DesignContext = {}) {
+  const derived = deriveTokenomics(doc, ctx);
   return derived.warnings.map((code) => ({
     code,
     title: IDEATION_RESOURCES[code].title,

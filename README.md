@@ -382,5 +382,10 @@ event window so judges can verify it.
   from the platform; the rest are ticked, by the builder or by an agent on
   the linked project. Progress shows on the studio row, the public page,
   the export and the project's MCP server.
+- Sept 30, 2026. Shape-aware token advice. A design linked to a project
+  opens its Rationale step with advice for that project's product shapes,
+  whether a token fits, which reasons hold up, what to lock and an example,
+  and a warning fires when the chosen reason is one every shape says to
+  avoid. Advisory only. The launch is unchanged.
 
 This list grows as work lands on the branch.

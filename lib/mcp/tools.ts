@@ -10,6 +10,7 @@ import {
   getProjectBySlug,
   getSnapshot,
   getTokenDesignBySlug,
+  getLinkedProject,
 } from "@/lib/ideation-db";
 import {
   designConstraints,
@@ -19,7 +20,7 @@ import {
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { GATE_COPY, SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
-import { SHAPE_SUBSECTORS, type ProductShape, blockedShapes, shapeRunsOnTestnet } from "@/lib/kits";
+import { SHAPE_SUBSECTORS, type ProductShape, blockedShapes, kitShapes, shapeRunsOnTestnet } from "@/lib/kits";
 import { docSectors, sectorOfSubsector } from "@/lib/sectors";
 import { registerLaunchTools } from "@/lib/mcp/launch-tools";
 import { deriveTokenomics } from "@/lib/tokenDesign";
@@ -186,6 +187,7 @@ export function registerAllTools(server: McpServer): void {
     },
     async ({ slug, doc }) => {
       let design: TokenDesignDoc | null = null;
+      let shapes: ProductShape[] = [];
       if (doc) {
         if (doc.kind !== "token_design" || doc.version !== 1)
           return errorResult('Inline doc must have kind "token_design" and version 1.');
@@ -197,6 +199,9 @@ export function registerAllTools(server: McpServer): void {
         const snapshot = await getSnapshot(row.published_hash);
         if (!snapshot || snapshot.doc.kind !== "token_design") return errorResult(DB_HINT);
         design = snapshot.doc;
+        // A published design linked to a project shows that project's shapes publicly (M47).
+        const linked = await getLinkedProject(row.id);
+        if (linked?.status === "published") shapes = kitShapes(linked.draft_doc.kit);
       } else {
         return errorResult("Pass either a slug or an inline doc.");
       }
@@ -204,7 +209,7 @@ export function registerAllTools(server: McpServer): void {
       return jsonResult({
         valid: firstProblem === null,
         firstProblem,
-        warnings: designWarnings(design),
+        warnings: designWarnings(design, { shapes }),
         deployability: designDeployability(design),
       });
     },

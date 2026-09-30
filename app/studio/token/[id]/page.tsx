@@ -6,6 +6,7 @@ import { TokenDesignEditor } from "@/components/ideation/TokenDesignEditor";
 import { getSessionUser } from "@/lib/auth";
 import { getLinkedProject, getMyProjects, getTokenDesign } from "@/lib/ideation-db";
 import { getCurve } from "@/lib/indexer";
+import { kitShapes } from "@/lib/kits";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -41,6 +42,7 @@ export default async function TokenDesignEditorPage({
       initialRev={row.agent_rev}
       deployedAddress={row.deployed_token_address}
       linkedProjectId={linked?.id ?? null}
+      linkedShapes={linked ? kitShapes(linked.draft_doc.kit) : []}
       curve={curve ? { graduated: curve.graduated, windowEnd: curve.windowEnd } : null}
       linkPanel={
         <LinkPanel

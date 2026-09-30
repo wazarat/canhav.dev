@@ -550,6 +550,13 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
       "Refund → buyers are whole and you re-scope. Postpone → you keep " +
       "optionality. All three beat finding out live.",
   },
+  rationale_shape_mismatch: {
+    title: "The reason does not fit the product shape",
+    body:
+      "The project linked to this design builds a shape where this reason for a token rarely holds up. The advice on the Rationale step lists the reasons that fit and what a token for that shape should lock. Pick one of those, or write down in the next field why this product is the exception.",
+    example:
+      "Worked example: an earn feature inside a wallet picks Bootstrapping a supply side. The vaults it routes to already have suppliers, so the emissions would pay for nothing. Fee capture on the cut the app keeps is the reason that fits.",
+  },
   rationale_unsure: {
     title: "Does this actually need a token?",
     body:

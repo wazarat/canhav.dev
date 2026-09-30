@@ -41,7 +41,7 @@ Other MCP clients (Cursor, ChatGPT connectors, Claude Desktop) take the same URL
 | `get_project` | Fetch one published project by slug. Owners also get their draft |
 | `get_token` | Fetch one published token design by slug, including derived tokenomics |
 | `get_design_constraints` | For one published design, which parts the CanHav contracts enforce on-chain versus what the team merely states, plus deployability and float figures |
-| `check_design` | Run the warning rules and deployability classification against a published slug or an inline design document |
+| `check_design` | Run the warning rules and deployability classification against a published slug or an inline design document. For a slug whose design is linked to a published project, the rationale is also checked against that project's product shapes |
 | `get_resource_catalog` | The public catalog of resources for credit and liquidity products on Robinhood Chain, with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags, where each protocol family runs today, `runsOnTestnet` and `examples` per shape and a `testnetGate` block naming the shapes the studio blocks. Filter by `shape`, `family` or `priority`. No sign-in |
 
 ### Launch tools
@@ -76,9 +76,9 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
 | `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). The `tokenDesign` block carries a `derived` summary (`floatAtLaunchPct`, `fdvToFloat`, `treasuryPct`) and the `warnings` codes. When a token exists (deployed from the linked design or launched from the project), `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct`; `launchedToken` carries the newest launch made from the project in the studio with the same `curve` block |
-| `get_linked_token_design` | The token design linked to this project, with derived tokenomics, `warnings` (code, title, body), `deployability` (what the CanHav contracts can deploy of it), `build` (token build step progress) and the deployed address when it has one |
+| `get_linked_token_design` | The token design linked to this project, with derived tokenomics, `warnings` (code, title, body), `deployability` (what the CanHav contracts can deploy of it), `build` (token build step progress), `advice` (per product shape, whether a token fits, which reasons fit or to avoid, what to lock) and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
-| `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc` |
+| `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc`, including whether the rationale fits this project's product shapes |
 | `check_project` | Validate the project draft against the project rules and report the first problem |
 | `get_resource_pack` | The reading list the team ticked for this project's product shapes (the union when it builds several), in read-first order, with fetchable `rawUrl`s, the family each resource comes from, caveat flags and an `environment` block. Pass `includeUnselected` for everything, or narrow with `step`, `priority` or `family` |
 | `get_prelaunch_review` | The review passes for this project's product shapes, each once, each with what a reviewer checks, the resources that define it and the team's recorded verdict |

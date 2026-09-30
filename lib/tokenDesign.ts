@@ -1,4 +1,6 @@
 import { LAUNCH_FORM } from "@/content/launch";
+import type { ProductShape } from "@/lib/kits";
+import { rationaleFitsShapes } from "@/lib/token-advice";
 import {
   type CohortVesting,
   type TokenDesignDoc,
@@ -31,7 +33,17 @@ export type DesignWarning =
   | "team_cliff_short"
   | "unlock_cluster"
   | "sale_no_undersub_plan"
-  | "rationale_unsure";
+  | "rationale_unsure"
+  | "rationale_shape_mismatch";
+
+/**
+ * What the caller knows beyond the document (M47). The shapes of the
+ * project a design is linked to, when there is one. Every caller that
+ * passes nothing gets the same warnings as before.
+ */
+export interface DesignContext {
+  shapes?: readonly ProductShape[];
+}
 
 export type UnlockCohort = VestedCohort | "public" | "liquidity";
 
@@ -107,7 +119,7 @@ function firstUnlockMonth(schedule: number[]): number | null {
   return null;
 }
 
-export function deriveTokenomics(doc: TokenDesignDoc): DerivedTokenomics {
+export function deriveTokenomics(doc: TokenDesignDoc, ctx: DesignContext = {}): DerivedTokenomics {
   const { allocations } = doc.supply;
   const hasDistribution = doc.distribution.event !== "" && doc.distribution.event !== "none";
   const marketAtLaunch = doc.market.when === "at_launch";
@@ -185,6 +197,8 @@ export function deriveTokenomics(doc: TokenDesignDoc): DerivedTokenomics {
     LOYALTY_PATTERN.test(doc.rationale.beyondDatabaseRow)
   )
     warnings.push("rationale_unsure");
+  if (rationaleFitsShapes(doc.rationale.why, ctx.shapes ?? []) === "avoid")
+    warnings.push("rationale_shape_mismatch");
 
   return {
     floatAtLaunchPct,

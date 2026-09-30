@@ -39,6 +39,11 @@ None in this section alone. Answers feed warnings.
 | Warning | When |
 |---------|------|
 | Does this actually need a token? | “Not sure yet,” or free text that looks like a loyalty / points / cashback program |
+| The reason does not fit the product shape | The design is linked to a project with a product shape and the chosen reason is one every shape of that project says to avoid. See the advice block below |
+
+### Shape advice
+
+When the design is linked to a project that has a product shape, the Rationale step opens with an advice block for that shape (or the shapes, merged). It says whether a token usually, sometimes or rarely fits the product, which reasons for a token fit and which to avoid, what a token for that shape should lock (the fee recipient, the curator role, the pool's founding position) and one example. It is advisory. Nothing in it blocks publishing or changes the launch. The project's MCP server returns the same block as `advice` on `get_linked_token_design`.
 
 ---
 

@@ -13,6 +13,7 @@ import { TextField } from "@/components/ideation/TextField";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftSave } from "@/components/ideation/useDraftSave";
+import { ShapeAdviceCard } from "@/components/ideation/ShapeAdviceCard";
 import { TokenStepSection } from "@/components/ideation/TokenStepSection";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
@@ -26,6 +27,7 @@ import {
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { TOKEN_STEPS_COPY, tokenBuildProgressOf } from "@/content/token-steps";
 import type { IndexedCurve } from "@/lib/indexer";
+import type { ProductShape } from "@/lib/kits";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { LAUNCH_CHAIN, LAUNCH_FORM } from "@/content/launch";
 import {
@@ -219,6 +221,7 @@ export function TokenDesignEditor({
   deployedAddress,
   initialRev,
   linkedProjectId = null,
+  linkedShapes = [],
   curve = null,
   linkPanel,
 }: {
@@ -231,6 +234,8 @@ export function TokenDesignEditor({
   initialRev?: number;
   /** The linked project, for the token build steps (M46). */
   linkedProjectId?: string | null;
+  /** The linked project's product shapes, for the shape advice and the fit warning (M47). */
+  linkedShapes?: readonly ProductShape[];
   /** The deployed token's curve, for the computed build steps (M46). */
   curve?: Pick<IndexedCurve, "graduated" | "windowEnd"> | null;
   linkPanel?: React.ReactNode;
@@ -320,6 +325,7 @@ export function TokenDesignEditor({
         <div className="max-w-2xl space-y-6">
           {step === 0 && (
             <>
+              <ShapeAdviceCard shapes={linkedShapes} why={doc.rationale.why} />
               <SelectField
                 label="Why does this need a token?"
                 required
@@ -844,7 +850,7 @@ export function TokenDesignEditor({
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <ComputedPanel doc={doc} />
+          <ComputedPanel doc={doc} shapes={linkedShapes} />
         </div>
       </div>
       {linkPanel}

@@ -58,6 +58,7 @@ import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { kitShapes } from "@/lib/kits";
+import { shapeAdviceFor } from "@/lib/token-advice";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
 /**
@@ -228,7 +229,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         tokenAddress ? getCurve(tokenAddress) : null,
         launchedAddress && launchedAddress !== tokenAddress ? getCurve(launchedAddress) : null,
       ]);
-      const derived = design ? deriveTokenomics(design.draft_doc) : null;
+      const derived = design
+        ? deriveTokenomics(design.draft_doc, { shapes: kitShapes(project.draft_doc.kit) })
+        : null;
       const launchHint = `Launch a token from canhav.com/launch?project=${project.id}.`;
       const nextAction = projectProblem
         ? "Fix the project draft in the studio."
@@ -322,14 +325,15 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's token design",
       description:
-        "The token design linked to this project, with its derived tokenomics, its warnings, what the CanHav contracts can deploy of it, and its deployed token address when it has one. Takes no arguments.",
+        "The token design linked to this project, with its derived tokenomics, its warnings (including whether the rationale fits this project's product shapes), what the CanHav contracts can deploy of it, an advice block per product shape on whether a token fits and what it should lock, and its deployed token address when it has one. Read the advice before changing the rationale with update_linked_token_design. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
-      const { design } = loaded.value;
+      const { project, design } = loaded.value;
       if (!design) return errorResult(NO_DESIGN);
+      const shapes = kitShapes(project.draft_doc.kit);
       return jsonResult({
         id: design.id,
         slug: design.slug,
@@ -340,9 +344,10 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         updatedAt: design.updated_at,
         publicUrl: publicUrl("t", design),
         draft: design.draft_doc,
-        derived: deriveTokenomics(design.draft_doc),
-        warnings: designWarnings(design.draft_doc),
+        derived: deriveTokenomics(design.draft_doc, { shapes }),
+        warnings: designWarnings(design.draft_doc, { shapes }),
         deployability: designDeployability(design.draft_doc),
+        advice: shapeAdviceFor(shapes),
         build: tokenBuildProgressOf(design.draft_doc, await tokenFacts(design)),
       });
     },
@@ -446,7 +451,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Check this project's token design",
       description:
-        "Run CanHav's design warning rules and deployability classification against this project's token design draft. Pass an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check an edit before saving it. Otherwise takes no arguments.",
+        "Run CanHav's design warning rules and deployability classification against this project's token design draft, including whether the rationale fits this project's product shapes. Pass an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check an edit before saving it. Otherwise takes no arguments.",
       inputSchema: z.object({ doc: z.record(z.string(), z.unknown()).optional() }),
     },
     async ({ doc }, ctx) => {
@@ -463,11 +468,12 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         candidate = design.draft_doc;
       }
       const firstProblem = validateTokenDesignDoc(candidate);
+      const shapes = kitShapes(loaded.value.project.draft_doc.kit);
       return jsonResult({
         checked: doc ? "inline doc" : "this project's linked design draft",
         valid: firstProblem === null,
         firstProblem,
-        warnings: designWarnings(candidate),
+        warnings: designWarnings(candidate, { shapes }),
         deployability: designDeployability(candidate),
       });
     },
@@ -576,7 +582,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_linked_token_design",
     {
       title: "Change the linked token design's draft",
-      description: `Change fields of the token design linked to this project. Name and ticker, rationale, supply and allocations, vesting, distribution, market, governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. ${WRITE_RULES} Run check_design afterwards for warnings.`,
+      description: `Change fields of the token design linked to this project. Name and ticker, rationale, supply and allocations, vesting, distribution, market, governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. Read the advice block on get_linked_token_design before changing the rationale. ${WRITE_RULES} Run check_design afterwards for warnings.`,
       inputSchema: z.object({ changes: tokenDesignPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
