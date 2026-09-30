@@ -7,9 +7,8 @@ import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { checklistFor } from "@/content/kits/checklists";
+import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
-import { checklistProgress, kitShapes } from "@/lib/kits";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import {
   type EntityLinkSummary,
@@ -60,13 +59,12 @@ function LinkLine({ link, side }: { link: EntityLinkSummary; side: "project" | "
   );
 }
 
-/** "Build 4 of 12" for a project with a product shape, nothing otherwise. */
+/** "Build 4 of 12" for a project with a product shape, nothing otherwise. Shared steps count once (M43). */
 function buildChip(row: ProjectRow | TokenDesignRow) {
   const doc = row.draft_doc;
   if (doc.kind !== "project" || !doc.kit?.shape) return null;
-  const items = checklistFor(kitShapes(doc.kit));
-  if (items.length === 0) return null;
-  const p = checklistProgress(items, doc.kit);
+  const p = buildProgress(doc.kit);
+  if (p.total === 0) return null;
   return (
     <StatusChip tone="info" className="hidden sm:inline-flex">
       {CHECKLIST_COPY.rowChip(p.done, p.total)}

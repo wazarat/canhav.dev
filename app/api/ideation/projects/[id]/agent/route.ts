@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { checklistFor } from "@/content/kits/checklists";
+import { shapeLabel } from "@/content/kits/copy";
 import {
   type AgentChange,
   type BuildStepsPatch,
@@ -12,7 +13,7 @@ import {
 import { agentStateOf, listAgentChanges, setAgentWriteMode } from "@/lib/agent-writes-db";
 import { authGate } from "@/lib/ideation-api";
 import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
-import { kitShapes } from "@/lib/kits";
+import { type ProductShape, kitShapes } from "@/lib/kits";
 
 export const runtime = "nodejs";
 
@@ -32,8 +33,11 @@ export async function GET(_req: Request, { params }: Ctx) {
   const design = await getLinkedTokenDesign(project.id);
   const { mode, rev } = agentStateOf(project);
   const changes = await listAgentChanges(project.id, gate.id);
+  // One title can sit under several shapes since M43, so the shape label follows it.
   const titles = new Map(
-    checklistFor(kitShapes(project.draft_doc.kit)).map((i) => [i.id, i.title] as const),
+    checklistFor(kitShapes(project.draft_doc.kit)).map(
+      (i) => [i.id, `${i.title} (${shapeLabel(i.id.slice(0, i.id.indexOf(".")) as ProductShape) ?? ""})`] as const,
+    ),
   );
 
   const lines = (c: AgentChange): ChangeLine[] => {

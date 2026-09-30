@@ -15,6 +15,7 @@ import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
+import { ProductStepSection } from "@/components/ideation/kit/ProductStepSection";
 import { EnvironmentBlock } from "@/components/ideation/kit/EnvironmentBlock";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
@@ -82,8 +83,8 @@ import {
   withSectors,
 } from "@/lib/sectors";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { checklistFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY } from "@/content/kits/copy";
+import { buildProgress, sectionsFor } from "@/content/kits/checklists";
+import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY, STEP_LABELS_KIT } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   KIT_LIMITS,
@@ -91,11 +92,11 @@ import {
   blockedShapesIn,
   blockedShapes,
   blockedSubsectors,
-  checklistProgress,
   reviewPassesFor,
   reviewProgress,
-  KIT_STEPS,
+  type KitStep,
   type ProjectKit,
+  groupProgress,
   effectiveSelection,
   emptyProjectKit,
   kitShapes,
@@ -108,13 +109,20 @@ import {
   withShapes,
 } from "@/lib/kits";
 
-const STEP_LABELS = ["Basics", "Architecture", "Security", "Reality", "Review"] as const;
+/**
+ * The editor's steps (M43). Four document steps, one product section per
+ * chosen shape, then Review last. Product sections hold the build steps for
+ * that shape and never gate publishing.
+ */
+type EditorStep = { kind: "doc"; key: KitStep } | { kind: "product"; shape: ProductShape };
+
+const DOC_STEPS: readonly KitStep[] = ["basics", "architecture", "security", "reality"];
 
 /** The testnet gate (M41), fixed per build from the environment rows. */
 const BLOCKED_SHAPES = new Set(blockedShapes(KIT_ENVIRONMENTS));
 const BLOCKED_SUBSECTORS = new Set(blockedSubsectors(KIT_ENVIRONMENTS));
 
-function stepProblems(doc: ProjectDoc): Array<string | null> {
+function stepProblems(doc: ProjectDoc): Record<KitStep, string | null> {
   const L = PROJECT_LIMITS;
   const short = (v: string, min: number) => v.trim().length < min;
 
@@ -160,7 +168,7 @@ function stepProblems(doc: ProjectDoc): Array<string | null> {
       ? "Reality check incomplete"
       : null;
 
-  return [basics, architecture, security, reality, validateProjectDoc(doc)];
+  return { basics, architecture, security, reality, review: validateProjectDoc(doc) };
 }
 
 export function ProjectEditor({
@@ -211,7 +219,7 @@ export function ProjectEditor({
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
-  const overall = problems[4];
+  const overall = problems.review;
   const kitIds = kitsForDoc(doc);
   const kit = doc.kit;
   const sectors = docSectors(doc);
@@ -294,7 +302,21 @@ export function ProjectEditor({
   const heldBlocked = blockedShapesIn(kitShapes(kit), KIT_ENVIRONMENTS);
   const removeBlocked = () => onShapes(kitShapes(kit).filter((s) => !BLOCKED_SHAPES.has(s)));
   const audience = docAudience(doc);
-  const kitStep = step === 4 ? null : KIT_STEPS[step];
+  const shapesKey = kitShapes(kit).join(",");
+  const editorSteps = useMemo<EditorStep[]>(
+    () => [
+      ...DOC_STEPS.map((key): EditorStep => ({ kind: "doc", key })),
+      ...(shapesKey ? shapesKey.split(",") : []).map((shape): EditorStep => ({ kind: "product", shape: shape as ProductShape })),
+      { kind: "doc", key: "review" },
+    ],
+    [shapesKey],
+  );
+  const sections = useMemo(() => sectionsFor(kitShapes(kit)), [kit]);
+  const current = editorSteps[Math.min(step, editorSteps.length - 1)];
+  const docStep = current.kind === "doc" ? current.key : null;
+  const productShape = current.kind === "product" ? current.shape : null;
+  const kitStep = docStep && docStep !== "review" ? docStep : null;
+  const build = buildProgress(kit);
   const railCounts = useMemo(() => {
     if (!kit?.shape) return null;
     const pack = packFor(KIT_CATALOG, kit, doc);
@@ -304,7 +326,21 @@ export function ProjectEditor({
     <KitRail doc={doc} kit={kit} step={kitStep} onPatchKit={patchKit} />
   ) : null;
 
-  const steps = STEP_LABELS.map((label, i) => ({ label, problem: problems[i] }));
+  const steps = editorSteps.map((s) =>
+    s.kind === "doc"
+      ? { key: s.key, label: STEP_LABELS_KIT[s.key], problem: problems[s.key] }
+      : {
+          key: s.shape,
+          label: shapeLabel(s.shape) ?? s.shape,
+          variant: "product" as const,
+          kicker: CHECKLIST_COPY.productKicker,
+          problem: (() => {
+            const section = sections.find((x) => x.shape === s.shape);
+            const p = section ? groupProgressOf(section, kit) : { done: 0, total: 0 };
+            return p.done === p.total ? null : CHECKLIST_COPY.openProblem;
+          })(),
+        },
+  );
 
   return (
     <EditorShell
@@ -340,7 +376,7 @@ export function ProjectEditor({
       ) : null}
       {stale ? <StaleDraftNotice /> : null}
       <div className="max-w-2xl space-y-6">
-        {step === 0 && (
+        {docStep === "basics" && (
           <>
             <TextField
               label="Project name"
@@ -541,7 +577,7 @@ export function ProjectEditor({
           </>
         )}
 
-        {step === 1 && (
+        {docStep === "architecture" && (
           <>
             <TextField
               label="What contracts exist"
@@ -599,7 +635,7 @@ export function ProjectEditor({
           </>
         )}
 
-        {step === 2 && (
+        {docStep === "security" && (
           <>
             <SelectField
               label="What's the worst thing a bug could do?"
@@ -630,7 +666,7 @@ export function ProjectEditor({
           </>
         )}
 
-        {step === 3 && (
+        {docStep === "reality" && (
           <>
             <StatusChip tone="warning" variant="block">
               <span className="block font-medium text-ink-100">{ROBINHOOD_MYTH.title}</span>
@@ -700,7 +736,15 @@ export function ProjectEditor({
           </>
         )}
 
-        {step === 4 && (
+        {productShape && kit ? (
+          <ProductStepSection
+            section={sections.find((x) => x.shape === productShape) ?? { shape: productShape, groups: [], sharedAbove: [] }}
+            kit={kit}
+            onPatchKit={patchKit}
+          />
+        ) : null}
+
+        {docStep === "review" && (
           <div className="space-y-5">
             <p className="text-sm leading-relaxed text-ink-400">
               Publishing makes this page public and snapshots it. Every
@@ -723,14 +767,7 @@ export function ProjectEditor({
                   />
                   <ReviewRow
                     term="Build steps"
-                    detail={
-                      kit && checklistFor(kitShapes(kit)).length
-                        ? CHECKLIST_COPY.progress(
-                            checklistProgress(checklistFor(kitShapes(kit)), kit).done,
-                            checklistFor(kitShapes(kit)).length,
-                          )
-                        : "Not set"
-                    }
+                    detail={build.total ? CHECKLIST_COPY.progress(build.done, build.total) : "Not set"}
                   />
                   <ReviewRow
                     term="Review passes"
@@ -836,6 +873,10 @@ export function ProjectEditor({
       </div>
     </EditorShell>
   );
+}
+
+function groupProgressOf(section: { groups: import("@/lib/kits").StepGroup[] }, kit: ProjectKit | undefined) {
+  return groupProgress(section.groups, kit);
 }
 
 function ReviewRow({ term, detail }: { term: string; detail: string }) {

@@ -494,6 +494,149 @@ export function assertChecklists(
 }
 
 // ---------------------------------------------------------------------------
+// Build step groups (M43). Steps that are the same work across shapes are
+// declared in content/kits/checklists/shared.ts and shown once. Storage
+// keeps the per-shape ids; a group is done when every member id is ticked.
+
+export interface SharedStep {
+  slug: string;
+  /** Shapes whose "<shape>.<slug>" is the same work. At least two. */
+  shapes: readonly ProductShape[];
+  /** Wording that reads across the shapes. Falls back to the leading item's. */
+  title?: string;
+  detail?: string;
+}
+
+export interface StepGroup {
+  /** Id of the leading item, "<homeShape>.<slug>". Stable React key. */
+  key: string;
+  slug: string;
+  title: string;
+  detail: string;
+  step: KitStep;
+  /** Union over the members, first seen order, each once. */
+  resources: readonly string[];
+  /** Every member id among the chosen shapes, table order. */
+  ids: readonly string[];
+  /** Chosen shapes carrying it, table order. shapes[0] is where it is listed. */
+  shapes: readonly ProductShape[];
+}
+
+export interface ProductSection {
+  shape: ProductShape;
+  /** Groups listed here, in this shape's own list order. */
+  groups: StepGroup[];
+  /** Groups this shape carries that are listed under an earlier shape. */
+  sharedAbove: StepGroup[];
+}
+
+export type ChecklistLists = Partial<Record<ProductShape, readonly ChecklistItem[]>>;
+
+/** One section per chosen shape, in table order, shared steps under the first shape that has them. */
+export function productSectionsFor(
+  lists: ChecklistLists,
+  shared: readonly SharedStep[],
+  shapes: ShapeInput,
+): ProductSection[] {
+  const chosen = toShapeList(shapes);
+  const chosenSet = new Set(chosen);
+  const byId = new Map<string, ChecklistItem>();
+  for (const shape of chosen) for (const item of lists[shape] ?? []) byId.set(item.id, item);
+  const emitted = new Map<string, StepGroup>();
+  const sections: ProductSection[] = [];
+  for (const shape of chosen) {
+    const section: ProductSection = { shape, groups: [], sharedAbove: [] };
+    for (const item of lists[shape] ?? []) {
+      const slug = item.id.slice(shape.length + 1);
+      const entry = shared.find((e) => e.slug === slug && e.shapes.includes(shape));
+      const members = entry ? entry.shapes.filter((m) => chosenSet.has(m)) : [shape];
+      const home = members[0];
+      if (home !== shape) {
+        const above = emitted.get(`${home}.${slug}`);
+        if (above) section.sharedAbove.push(above);
+        continue;
+      }
+      const ids = members.map((m) => `${m}.${slug}`).filter((id) => byId.has(id));
+      const resources: string[] = [];
+      for (const id of ids)
+        for (const r of byId.get(id)?.resources ?? []) if (!resources.includes(r)) resources.push(r);
+      const group: StepGroup = {
+        key: item.id,
+        slug,
+        title: entry?.title ?? item.title,
+        detail: entry?.detail ?? item.detail,
+        step: item.step,
+        resources,
+        ids,
+        shapes: members,
+      };
+      emitted.set(item.id, group);
+      section.groups.push(group);
+    }
+    sections.push(section);
+  }
+  return sections;
+}
+
+export function stepGroupsFor(
+  lists: ChecklistLists,
+  shared: readonly SharedStep[],
+  shapes: ShapeInput,
+): StepGroup[] {
+  return productSectionsFor(lists, shared, shapes).flatMap((s) => s.groups);
+}
+
+export type GroupState = "done" | "partial" | "open";
+
+/** done when every member id is ticked, partial when some are (an agent ticked one shape's id). */
+export function groupState(group: StepGroup, kit: Pick<ProjectKit, "checklist"> | undefined): GroupState {
+  const done = kit?.checklist ?? {};
+  const n = group.ids.filter((id) => done[id] === true).length;
+  return n === group.ids.length ? "done" : n === 0 ? "open" : "partial";
+}
+
+export function groupProgress(
+  groups: readonly StepGroup[],
+  kit: Pick<ProjectKit, "checklist"> | undefined,
+): { done: number; total: number } {
+  return { done: groups.filter((g) => groupState(g, kit) === "done").length, total: groups.length };
+}
+
+/** Tick or clear every member id of a group. Never stores false. */
+export function toggleStepGroup(
+  kit: Pick<ProjectKit, "checklist">,
+  group: StepGroup,
+  done: boolean,
+): Pick<ProjectKit, "checklist"> {
+  let next: Pick<ProjectKit, "checklist"> = { checklist: kit.checklist };
+  for (const id of group.ids) next = toggleChecklistItem(next, id, done);
+  return next;
+}
+
+export function assertSharedSteps(lists: ChecklistLists, shared: readonly SharedStep[]): void {
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of shared) {
+    if (entry.shapes.length < 2) problems.push(`${entry.slug} names fewer than two shapes`);
+    if (new Set(entry.shapes).size !== entry.shapes.length) problems.push(`${entry.slug} repeats a shape`);
+    let step: KitStep | null = null;
+    for (const shape of entry.shapes) {
+      const id = `${shape}.${entry.slug}`;
+      const item = (lists[shape] ?? []).find((i) => i.id === id);
+      if (!item) {
+        problems.push(`${id} does not exist`);
+        continue;
+      }
+      if (seen.has(id)) problems.push(`${id} is in two shared entries`);
+      seen.add(id);
+      if (step === null) step = item.step;
+      else if (step !== item.step) problems.push(`${id} is on step ${item.step}, not ${step}`);
+    }
+  }
+  if (problems.length) throw new Error(`Shared build steps are invalid. ${problems.join("; ")}`);
+}
+
+// ---------------------------------------------------------------------------
 // Where a shape can run today
 
 export type DeploymentStatus = "official" | "community" | "manifest_only" | "none";

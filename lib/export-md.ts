@@ -31,18 +31,20 @@ import {
 } from "@/content/ideation";
 import {
   ENVIRONMENT_COPY,
+  CHECKLIST_COPY,
   FAMILY_LABELS,
   FLAG_COPY,
   KIND_LABELS,
   PRIORITY_LABELS,
   REVIEW_VERDICT_LABELS,
   STEP_LABELS_KIT,
+  shapeLabel,
   shapeLabels,
   startingPointLabel,
 } from "@/content/kits/copy";
 import { LAUNCH_CHAIN } from "@/content/launch";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
-import { KIT_PRIORITY_ORDER } from "@/lib/kits";
+import { KIT_PRIORITY_ORDER, type ProductShape } from "@/lib/kits";
 import {
   type ProjectDoc,
   type StatusDecl,
@@ -188,13 +190,27 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
       "",
       `${heading} Build steps`,
       "",
-      `${pack.checklist.done} of ${pack.checklist.total} done. In order.`,
-      "",
-      ...pack.checklist.items.map(
-        (i, n) =>
-          `${n + 1}. [${i.done ? "x" : " "}] **${i.title}** (${STEP_LABELS_KIT[i.step]}). ${i.detail}`,
-      ),
+      `${pack.checklist.done} of ${pack.checklist.total} done. ${CHECKLIST_COPY.countNote} In order.`,
     );
+    const label = (shape: ProductShape) => shapeLabel(shape) ?? shape;
+    for (const shape of pack.shapes as ProductShape[]) {
+      const groups = pack.checklist.groups.filter((g) => g.shape === shape);
+      const above = pack.checklist.groups.filter((g) => g.shape !== shape && g.shapes.includes(shape));
+      lines.push("", `${heading}# ${label(shape)}`, "");
+      if (groups.length === 0 && above.length > 0) {
+        lines.push(CHECKLIST_COPY.sharedAboveLine([...new Set(above.map((g) => label(g.shape)))]));
+        continue;
+      }
+      lines.push(
+        ...groups.map((g, n) => {
+          const others = g.shapes.filter((x) => x !== shape).map(label);
+          const tag = others.length ? ` (${CHECKLIST_COPY.sharedTag(others)})` : "";
+          return `${n + 1}. [${g.done ? "x" : " "}] **${g.title}**${tag} (${STEP_LABELS_KIT[g.step]}). ${g.detail}`;
+        }),
+      );
+      if (above.length)
+        lines.push("", CHECKLIST_COPY.sharedAboveLine([...new Set(above.map((g) => label(g.shape)))]));
+    }
   }
   if (pack.review.passes.length > 0) {
     const p = pack.review.progress;

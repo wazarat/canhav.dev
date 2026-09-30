@@ -120,12 +120,22 @@ export const RAIL_COPY = {
 } as const;
 
 export const CHECKLIST_COPY = {
-  tab: "Build steps",
-  resourcesTab: "Resources",
   intro: "The order a small team should take these. Tick a step when it is written down, not when it is started.",
   none: "Build steps for this shape are on the way.",
   progress: (done: number, total: number) => `${done} of ${total} done`,
   rowChip: (done: number, total: number) => `Build ${done} of ${total}`,
+  /** The product sections in the step nav (M43). */
+  productKicker: "Build",
+  productIntro:
+    "These steps belong to the product you are building, not to the project record. They never block publishing, and an agent connected to this project can tick them for you.",
+  openProblem: "Build steps open",
+  sharedNote: (labels: readonly string[]) => `This step is also part of ${joinAnd(labels)}.`,
+  sharedAbove: (n: number, labels: readonly string[]) =>
+    `${n === 1 ? "1 more step is" : `${n} more steps are`} shared with ${joinAnd(labels)} and listed ${labels.length === 1 ? "in that section" : "in those sections"}.`,
+  partial: (n: number, m: number) => `Ticked for ${n} of ${m} shapes`,
+  sharedTag: (labels: readonly string[]) => `also part of ${joinAnd(labels)}`,
+  sharedAboveLine: (labels: readonly string[]) => `Shared with ${joinAnd(labels)}, listed above.`,
+  countNote: "Steps shared between shapes count once.",
 } as const;
 
 export const REVIEW_VERDICT_OPTIONS: ReadonlyArray<ChipOption<ReviewVerdict>> = [

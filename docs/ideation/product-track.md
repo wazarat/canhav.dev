@@ -112,6 +112,12 @@ Optional verify signals (wallet, GitHub repo, testnet contract addresses) attach
 
 ---
 
+## Build steps, one section per product shape
+
+Between Reality and Review the editor shows one section per product shape the project builds, with a violet Build pill in the step nav so a builder can tell the product from the project record. Each section lists that shape's build steps in order, each with a checkbox, the editor step it informs and the resources that help. A step that is the same work across several chosen shapes (running the review passes, planning the fork and staging, choosing markets, assigning roles, the dead deposit, the scenario walk, the testnet deployment) is listed once under the first shape that has it, with "This step is also part of X and Y"; ticking it ticks the step for every shape, and the studio row, the public page, Review, the exports and `get_build_steps` count it once. A later section ends with how many of its steps are shared and listed above. These steps never block publishing. An agent connected to the project's MCP server can tick them.
+
+---
+
 ## Review and publish
 
 Publishing snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional. See [The two ideation tracks](two-tracks.md).

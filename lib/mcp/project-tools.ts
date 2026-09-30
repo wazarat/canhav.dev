@@ -41,10 +41,10 @@ import {
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
 import { submitAgentChange } from "@/lib/agent-writes-server";
-import { checklistFor } from "@/content/kits/checklists";
+import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
-import { checklistProgress, kitShapes } from "@/lib/kits";
+import { kitShapes } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
 /**
@@ -202,7 +202,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               shapeLabel: shapeLabel(kit.shape),
               shapes: kitShapes(kit),
               shapeLabels: shapeLabels(kit),
-              build: checklistProgress(checklistFor(kitShapes(kit)), kit),
+              build: buildProgress(kit),
             }
           : null,
         tokenDesign: design
@@ -386,7 +386,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, what done looks like, the editor step it informs, and whether it is ticked. Use the ids with set_build_steps. Takes no arguments.",
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, and sharedWith, the ids of the same step under the project's other shapes. Steps shared between shapes count once in progress, so tick every id in sharedWith together. Use the ids with set_build_steps. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -395,14 +395,19 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const kit = loaded.value.project.draft_doc.kit;
       const items = checklistFor(kitShapes(kit));
       if (!kit || items.length === 0) return errorResult(NO_SHAPE_HINT);
+      const groupOf = new Map<string, readonly string[]>();
+      for (const section of sectionsFor(kitShapes(kit)))
+        for (const g of section.groups) for (const id of g.ids) groupOf.set(id, g.ids);
       return jsonResult({
-        progress: checklistProgress(items, kit),
+        progress: buildProgress(kit),
         steps: items.map((i) => ({
           id: i.id,
+          shape: i.id.slice(0, i.id.indexOf(".")),
           title: i.title,
           detail: i.detail,
           editorStep: i.step,
           done: kit.checklist?.[i.id] === true,
+          sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
         })),
       });
     },

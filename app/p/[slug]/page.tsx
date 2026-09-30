@@ -19,9 +19,8 @@ import {
   sectorLabels,
   subsectorLabels,
 } from "@/content/ideation";
-import { checklistFor } from "@/content/kits/checklists";
+import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
-import { checklistProgress, kitShapes } from "@/lib/kits";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { type ProjectDoc, type StatusDecl, docAudience } from "@/lib/ideation";
 import { getLaunchesByProject } from "@/lib/launches-db";
@@ -138,12 +137,9 @@ export default async function ProjectPublicPage({
               {label}
             </StatusChip>
           ))}
-          {doc.kit && checklistFor(kitShapes(doc.kit)).length > 0 ? (
+          {doc.kit && buildProgress(doc.kit).total > 0 ? (
             <StatusChip tone="info">
-              {CHECKLIST_COPY.rowChip(
-                checklistProgress(checklistFor(kitShapes(doc.kit)), doc.kit).done,
-                checklistFor(kitShapes(doc.kit)).length,
-              )}
+              {CHECKLIST_COPY.rowChip(buildProgress(doc.kit).done, buildProgress(doc.kit).total)}
             </StatusChip>
           ) : null}
           <StatusChip tone="info">{optionLabel(STAGE_OPTIONS, doc.stage)}</StatusChip>

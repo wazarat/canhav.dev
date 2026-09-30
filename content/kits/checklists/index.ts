@@ -1,5 +1,21 @@
 import { KIT_CATALOG_IDS } from "@/content/kits/catalog";
-import { type ChecklistItem, type ProductShape, type ShapeInput, assertChecklists, toShapeList } from "@/lib/kits";
+import {
+  type ChecklistItem,
+  type ProductShape,
+  type ProductSection,
+  type ProjectKit,
+  type ShapeInput,
+  type StepGroup,
+  assertChecklists,
+  assertSharedSteps,
+  groupProgress,
+  kitShapes,
+  productSectionsFor,
+  stepGroupsFor,
+  toShapeList,
+} from "@/lib/kits";
+
+import { SHARED_STEPS } from "./shared";
 
 import {
   EMBEDDED_FIXED_RATE_CHECKLIST,
@@ -40,9 +56,31 @@ export const KIT_CHECKLISTS: Partial<Record<ProductShape, readonly ChecklistItem
   hook_pool: HOOK_POOL_CHECKLIST,
 };
 
-/** The steps for one shape or, for several, their lists one after another in table order. */
+/** Every per-shape item for the shapes, lists one after another in table order. For ids and storage. */
 export function checklistFor(shapes: ShapeInput): readonly ChecklistItem[] {
   return toShapeList(shapes).flatMap((s) => KIT_CHECKLISTS[s] ?? []);
 }
 
+/** One section per chosen shape with shared steps shown once (M43). What the editor renders. */
+export function sectionsFor(shapes: ShapeInput): ProductSection[] {
+  return productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+}
+
+/** Every group across the chosen shapes, section order. */
+export function groupsFor(shapes: ShapeInput): StepGroup[] {
+  return stepGroupsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+}
+
+/**
+ * The one build progress number, shared steps counted once. Every surface
+ * (studio row, public page, Review, pack, exports, MCP) calls this.
+ */
+export function buildProgress(kit: Pick<ProjectKit, "shape" | "shapes" | "checklist"> | undefined): {
+  done: number;
+  total: number;
+} {
+  return groupProgress(groupsFor(kitShapes(kit)), kit);
+}
+
 assertChecklists(KIT_CHECKLISTS, KIT_CATALOG_IDS);
+assertSharedSteps(KIT_CHECKLISTS, SHARED_STEPS);

@@ -1,5 +1,5 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { checklistFor } from "@/content/kits/checklists";
+import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
@@ -15,10 +15,11 @@ import {
   type KitResource,
   type KitResourceKind,
   type KitStep,
+  type ProductShape,
   type PackFilter,
   type ReviewPass,
   type ReviewVerdict,
-  checklistProgress,
+  groupState,
   effectiveSelection,
   effectiveSubsectors,
   environmentPlanFor,
@@ -74,7 +75,27 @@ export interface ResourcePackView {
   resources: PackResourceView[];
   counts: ReturnType<typeof packCounts>;
   /** The ordered build steps for the shape and which are done. */
-  checklist: { done: number; total: number; items: Array<ChecklistItem & { done: boolean }> };
+  /**
+   * done and total count shared steps once (M43). items stays per id with
+   * the other ids of its group in sharedWith; groups is what the editor
+   * shows, in section order.
+   */
+  checklist: {
+    done: number;
+    total: number;
+    items: Array<ChecklistItem & { done: boolean; shape: ProductShape; sharedWith: string[] }>;
+    groups: Array<{
+      key: string;
+      title: string;
+      detail: string;
+      step: KitStep;
+      shape: ProductShape;
+      shapes: ProductShape[];
+      ids: string[];
+      resources: string[];
+      done: boolean;
+    }>;
+  };
   /** Pre-launch review passes for the shape with recorded verdicts. */
   review: ReviewView;
   howToUse: string;
@@ -155,6 +176,10 @@ export function buildResourcePack(
   const resources = filtered.filter((r) => opts.includeUnselected || selection.has(r.id)).map(view);
   const families = environmentPlanFor(shapes, KIT_ENVIRONMENTS);
   const checklistItems = checklistFor(shapes);
+  const sections = sectionsFor(shapes);
+  const groupOf = new Map<string, { ids: readonly string[]; shape: ProductShape }>();
+  for (const section of sections)
+    for (const g of section.groups) for (const id of g.ids) groupOf.set(id, { ids: g.ids, shape: section.shape });
   const checkedOn = families.length
     ? families.map((f) => f.checkedOn).sort().at(-1) ?? null
     : null;
@@ -175,8 +200,26 @@ export function buildResourcePack(
     resources,
     counts: packCounts(fullPack, selection),
     checklist: {
-      ...checklistProgress(checklistItems, kit),
-      items: checklistItems.map((i) => ({ ...i, done: kit.checklist?.[i.id] === true })),
+      ...buildProgress(kit),
+      items: checklistItems.map((i) => ({
+        ...i,
+        done: kit.checklist?.[i.id] === true,
+        shape: i.id.slice(0, i.id.indexOf(".")) as ProductShape,
+        sharedWith: (groupOf.get(i.id)?.ids ?? []).filter((id) => id !== i.id),
+      })),
+      groups: sections.flatMap((section) =>
+        section.groups.map((g) => ({
+          key: g.key,
+          title: g.title,
+          detail: g.detail,
+          step: g.step,
+          shape: section.shape,
+          shapes: [...g.shapes],
+          ids: [...g.ids],
+          resources: [...g.resources],
+          done: groupState(g, kit) === "done",
+        })),
+      ),
     },
     review: buildReviewView(doc)!,
     howToUse: HOW_TO_USE,

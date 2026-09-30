@@ -361,5 +361,11 @@ event window so judges can verify it.
   age range, geography, crypto experience, how they find you and what they
   hold. Both reach the public page, the exports and the agent tools, and
   older projects are unchanged.
+- Sept 30, 2026. Build steps as product sections. The build steps leave the
+  resource pack rail and become their own sections in the project editor,
+  one violet pill per product shape between Reality and Review. A step that
+  is the same work across several shapes is listed once with a note, ticked
+  once and counted once everywhere, from the studio row to the exports and
+  the agent tools.
 
 This list grows as work lands on the branch.
