@@ -17,6 +17,7 @@ import {
   type LeafSpec,
   applyBuildSteps,
   applyProjectPatch,
+  buildStepKeys,
   buildStepsPatchSchema,
   changeLines,
   decidePatch,
@@ -354,7 +355,7 @@ function PendingCard({
   const ids = buildSteps
     ? (() => {
         const p = buildStepsPatchSchema.safeParse(change.patch);
-        return p.success ? [...p.data.done, ...p.data.undone] : [];
+        return p.success ? buildStepKeys(p.data as BuildStepsPatch) : [];
       })()
     : lines.map((l) => l.path);
   const keyOf = (i: number) => ids[i] ?? lines[i].path;

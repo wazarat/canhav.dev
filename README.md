@@ -395,5 +395,9 @@ event window so judges can verify it.
 - Oct 1, 2026. Explore toggle. The Explore tab switches between launched
   tokens and published projects, and the choice lives in the URL so a view
   can be shared.
+- Oct 1, 2026. Build steps you can change. Any build step can be removed
+  and restored, and a team can add its own steps under a product shape.
+  An agent on the project's MCP server can do the same, and each entry of
+  its proposal is decided on its own.
 
 This list grows as work lands on the branch.

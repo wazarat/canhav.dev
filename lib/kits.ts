@@ -253,6 +253,20 @@ export interface ProjectKit {
   checklist?: Record<string, true>;
   /** Pre-launch review pass id to verdict. Only set verdicts are stored. */
   review?: Record<string, ReviewVerdict>;
+  /** Build steps the team (or its agent) added to a shape's section (M50). */
+  customSteps?: CustomStep[];
+  /** Catalog build step ids the team removed from its sections (M50). A shared step stores every member id. */
+  hiddenSteps?: string[];
+}
+
+/** A build step the team added. Ticked through `checklist` like any other, by its id. */
+export interface CustomStep {
+  /** "custom.<shape>.<n>", unique within the kit. */
+  id: string;
+  shape: ProductShape;
+  title: string;
+  /** What done looks like. May be empty. */
+  detail: string;
 }
 
 export type ReviewVerdict = "pass" | "fail" | "na";
@@ -269,6 +283,10 @@ export const KIT_LIMITS = {
   checklist: { max: 200 },
   /** Cap on stored review verdicts. */
   review: { max: 200 },
+  /** Build steps a team may add across its shapes, and their text. */
+  customSteps: { max: 40, titleMin: 3, titleMax: 120, detailMax: 400 },
+  /** Cap on removed catalog step ids, above the 134 that exist. */
+  hiddenSteps: { max: 200 },
 } as const;
 
 export function emptyProjectKit(kits: readonly KitId[] = ["credit"]): ProjectKit {
@@ -335,6 +353,29 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     }
     if (n > 0) kit.review = verdicts;
   }
+  if (Array.isArray(r.customSteps)) {
+    const L = KIT_LIMITS.customSteps;
+    const seen = new Set<string>();
+    const steps: CustomStep[] = [];
+    for (const raw of r.customSteps as unknown[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const c = raw as Record<string, unknown>;
+      if (typeof c.id !== "string" || !c.id.startsWith("custom.") || seen.has(c.id)) continue;
+      if (!PRODUCT_SHAPE_VALUES.includes(c.shape as ProductShape)) continue;
+      if (typeof c.title !== "string" || !c.title.trim()) continue;
+      if (steps.length >= L.max) break;
+      seen.add(c.id);
+      steps.push({
+        id: c.id,
+        shape: c.shape as ProductShape,
+        title: c.title.slice(0, L.titleMax),
+        detail: typeof c.detail === "string" ? c.detail.slice(0, L.detailMax) : "",
+      });
+    }
+    if (steps.length) kit.customSteps = steps;
+  }
+  const hidden = idList(r.hiddenSteps).slice(0, KIT_LIMITS.hiddenSteps.max);
+  if (hidden.length) kit.hiddenSteps = hidden;
   return kit;
 }
 
@@ -367,6 +408,17 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     if (entries.length > KIT_LIMITS.review.max) return "Too many review verdicts.";
     if (entries.some(([, v]) => !REVIEW_VERDICTS.includes(v))) return "Unknown review verdict.";
   }
+  if (kit.customSteps) {
+    const L = KIT_LIMITS.customSteps;
+    if (kit.customSteps.length > L.max) return `At most ${L.max} added build steps.`;
+    for (const c of kit.customSteps) {
+      if (!PRODUCT_SHAPE_VALUES.includes(c.shape)) return "An added build step names an unknown product shape.";
+      if (c.title.trim().length < L.titleMin) return `An added build step needs a title of at least ${L.titleMin} characters.`;
+      if (c.title.length > L.titleMax) return `An added build step title is over ${L.titleMax} characters.`;
+      if (c.detail.length > L.detailMax) return `An added build step detail is over ${L.detailMax} characters.`;
+    }
+  }
+  if ((kit.hiddenSteps?.length ?? 0) > KIT_LIMITS.hiddenSteps.max) return "Too many removed build steps.";
   return null;
 }
 
@@ -520,6 +572,8 @@ export interface StepGroup {
   ids: readonly string[];
   /** Chosen shapes carrying it, table order. shapes[0] is where it is listed. */
   shapes: readonly ProductShape[];
+  /** True for a step the team added (M50). One id, one shape, no resources. */
+  custom?: true;
 }
 
 export interface ProductSection {
@@ -611,6 +665,113 @@ export function toggleStepGroup(
   let next: Pick<ProjectKit, "checklist"> = { checklist: kit.checklist };
   for (const id of group.ids) next = toggleChecklistItem(next, id, done);
   return next;
+}
+
+// ---------------------------------------------------------------------------
+// Added and removed steps (M50). The catalog sections above are the
+// starting point; a team removes steps that do not apply (a shared step
+// goes for every shape it serves) and adds its own under a shape. Both live
+// on the kit, so they travel with the project into exports and the MCP tools.
+
+type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps">;
+
+function isHidden(group: StepGroup, hidden: ReadonlySet<string>): boolean {
+  return group.ids.length > 0 && group.ids.every((id) => hidden.has(id));
+}
+
+function customGroup(c: CustomStep): StepGroup {
+  return {
+    key: c.id,
+    slug: "custom",
+    title: c.title,
+    detail: c.detail,
+    // Added steps carry no editor step. The section shows a "Your step" badge instead.
+    step: "review",
+    resources: [],
+    ids: [c.id],
+    shapes: [c.shape],
+    custom: true,
+  };
+}
+
+/** The catalog sections with the kit's removals taken out and its added steps appended to their shape. */
+export function withKitSteps(sections: readonly ProductSection[], kit: KitSteps | undefined): ProductSection[] {
+  const hidden = new Set(kit?.hiddenSteps ?? []);
+  const custom = kit?.customSteps ?? [];
+  return sections.map((section) => ({
+    shape: section.shape,
+    groups: [
+      ...section.groups.filter((g) => !isHidden(g, hidden)),
+      ...custom.filter((c) => c.shape === section.shape).map(customGroup),
+    ],
+    sharedAbove: section.sharedAbove.filter((g) => !isHidden(g, hidden)),
+  }));
+}
+
+/** The catalog groups a kit removed, by the shape whose section listed them. */
+export function removedGroups(
+  sections: readonly ProductSection[],
+  kit: KitSteps | undefined,
+): Map<ProductShape, StepGroup[]> {
+  const hidden = new Set(kit?.hiddenSteps ?? []);
+  const out = new Map<ProductShape, StepGroup[]>();
+  for (const section of sections) {
+    const gone = section.groups.filter((g) => isHidden(g, hidden));
+    if (gone.length) out.set(section.shape, gone);
+  }
+  return out;
+}
+
+/** Add a step under a shape. The id is "custom.<shape>.<n>", n one past the highest in use. */
+export function addCustomStep(
+  kit: KitSteps,
+  shape: ProductShape,
+  title: string,
+  detail = "",
+): Pick<ProjectKit, "customSteps"> {
+  const L = KIT_LIMITS.customSteps;
+  const existing = kit.customSteps ?? [];
+  if (existing.length >= L.max) return { customSteps: existing };
+  const prefix = `custom.${shape}.`;
+  const n =
+    existing
+      .filter((c) => c.id.startsWith(prefix))
+      .map((c) => Number(c.id.slice(prefix.length)) || 0)
+      .reduce((a, b) => Math.max(a, b), 0) + 1;
+  return {
+    customSteps: [
+      ...existing,
+      { id: `${prefix}${n}`, shape, title: title.trim().slice(0, L.titleMax), detail: detail.trim().slice(0, L.detailMax) },
+    ],
+  };
+}
+
+/**
+ * Remove a step from its section. An added step is deleted with its tick; a
+ * catalog step is hidden, every member id of a shared one, so it can be
+ * restored later with its ticks intact.
+ */
+export function removeStepGroup(
+  kit: KitSteps & Pick<ProjectKit, "checklist">,
+  group: StepGroup,
+): Pick<ProjectKit, "customSteps" | "hiddenSteps" | "checklist"> {
+  if (group.custom) {
+    const rest = (kit.customSteps ?? []).filter((c) => c.id !== group.key);
+    return {
+      customSteps: rest.length ? rest : undefined,
+      hiddenSteps: kit.hiddenSteps,
+      ...toggleChecklistItem(kit, group.key, false),
+    };
+  }
+  const hidden = [...new Set([...(kit.hiddenSteps ?? []), ...group.ids])].slice(0, KIT_LIMITS.hiddenSteps.max);
+  return { customSteps: kit.customSteps, hiddenSteps: hidden, checklist: kit.checklist };
+}
+
+/** Bring removed catalog steps back. */
+export function restoreSteps(kit: KitSteps, ids: readonly string[]): Pick<ProjectKit, "hiddenSteps"> {
+  const back = new Set(ids);
+  const rest = (kit.hiddenSteps ?? []).filter((id) => !back.has(id));
+  return { hiddenSteps: rest.length ? rest : undefined };
 }
 
 export function assertSharedSteps(lists: ChecklistLists, shared: readonly SharedStep[]): void {

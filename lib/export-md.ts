@@ -207,7 +207,9 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
         ...groups.map((g, n) => {
           const others = g.shapes.filter((x) => x !== shape).map(label);
           const tag = others.length ? ` (${CHECKLIST_COPY.sharedTag(others)})` : "";
-          return `${n + 1}. [${g.done ? "x" : " "}] **${g.title}**${tag} (${STEP_LABELS_KIT[g.step]}). ${g.detail}`;
+          // A step the team added has no editor step, so it carries its own tag (M50).
+          const where = g.custom ? CHECKLIST_COPY.customTag : STEP_LABELS_KIT[g.step];
+          return `${n + 1}. [${g.done ? "x" : " "}] **${g.title}**${tag} (${where})${g.detail ? `. ${g.detail}` : ""}`;
         }),
       );
       if (above.length)

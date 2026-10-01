@@ -11,8 +11,10 @@ import {
   groupProgress,
   kitShapes,
   productSectionsFor,
+  removedGroups,
   stepGroupsFor,
   toShapeList,
+  withKitSteps,
 } from "@/lib/kits";
 
 import { SHARED_STEPS } from "./shared";
@@ -61,25 +63,42 @@ export function checklistFor(shapes: ShapeInput): readonly ChecklistItem[] {
   return toShapeList(shapes).flatMap((s) => KIT_CHECKLISTS[s] ?? []);
 }
 
-/** One section per chosen shape with shared steps shown once (M43). What the editor renders. */
-export function sectionsFor(shapes: ShapeInput): ProductSection[] {
-  return productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps">;
+
+/**
+ * One section per chosen shape with shared steps shown once (M43). What the
+ * editor renders. With a kit, the steps it removed are left out and the
+ * steps it added sit at the end of their shape's section (M50).
+ */
+export function sectionsFor(shapes: ShapeInput, kit?: KitSteps): ProductSection[] {
+  const base = productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+  return kit ? withKitSteps(base, kit) : base;
 }
 
-/** Every group across the chosen shapes, section order. */
-export function groupsFor(shapes: ShapeInput): StepGroup[] {
-  return stepGroupsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+/** Every group across the chosen shapes, section order. Kit aware like sectionsFor. */
+export function groupsFor(shapes: ShapeInput, kit?: KitSteps): StepGroup[] {
+  return kit ? sectionsFor(shapes, kit).flatMap((s) => s.groups) : stepGroupsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+}
+
+/** The catalog steps a kit removed, by the shape whose section listed them (M50). */
+export function removedGroupsFor(
+  kit: (Pick<ProjectKit, "shape" | "shapes"> & KitSteps) | undefined,
+): Map<ProductShape, StepGroup[]> {
+  return removedGroups(productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, kitShapes(kit)), kit);
 }
 
 /**
- * The one build progress number, shared steps counted once. Every surface
- * (studio row, public page, Review, pack, exports, MCP) calls this.
+ * The one build progress number, shared steps counted once, removed steps
+ * left out and added steps counted. Every surface (studio row, public page,
+ * Review, pack, exports, MCP) calls this.
  */
-export function buildProgress(kit: Pick<ProjectKit, "shape" | "shapes" | "checklist"> | undefined): {
+export function buildProgress(
+  kit: (Pick<ProjectKit, "shape" | "shapes" | "checklist"> & KitSteps) | undefined,
+): {
   done: number;
   total: number;
 } {
-  return groupProgress(groupsFor(kitShapes(kit)), kit);
+  return groupProgress(groupsFor(kitShapes(kit), kit ?? {}), kit);
 }
 
 assertChecklists(KIT_CHECKLISTS, KIT_CATALOG_IDS);

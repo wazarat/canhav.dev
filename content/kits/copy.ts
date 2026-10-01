@@ -136,6 +136,20 @@ export const CHECKLIST_COPY = {
   sharedTag: (labels: readonly string[]) => `also part of ${joinAnd(labels)}`,
   sharedAboveLine: (labels: readonly string[]) => `Shared with ${joinAnd(labels)}, listed above.`,
   countNote: "Steps shared between shapes count once.",
+  /** Added and removed steps (M50). */
+  customBadge: "Your step",
+  customTag: "added by the team",
+  addTitle: "Add a step",
+  addHint: "Anything this product needs that the list above does not cover. It is ticked and counted like the rest.",
+  addPlaceholder: "What needs doing",
+  addDetailPlaceholder: "What done looks like (optional)",
+  addButton: "Add step",
+  addLimit: (max: number) => `A project can add up to ${max} steps.`,
+  remove: (title: string) => `Remove ${title}`,
+  removedTitle: "Removed steps",
+  removedHint: "Removed steps leave the count. Restore one to bring it back with its tick.",
+  removedShared: (labels: readonly string[]) => `Removed for ${joinAnd(labels)} too.`,
+  restore: "Restore",
 } as const;
 
 export const REVIEW_VERDICT_OPTIONS: ReadonlyArray<ChipOption<ReviewVerdict>> = [

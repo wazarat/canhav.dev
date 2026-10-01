@@ -44,7 +44,22 @@ export async function GET(_req: Request, { params }: Ctx) {
     ),
     // Token build steps (M46) share the kind; their ids are disjoint by prefix.
     ...tokenStepTitles(),
+    // Steps the team added (M50).
+    ...(project.draft_doc.kit?.customSteps ?? []).map(
+      (c) => [c.id, `${c.title} (${shapeLabel(c.shape) ?? ""})`] as const,
+    ),
   ]);
+  /** A readable label for one build step line. Ticks keep the title; adds, removals and restores say so (M50). */
+  const stepLabel = (key: string, patch: BuildStepsPatch): string => {
+    // Entry keys from buildStepKeys, code not copy.
+    if (key.startsWith("add:")) { // copy-ok
+      const a = patch.add?.[Number(key.slice(4))];
+      return `New step (${shapeLabel((a?.shape ?? "") as ProductShape) ?? a?.shape ?? ""})`;
+    }
+    if (key.startsWith("remove:")) return `Remove. ${titles.get(key.slice(7)) ?? key.slice(7)}`; // copy-ok
+    if (key.startsWith("restore:")) return `Restore. ${titles.get(key.slice(8)) ?? key.slice(8)}`; // copy-ok
+    return titles.get(key) ?? key;
+  };
 
   const lines = (c: AgentChange): ChangeLine[] => {
     const decided = c.status === "accepted" && c.appliedPatch !== null;
@@ -53,7 +68,7 @@ export async function GET(_req: Request, { params }: Ctx) {
       const raw = decided
         ? buildStepDecisionLines(c.patch as BuildStepsPatch, applied?.success ? (applied.data as BuildStepsPatch) : null)
         : buildStepLines(c.patch as BuildStepsPatch);
-      return raw.map((l) => ({ ...l, path: titles.get(l.path) ?? l.path }));
+      return raw.map((l) => ({ ...l, path: stepLabel(l.path, c.patch as BuildStepsPatch) }));
     }
     // A decided change shows what the owner let through (M44).
     if (decided) return decisionLines(c.patch, c.appliedPatch);

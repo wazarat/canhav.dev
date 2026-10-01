@@ -83,7 +83,7 @@ export interface ResourcePackView {
   checklist: {
     done: number;
     total: number;
-    items: Array<ChecklistItem & { done: boolean; shape: ProductShape; sharedWith: string[] }>;
+    items: Array<ChecklistItem & { done: boolean; shape: ProductShape; sharedWith: string[]; custom?: boolean }>;
     groups: Array<{
       key: string;
       title: string;
@@ -94,6 +94,8 @@ export interface ResourcePackView {
       ids: string[];
       resources: string[];
       done: boolean;
+      /** True for a step the team added (M50). */
+      custom?: boolean;
     }>;
   };
   /** Pre-launch review passes for the shape with recorded verdicts. */
@@ -175,8 +177,21 @@ export function buildResourcePack(
   });
   const resources = filtered.filter((r) => opts.includeUnselected || selection.has(r.id)).map(view);
   const families = environmentPlanFor(shapes, KIT_ENVIRONMENTS);
-  const checklistItems = checklistFor(shapes);
-  const sections = sectionsFor(shapes);
+  // Removed steps are left out and added steps appended (M50).
+  const hiddenSteps = new Set(kit.hiddenSteps ?? []);
+  const checklistItems: Array<ChecklistItem & { custom?: boolean }> = [
+    ...checklistFor(shapes).filter((i) => !hiddenSteps.has(i.id)),
+    ...(kit.customSteps ?? []).map((c) => ({
+      id: c.id,
+      title: c.title,
+      detail: c.detail,
+      step: "review" as KitStep,
+      resources: [] as string[],
+      custom: true,
+    })),
+  ];
+  const customShape = new Map((kit.customSteps ?? []).map((c) => [c.id, c.shape] as const));
+  const sections = sectionsFor(shapes, kit);
   const groupOf = new Map<string, { ids: readonly string[]; shape: ProductShape }>();
   for (const section of sections)
     for (const g of section.groups) for (const id of g.ids) groupOf.set(id, { ids: g.ids, shape: section.shape });
@@ -204,7 +219,7 @@ export function buildResourcePack(
       items: checklistItems.map((i) => ({
         ...i,
         done: kit.checklist?.[i.id] === true,
-        shape: i.id.slice(0, i.id.indexOf(".")) as ProductShape,
+        shape: customShape.get(i.id) ?? (i.id.slice(0, i.id.indexOf(".")) as ProductShape),
         sharedWith: (groupOf.get(i.id)?.ids ?? []).filter((id) => id !== i.id),
       })),
       groups: sections.flatMap((section) =>
@@ -218,6 +233,7 @@ export function buildResourcePack(
           ids: [...g.ids],
           resources: [...g.resources],
           done: groupState(g, kit) === "done",
+          ...(g.custom ? { custom: true } : {}),
         })),
       ),
     },

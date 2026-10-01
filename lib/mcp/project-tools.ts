@@ -520,7 +520,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, and sharedWith, the ids of the same step under the project's other shapes. Steps shared between shapes count once in progress, so tick every id in sharedWith together. Use the ids with set_build_steps. Takes no arguments.",
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), and sharedWith, the ids of the same step under the project's other shapes. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -530,19 +530,37 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const items = checklistFor(kitShapes(kit));
       if (!kit || items.length === 0) return errorResult(NO_SHAPE_HINT);
       const groupOf = new Map<string, readonly string[]>();
-      for (const section of sectionsFor(kitShapes(kit)))
+      for (const section of sectionsFor(kitShapes(kit), kit))
         for (const g of section.groups) for (const id of g.ids) groupOf.set(id, g.ids);
+      const hidden = new Set(kit.hiddenSteps ?? []);
       return jsonResult({
         progress: buildProgress(kit),
-        steps: items.map((i) => ({
-          id: i.id,
-          shape: i.id.slice(0, i.id.indexOf(".")),
-          title: i.title,
-          detail: i.detail,
-          editorStep: i.step,
-          done: kit.checklist?.[i.id] === true,
-          sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
-        })),
+        steps: [
+          ...items
+            .filter((i) => !hidden.has(i.id))
+            .map((i) => ({
+              id: i.id,
+              shape: i.id.slice(0, i.id.indexOf(".")),
+              title: i.title,
+              detail: i.detail,
+              editorStep: i.step as string | null,
+              done: kit.checklist?.[i.id] === true,
+              custom: false,
+              sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
+            })),
+          // Steps the team added (M50), at the end of their shape.
+          ...(kit.customSteps ?? []).map((c) => ({
+            id: c.id,
+            shape: c.shape as string,
+            title: c.title,
+            detail: c.detail,
+            editorStep: null,
+            done: kit.checklist?.[c.id] === true,
+            custom: true,
+            sharedWith: [] as string[],
+          })),
+        ],
+        removed: items.filter((i) => hidden.has(i.id)).map((i) => ({ id: i.id, title: i.title })),
       });
     },
     scope,
@@ -552,8 +570,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     server,
     "set_build_steps",
     {
-      title: "Tick or untick build steps",
-      description: `Mark build steps of this project as done or not done, by id from get_build_steps. Tick a step when the work is written down and you can point to it, not when it is started. ${WRITE_RULES}`,
+      title: "Tick, add, remove or restore build steps",
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES}`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {
@@ -564,7 +582,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         project,
         design,
         project.owner_id,
-        { target: "project", kind: "build_steps", patch: { done: args.done, undone: args.undone } },
+        {
+          target: "project",
+          kind: "build_steps",
+          patch: { done: args.done, undone: args.undone, add: args.add, remove: args.remove, restore: args.restore },
+        },
         args.note,
       );
       if (!result.ok) return errorResult(result.message);

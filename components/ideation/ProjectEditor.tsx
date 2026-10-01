@@ -83,7 +83,7 @@ import {
   withSectors,
 } from "@/lib/sectors";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { buildProgress, sectionsFor } from "@/content/kits/checklists";
+import { buildProgress, removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY, STEP_LABELS_KIT } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
@@ -311,7 +311,9 @@ export function ProjectEditor({
     ],
     [shapesKey],
   );
-  const sections = useMemo(() => sectionsFor(kitShapes(kit)), [kit]);
+  // Kit aware, so removed steps are gone and added ones are in (M50).
+  const sections = useMemo(() => sectionsFor(kitShapes(kit), kit ?? {}), [kit]);
+  const removedByShape = useMemo(() => removedGroupsFor(kit), [kit]);
   const current = editorSteps[Math.min(step, editorSteps.length - 1)];
   const docStep = current.kind === "doc" ? current.key : null;
   const productShape = current.kind === "product" ? current.shape : null;
@@ -738,7 +740,9 @@ export function ProjectEditor({
 
         {productShape && kit ? (
           <ProductStepSection
+            key={productShape}
             section={sections.find((x) => x.shape === productShape) ?? { shape: productShape, groups: [], sharedAbove: [] }}
+            removed={removedByShape.get(productShape)}
             kit={kit}
             onPatchKit={patchKit}
           />

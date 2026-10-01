@@ -106,8 +106,8 @@ An agent on a project's server can change that project's draft, tick build steps
 | Tool | What it does |
 |------|--------------|
 | `update_project` | Change fields of the project draft. Basics (name, what it does, audience b2b or b2c, personas for B2B, consumerPersonas for B2C, who pays, why this chain, stage), architecture, security, reality and the verification fields. Send only the fields being changed. Lists replace the stored list |
-| `get_build_steps` | The build steps for the project's product shapes with their ids, their shape, whether each is ticked and `sharedWith`, the ids of the same step under the project's other shapes. Progress counts a shared step once, so tick every id in `sharedWith` together |
-| `set_build_steps` | Tick or untick build steps by id |
+| `get_build_steps` | The build steps for the project's product shapes with their ids, their shape, whether each is ticked and `sharedWith`, the ids of the same step under the project's other shapes. Progress counts a shared step once, so tick every id in `sharedWith` together. Steps the team added carry `custom: true` and no editor step, removed catalog steps are listed under `removed` and left out of progress |
+| `set_build_steps` | Tick or untick build steps by id (`done`, `undone`), add steps under one of the project's product shapes (`add` with `shape`, `title` and an optional `detail`), remove steps (`remove`, a step shared between shapes goes for all of them, a step the team added is deleted) and bring removed catalog steps back (`restore`). The owner decides each entry of a proposal on its own |
 | `get_token_build_steps` | The linked design's token build steps, eight design steps and eight launch stages, each with its id, phase, state and whether it is computed from the platform (publish, link, launch, the snipe window, graduation). Rows that do not apply leave the progress count |
 | `set_token_build_steps` | Tick or untick the linked design's manual token build steps by id. Computed ids are refused. Rides the same proposal flow as the design's fields |
 | `update_linked_token_design` | Change fields of the linked token design draft |

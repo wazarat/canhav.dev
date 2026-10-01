@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { checklistFor } from "@/content/kits/checklists";
+import { checklistFor, groupsFor } from "@/content/kits/checklists";
 import { TOKEN_STEPS } from "@/content/token-steps";
 import {
   AUDIENCE_VALUES,
@@ -13,7 +13,16 @@ import {
   type TokenDesignDoc,
 } from "@/lib/ideation";
 import { JOURNEY_LIMITS } from "@/lib/journey";
-import { kitShapes, toggleChecklistItem } from "@/lib/kits";
+import {
+  KIT_LIMITS,
+  type ProductShape,
+  type StepGroup,
+  addCustomStep,
+  kitShapes,
+  removeStepGroup,
+  restoreSteps,
+  toggleChecklistItem,
+} from "@/lib/kits";
 import { manualTokenStepIds, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
 
 /**
@@ -54,6 +63,12 @@ export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected"
 export interface BuildStepsPatch {
   done: string[];
   undone: string[];
+  /** Steps to add under a shape (M50). Project build steps only. */
+  add?: Array<{ shape: string; title: string; detail?: string }>;
+  /** Step ids to remove from the sections. A catalog id hides its whole shared group. */
+  remove?: string[];
+  /** Removed catalog step ids to bring back. */
+  restore?: string[];
 }
 
 /** One recorded agent change, as the studio and the MCP tools see it. */
@@ -289,7 +304,34 @@ export type TokenDesignPatch = z.infer<typeof tokenDesignPatchSchema>;
 export const buildStepsPatchSchema = z.strictObject({
   done: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
   undone: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
+  add: z
+    .array(
+      z.strictObject({
+        shape: z.string().max(60),
+        title: z.string().min(KIT_LIMITS.customSteps.titleMin).max(KIT_LIMITS.customSteps.titleMax),
+        detail: z.string().max(KIT_LIMITS.customSteps.detailMax).default(""),
+      }),
+    )
+    .max(20)
+    .default([]),
+  remove: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
+  restore: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
 });
+
+/**
+ * One key per entry of a build step change, in the order buildStepLines
+ * lists them. Ticks keep the bare step id; the rest are prefixed, and an
+ * added step is keyed by its position in the proposal.
+ */
+export function buildStepKeys(patch: BuildStepsPatch): string[] {
+  return [
+    ...patch.done,
+    ...patch.undone,
+    ...(patch.add ?? []).map((_, i) => `add:${i}`),
+    ...(patch.remove ?? []).map((id) => `remove:${id}`),
+    ...(patch.restore ?? []).map((id) => `restore:${id}`),
+  ];
+}
 
 /** First readable problem in a zod failure, with the field path in front. */
 export function firstIssue(error: z.ZodError): string {
@@ -332,29 +374,65 @@ export function applyTokenDesignPatch(doc: TokenDesignDoc, patch: TokenDesignPat
 
 /** The build step ids this project's chosen shapes offer. */
 export function buildStepIds(doc: ProjectDoc): Set<string> {
-  return new Set(checklistFor(kitShapes(doc.kit)).map((i) => i.id));
+  return new Set([
+    ...checklistFor(kitShapes(doc.kit)).map((i) => i.id),
+    // Steps the team added (M50) are ticked by id like the rest.
+    ...(doc.kit?.customSteps ?? []).map((c) => c.id),
+  ]);
 }
 
 /** Null when every id belongs to this project's build steps, else the problem. */
 export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): string | null {
   if (!doc.kit || kitShapes(doc.kit).length === 0)
     return "This project has no product shape yet, so it has no build steps. The owner picks a shape in the studio under What are you building.";
-  if (patch.done.length + patch.undone.length === 0) return "Name at least one build step.";
+  if (buildStepKeys(patch).length === 0) return "Name at least one build step.";
   const known = buildStepIds(doc);
-  const unknown = [...patch.done, ...patch.undone].filter((id) => !known.has(id));
+  const add = patch.add ?? [];
+  const remove = patch.remove ?? [];
+  const restore = patch.restore ?? [];
+  const unknown = [...patch.done, ...patch.undone, ...remove, ...restore].filter((id) => !known.has(id));
   if (unknown.length)
     return `Unknown build step ${unknown.slice(0, 3).join(", ")}. Read get_build_steps for the ids.`;
   const both = patch.done.filter((id) => patch.undone.includes(id));
   if (both.length) return `${both[0]} is in both done and undone.`;
+  const shapes = kitShapes(doc.kit);
+  const badShape = add.find((a) => !shapes.includes(a.shape as ProductShape));
+  if (badShape)
+    return `${badShape.shape} is not one of this project's product shapes (${shapes.join(", ")}). A step is added under a shape the project builds.`;
+  const room = KIT_LIMITS.customSteps.max - (doc.kit.customSteps?.length ?? 0);
+  if (add.length > room) return `This project can add ${Math.max(room, 0)} more build steps.`;
+  const hidden = new Set(doc.kit.hiddenSteps ?? []);
+  const notRemoved = restore.filter((id) => !hidden.has(id));
+  if (notRemoved.length) return `${notRemoved[0]} is not removed, so there is nothing to restore.`;
   return null;
 }
 
 export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): ProjectDoc {
   if (!doc.kit) return doc;
   let kit = doc.kit;
+  for (const a of patch.add ?? [])
+    kit = { ...kit, ...addCustomStep(kit, a.shape as ProductShape, a.title, a.detail ?? "") };
+  if (patch.remove?.length) {
+    // A catalog id takes its whole shared group with it, the same as the studio's remove.
+    const groups = groupsFor(kitShapes(kit), {});
+    for (const id of patch.remove) {
+      const custom = (kit.customSteps ?? []).find((c) => c.id === id);
+      const group: StepGroup | undefined = custom
+        ? { key: id, slug: "custom", title: custom.title, detail: custom.detail, step: "review", resources: [], ids: [id], shapes: [custom.shape], custom: true }
+        : groups.find((g) => g.ids.includes(id));
+      if (group) kit = { ...kit, ...removeStepGroup(kit, group) };
+    }
+  }
+  if (patch.restore?.length) {
+    const groups = groupsFor(kitShapes(kit), {});
+    const ids = patch.restore.flatMap((id) => groups.find((g) => g.ids.includes(id))?.ids ?? [id]);
+    kit = { ...kit, ...restoreSteps(kit, ids) };
+  }
   for (const id of patch.done) kit = { ...kit, ...toggleChecklistItem(kit, id, true) };
   for (const id of patch.undone) kit = { ...kit, ...toggleChecklistItem(kit, id, false) };
-  return { ...doc, kit };
+  // Keys set to undefined by the helpers must not be stored.
+  const clean = Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as ProjectDoc["kit"];
+  return { ...doc, kit: clean };
 }
 
 // ---------------------------------------------------------------------------
@@ -362,6 +440,8 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
 
 /** Null when every id is a manual token step, else the problem. */
 export function tokenBuildStepsProblem(patch: BuildStepsPatch): string | null {
+  if ((patch.add?.length ?? 0) + (patch.remove?.length ?? 0) + (patch.restore?.length ?? 0) > 0)
+    return "Token build steps can be ticked, not added or removed. Send done and undone only.";
   if (patch.done.length + patch.undone.length === 0) return "Name at least one build step.";
   const known = tokenStepIds(TOKEN_STEPS);
   const manual = manualTokenStepIds(TOKEN_STEPS);
@@ -452,6 +532,13 @@ export function buildStepLines(patch: BuildStepsPatch): ChangeLine[] {
   return [
     ...patch.done.map((id) => ({ path: id, before: "Not done", after: "Done" })),
     ...patch.undone.map((id) => ({ path: id, before: "Done", after: "Not done" })),
+    ...(patch.add ?? []).map((a, i) => ({
+      path: `add:${i}`,
+      before: "",
+      after: a.detail ? `${a.title}. ${a.detail}` : a.title,
+    })),
+    ...(patch.remove ?? []).map((id) => ({ path: `remove:${id}`, before: "Listed", after: "Removed" })),
+    ...(patch.restore ?? []).map((id) => ({ path: `restore:${id}`, before: "Removed", after: "Listed" })),
   ];
 }
 
@@ -527,16 +614,27 @@ export function patchNarrows(stored: unknown, decided: unknown): boolean {
   return paths.length > 0 && paths.every((p) => allowed.has(p));
 }
 
+/** The entries of a build step change whose key (see buildStepKeys) is kept. */
 export function subsetBuildSteps(patch: BuildStepsPatch, keep: ReadonlySet<string>): BuildStepsPatch {
-  return { done: patch.done.filter((id) => keep.has(id)), undone: patch.undone.filter((id) => keep.has(id)) };
+  return {
+    done: patch.done.filter((id) => keep.has(id)),
+    undone: patch.undone.filter((id) => keep.has(id)),
+    add: (patch.add ?? []).filter((_, i) => keep.has(`add:${i}`)),
+    remove: (patch.remove ?? []).filter((id) => keep.has(`remove:${id}`)),
+    restore: (patch.restore ?? []).filter((id) => keep.has(`restore:${id}`)),
+  };
 }
 
+const sameAdd = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
 export function buildStepsNarrow(stored: BuildStepsPatch, decided: BuildStepsPatch): boolean {
-  const n = decided.done.length + decided.undone.length;
   return (
-    n > 0 &&
+    buildStepKeys(decided).length > 0 &&
     decided.done.every((id) => stored.done.includes(id)) &&
-    decided.undone.every((id) => stored.undone.includes(id))
+    decided.undone.every((id) => stored.undone.includes(id)) &&
+    (decided.add ?? []).every((a) => (stored.add ?? []).some((b) => sameAdd(a, b))) &&
+    (decided.remove ?? []).every((id) => (stored.remove ?? []).includes(id)) &&
+    (decided.restore ?? []).every((id) => (stored.restore ?? []).includes(id))
   );
 }
 
@@ -552,7 +650,7 @@ export function decidePatch(kind: AgentChangeKind, patch: unknown, decision: Dec
   if (kind === "build_steps") {
     const parsed = buildStepsPatchSchema.safeParse(patch);
     if (!parsed.success) return patch;
-    const keep = new Set([...parsed.data.done, ...parsed.data.undone].filter((id) => !decision.dropped.has(id)));
+    const keep = new Set(buildStepKeys(parsed.data as BuildStepsPatch).filter((key) => !decision.dropped.has(key)));
     return subsetBuildSteps(parsed.data as BuildStepsPatch, keep);
   }
   const keep = new Set(leafPaths(patch).filter((p) => !decision.dropped.has(p)));
@@ -648,6 +746,14 @@ export function decisionLines(patch: unknown, appliedPatch: unknown): ChangeLine
 }
 
 export function buildStepDecisionLines(patch: BuildStepsPatch, applied: BuildStepsPatch | null): ChangeLine[] {
-  const kept = applied ? new Set([...applied.done, ...applied.undone]) : null;
-  return buildStepLines(patch).map((l) => ({ ...l, applied: kept ? kept.has(l.path) : true }));
+  if (!applied) return buildStepLines(patch).map((l) => ({ ...l, applied: true }));
+  // Added steps are matched by content, since dropping one shifts the positions after it.
+  const kept = new Set([
+    ...applied.done,
+    ...applied.undone,
+    ...(patch.add ?? []).flatMap((a, i) => ((applied.add ?? []).some((b) => sameAdd(a, b)) ? [`add:${i}`] : [])),
+    ...(applied.remove ?? []).map((id) => `remove:${id}`),
+    ...(applied.restore ?? []).map((id) => `restore:${id}`),
+  ]);
+  return buildStepLines(patch).map((l) => ({ ...l, applied: kept.has(l.path) }));
 }
