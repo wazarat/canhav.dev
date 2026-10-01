@@ -40,6 +40,8 @@ field. Limits come from their single source of truth (e.g. `JOURNEY_LIMITS` in
 - `/agents` is a URL-only page — intentionally unlinked from nav. `/launch` is the
   Launch tab since 2026-09-23 (Singapore buildathon M6). `/explore` is the Explore
   tab since 2026-09-24 (M15); it replaced `/projects`, which now redirects there
-  along with the old `/launch/explore`. The two audience callouts from the old
+  along with the old `/launch/explore`. Since 2026-10-01 (M49) a toggle switches
+  the board between Tokens (the default) and Projects (`?view=projects`, where
+  `/projects` lands). The two audience callouts from the old
   page live on in `components/home/BuildWithUsCards.tsx`, rendered at the bottom
   of `/explore`.

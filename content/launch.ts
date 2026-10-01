@@ -457,6 +457,30 @@ export const LAUNCH_COPY = {
     "Every token launched through CanHav, newest first. Open one to see its curve or pool, its commitment and sales, or read it from your agent.",
 } as const;
 
+/** The Explore board (M49). Tokens launched on chain, or projects published from the studio. */
+export type ExploreView = "tokens" | "projects";
+
+export const EXPLORE_COPY = {
+  kicker: "Explore",
+  toggleLabel: "What to explore",
+  views: [
+    { value: "tokens", label: "Tokens" },
+    { value: "projects", label: "Projects" },
+  ] as ReadonlyArray<{ value: ExploreView; label: string }>,
+  tokens: {
+    title: LAUNCH_COPY.exploreTitle,
+    lead: LAUNCH_COPY.exploreLead,
+    cta: "Launch a token →",
+    href: "/launch",
+  },
+  projects: {
+    title: "Published projects",
+    lead: "Every project published from the CanHav studio, newest first. Open one to see what it builds, its sectors and shapes, its security declarations and any token launched from it. A project needs no token to be here.",
+    cta: "Start a project →",
+    href: "/studio",
+  },
+} as const;
+
 /**
  * Wallets that appear via EIP-6963 but cannot add custom EVM chains, so they
  * can never reach Robinhood Chain Testnet (46630). Keyed by rdns. They're

@@ -5,7 +5,7 @@ const nextConfig = {
   // Temporary while the event runs, so the old paths can come back cheaply.
   async redirects() {
     return [
-      { source: "/projects", destination: "/explore", permanent: false },
+      { source: "/projects", destination: "/explore?view=projects", permanent: false },
       { source: "/launch/explore", destination: "/explore", permanent: false },
       // The waitlist closed when sign-up opened to everyone.
       { source: "/waitlist", destination: "/sign-up", permanent: true },

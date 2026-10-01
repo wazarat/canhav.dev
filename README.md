@@ -392,5 +392,8 @@ event window so judges can verify it.
   design's published snapshot reads them as its commitment, so the creator
   gets allocation sales, milestone escrow and anchored progress updates
   exactly as a journey launch does. Nothing on chain changed.
+- Oct 1, 2026. Explore toggle. The Explore tab switches between launched
+  tokens and published projects, and the choice lives in the URL so a view
+  can be shared.
 
 This list grows as work lands on the branch.
