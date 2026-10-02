@@ -86,6 +86,41 @@ export async function recordLaunch(input: {
 }
 
 /**
+ * Record a launch for the account that proved it holds the creator wallet
+ * (M57). Unlike recordLaunch this takes the row over from another account,
+ * since the freshness window that account used proved nothing about the
+ * wallet. The project link survives only when the owner does not change.
+ */
+export async function claimLaunch(input: {
+  tokenAddress: string;
+  ownerId: string;
+  creatorAddress: string;
+  txHash: string | null;
+  chain: ProjectChain;
+}): Promise<boolean | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  const rows = await sql`
+    insert into launchpad.launches (token_address, owner_id, creator_address, tx_hash, chain_id)
+    values (
+      ${input.tokenAddress.toLowerCase()},
+      ${input.ownerId},
+      ${input.creatorAddress.toLowerCase()},
+      ${input.txHash},
+      ${chainInfo(input.chain).chainId}
+    )
+    on conflict (token_address) do update
+      set project_id = case
+            when launchpad.launches.owner_id = excluded.owner_id then launchpad.launches.project_id
+            else null
+          end,
+          owner_id = excluded.owner_id
+    returning token_address
+  `;
+  return rows.length > 0;
+}
+
+/**
  * Link, move or unlink the project of a launch the account already owns
  * (M56). Null project unlinks. False when no row of that owner matched.
  */

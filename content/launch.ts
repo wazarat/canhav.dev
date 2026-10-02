@@ -418,6 +418,79 @@ export const MCP_CONNECT = {
   },
 } as const;
 
+/** The token page in its market layout (M58). ETH only, both chains are testnets. */
+export const TOKEN_PAGE_COPY = {
+  back: "Back to explore",
+  /** Anchor the context card's commitment link scrolls to. */
+  commitmentAnchor: "commitment",
+  about: {
+    title: "About",
+    noDescription: "No verified description is on record for this token.",
+    creator: "Creator",
+    launched: "launched",
+    supply: "Supply",
+    fixed: "Fixed at launch",
+    explorer: "Explorer",
+    x: "X",
+    telegram: "Telegram",
+    website: "Website",
+  },
+  context: {
+    title: "Project and commitment",
+    project: "Project",
+    projectNone: "No project is linked to this token.",
+    projectDraft: "Launched from a studio project that is not published yet.",
+    commitment: "Commitment",
+    commitmentNone: "Launched without a commitment.",
+    commitmentMilestones: (n: number) => `${n} milestones committed on chain.`,
+    commitmentHash: "A document hash is committed on chain.",
+    commitmentRead: "Read the commitment",
+    fees: "Fees",
+    poolFee: "0.30% of each swap, kept in the pool",
+    protocolFee: "Protocol fee",
+    protocolFeeValue: (pct: string) => `${pct}% of each swap, 70% to the creator`,
+    noFeeSharing: "These contracts have no creator trading fee and no fee sharing with holders.",
+  },
+  stats: {
+    price: "Price",
+    marketCap: "Market cap",
+    raised: "Raised",
+    liquidity: "Liquidity",
+    market: "Market",
+    curve: "Bonding curve",
+    pool: "Pool",
+    none: "No market yet",
+  },
+  trade: {
+    title: "Trade",
+    connect: "Connect a wallet to buy or sell.",
+    noMarket: "This token has no bonding curve and no pool with liquidity, so there is nothing to trade against yet.",
+    graduated: "The curve has graduated. Trading continues in the pool, whose liquidity is locked.",
+  },
+  chart: {
+    rangeLabel: "Chart range",
+    marketCap: "market cap",
+    perToken: "per token",
+    aria: "Market cap over time",
+    empty: "No trades yet, so there is no price history to chart.",
+    note: "Market cap in ETH from the price each trade executed at. Not candles, and capped at the most recent 1000 trades.",
+  },
+  trades: {
+    title: "Recent trades",
+    empty: "No trades yet.",
+    buy: "Buy",
+    sell: "Sell",
+    curve: "Bonding curve",
+    pool: "Pool",
+    tax: "tax",
+    developer: "developer",
+    previous: "Newer trades",
+    next: "Older trades",
+    capped: (n: number) => `Showing the most recent ${n} trades.`,
+  },
+  record: "On-chain record",
+} as const;
+
 /** The optional Project block on the launch form and the link controls in the studio (M56). */
 export const LAUNCH_PROJECT_COPY = {
   label: "Project",

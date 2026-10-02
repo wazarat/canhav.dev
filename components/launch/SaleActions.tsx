@@ -258,7 +258,7 @@ export function SaleActions({
   if (!isConnected) return null;
 
   const hasAnything =
-    !!liveSale || isCreator || claimables.length > 0 || reclaimables.length > 0;
+    !!liveSale || (isCreator && !!milestones) || claimables.length > 0 || reclaimables.length > 0;
   if (!hasAnything) return null;
 
   return (

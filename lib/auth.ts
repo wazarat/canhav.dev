@@ -1,6 +1,6 @@
 import "server-only";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 
 export interface SessionUser {
   /** Clerk user id (`user_…` string) — the `owner_id` on ideation records. */
@@ -33,4 +33,24 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (claimed) return { id: userId, email: claimed };
   const user = await currentUser();
   return { id: userId, email: user?.primaryEmailAddress?.emailAddress ?? null };
+}
+
+/**
+ * The wallets an account has proved it controls (M57). Clerk verifies each
+ * one by signature, at wallet sign-in or when it is added to the profile.
+ * Lowercase addresses. Read by user id, so it also works for an MCP token.
+ * Empty when Clerk is unconfigured or the lookup fails.
+ */
+export async function getVerifiedWallets(userId: string): Promise<string[]> {
+  if (!isAuthConfigured()) return [];
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    return user.web3Wallets
+      .filter((w) => w.verification?.status === "verified" && /^0x[a-fA-F0-9]{40}$/.test(w.web3Wallet))
+      .map((w) => w.web3Wallet.toLowerCase());
+  } catch (err) {
+    console.warn("wallet lookup failed", err);
+    return [];
+  }
 }

@@ -6,7 +6,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { formatEther } from "viem";
 
 import { CurveActions } from "@/components/launch/CurveActions";
-import { CurveCard } from "@/components/launch/CurveCard";
+import { CurveProgress, trimEth } from "@/components/launch/CurveProgress";
 import { EscrowActions, type EscrowActionTranche } from "@/components/launch/EscrowActions";
 import { EscrowCard } from "@/components/launch/EscrowCard";
 import { DesignCommitmentCard } from "@/components/launch/DesignCommitmentCard";
@@ -14,17 +14,27 @@ import { JourneyCard } from "@/components/launch/JourneyCard";
 import { OwnerLaunchActions } from "@/components/launch/OwnerLaunchActions";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
 import { PoolActions, type PoolActionPool } from "@/components/launch/PoolActions";
-import { PoolCard } from "@/components/launch/PoolCard";
-import { ProjectCard } from "@/components/launch/ProjectCard";
+import { MarketStats } from "@/components/launch/token/MarketStats";
+import { PriceChart } from "@/components/launch/token/PriceChart";
+import { TokenAbout } from "@/components/launch/token/TokenAbout";
+import { TokenContextCard } from "@/components/launch/token/TokenContextCard";
+import { TradesTable } from "@/components/launch/token/TradesTable";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
 import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { launchChain } from "@/content/launch";
+import {
+  LAUNCH_CURVE,
+  LAUNCH_CURVE_SHARE_PCT,
+  LAUNCH_CURVE_TAX_PCT,
+  TOKEN_PAGE_COPY,
+  launchChain,
+} from "@/content/launch";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { formatCount } from "@/lib/format";
 import {
   formatSupply,
+  curveWindowOpen,
   getCurve,
   getCurveTrades,
   getEscrows,
@@ -41,6 +51,13 @@ import {
 import { hasCommitment } from "@/lib/journey";
 import { getLaunchCommitment, getVerifiedUpdates } from "@/lib/journey-db";
 import { getLaunchProjectSummary } from "@/lib/launch-project";
+import {
+  formatEthAmount,
+  pricePoints,
+  reservePrice,
+  tradeRows,
+  wholeTokens,
+} from "@/lib/market";
 import { publicClientFor } from "@/lib/publicClient";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
@@ -95,6 +112,9 @@ export const dynamic = "force-dynamic";
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
+/** Trades loaded per venue for the chart and the table. The indexer's page limit. */
+const HISTORY = 1000;
+
 /** Deduped so generateMetadata and the page share one indexer round trip. */
 // The token is looked for on every chain and carries the one it was found on (M54).
 const readToken = cache((address: string) => findTokenRead(address));
@@ -130,12 +150,12 @@ function UnresolvedLaunch({
   message: string;
 }) {
   return (
-    <div className="container max-w-3xl py-14 md:py-20">
+    <div className="container max-w-6xl py-14 md:py-20">
       <Link
         href="/explore"
         className="inline-flex items-center gap-1.5 text-sm text-ink-400 transition-colors hover:text-ink-100"
       >
-        <ArrowLeft className="h-4 w-4" /> All launches
+        <ArrowLeft className="h-4 w-4" /> {TOKEN_PAGE_COPY.back}
       </Link>
 
       <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-ink-50">
@@ -236,8 +256,9 @@ export default async function TokenPage({
       getVerifiedUpdates(token.address, token.creator, chain),
       // The description text, only when it re-hashes to the on-chain value.
       getVerifiedTokenMetadata(token.descriptionHash, token.creator),
-      ammPool ? getRecentSwaps(ammPool.poolId, undefined, chain) : null,
-      curve ? getCurveTrades(token.address, undefined, chain) : null,
+      // The whole recent history, for the chart and the trades table (M58).
+      ammPool ? getRecentSwaps(ammPool.poolId, HISTORY, chain) : null,
+      curve ? getCurveTrades(token.address, HISTORY, chain) : null,
       // The studio project the token was launched from (M19d), or null.
       getLaunchProjectSummary(token.address),
       ...(sales ?? []).map((s) => getRecentPurchases(s.saleId, undefined, chain)),
@@ -275,13 +296,41 @@ export default async function TokenPage({
     })),
   }));
 
+  // The market (M58). One list of trades and one price series over the curve
+  // and the pool, all in ETH.
+  const now = Math.floor(Date.now() / 1000);
+  const trades = curveTrades as Awaited<ReturnType<typeof getCurveTrades>>;
+  const swaps = swapData as Awaited<ReturnType<typeof getRecentSwaps>>;
+  const rows = tradeRows(trades?.trades, swaps?.swaps);
+  const points = pricePoints(rows);
+  const supply = wholeTokens(token.totalSupply);
+  const graduated = Boolean(curve?.graduated);
+  const poolLive = ammPool !== null && BigInt(ammPool.totalShares) > 0n;
+  const onCurve = curve !== null && !graduated;
+  const price = onCurve
+    ? reservePrice(curve.ethReserve, curve.tokenReserve)
+    : poolLive
+      ? reservePrice(ammPool.ethReserve, ammPool.tokenReserve)
+      : null;
+  const S = TOKEN_PAGE_COPY.stats;
+  const inWindow = curve ? curveWindowOpen(curve, now) : false;
+  const actionPool = ammPool
+    ? ({
+        poolId: ammPool.poolId,
+        protocolFeeBps: ammPool.protocolFeeBps,
+        ethReserve: ammPool.ethReserve,
+        tokenReserve: ammPool.tokenReserve,
+        totalShares: ammPool.totalShares,
+      } satisfies PoolActionPool)
+    : null;
+
   return (
-    <div className="container max-w-3xl py-14 md:py-20">
+    <div className="container max-w-6xl py-14 md:py-20">
       <Link
         href="/explore"
         className="inline-flex items-center gap-1.5 text-sm text-ink-400 transition-colors hover:text-ink-100"
       >
-        <ArrowLeft className="h-4 w-4" /> All launches
+        <ArrowLeft className="h-4 w-4" /> {TOKEN_PAGE_COPY.back}
       </Link>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
@@ -307,26 +356,6 @@ export default async function TokenPage({
             <span className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300">
               {isCurveLaunch(token) ? "curve launch" : `template v${token.version}`}
             </span>
-            {token.xHandle ? (
-              <a
-                href={`https://x.com/${token.xHandle}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300 transition-colors hover:text-ink-100"
-              >
-                x.com/{token.xHandle}
-              </a>
-            ) : null}
-            {metadata?.telegram ? (
-              <a
-                href={`https://t.me/${metadata.telegram}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center rounded-full border border-ink-700/70 bg-ink-900/60 px-2.5 py-0.5 text-xs text-ink-300 transition-colors hover:text-ink-100"
-              >
-                t.me/{metadata.telegram}
-              </a>
-            ) : null}
           </div>
         </div>
       </div>
@@ -335,10 +364,129 @@ export default async function TokenPage({
           address={token.address.toLowerCase()}
           name={token.name}
           committed={committed}
+          creator={token.creator.toLowerCase()}
         />
       </div>
 
-      <div className="card-surface glow-ring mt-8 rounded-2xl border border-ink-700/70 p-6">
+      <TokenAbout
+        address={token.address.toLowerCase()}
+        creator={token.creator}
+        description={metadata?.description ?? null}
+        supply={formatCount(formatSupply(token.totalSupply))}
+        symbol={token.symbol}
+        networkName={net.name}
+        explorerUrl={explorer}
+        launchedOn={new Date(Number(token.blockTimestamp) * 1000).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        })}
+        xHandle={token.xHandle}
+        telegram={metadata?.telegram ?? null}
+        website={token.website}
+      />
+
+      <TokenContextCard
+        // This route runs without Clerk middleware, so no viewer is ever the
+        // owner here; a draft project shows its chips without its name.
+        project={projectSummary?.project ?? null}
+        commitment={{ committed, milestoneCount: milestones?.length ?? null }}
+        curveLaunch={isCurveLaunch(token)}
+        poolFeeBps={ammPool?.protocolFeeBps ?? null}
+      />
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="card-surface rounded-2xl border border-ink-700/70 p-6 lg:self-start">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-ink-50">
+              {TOKEN_PAGE_COPY.trade.title}
+            </h2>
+            {curve ? (
+              graduated ? (
+                <StatusChip tone="success">{LAUNCH_CURVE.labels.graduated}</StatusChip>
+              ) : inWindow ? (
+                <StatusChip tone="warning">{LAUNCH_CURVE.labels.window}</StatusChip>
+              ) : (
+                <StatusChip tone="info">{LAUNCH_CURVE.labels.live}</StatusChip>
+              )
+            ) : null}
+          </div>
+          {curve ? (
+            <div className="mt-4 rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
+              <p className="text-xs text-ink-500">{LAUNCH_CURVE.labels.title}</p>
+              <CurveProgress
+                className="mt-2"
+                raisedWei={curve.raisedWei}
+                thresholdWei={curve.thresholdWei}
+                graduated={curve.graduated}
+              />
+              {graduated ? (
+                <p className="mt-2 text-xs text-ink-500">{TOKEN_PAGE_COPY.trade.graduated}</p>
+              ) : null}
+            </div>
+          ) : null}
+          {onCurve ? (
+            <CurveActions chain={chain} tokenAddress={token.address} symbol={token.symbol} />
+          ) : (
+            // While a curve is live its market is the curve, so the creator is
+            // not offered a pool. After graduation the launcher's pool is
+            // tradable by everyone, with the liquidity controls hidden.
+            <PoolActions
+              chain={chain}
+              panel
+              tokenAddress={token.address}
+              creator={token.creator}
+              symbol={token.symbol}
+              lockedLiquidity={graduated}
+              pool={actionPool}
+            />
+          )}
+          {!onCurve && !poolLive ? (
+            <p className="mt-4 text-sm text-ink-400">{TOKEN_PAGE_COPY.trade.noMarket}</p>
+          ) : null}
+        </div>
+
+        <div className="card-surface min-w-0 rounded-2xl border border-ink-700/70 p-6">
+          <MarketStats
+            price={price === null ? "n/a" : `${formatEthAmount(price)} ETH`}
+            marketCap={price === null ? "n/a" : `${formatEthAmount(price * supply)} ETH`}
+            depthLabel={onCurve ? S.raised : S.liquidity}
+            depth={
+              onCurve
+                ? `${trimEth(BigInt(curve.raisedWei))} of ${trimEth(BigInt(curve.thresholdWei))} ETH`
+                : poolLive
+                  ? `${formatEthAmount(Number(BigInt(ammPool.ethReserve)) / 1e18)} ETH`
+                  : "n/a"
+            }
+            market={onCurve ? S.curve : poolLive ? S.pool : S.none}
+          />
+          <PriceChart points={points} supply={supply} current={price} now={now} />
+          {curve ? (
+            <p className="mt-3 text-xs text-ink-500">
+              Buys in the first {LAUNCH_CURVE.windowSeconds} seconds after launch pay a{" "}
+              {LAUNCH_CURVE_TAX_PCT}% snipe tax that the launcher holds for graduation. Sells are
+              never taxed. At {LAUNCH_CURVE.thresholdEth} ETH raised the launcher seeds a pool with
+              the raised ETH, the tax and the reserved {100 - LAUNCH_CURVE_SHARE_PCT}% of the
+              supply, and keeps the shares forever, so that liquidity can never be withdrawn.
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <TradesTable
+        rows={rows}
+        total={(trades?.count ?? 0) + (swaps?.count ?? 0)}
+        symbol={token.symbol}
+        explorerUrl={explorer}
+        developerTx={curve?.txHash ?? null}
+        now={now}
+      />
+
+      <div className="card-surface mt-6 rounded-2xl border border-ink-700/70 p-6">
+        <h2 className="mb-2 font-display text-lg font-semibold tracking-tight text-ink-50">
+          {TOKEN_PAGE_COPY.record}
+        </h2>
         <Row
           label="Token address"
           mono
@@ -367,25 +515,6 @@ export default async function TokenPage({
             </a>
           }
         />
-        <Row label="Total supply" value={`${formatCount(formatSupply(token.totalSupply))} ${token.symbol}`} />
-        <Row
-          label="Website"
-          value={
-            token.website ? (
-              <a
-                href={token.website}
-                target="_blank"
-                rel="noreferrer"
-                className="text-electric-300 hover:text-electric-200"
-              >
-                {token.website}
-              </a>
-            ) : (
-              <span className="text-ink-500">n/a</span>
-            )
-          }
-        />
-        {metadata ? <Row label="Description" value={metadata.description} /> : null}
         <Row label="Description hash" mono value={token.descriptionHash} />
         <Row label="Journey hash" mono value={token.journeyHash} />
         <Row label="Salt" mono value={token.salt} />
@@ -416,6 +545,7 @@ export default async function TokenPage({
         <Row label="Block" value={token.blockNumber} />
         <Row label="Network" value={net.name} />
       </div>
+
 
       {vesting ? (
         <VestingCard chain={chain} vesting={vesting} symbol={token.symbol} live={liveVesting} />
@@ -449,51 +579,6 @@ export default async function TokenPage({
         sales={actionSales}
       />
 
-      {curve ? (
-        <CurveCard chain={chain}
-          curve={curve}
-          symbol={token.symbol}
-          trades={curveTrades as Awaited<ReturnType<typeof getCurveTrades>>}
-          nowSeconds={Math.floor(Date.now() / 1000)}
-        >
-          {!curve.graduated ? (
-            <CurveActions chain={chain} tokenAddress={token.address} symbol={token.symbol} />
-          ) : null}
-        </CurveCard>
-      ) : null}
-
-      {ammPool ? (
-        <PoolCard chain={chain}
-          pool={ammPool}
-          symbol={token.symbol}
-          swapData={swapData as Awaited<ReturnType<typeof getRecentSwaps>>}
-          locked={Boolean(curve?.graduated)}
-        />
-      ) : null}
-
-      {curve && !curve.graduated ? null : (
-        // While a curve is live its market is the curve, so the creator is
-        // not offered a pool. After graduation the launcher's pool is
-        // tradable by everyone, with the liquidity controls hidden.
-        <PoolActions chain={chain}
-          tokenAddress={token.address}
-          creator={token.creator}
-          symbol={token.symbol}
-          lockedLiquidity={Boolean(curve?.graduated)}
-          pool={
-            ammPool
-              ? ({
-                  poolId: ammPool.poolId,
-                  protocolFeeBps: ammPool.protocolFeeBps,
-                  ethReserve: ammPool.ethReserve,
-                  tokenReserve: ammPool.tokenReserve,
-                  totalShares: ammPool.totalShares,
-                } satisfies PoolActionPool)
-              : null
-          }
-        />
-      )}
-
       <EscrowActions chain={chain}
         tokenAddress={token.address}
         creator={token.creator}
@@ -509,6 +594,7 @@ export default async function TokenPage({
         milestoneTitles={(milestones ?? []).map((m) => m.title)}
       />
 
+      <div id={TOKEN_PAGE_COPY.commitmentAnchor} className="scroll-mt-28" />
       {commitment?.source === "journey" ? (
         // journeyHash resolves in launchpad.journeys ⇒ the quick-deploy path.
         <>
@@ -544,12 +630,6 @@ export default async function TokenPage({
           </StatusChip>
         </div>
       )}
-
-      {projectSummary ? (
-        // This route runs without Clerk middleware, so no viewer is ever the
-        // owner here; a draft project shows its chips without its name.
-        <ProjectCard project={projectSummary.project} isOwner={false} />
-      ) : null}
 
       <p className="mt-4 text-xs text-ink-500">
         Token fields are read from the on-chain TokenLaunched event via the

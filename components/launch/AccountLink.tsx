@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 
 import { StatusChip } from "@/components/ui/StatusChip";
 import { isAuthConfiguredClient } from "@/components/studio/authConfig";
+import { AUTH_COPY } from "@/content/auth";
 import { LAUNCH_PROJECT_COPY } from "@/content/launch";
 
 /**
@@ -36,7 +37,7 @@ function SignedOutHint() {
       <Link href="/studio" className="text-electric-300 transition-colors hover:text-electric-200">
         Sign in
       </Link>{" "}
-      before your next launch and your agent can list it with get_my_launches.
+      {AUTH_COPY.launchSignedOut}
     </p>
   );
 }

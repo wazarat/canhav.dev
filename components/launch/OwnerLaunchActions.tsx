@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { ClaimLaunch } from "@/components/launch/ClaimLaunch";
 import { isAuthConfiguredClient } from "@/components/studio/authConfig";
 import { LaunchRowActions, type LaunchLinkProject } from "@/components/studio/LaunchRowActions";
 
@@ -14,16 +15,21 @@ interface OwnerView {
  * The owner's controls on the token page, across from the token name (M56).
  * The agent prompt and the project link. The page itself is public and
  * session free, so this asks GET /api/launches/<address>, which answers only
- * the account that recorded the launch. Everyone else sees nothing.
+ * the account that owns the launch. The connected creator wallet whose
+ * account does not own it yet gets the claim button instead (M57). Everyone
+ * else sees nothing.
  */
 export function OwnerLaunchActions({
   address,
   name,
   committed,
+  creator,
 }: {
   address: string;
   name: string;
   committed: boolean;
+  /** The token's creator, lowercase. */
+  creator: string;
 }) {
   const [view, setView] = useState<OwnerView | null>(null);
 
@@ -37,7 +43,8 @@ export function OwnerLaunchActions({
     if (isAuthConfiguredClient()) load();
   }, [load]);
 
-  if (!view) return null;
+  if (!isAuthConfiguredClient()) return null;
+  if (!view) return <ClaimLaunch creator={creator} onClaimed={load} />;
   return (
     <LaunchRowActions
       address={address}

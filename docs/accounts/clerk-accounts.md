@@ -4,7 +4,13 @@
 
 ## Sign up and log in
 
-Sign-up is open to everyone. Create an account at [canhav.com/sign-up](https://canhav.com/sign-up), or use the Sign up button in the navigation or on the homepage. Existing accounts log in at `/studio`.
+Sign-up is open to everyone, with an email or with a wallet. Create an account at [canhav.com/sign-up](https://canhav.com/sign-up), or use the Sign up button in the navigation or on the homepage. Existing accounts log in at `/studio`.
+
+## Wallets and launches
+
+A token belongs to the account that holds its creator wallet as a verified wallet. Sign in with the wallet you launch from, or add it to an email account under Wallets in the studio, and every token that wallet launched appears under Launches, whenever it was launched and whether or not you were signed in at the time. On a token page, the connected creator wallet can also claim the launch with one signature. Verifying a wallet is a signature only. It sends no transaction and costs no gas.
+
+CanHav does not create a wallet for you. An email account still brings its own wallet to launch.
 
 ## What requires an account
 
@@ -20,7 +26,7 @@ Sign-up is open to everyone. Create an account at [canhav.com/sign-up](https://c
 - Using Token Launch with a **wallet** on testnet (`/launch`): create, explore, and on-chain actions stay wallet-based
 - Reading public project and token pages (`/p/...`, `/t/...`)
 
-Wallet connection for Token Launch is separate from Clerk account sign-in.
+Connecting a wallet to trade or launch does not sign you in. Signing in with a wallet is a separate step, described above.
 
 ## What data is stored
 

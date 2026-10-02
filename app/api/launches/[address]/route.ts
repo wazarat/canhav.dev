@@ -6,7 +6,8 @@ import { getMyProjects, getProject } from "@/lib/ideation-db";
 import { projectChainOf } from "@/lib/chains";
 import { findToken } from "@/lib/indexer";
 import { chainMismatch, createProjectForToken } from "@/lib/launch-project";
-import { getLaunchByToken, launchRowChain, setLaunchProject } from "@/lib/launches-db";
+import { ownedLaunch } from "@/lib/launch-ownership";
+import { launchRowChain, setLaunchProject } from "@/lib/launches-db";
 
 export const runtime = "nodejs";
 
@@ -14,16 +15,18 @@ export const runtime = "nodejs";
  * What the owner of a launch needs for the controls on the token page (M56).
  * The linked project and the account's projects on the launch's chain. 404
  * for anyone else, so the public token page shows the controls to nobody but
- * the account that recorded the launch.
+ * the account that recorded the launch or holds its creator wallet (M57).
  */
 export async function GET(_req: Request, ctx: { params: Promise<{ address: string }> }) {
   const gate = await authGate();
   if (gate instanceof NextResponse) return gate;
 
   const address = (await ctx.params).address.toLowerCase();
-  const launch = await getLaunchByToken(address);
-  if (!launch || launch.owner_id !== gate.id)
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  if (!/^0x[0-9a-f]{40}$/.test(address))
+    return NextResponse.json({ error: "Invalid token address." }, { status: 400 });
+  // The row owner, or the account holding the creator wallet (M57).
+  const launch = await ownedLaunch(address, gate.id);
+  if (!launch) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const chain = launchRowChain(launch);
   const projects = ((await getMyProjects(gate.id)) ?? []).map((row) => ({
@@ -42,8 +45,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ address: strin
 
 /**
  * Link, move or unlink the project of a launch after the fact (M56). Only a
- * launch the account already recorded qualifies, so the freshness window on
- * POST /api/launches stays the one way to claim a token. The body carries
+ * launch the account owns qualifies, by its row or by holding the creator
+ * wallet (M57). The body carries
  * `projectId` (a uuid, or null to unlink) or `createProject: true`, which
  * starts a draft named after the token on the token's chain and links it.
  */
@@ -68,9 +71,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ address: stri
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  const launch = await getLaunchByToken(address);
-  if (!launch || launch.owner_id !== gate.id)
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  // The row owner, or the account holding the creator wallet (M57).
+  const launch = await ownedLaunch(address, gate.id);
+  if (!launch) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const chain = launchRowChain(launch);
 
   let linked: { id: string; name: string } | null = null;

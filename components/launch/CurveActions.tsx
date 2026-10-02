@@ -15,6 +15,7 @@ import { formatCount } from "@/lib/format";
 import { writeWithGas } from "@/lib/tx";
 import { cn } from "@/lib/utils";
 
+import { ConnectToTrade } from "./ConnectToTrade";
 import { friendlyCurveError } from "./curveErrors";
 import { trimEth } from "./CurveProgress";
 import { useLaunchChain } from "./useLaunchChain";
@@ -175,17 +176,17 @@ export function CurveActions({
     );
   }
 
-  if (!isConnected) return null;
+  if (!isConnected) return <ConnectToTrade chain={chain} />;
 
   return (
-    <div className="mt-5 rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
+    <div className="mt-4">
       {inWindow ? (
         <StatusChip tone="warning" variant="block" className="mb-4">
           Snipe tax applies for {secondsLeft} more seconds. Buys now pay {LAUNCH_CURVE_TAX_PCT}% into
           the graduation pool.
         </StatusChip>
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5">
         <div className="space-y-2">
           <Field label={LAUNCH_CURVE.labels.buy} error={undefined}>
             <Input

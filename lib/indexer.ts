@@ -128,6 +128,25 @@ export async function getTokensByCreator(creator: string, chain: ProjectChain = 
   return data?.tokens ?? null;
 }
 
+/**
+ * Every token a wallet launched, on every indexed chain, each with the chain
+ * it is on (M57). The account side of "this wallet's launches are yours".
+ */
+export async function getCreatorTokens(creator: string): Promise<IndexedToken[]> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(creator)) return [];
+  const lists = await Promise.all(
+    indexedChains().map(async (chain) => {
+      const data = await queryOn(chain)<{ tokens: { items: IndexedToken[] } }>(
+        `{ tokens(where: { creator: "${creator.toLowerCase()}" }, orderBy: "blockNumber", orderDirection: "desc", limit: 100) {
+          items { ${TOKEN_FIELDS} }
+        } }`,
+      );
+      return (data?.tokens.items ?? []).map((t) => ({ ...t, chain }));
+    }),
+  );
+  return lists.flat();
+}
+
 export type TokenIdentityMatch = Pick<IndexedToken, "address" | "name" | "symbol">;
 
 /**
@@ -487,7 +506,7 @@ export async function getRecentSwaps(
 ): Promise<{ swaps: IndexedSwap[]; count: number; ethVolume: bigint } | null> {
   if (!/^[0-9]+$/.test(poolId)) return null;
   const data = await queryOn(chain)<{ swaps: { items: IndexedSwap[]; totalCount: number } }>(
-    `{ swaps(where: { poolId: "${poolId}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: 100) { totalCount items {
+    `{ swaps(where: { poolId: "${poolId}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: ${Math.max(100, limit)}) { totalCount items {
       trader ethToToken amountIn amountOut protocolFeePaid blockTimestamp txHash
     } } }`,
   );

@@ -13,6 +13,7 @@ import { launchAmmAbi } from "@/lib/abi/launchAmm";
 import { describeTxError, writeWithGas } from "@/lib/tx";
 import { launchChain } from "@/content/launch";
 
+import { ConnectToTrade } from "./ConnectToTrade";
 import { useLaunchChain } from "./useLaunchChain";
 
 export interface PoolActionPool {
@@ -78,6 +79,7 @@ export function PoolActions({
   symbol,
   pool,
   lockedLiquidity = false,
+  panel = false,
 }: {
   /** The chain the token lives on (M54). */
   chain: ProjectChain;
@@ -86,6 +88,8 @@ export function PoolActions({
   symbol: string;
   pool: PoolActionPool | null;
   lockedLiquidity?: boolean;
+  /** Inside the token page's trade panel (M58). Stacked, no card of its own, and a connect prompt. */
+  panel?: boolean;
 }) {
   const net = launchChain(chain);
   const router = useRouter();
@@ -326,7 +330,7 @@ export function PoolActions({
     });
   }
 
-  if (!isConnected) return null;
+  if (!isConnected) return panel && pool && hasLiquidity ? <ConnectToTrade chain={chain} /> : null;
   if (!pool && !isCreator) return null;
 
   const buyQuote =
@@ -341,7 +345,7 @@ export function PoolActions({
       : 0n;
 
   return (
-    <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
+    <div className={panel ? "mt-4" : "card-surface mt-4 rounded-2xl border border-ink-700/70 p-5"}>
       {!pool && isCreator && !lockedLiquidity ? (
         <div className="space-y-3">
           <p className="text-sm text-ink-300">
@@ -368,7 +372,7 @@ export function PoolActions({
       ) : null}
 
       {pool && hasLiquidity ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={panel ? "grid gap-5" : "grid gap-4 sm:grid-cols-2"}>
           <div className="space-y-2">
             <Field label="Buy with ETH" error={undefined}>
               <Input
@@ -412,7 +416,7 @@ export function PoolActions({
 
       {pool && !lockedLiquidity ? (
         <div className={hasLiquidity ? "mt-4 border-t border-ink-800/70 pt-4" : ""}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={panel ? "grid gap-5" : "grid gap-4 sm:grid-cols-2"}>
             <div className="space-y-2">
               <Field
                 label="Add liquidity (ETH)"

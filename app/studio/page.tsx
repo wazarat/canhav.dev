@@ -6,6 +6,7 @@ import { LaunchList } from "@/components/studio/LaunchList";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
+import { WalletsButton } from "@/components/studio/WalletsButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
@@ -257,6 +258,7 @@ export default async function StudioPage() {
         {header}
         <div className="flex items-center gap-3">
           <span className="text-xs text-ink-500">{user.email}</span>
+          <WalletsButton />
           <SignOutButton />
         </div>
       </div>

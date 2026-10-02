@@ -14,8 +14,9 @@ import { AUTH_COPY } from "@/content/auth";
  * download round-trip, and it still wins over the fallback below.
  * fallbackRedirectUrl keeps everyone else on /studio; Clerk's own default is
  * "/", and the nav has no Studio link until the session hydrates, so a
- * successful sign-in used to look like a failure. Email-first by design: no
- * wallet anywhere in the studio. Sign-up is open, at /sign-up.
+ * successful sign-in used to look like a failure. Email or wallet (M57): the
+ * wallet buttons appear once Web3 sign-in is on in the Clerk dashboard.
+ * Sign-up is open, at /sign-up.
  */
 export function SignInCard() {
   if (!isAuthConfiguredClient()) {
