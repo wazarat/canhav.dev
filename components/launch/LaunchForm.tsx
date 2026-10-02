@@ -31,6 +31,7 @@ import {
   LAUNCH_CURVE,
   LAUNCH_CURVE_SHARE_PCT,
   LAUNCH_PARAMS,
+  LAUNCH_PROJECT_COPY,
   LAUNCH_SUPPLY,
   normalizeTelegram,
   normalizeXHandle,
@@ -46,7 +47,7 @@ import {
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 
-import { AccountLink } from "./AccountLink";
+import { AccountLink, type LinkedProject } from "./AccountLink";
 import { ConnectButton } from "./ConnectButton";
 import { CurveProgress } from "./CurveProgress";
 import { friendlyCurveError } from "./curveErrors";
@@ -113,10 +114,21 @@ export interface DesignCommitment {
   milestoneCount: number;
 }
 
+/** One of the signed-in account's projects, for the optional Project block (M56). */
+export interface LaunchProjectOption {
+  id: string;
+  name: string;
+  chain: ProjectChain;
+  hasKit: boolean;
+}
+
+type ProjectMode = (typeof LAUNCH_PROJECT_COPY.options)[number]["value"];
+
 export function LaunchForm({
   prefill,
   designCommitment,
   project,
+  projects = null,
   chain: fixedChain,
   launchable = [DEFAULT_PROJECT_CHAIN],
 }: {
@@ -135,6 +147,8 @@ export function LaunchForm({
   designCommitment?: DesignCommitment;
   /** The studio project this launch was started from (?project=<id>). */
   project?: ProjectContext;
+  /** The account's projects to pick from. Null when signed out. */
+  projects?: LaunchProjectOption[] | null;
 } = {}) {
   // Step 1 — token details
   const [name, setName] = useState(prefill?.name ?? "");
@@ -164,6 +178,21 @@ export function LaunchForm({
   const chain = fixedChain ?? pickedChain;
   const net = launchChain(chain);
   const open = net.live && launchable.includes(chain);
+
+  // The optional Project block (M56). Offered on a plain launch only: a launch
+  // from a project already has one, and a design brings its own link.
+  const offerProject = !project && !designCommitment;
+  const [projectMode, setProjectMode] = useState<ProjectMode>("none");
+  const [pickedProjectId, setPickedProjectId] = useState("");
+  // A token is linked to a project on the same chain (M54).
+  const chainProjects = (projects ?? []).filter((p) => p.chain === chain);
+  const pickedProject =
+    offerProject && projectMode === "existing"
+      ? (chainProjects.find((p) => p.id === pickedProjectId) ?? null)
+      : null;
+  const startProject = offerProject && projects !== null && projectMode === "create";
+  /** The project the success screen ended up linking, for the agent prompt. */
+  const [linkedProject, setLinkedProject] = useState<LinkedProject | null>(null);
   const { isConnected, address, ensureChain } = useLaunchChain(chain);
   const { connector } = useAccount();
   const { writeContractAsync } = useWriteContract();
@@ -479,8 +508,10 @@ export function LaunchForm({
         <AccountLink
           tokenAddress={status.token.toLowerCase()}
           txHash={status.txHash}
-          projectId={project?.id}
-          projectName={project?.name}
+          projectId={project?.id ?? pickedProject?.id}
+          projectName={project?.name ?? pickedProject?.name}
+          createProject={startProject ? { description: description.trim() } : undefined}
+          onLinked={setLinkedProject}
         />
         {status.devBuy ? (
           <div className="mt-4 space-y-2">
@@ -514,6 +545,16 @@ export function LaunchForm({
               kind: "launch",
               address: status.token.toLowerCase(),
               committed: Boolean(designCommitment) || commitmentOn,
+              name: name.trim(),
+              project: linkedProject
+                ? {
+                    ...linkedProject,
+                    hasKit:
+                      project?.id === linkedProject.id
+                        ? project.shapes.length > 0
+                        : pickedProject?.id === linkedProject.id && pickedProject.hasKit,
+                  }
+                : null,
             }}
             compact
           />
@@ -756,6 +797,70 @@ export function LaunchForm({
               </div>
             ) : null}
 
+            {offerProject ? (
+              <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
+                {projects === null ? (
+                  <>
+                    <p className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.label}</p>
+                    <p className="mt-0.5 text-xs text-ink-500">
+                      {LAUNCH_PROJECT_COPY.hint}{" "}
+                      <Link
+                        href="/studio"
+                        className="text-electric-300 transition-colors hover:text-electric-200"
+                      >
+                        Sign in
+                      </Link>{" "}
+                      {LAUNCH_PROJECT_COPY.signedOut}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <ChipRadioGroup
+                      label={LAUNCH_PROJECT_COPY.label}
+                      hint={LAUNCH_PROJECT_COPY.hint}
+                      value={projectMode}
+                      onChange={(v) => setProjectMode(v || "none")}
+                      options={LAUNCH_PROJECT_COPY.options}
+                    />
+                    {projectMode === "existing" ? (
+                      chainProjects.length > 0 ? (
+                        <select
+                          value={pickedProject?.id ?? ""}
+                          onChange={(e) => setPickedProjectId(e.target.value)}
+                          aria-label={LAUNCH_PROJECT_COPY.label}
+                          className={cn(
+                            inputClasses,
+                            "mt-3 max-w-xs appearance-none",
+                            !pickedProject && "text-ink-500",
+                          )}
+                        >
+                          <option value="" disabled>
+                            {LAUNCH_PROJECT_COPY.choose}
+                          </option>
+                          {chainProjects.map((p) => (
+                            <option key={p.id} value={p.id} className="bg-ink-950 text-ink-50">
+                              {p.name || "Untitled"}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="mt-3">
+                          <StatusChip tone="neutral" variant="block">
+                            {LAUNCH_PROJECT_COPY.noneOnChain(net.name)}
+                          </StatusChip>
+                        </div>
+                      )
+                    ) : null}
+                    {projectMode === "create" ? (
+                      <p className="mt-3 text-xs leading-relaxed text-ink-500">
+                        {LAUNCH_PROJECT_COPY.createHint}
+                      </p>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            ) : null}
+
             <div className="flex items-center justify-between gap-3 border-t border-ink-800/70 pt-5">
               <span className="text-xs text-ink-500">
                 {journeyProblem && (why || supplyRationale) ? journeyProblem : ""}
@@ -840,6 +945,13 @@ export function LaunchForm({
                   <span className="text-right text-ink-100">
                     {project.name}
                     {project.shapeLabels.length ? `, ${project.shapeLabels.join(" · ")}` : ""}
+                  </span>
+                </div>
+              ) : pickedProject || startProject ? (
+                <div className="flex justify-between gap-4 py-1">
+                  <span className="shrink-0 text-ink-500">{LAUNCH_PROJECT_COPY.label}</span>
+                  <span className="text-right text-ink-100">
+                    {pickedProject ? pickedProject.name || "Untitled" : LAUNCH_PROJECT_COPY.reviewCreate}
                   </span>
                 </div>
               ) : null}

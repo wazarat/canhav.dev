@@ -62,6 +62,12 @@ These read the same launch indexer and journey tables as the launch pages, so an
 
 Every launch tool returns an error result with a retry hint when the indexer is unreachable, and a validation error for a malformed address.
 
+### One prompt for a launch
+
+The launch success screen, the token page and each launch row in the studio carry one prompt to paste into Claude Code, the Claude desktop app or another AI IDE that speaks MCP. It adds the shared server, reads the launch by address and reports where the token stands. When the launch is linked to one of your projects, the studio version of the prompt also adds that project's server and reads the project.
+
+A launch is linked to a project on the launch form (pick one of your projects on the same chain, or start a draft for the token), or afterwards in the studio, where the link can be changed or removed. Linking is done by the owner in the studio. An agent cannot link or unlink a launch.
+
 ## Project-scoped servers
 
 Every project in the studio also has its own MCP server at `https://www.canhav.com/mcp/p/<project id>`. Its tools are bound to that one project, so none of them takes a slug or an address. Open the project in the studio and copy the `claude mcp add` command from the connect card, which names the server after the project so several can be added side by side.

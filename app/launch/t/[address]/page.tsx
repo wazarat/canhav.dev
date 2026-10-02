@@ -544,7 +544,7 @@ export default async function TokenPage({
       ) : null}
 
       <McpConnectCard
-        target={{ kind: "launch", address: token.address.toLowerCase(), committed }}
+        target={{ kind: "launch", address: token.address.toLowerCase(), committed, name: token.name }}
         className="mt-8"
       />
 

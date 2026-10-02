@@ -12,6 +12,7 @@ import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { tokenBuildProgressOf } from "@/content/token-steps";
 import { type IndexedCurve, getCurvesAllChains } from "@/lib/indexer";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
+import { projectChainOf } from "@/lib/chains";
 import {
   type EntityLinkSummary,
   type ProjectRow,
@@ -268,7 +269,15 @@ export default async function StudioPage() {
         </div>
       ) : (
         <div className="mt-10 space-y-10">
-          <LaunchList launches={launches} />
+          <LaunchList
+            launches={launches}
+            projects={projects.map((p) => ({
+              id: p.id,
+              name: p.draft_doc.name,
+              hasKit: Boolean(p.draft_doc.kit?.shape),
+              chain: projectChainOf(p.draft_doc),
+            }))}
+          />
           <StudioTrackCards />
           <div className="grid gap-10 md:grid-cols-2">
             <EntityList

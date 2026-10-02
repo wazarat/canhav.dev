@@ -85,6 +85,26 @@ export async function recordLaunch(input: {
   return rows.length > 0 ? "recorded" : "exists";
 }
 
+/**
+ * Link, move or unlink the project of a launch the account already owns
+ * (M56). Null project unlinks. False when no row of that owner matched.
+ */
+export async function setLaunchProject(
+  tokenAddress: string,
+  ownerId: string,
+  projectId: string | null,
+): Promise<boolean | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  const rows = await sql`
+    update launchpad.launches
+    set project_id = ${projectId}
+    where token_address = ${tokenAddress.toLowerCase()} and owner_id = ${ownerId}
+    returning token_address
+  `;
+  return rows.length > 0;
+}
+
 /** Launches recorded for one account, newest first. */
 export async function getLaunchesByOwner(ownerId: string): Promise<LaunchRow[] | null> {
   const sql = getDb();

@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   type DesignCommitment,
   type LaunchPrefill,
+  type LaunchProjectOption,
   LaunchForm,
 } from "@/components/launch/LaunchForm";
 import { LAUNCH_COPY, LAUNCH_FORM, MCP_CONNECT } from "@/content/launch";
@@ -14,6 +15,7 @@ import type { ProjectContext } from "@/lib/ideation";
 import {
   getLinkedProject,
   getLinkedTokenDesign,
+  getMyProjects,
   getProject,
   getPublishedTokenDesignById,
   getSnapshot,
@@ -90,6 +92,19 @@ async function loadProject(projectId: string | undefined): Promise<{
   return { project: projectContext(row), designId };
 }
 
+/** The signed-in account's projects for the optional Project block (M56). Null when signed out. */
+async function loadMyProjects(): Promise<LaunchProjectOption[] | null> {
+  if (!isAuthConfigured()) return null;
+  const user = await getSessionUser();
+  if (!user) return null;
+  return ((await getMyProjects(user.id)) ?? []).map((row) => ({
+    id: row.id,
+    name: row.draft_doc.name,
+    chain: projectChainOf(row.draft_doc),
+    hasKit: Boolean(row.draft_doc.kit?.shape),
+  }));
+}
+
 export default async function LaunchPage({
   searchParams,
 }: {
@@ -100,6 +115,7 @@ export default async function LaunchPage({
   const { prefill, designCommitment, chain: designChain } = await loadDesign(params.design ?? designId);
   // A launch from a project, or from a design linked to one, goes on that project's chain (M54).
   const chain = project?.chain ?? designChain;
+  const projects = project || designCommitment ? null : await loadMyProjects();
 
   return (
     <div className="container py-14 md:py-20">
@@ -140,7 +156,7 @@ export default async function LaunchPage({
       </div>
 
       <div className="mt-10 md:mt-12">
-        <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} chain={chain} launchable={indexedChains()} />
+        <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} projects={projects} chain={chain} launchable={indexedChains()} />
       </div>
     </div>
   );

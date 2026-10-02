@@ -4,8 +4,12 @@ import { notFound, redirect } from "next/navigation";
 import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { ProjectEditor } from "@/components/ideation/ProjectEditor";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
+import { type PanelLaunch, ProjectLaunchPanel } from "@/components/studio/ProjectLaunchPanel";
 import { getSessionUser } from "@/lib/auth";
+import { projectChainOf } from "@/lib/chains";
+import { hasCommitment } from "@/lib/journey";
 import { projectChainLocked } from "@/lib/launch-project";
+import { type MyLaunch, getMyLaunches } from "@/lib/my-launches";
 import { getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 
 export const metadata: Metadata = {
@@ -26,11 +30,22 @@ export default async function ProjectEditorPage({
   const row = await getProject(id, user.id);
   if (!row) notFound();
 
-  const [linked, myDesigns, chainLocked] = await Promise.all([
+  const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
     getMyTokenDesigns(user.id),
     projectChainLocked(row.id),
+    getMyLaunches(user.id),
   ]);
+  // The launches side of the project (M56). Design-only launches link through the design.
+  const chain = projectChainOf(row.draft_doc);
+  const panelLaunch = (l: MyLaunch): PanelLaunch => ({
+    address: l.address,
+    name: l.launch?.name ?? l.design?.name ?? `${l.address.slice(0, 6)}…${l.address.slice(-4)}`,
+    symbol: l.launch?.symbol ?? null,
+    committed: l.launch ? hasCommitment(l.launch.journeyHash) : true,
+  });
+  const recorded = (myLaunches ?? []).filter((l) => l.source !== "design");
+  const hasKit = Boolean(row.draft_doc.kit?.shape);
 
   return (
     <ProjectEditor
@@ -53,12 +68,17 @@ export default async function ProjectEditorPage({
             }
             candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
           />
+          <ProjectLaunchPanel
+            project={{ id: row.id, name: row.draft_doc.name, hasKit }}
+            linked={recorded.filter((l) => l.project?.id === row.id).map(panelLaunch)}
+            candidates={recorded.filter((l) => !l.project && l.chain === chain).map(panelLaunch)}
+          />
           <McpConnectCard
             target={{
               kind: "project",
               id: row.id,
               name: row.draft_doc.name,
-              hasKit: Boolean(row.draft_doc.kit?.shape),
+              hasKit,
             }}
             className="mt-6"
           />

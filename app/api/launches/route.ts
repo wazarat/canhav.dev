@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 import { authGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
-import { chainInfo, projectChainOf } from "@/lib/chains";
+import { DEFAULT_PROJECT_CHAIN, projectChainOf } from "@/lib/chains";
 import { findToken } from "@/lib/indexer";
-import { recordLaunch } from "@/lib/launches-db";
+import { chainMismatch, createProjectForToken } from "@/lib/launch-project";
+import { getLaunchByToken, recordLaunch } from "@/lib/launches-db";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,9 @@ export async function POST(req: Request) {
   let tokenAddress: string;
   let txHash: string | null = null;
   let projectId: string | null = null;
+  // "Start a project for this token" on the launch form (M56). Only the
+  // description comes from the client, the name and chain come from the indexer.
+  let createFor: { description: string } | null = null;
   try {
     const body = await req.json();
     tokenAddress = String(body.tokenAddress ?? "").toLowerCase();
@@ -33,6 +37,11 @@ export async function POST(req: Request) {
       txHash = body.txHash.toLowerCase();
     if (typeof body.projectId === "string" && /^[0-9a-f-]{36}$/.test(body.projectId))
       projectId = body.projectId;
+    if (!projectId && body.createProject && typeof body.createProject === "object")
+      createFor = {
+        description:
+          typeof body.createProject.description === "string" ? body.createProject.description : "",
+      };
   } catch {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
@@ -53,7 +62,10 @@ export async function POST(req: Request) {
     token = await findToken(tokenAddress);
   }
   if (!token)
-    return NextResponse.json({ error: "Token not indexed yet. Try again shortly." }, { status: 409 });
+    return NextResponse.json(
+      { error: "Token not indexed yet. Try again shortly.", code: "not_indexed" },
+      { status: 409 },
+    );
 
   const ageS = Math.floor(Date.now() / 1000) - Number(token.blockTimestamp);
   if (ageS > FRESH_LAUNCH_WINDOW_S)
@@ -65,11 +77,28 @@ export async function POST(req: Request) {
   // A token launches on the chain its project builds on (M54).
   if (project && token.chain && projectChainOf(project.draft_doc) !== token.chain)
     return NextResponse.json(
-      {
-        error: `This project builds on ${chainInfo(projectChainOf(project.draft_doc)).name}, and this token launched on ${chainInfo(token.chain).name}. A token is linked to a project on the same chain.`,
-      },
+      { error: chainMismatch(projectChainOf(project.draft_doc), token.chain), code: "chain_mismatch" },
       { status: 409 },
     );
+
+  let linked = project ? { id: project.id, name: project.draft_doc.name } : null;
+  if (createFor) {
+    // A retry must not start a second project for the same token.
+    const existing = await getLaunchByToken(tokenAddress);
+    if (existing && existing.owner_id !== gate.id)
+      return NextResponse.json({ error: "Already recorded.", code: "exists" }, { status: 409 });
+    const row = existing?.project_id
+      ? await getProject(existing.project_id, gate.id)
+      : await createProjectForToken(gate.id, {
+          name: token.name,
+          description: createFor.description,
+          chain: token.chain ?? DEFAULT_PROJECT_CHAIN,
+        });
+    if (row) {
+      projectId = row.id;
+      linked = { id: row.id, name: row.draft_doc.name };
+    }
+  }
 
   const result = await recordLaunch({
     tokenAddress,
@@ -82,6 +111,6 @@ export async function POST(req: Request) {
   if (result === null)
     return NextResponse.json({ error: "Storage not configured." }, { status: 503 });
   if (result === "exists")
-    return NextResponse.json({ error: "Already recorded." }, { status: 409 });
-  return NextResponse.json({ ok: true }, { status: 201 });
+    return NextResponse.json({ error: "Already recorded.", code: "exists" }, { status: 409 });
+  return NextResponse.json({ ok: true, project: linked }, { status: 201 });
 }

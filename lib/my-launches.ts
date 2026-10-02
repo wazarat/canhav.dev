@@ -1,10 +1,11 @@
 import "server-only";
 
+import type { ProjectChain } from "@/lib/chains";
 import type { ProjectContext } from "@/lib/ideation";
-import { getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
+import { designDeployChain, getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
 import { findToken, type IndexedToken } from "@/lib/indexer";
 import { projectContext } from "@/lib/launch-project";
-import { getLaunchesByOwner } from "@/lib/launches-db";
+import { getLaunchesByOwner, launchRowChain } from "@/lib/launches-db";
 
 /**
  * One account's launches, from two sources: tokens launched while signed in
@@ -19,6 +20,8 @@ export interface MyLaunch {
   /** Lowercase token address. */
   address: string;
   source: LaunchSource;
+  /** The chain the token launched on (M54). */
+  chain: ProjectChain;
   /** ISO timestamp of the record, newest first in the result. */
   launchedAt: string | null;
   creatorWallet: string | null;
@@ -47,6 +50,7 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
     byAddress.set(r.token_address, {
       address: r.token_address,
       source: "launch",
+      chain: launchRowChain(r),
       launchedAt: r.created_at,
       creatorWallet: r.creator_address,
       launchTxHash: r.tx_hash,
@@ -66,6 +70,7 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
       byAddress.set(address, {
         address,
         source: "design",
+        chain: designDeployChain(r),
         launchedAt: r.deployed_at,
         creatorWallet: r.deployed_by_wallet,
         launchTxHash: null,

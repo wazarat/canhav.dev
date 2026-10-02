@@ -25,7 +25,15 @@ import { cn } from "@/lib/utils";
  */
 export type McpTarget =
   | { kind: "any" }
-  | { kind: "launch"; address: string; committed: boolean }
+  | {
+      kind: "launch";
+      address: string;
+      committed: boolean;
+      /** The token name, for the paste prompt. */
+      name?: string;
+      /** The project the launch is linked to. Owner surfaces only, its server is the owner's alone. */
+      project?: { id: string; name: string; hasKit?: boolean } | null;
+    }
   | { kind: "project"; id: string; name: string; hasKit?: boolean };
 
 function lines(target: McpTarget) {
@@ -51,6 +59,36 @@ function lines(target: McpTarget) {
         : MCP_CONNECT.promptAny,
     note: MCP_CONNECT.desktopNote,
   };
+}
+
+/**
+ * The launch prompt (M56). One block to paste into an AI IDE, with the two
+ * hand steps under a toggle. Shared by the card and the studio popup.
+ */
+export function LaunchPrompt({ target }: { target: Extract<McpTarget, { kind: "launch" }> }) {
+  return (
+    <>
+      <CopyBlock
+        label={MCP_CONNECT.pasteLaunch}
+        text={MCP_CONNECT.launchPastePrompt(target)}
+        hint={target.project ? MCP_CONNECT.pasteLaunchProjectHint : MCP_CONNECT.pasteLaunchHint}
+      />
+      <details className="glass rounded-2xl">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-ink-100">
+          {MCP_CONNECT.byHandToggle}
+        </summary>
+        <div className="space-y-4 px-4 pb-4 pt-1">
+          <CopyLine label={MCP_CONNECT.steps.install} text={MCP_CONNECT.installCommand} />
+          <CopyLine label={MCP_CONNECT.steps.add} text={MCP_CONNECT.addCommand} />
+          <CopyLine
+            label={MCP_CONNECT.steps.ask}
+            text={MCP_CONNECT.promptFor(target.address, target.committed)}
+            mono={false}
+          />
+        </div>
+      </details>
+    </>
+  );
 }
 
 export function McpConnectCard({
@@ -80,11 +118,15 @@ export function McpConnectCard({
       ) : null}
 
       <div className="mt-4 space-y-4">
-        {!compact ? (
+        {!compact && target.kind !== "launch" ? (
           <CopyLine label={MCP_CONNECT.steps.install} text={MCP_CONNECT.installCommand} />
         ) : null}
-        <CopyLine label={l.addLabel} text={l.addCommand} />
-        {target.kind === "project" ? (
+        {target.kind === "launch" ? (
+          <LaunchPrompt target={target} />
+        ) : (
+          <CopyLine label={l.addLabel} text={l.addCommand} />
+        )}
+        {target.kind === "launch" ? null : target.kind === "project" ? (
           <CopyBlock
             label={MCP_GUIDE.paste}
             text={MCP_GUIDE.pastePrompt(target.id, target.name, { hasKit: target.hasKit === true })}

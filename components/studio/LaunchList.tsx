@@ -1,14 +1,17 @@
 import Link from "next/link";
 
+import { LaunchRowActions, type LaunchLinkProject } from "@/components/studio/LaunchRowActions";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_COPY } from "@/content/ideation";
 import { hasCommitment } from "@/lib/journey";
+import type { ProjectChain } from "@/lib/chains";
 import type { MyLaunch } from "@/lib/my-launches";
 
 /**
  * The signed-in account's launches, one row per token, each linking to the
  * token page. Data comes from lib/my-launches.ts, the same set the MCP
- * get_my_launches tool returns.
+ * get_my_launches tool returns. Each row carries the agent prompt popup and
+ * the project link controls (M56).
  */
 
 function shortAddress(address: string): string {
@@ -30,7 +33,14 @@ const SOURCE_LABEL: Record<MyLaunch["source"], string> = {
   both: "Launched from design",
 };
 
-export function LaunchList({ launches }: { launches: MyLaunch[] | null }) {
+export function LaunchList({
+  launches,
+  projects = [],
+}: {
+  launches: MyLaunch[] | null;
+  /** The account's projects, to link a launch to one on the same chain. */
+  projects?: Array<LaunchLinkProject & { chain: ProjectChain }>;
+}) {
   return (
     <section>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -62,48 +72,55 @@ export function LaunchList({ launches }: { launches: MyLaunch[] | null }) {
             const when = launchedOn(l.launchedAt);
             const committed = l.launch ? hasCommitment(l.launch.journeyHash) : true;
             return (
-              <li key={l.address}>
-                <Link
-                  href={`/launch/t/${l.address}`}
-                  className="glass flex items-center justify-between gap-3 rounded-xl border border-ink-800/70 px-4 py-3 transition-colors hover:border-electric-500/40"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink-50">
-                      {name}
-                      {symbol ? (
-                        <span className="ml-2 font-mono text-xs text-electric-300">${symbol}</span>
-                      ) : null}
-                    </p>
-                    <p className="mt-0.5 truncate font-mono text-[11px] text-ink-500">
-                      {when ? `Launched ${when} · ` : ""}
-                      {shortAddress(l.address)}
-                    </p>
-                    {l.project ? (
-                      <p className="mt-0.5 truncate text-[11px] text-ink-500">
-                        {STUDIO_COPY.launch.fromProject}{" "}
-                        <span className="text-ink-300">{l.project.name}</span>
-                        {l.project.shapeLabels.length
-                          ? ` · ${l.project.shapeLabels.join(" · ")}`
-                          : l.project.sectorLabels.length
-                            ? ` · ${l.project.sectorLabels.join(" · ")}`
-                            : ""}
-                      </p>
+              <li
+                key={l.address}
+                className="glass flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-800/70 px-4 py-3"
+              >
+                <Link href={`/launch/t/${l.address}`} className="group min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink-50 transition-colors group-hover:text-electric-200">
+                    {name}
+                    {symbol ? (
+                      <span className="ml-2 font-mono text-xs text-electric-300">${symbol}</span>
                     ) : null}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {!committed ? (
-                      <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
-                        No commitment
-                      </StatusChip>
-                    ) : null}
-                    <StatusChip
-                      tone={l.source === "launch" ? "success" : "info"}
-                      className="px-2 py-0.5 text-[11px]"
-                    >
-                      {SOURCE_LABEL[l.source]}
-                    </StatusChip>
-                  </div>
+                  </p>
+                  <p className="mt-0.5 truncate font-mono text-[11px] text-ink-500">
+                    {when ? `Launched ${when} · ` : ""}
+                    {shortAddress(l.address)}
+                  </p>
+                  {l.project ? (
+                    <p className="mt-0.5 truncate text-[11px] text-ink-500">
+                      {STUDIO_COPY.launch.fromProject}{" "}
+                      <span className="text-ink-300">{l.project.name}</span>
+                      {l.project.shapeLabels.length
+                        ? ` · ${l.project.shapeLabels.join(" · ")}`
+                        : l.project.sectorLabels.length
+                          ? ` · ${l.project.sectorLabels.join(" · ")}`
+                          : ""}
+                    </p>
+                  ) : null}
                 </Link>
+                <div className="hidden shrink-0 items-center gap-2 sm:flex">
+                  {!committed ? (
+                    <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
+                      No commitment
+                    </StatusChip>
+                  ) : null}
+                  <StatusChip
+                    tone={l.source === "launch" ? "success" : "info"}
+                    className="px-2 py-0.5 text-[11px]"
+                  >
+                    {SOURCE_LABEL[l.source]}
+                  </StatusChip>
+                </div>
+                <LaunchRowActions
+                  address={l.address}
+                  name={l.launch?.name ?? l.design?.name}
+                  committed={committed}
+                  linkable={l.source !== "design"}
+                  // The row from the studio list, so the server alias matches the project page.
+                  project={projects.find((p) => p.id === l.project?.id) ?? null}
+                  candidates={projects.filter((p) => p.chain === l.chain)}
+                />
               </li>
             );
           })}

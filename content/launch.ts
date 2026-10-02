@@ -366,6 +366,87 @@ export const MCP_CONNECT = {
     "The Claude desktop app can add the same server URL as a custom connector.",
   docsLabel: "Every tool in the docs",
   landingPointer: "Every launch is readable over MCP.",
+  pasteLaunch: "Paste this into your AI IDE",
+  pasteLaunchHint:
+    "One prompt that connects and reads the launch. Works in Claude Code, the Claude desktop app and any AI IDE that speaks MCP.",
+  pasteLaunchProjectHint:
+    "One prompt that connects, reads the launch and reads the project it belongs to. Works in Claude Code, the Claude desktop app and any AI IDE that speaks MCP.",
+  byHandToggle: "Do it by hand",
+  openPrompt: "Agent prompt",
+  close: "Close",
+  /**
+   * The one prompt a launcher pastes into an AI IDE (M56). Reads the launch
+   * from the shared server, and the project it is linked to from that
+   * project's own server when there is one. Same copy rules as pastePrompt.
+   */
+  launchPastePrompt: (opts: {
+    address: string;
+    name?: string;
+    committed: boolean;
+    project?: { id: string; name: string; hasKit?: boolean } | null;
+  }): string => {
+    const address = opts.address.toLowerCase();
+    const name = opts.name?.trim();
+    const what = name ? `the token "${name}" at ${address}` : `the token at ${address}`;
+    const commitment = opts.committed
+      ? `The launch carries an on-chain commitment, so also call get_launch_journey and get_milestone_updates.`
+      : `The launch carries no commitment, so there are no milestones to read.`;
+    const paras = [
+      `I launched ${what} on CanHav and I want you to read it over MCP.`,
+      `1. Add the CanHav MCP server. In Claude Code run\n${MCP_CONNECT.addCommand}\nIn the Claude desktop app or another AI IDE add a custom connector at ${MCP_CONNECT.serverUrl} instead.`,
+      `2. Run claude mcp list and check that canhav is connected. Reading a launch needs no sign-in. If I ask for my own launches with get_my_launches, ask me to type /mcp, pick canhav and choose Authenticate.`,
+      `3. Call get_launch for ${address} and read the whole answer. Then call get_curve_status, get_pool_status and get_sale_status for the same address. ${commitment}`,
+    ];
+    const project = opts.project;
+    if (project) {
+      const alias = mcpAlias(project.name, project.id);
+      const title = project.name.trim() ? `my CanHav project "${project.name.trim()}"` : "my CanHav project";
+      const pack = project.hasKit
+        ? ` Then call get_resource_pack and read every core resource in readFirst order before you suggest any code.`
+        : "";
+      paras.push(
+        `4. This token belongs to ${title}, which has its own MCP server. In Claude Code run\n${MCP_CONNECT.projectAddCommand(project.id, project.name)}\nElsewhere add a custom connector at ${MCP_CONNECT.projectServerUrl(project.id)} instead. Ask me to type /mcp, pick ${alias} and choose Authenticate. I sign in with the CanHav account that owns the project. Wait for me to say it is done.`,
+        `5. Call the ${alias} get_project_status tool and read the whole answer.${pack}`,
+        `6. Tell me in plain words where the token stands. Curve progress, pool depth, sales and milestones. Then tell me what is left on the project and which studio step each item lives in.`,
+      );
+    } else {
+      paras.push(
+        `4. Tell me in plain words where the token stands. Curve progress, pool depth, sales and milestones. Then suggest what I should do next.`,
+      );
+    }
+    return paras.join("\n\n");
+  },
+} as const;
+
+/** The optional Project block on the launch form and the link controls in the studio (M56). */
+export const LAUNCH_PROJECT_COPY = {
+  label: "Project",
+  hint: "Optional. A project is what you are building around the token. Link one now or later from the studio.",
+  options: [
+    { value: "none", label: "No project" },
+    { value: "existing", label: "Link one of my projects" },
+    { value: "create", label: "Start a project for this token" },
+  ] as ReadonlyArray<{ value: "none" | "existing" | "create"; label: string }>,
+  choose: "Choose a project…",
+  noneOnChain: (chainName: string) =>
+    `None of your projects build on ${chainName}. Start one for this token instead, or link later from the studio.`,
+  createHint:
+    "A draft project is created right after the launch, named after the token and linked to it. You finish it in the studio, by hand or with your agent.",
+  signedOut: "to link this launch to a project.",
+  reviewCreate: "A new draft, created after launch",
+  openProject: "Open the project in the studio",
+  linkTitle: "Link a project",
+  startForToken: "Start a project for this token",
+  unlink: "Unlink",
+  change: "Change",
+  failed: "The link could not be changed.",
+  panelTitle: "Token launch",
+  panelLead:
+    "A project can carry a launched token. Linking fixes the project to the chain the token launched on.",
+  panelNone: "No token is linked to this project yet.",
+  panelChoose: "Choose a launch…",
+  panelLink: "Link this launch",
+  panelLaunch: "Launch a token from this project",
 } as const;
 
 /**
@@ -439,7 +520,7 @@ export const MCP_GUIDE = {
         "Publish or unpublish.",
         "Choose sectors, subsectors or what you are building.",
         "Tick the distribution acknowledgement.",
-        "Link or unlink a token design.",
+        "Link or unlink a token design or a launch.",
       ],
     },
     other: {
