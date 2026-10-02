@@ -1,0 +1,39 @@
+# Fly.io deploy for the second indexer instance, Arbitrum Sepolia (421614).
+# The same image as fly.toml, a different app and PONDER_CHAIN. See the
+# "Second instance" section of README.md. Deploy with:
+#
+#   fly deploy --ha=false -c fly.arbitrum.toml
+
+app = "canhav-indexer-arbitrum"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8080"
+  # Selects the Arbitrum half of ponder.config.ts.
+  PONDER_CHAIN = "arbitrum_sepolia"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Never scale to zero, for the reason given in fly.toml.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # /health, never /ready, for the reason given in fly.toml.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "60s"
+    method = "GET"
+    path = "/health"
+
+# The contracts were deployed on 2026-10-02, so there is almost nothing to
+# backfill and the smallest machine is enough to start with. Scale up the
+# same way as the Robinhood instance if realtime indexing falls behind.
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

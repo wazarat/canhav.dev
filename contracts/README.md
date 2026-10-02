@@ -96,6 +96,19 @@ with `PONDER_CHAIN=arbitrum_sepolia`, and set `INDEXER_URL_ARBITRUM_SEPOLIA`
 for the app. Until then the app treats the chain as not live and refuses
 every write on it.
 
+### Launch fees on a new chain
+
+A fresh deployment starts with a zero launch fee on the factory and the
+launcher. `script/SetLaunchFees.s.sol` sets both to one value (0.0002 ETH by
+default, the Robinhood value) through the chain's timelock, in two runs
+around its delay.
+
+```bash
+TIMELOCK=0xeD66C31FFAC1C5dCf4f327536a7540B22DF2B5E1 FACTORY=0xdC3521DDEFfca6825771da6c23679A7BA1E82475 CURVE_LAUNCHER=0x6Dde90B06b920565ccBA93D8ad7d5AfE5846426f PHASE=schedule forge script script/SetLaunchFees.s.sol --rpc-url arbitrum_sepolia --broadcast
+```
+
+Wait five minutes, then run the same line with `PHASE=execute`.
+
 ## Layout
 
 ```

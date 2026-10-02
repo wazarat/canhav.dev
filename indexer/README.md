@@ -101,6 +101,39 @@ and Preview**, and redeploy. It is a dashboard setting, not a shell command.
 
     INDEXER_URL = https://canhav-indexer.fly.dev
 
+### Second instance, Arbitrum Sepolia
+
+The launchpad runs on two chains and each has its own indexer, the same image
+with `PONDER_CHAIN=arbitrum_sepolia`. It is a second Fly app with its own
+config, `fly.arbitrum.toml`, so the Robinhood app is not touched or
+redeployed. It attaches to the same Postgres cluster, which gives it its own
+database and user, so both instances keep the fixed `launchpad` schema without
+sharing it.
+
+```sh
+fly apps create canhav-indexer-arbitrum
+```
+
+```sh
+fly postgres attach canhav-indexer-db -a canhav-indexer-arbitrum
+```
+
+```sh
+fly deploy --ha=false -c fly.arbitrum.toml
+```
+
+The contracts there were deployed on 2026-10-02, so the backfill is short.
+`https://canhav-indexer-arbitrum.fly.dev/ready` returns 200 when it is done.
+Then set this in Vercel, for Production and Preview, and redeploy:
+
+    INDEXER_URL_ARBITRUM_SEPOLIA = https://canhav-indexer-arbitrum.fly.dev
+
+Each instance opens a pool of up to 30 Postgres connections. Two of them on
+the 1GB database machine is the thing to watch; if Postgres runs short of
+memory, scale that machine up rather than the indexers. The public Arbitrum
+Sepolia RPC is the default; set `PONDER_RPC_URL_421614` as a secret on the new
+app to use a dedicated one.
+
 ### What is deliberate
 
 - **`auto_stop_machines = false`.** This is a continuous chain sync, not a
