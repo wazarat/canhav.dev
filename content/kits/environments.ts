@@ -1,13 +1,15 @@
-import type { FamilyEnvironment } from "@/lib/kits";
+import type { ProjectChain } from "@/lib/chains";
+import type { EnvironmentRows } from "@/lib/kits";
 
 /**
- * Where each protocol family can run today on Robinhood Chain. One row per
- * family; SHAPE_FAMILIES decides which rows a shape shows, and Boros never
- * appears in a shape plan because it does not run here (it is listed for
+ * Where each protocol family can run today, per chain a project can build
+ * on (M52). One row per family per chain; SHAPE_FAMILIES decides which rows
+ * a shape shows, after the chain's own row. On Robinhood Chain Boros never
+ * appears in a shape plan because it does not run there (it is listed for
  * the public catalog tool only). A family with its own path (Uniswap, which
- * a team deploys itself on testnet) shows it beside the shared one. Every
- * row carries the date it was last checked. No colons, no em dashes in
- * notes.
+ * a team deploys itself on Robinhood testnet) shows it beside the shared
+ * one. Every row carries the date it was last checked. No colons, no em
+ * dashes in notes.
  */
 
 const DEV_PATH = [
@@ -16,7 +18,13 @@ const DEV_PATH = [
   "Mainnet staging behind strict caps before the full surface opens",
 ] as const;
 
-export const KIT_ENVIRONMENTS: Partial<Record<FamilyEnvironment["family"], FamilyEnvironment>> = {
+const ARBITRUM_DEV_PATH = [
+  "Arbitrum Sepolia 421614 first, with mocks for anything that is not deployed there",
+  "A local fork of Arbitrum One 42161 against the real contracts",
+  "Mainnet staging behind strict caps before the full surface opens",
+] as const;
+
+const ROBINHOOD_ROWS: EnvironmentRows = {
   robinhood: {
     family: "robinhood",
     testnet: {
@@ -107,4 +115,106 @@ export const KIT_ENVIRONMENTS: Partial<Record<FamilyEnvironment["family"], Famil
     devPath: DEV_PATH,
     checkedOn: "2026-09-27",
   },
+};
+
+/**
+ * Arbitrum rows, each read from the protocol's own deployment records on
+ * the date in checkedOn. Sepolia 421614 is the testnet, Arbitrum One 42161
+ * the mainnet it stands in for.
+ */
+const ARBITRUM_ROWS: EnvironmentRows = {
+  arbitrum: {
+    family: "arbitrum",
+    testnet: {
+      chainId: 421614,
+      status: "official",
+      note: "Public RPC, explorer and faucets are live. The public endpoint is rate limited, so use a provider for anything beyond light testing.",
+      source: "https://docs.arbitrum.io/build-decentralized-apps/reference/node-providers",
+    },
+    mainnet: {
+      chainId: 42161,
+      status: "official",
+      note: "Arbitrum One is live, with a managed RPC provider recommended for production traffic.",
+      source: "https://docs.arbitrum.io/build-decentralized-apps/reference/node-providers",
+    },
+    devPath: ARBITRUM_DEV_PATH,
+    checkedOn: "2026-10-02",
+  },
+  morpho: {
+    family: "morpho",
+    testnet: {
+      chainId: 421614,
+      status: "none",
+      note: "Not in the official address registry, which lists Sepolia and Base Sepolia as its only testnets. Market and vault work runs against mocks, your own deployment of the core contracts, or a fork of Arbitrum One.",
+      source: "https://docs.morpho.org/developers/contracts/addresses",
+    },
+    mainnet: {
+      chainId: 42161,
+      status: "official",
+      note: "Listed in the official address registry.",
+      source: "https://docs.morpho.org/developers/contracts/addresses",
+    },
+    devPath: ARBITRUM_DEV_PATH,
+    checkedOn: "2026-10-02",
+  },
+  pendle: {
+    family: "pendle",
+    testnet: {
+      chainId: 421614,
+      status: "none",
+      note: "No manifest for chain 421614 in the protocol's deployments. Wrapper and market work runs against mocks or against a fork of Arbitrum One.",
+      source: "https://github.com/pendle-finance/pendle-core-v2-public/tree/main/deployments",
+    },
+    mainnet: {
+      chainId: 42161,
+      status: "official",
+      note: "The core and helper manifests for chain 42161 are in the protocol's repository.",
+      source: "https://github.com/pendle-finance/pendle-core-v2-public/blob/main/deployments/42161-core.json",
+    },
+    devPath: ARBITRUM_DEV_PATH,
+    checkedOn: "2026-10-02",
+  },
+  uniswap: {
+    family: "uniswap",
+    testnet: {
+      chainId: 421614,
+      status: "official",
+      note: "The v4 pool manager is in the protocol's deployments table for Arbitrum Sepolia. Read every address from that table before relying on it.",
+      source: "https://developers.uniswap.org/docs/protocols/v4/deployments",
+    },
+    mainnet: {
+      chainId: 42161,
+      status: "official",
+      note: "The v4 pool manager is in the protocol's deployments table for Arbitrum One.",
+      source: "https://developers.uniswap.org/docs/protocols/v4/deployments",
+    },
+    devPath: [
+      "Arbitrum Sepolia 421614 against the canonical v4 deployment, with your own pool and hook",
+      "A local fork of Arbitrum One 42161 against the canonical deployment",
+      "Arbitrum One on the canonical contracts with your own pool and hook, behind a cap at first",
+    ],
+    checkedOn: "2026-10-02",
+  },
+  boros: {
+    family: "boros",
+    testnet: {
+      chainId: 421614,
+      status: "none",
+      note: "The protocol's public deployment files name no testnet. Work against a fork of Arbitrum One.",
+      source: "https://github.com/pendle-finance/boros-core-public/tree/main/deployments",
+    },
+    mainnet: {
+      chainId: 42161,
+      status: "official",
+      note: "Runs on Arbitrum One. Read the addresses from the protocol's deployment files.",
+      source: "https://github.com/pendle-finance/boros-core-public/tree/main/deployments",
+    },
+    devPath: ARBITRUM_DEV_PATH,
+    checkedOn: "2026-10-02",
+  },
+};
+
+export const KIT_ENVIRONMENTS: Record<ProjectChain, EnvironmentRows> = {
+  robinhood_testnet: ROBINHOOD_ROWS,
+  arbitrum_sepolia: ARBITRUM_ROWS,
 };

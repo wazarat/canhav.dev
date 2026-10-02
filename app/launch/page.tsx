@@ -7,21 +7,24 @@ import {
   LaunchForm,
 } from "@/components/launch/LaunchForm";
 import { LAUNCH_COPY, LAUNCH_FORM, MCP_CONNECT } from "@/content/launch";
+import { type ProjectChain, projectChainOf } from "@/lib/chains";
 import { designMilestones } from "@/lib/launch-commitment";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import type { ProjectContext } from "@/lib/ideation";
 import {
+  getLinkedProject,
   getLinkedTokenDesign,
   getProject,
   getPublishedTokenDesignById,
   getSnapshot,
 } from "@/lib/ideation-db";
+import { indexedChains } from "@/lib/indexer";
 import { projectContext } from "@/lib/launch-project";
 
 export const metadata: Metadata = {
   title: "Launch a token",
   description:
-    "Launch a token on Robinhood Chain Testnet with an on-chain commitment that any agent can read over MCP.",
+    "Launch a token on Robinhood Chain Testnet or Arbitrum Sepolia with an on-chain commitment that any agent can read over MCP.",
 };
 
 export const dynamic = "force-dynamic";
@@ -30,6 +33,8 @@ export const dynamic = "force-dynamic";
 async function loadDesign(designId: string | undefined): Promise<{
   prefill?: LaunchPrefill;
   designCommitment?: DesignCommitment;
+  /** The chain of the project the design is linked to, when it is linked (M54). */
+  chain?: ProjectChain;
 }> {
   if (!designId || !/^[0-9a-f-]{36}$/.test(designId)) return {};
   const row = await getPublishedTokenDesignById(designId);
@@ -40,7 +45,9 @@ async function loadDesign(designId: string | undefined): Promise<{
   const milestoneCount =
     snapshot && snapshot.doc.kind === "token_design" ? (designMilestones(snapshot.doc)?.length ?? 0) : 0;
   const team = doc.vesting.cohorts.find((c) => c.cohort === "team");
+  const linkedProject = await getLinkedProject(row.id);
   return {
+    ...(linkedProject ? { chain: projectChainOf(linkedProject.draft_doc) } : {}),
     prefill: {
       name: doc.name.replace(LAUNCH_FORM.name.strip, "").slice(0, LAUNCH_FORM.name.max),
       ticker: doc.ticker,
@@ -90,7 +97,9 @@ export default async function LaunchPage({
 }) {
   const params = await searchParams;
   const { project, designId } = await loadProject(params.project);
-  const { prefill, designCommitment } = await loadDesign(params.design ?? designId);
+  const { prefill, designCommitment, chain: designChain } = await loadDesign(params.design ?? designId);
+  // A launch from a project, or from a design linked to one, goes on that project's chain (M54).
+  const chain = project?.chain ?? designChain;
 
   return (
     <div className="container py-14 md:py-20">
@@ -131,7 +140,7 @@ export default async function LaunchPage({
       </div>
 
       <div className="mt-10 md:mt-12">
-        <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} />
+        <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} chain={chain} launchable={indexedChains()} />
       </div>
     </div>
   );

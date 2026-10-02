@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProjectChain } from "@/lib/chains";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { erc20Abi, formatEther, parseEther } from "viem";
@@ -8,7 +9,7 @@ import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN, LAUNCH_CURVE, LAUNCH_CURVE_TAX_PCT } from "@/content/launch";
+import { launchChain, LAUNCH_CURVE, LAUNCH_CURVE_TAX_PCT } from "@/content/launch";
 import { curveLauncherAbi } from "@/lib/abi/curveLauncher";
 import { formatCount } from "@/lib/format";
 import { writeWithGas } from "@/lib/tx";
@@ -39,11 +40,21 @@ function parseEth(v: string): bigint | null {
  * window read live so the countdown is honest. Every write goes through
  * writeWithGas so the wallet gets a gas limit estimated on our RPC.
  */
-export function CurveActions({ tokenAddress, symbol }: { tokenAddress: string; symbol: string }) {
+export function CurveActions({
+  chain,
+  tokenAddress,
+  symbol,
+}: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
+  tokenAddress: string;
+  symbol: string;
+}) {
+  const net = launchChain(chain);
   const router = useRouter();
-  const { isConnected, address, ensureChain } = useLaunchChain();
+  const { isConnected, address, ensureChain } = useLaunchChain(chain);
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: net.chainId });
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [buyEth, setBuyEth] = useState("");
@@ -55,22 +66,25 @@ export function CurveActions({ tokenAddress, symbol }: { tokenAddress: string; s
   const sellWei = /^[0-9]+$/.test(sellTokens) && sellTokens !== "0" ? BigInt(sellTokens) * 10n ** 18n : null;
 
   const { data: progress } = useReadContract({
+    chainId: net.chainId,
     abi: curveLauncherAbi,
-    address: LAUNCH_CHAIN.curveAddress,
+    address: net.curveAddress,
     functionName: "progress",
     args: [token],
     query: { refetchInterval: 5_000 },
   });
   const { data: buyQuote } = useReadContract({
+    chainId: net.chainId,
     abi: curveLauncherAbi,
-    address: LAUNCH_CHAIN.curveAddress,
+    address: net.curveAddress,
     functionName: "quoteBuy",
     args: [token, buyWei ?? 0n],
     query: { enabled: buyWei !== null, refetchInterval: 5_000 },
   });
   const { data: sellQuote } = useReadContract({
+    chainId: net.chainId,
     abi: curveLauncherAbi,
-    address: LAUNCH_CHAIN.curveAddress,
+    address: net.curveAddress,
     functionName: "quoteSell",
     args: [token, sellWei ?? 0n],
     query: { enabled: sellWei !== null, refetchInterval: 5_000 },
@@ -85,12 +99,12 @@ export function CurveActions({ tokenAddress, symbol }: { tokenAddress: string; s
     if (status.kind === "working") return;
     try {
       setStatus({ kind: "working", label: "Checking network…" });
-      if (!(await ensureChain())) throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
+      if (!(await ensureChain())) throw new Error(`Switch to ${net.name} to continue.`);
       setStatus({ kind: "working", label });
       await fn();
     } catch (err) {
       console.error("curve action failed", err);
-      setStatus({ kind: "error", message: friendlyCurveError(err, what, needs) });
+      setStatus({ kind: "error", message: friendlyCurveError(err, what, needs, net.name) });
     }
   }
 
@@ -117,7 +131,7 @@ export function CurveActions({ tokenAddress, symbol }: { tokenAddress: string; s
         const { publicClient, account } = gasClient();
         const hash = await writeWithGas(publicClient, account, writeContractAsync, {
           abi: curveLauncherAbi,
-          address: LAUNCH_CHAIN.curveAddress,
+          address: net.curveAddress,
           functionName: "buy",
           args: [token, floor(buyQuote[0])],
           value: buyWei,
@@ -141,7 +155,7 @@ export function CurveActions({ tokenAddress, symbol }: { tokenAddress: string; s
           abi: erc20Abi,
           address: token,
           functionName: "approve",
-          args: [LAUNCH_CHAIN.curveAddress, sellWei],
+          args: [net.curveAddress, sellWei],
         });
         setStatus({ kind: "working", label: "Waiting for the approval…" });
         const approval = await publicClient.waitForTransactionReceipt({ hash: approveHash });
@@ -149,7 +163,7 @@ export function CurveActions({ tokenAddress, symbol }: { tokenAddress: string; s
         setStatus({ kind: "working", label: "Confirm the sell in your wallet…" });
         const hash = await writeWithGas(publicClient, account, writeContractAsync, {
           abi: curveLauncherAbi,
-          address: LAUNCH_CHAIN.curveAddress,
+          address: net.curveAddress,
           functionName: "sell",
           args: [token, sellWei, floor(sellQuote)],
         });

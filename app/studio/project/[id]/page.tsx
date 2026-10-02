@@ -5,6 +5,7 @@ import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { ProjectEditor } from "@/components/ideation/ProjectEditor";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { getSessionUser } from "@/lib/auth";
+import { projectChainLocked } from "@/lib/launch-project";
 import { getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 
 export const metadata: Metadata = {
@@ -25,9 +26,10 @@ export default async function ProjectEditorPage({
   const row = await getProject(id, user.id);
   if (!row) notFound();
 
-  const [linked, myDesigns] = await Promise.all([
+  const [linked, myDesigns, chainLocked] = await Promise.all([
     getLinkedTokenDesign(row.id),
     getMyTokenDesigns(user.id),
+    projectChainLocked(row.id),
   ]);
 
   return (
@@ -37,6 +39,7 @@ export default async function ProjectEditorPage({
       initialStatus={row.status}
       initialSlug={row.slug}
       initialRev={row.agent_rev}
+      chainLocked={chainLocked}
       linkPanel={
         <>
           <LinkPanel

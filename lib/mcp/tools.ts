@@ -20,7 +20,8 @@ import {
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { GATE_COPY, SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
-import { SHAPE_SUBSECTORS, type ProductShape, blockedShapes, kitShapes, shapeRunsOnTestnet } from "@/lib/kits";
+import { PROJECT_CHAINS, PROJECT_CHAIN_INFO } from "@/lib/chains";
+import { SHAPE_SUBSECTORS, type ProductShape, kitShapes, shapeRunsOnTestnet, shapesMissingTestnet } from "@/lib/kits";
 import { docSectors, sectorOfSubsector } from "@/lib/sectors";
 import { registerLaunchTools } from "@/lib/mcp/launch-tools";
 import { deriveTokenomics } from "@/lib/tokenDesign";
@@ -220,7 +221,7 @@ export function registerAllTools(server: McpServer): void {
     {
       title: "Resource catalog",
       description:
-        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain (Morpho, Pendle, Uniswap, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags, where each protocol family runs today and which shapes the studio blocks because their protocol has no deployment on Robinhood Chain testnet (runsOnTestnet per shape, testnetGate at the top). Filter by shape, family or priority. No sign-in needed.",
+        "CanHav's public catalog of resources for building credit and liquidity products on Robinhood Chain or Arbitrum (Morpho, Pendle, Uniswap, shared standards, oracles, risk and security tooling), with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags, where each protocol family runs today on each chain a project can pick (chains, with environments per chain) and which shapes rely on a protocol with no deployment on a chain's testnet (runsOnTestnetByChain per shape, testnetGate at the top). Such a shape can still be picked, and the team or its agent writes the build steps that fit. runsOnTestnet and environments at the top level describe Robinhood Chain, kept for older readers. Filter by shape, family or priority. No sign-in needed.",
       inputSchema: z.object({
         shape: z
           .enum([
@@ -239,7 +240,7 @@ export function registerAllTools(server: McpServer): void {
             "hook_pool",
           ])
           .optional(),
-        family: z.enum(["shared", "robinhood", "morpho", "pendle", "uniswap", "boros"]).optional(),
+        family: z.enum(["shared", "robinhood", "arbitrum", "morpho", "pendle", "uniswap", "boros"]).optional(),
         priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
       }),
     },
@@ -269,6 +270,7 @@ export function registerAllTools(server: McpServer): void {
         steps: r.steps,
         priority: r.priority,
         flags: [...(r.flags ?? [])],
+        ...(r.chains ? { chains: r.chains } : {}),
       }));
       return jsonResult({
         shapes: SHAPE_OPTIONS.map((o) => ({
@@ -276,11 +278,23 @@ export function registerAllTools(server: McpServer): void {
           label: o.label,
           subsectors: SHAPE_SUBSECTORS[o.value],
           sectors: [...new Set(SHAPE_SUBSECTORS[o.value].map(sectorOfSubsector))],
-          runsOnTestnet: shapeRunsOnTestnet(o.value, KIT_ENVIRONMENTS),
+          runsOnTestnet: shapeRunsOnTestnet(o.value, KIT_ENVIRONMENTS.robinhood_testnet),
+          runsOnTestnetByChain: Object.fromEntries(
+            PROJECT_CHAINS.map((c) => [c, shapeRunsOnTestnet(o.value, KIT_ENVIRONMENTS[c])]),
+          ),
           examples: o.examples,
         })),
-        testnetGate: { blockedShapes: blockedShapes(KIT_ENVIRONMENTS), rule: GATE_COPY.catalogRule },
-        environments: Object.values(KIT_ENVIRONMENTS),
+        chains: PROJECT_CHAINS.map((c) => ({
+          key: c,
+          name: PROJECT_CHAIN_INFO[c].name,
+          testnetChainId: PROJECT_CHAIN_INFO[c].chainId,
+          mainnetChainId: PROJECT_CHAIN_INFO[c].mainnetChainId,
+          shapesMissingTestnet: shapesMissingTestnet(KIT_ENVIRONMENTS[c]),
+          environments: Object.values(KIT_ENVIRONMENTS[c]),
+        })),
+        // Nothing is blocked since M52. The key stays for older readers.
+        testnetGate: { blockedShapes: [] as ProductShape[], rule: GATE_COPY.catalogRule },
+        environments: Object.values(KIT_ENVIRONMENTS.robinhood_testnet),
         total: resources.length,
         resources,
       });

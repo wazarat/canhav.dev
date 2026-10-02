@@ -21,5 +21,8 @@ remappings = [
 
 [rpc_endpoints]
 robinhood_testnet = "${ROBINHOOD_TESTNET_RPC_URL}"
+# Arbitrum Sepolia (M55), the second chain the launchpad runs on. Also a Nitro
+# chain, so the same bytecode and the same Cancun target apply.
+arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

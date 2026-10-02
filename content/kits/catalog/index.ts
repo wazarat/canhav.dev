@@ -1,5 +1,6 @@
 import { type KitResource, assertKitCatalog } from "@/lib/kits";
 
+import { ARBITRUM_RESOURCES } from "./arbitrum";
 import { BOROS_RESOURCES } from "./boros";
 import { MORPHO_RESOURCES } from "./morpho";
 import { PENDLE_RESOURCES } from "./pendle";
@@ -16,6 +17,7 @@ import { UNISWAP_RESOURCES } from "./uniswap";
 export const KIT_CATALOG: readonly KitResource[] = [
   ...SHARED_RESOURCES,
   ...ROBINHOOD_RESOURCES,
+  ...ARBITRUM_RESOURCES,
   ...MORPHO_RESOURCES,
   ...PENDLE_RESOURCES,
   ...UNISWAP_RESOURCES,
@@ -30,6 +32,7 @@ export const KIT_CATALOG_IDS: ReadonlySet<string> = new Set(KIT_CATALOG.map((r) 
 assertKitCatalog(KIT_CATALOG, {
   shared: SHARED_RESOURCES,
   robinhood: ROBINHOOD_RESOURCES,
+  arbitrum: ARBITRUM_RESOURCES,
   morpho: MORPHO_RESOURCES,
   pendle: PENDLE_RESOURCES,
   uniswap: UNISWAP_RESOURCES,

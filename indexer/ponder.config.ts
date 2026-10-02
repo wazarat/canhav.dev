@@ -26,21 +26,21 @@ const PUBLIC_RPC = "https://rpc.testnet.chain.robinhood.com";
  * `BuildError: Invalid URL` at the config stage, with nothing naming the
  * variable. Treat blank as unset and say so.
  */
-function rpcUrl(): string {
-  const raw = process.env.PONDER_RPC_URL_46630?.trim();
-  if (!raw) return PUBLIC_RPC;
+function rpcUrl(envName = "PONDER_RPC_URL_46630", fallback = PUBLIC_RPC): string {
+  const raw = process.env[envName]?.trim();
+  if (!raw) return fallback;
   try {
     new URL(raw);
   } catch {
     throw new Error(
-      `PONDER_RPC_URL_46630 is not a valid URL (received ${JSON.stringify(raw)}). ` +
-        `Unset it to fall back to ${PUBLIC_RPC}.`,
+      `${envName} is not a valid URL (received ${JSON.stringify(raw)}). ` +
+        `Unset it to fall back to ${fallback}.`,
     );
   }
   return raw;
 }
 
-export default createConfig({
+const robinhood = createConfig({
   chains: {
     robinhoodTestnet: {
       id: 46630,
@@ -128,3 +128,76 @@ export default createConfig({
     },
   },
 });
+
+// ---------------------------------------------------------------------------
+// Arbitrum Sepolia (421614). The same contracts, deployed once by
+// contracts/script/DeployChain.s.sol, so one address per entry and one start
+// block for all of them. This instance runs beside the Robinhood one, each
+// with its own database schema; the app picks the indexer by chain
+// (lib/indexer.ts INDEXER_URLS). Select it with PONDER_CHAIN=arbitrum_sepolia.
+//
+// Deployment record: contracts/broadcast/DeployChain.s.sol/421614/run-latest.json.
+const ARBITRUM_SEPOLIA_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
+
+const ARBITRUM: {
+  startBlock: number | null;
+  factory: `0x${string}` | null;
+  timelock: `0x${string}` | null;
+  escrow: `0x${string}` | null;
+  updates: `0x${string}` | null;
+  sale: `0x${string}` | null;
+  amm: `0x${string}` | null;
+  splitter: `0x${string}` | null;
+  curve: `0x${string}` | null;
+} = {
+  // The LaunchToken implementation, the first transaction of the broadcast (2026-10-02).
+  startBlock: 315002357,
+  factory: "0xdC3521DDEFfca6825771da6c23679A7BA1E82475",
+  timelock: "0xeD66C31FFAC1C5dCf4f327536a7540B22DF2B5E1",
+  escrow: "0x3F7AcbFE98c5Ac72259F7e838886c310f3E0D8ce",
+  updates: "0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC",
+  sale: "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0",
+  amm: "0x4EA372acAb7be21113f474CEd2B7b317019afeD3",
+  splitter: "0x37dC58e2098b61249E12e0674D0C137EDf5248B4",
+  curve: "0x6Dde90B06b920565ccBA93D8ad7d5AfE5846426f",
+};
+
+// The pre-fee factories (v1, v2) only ever existed on Robinhood. Their entry
+// has to exist because src/index.ts registers handlers on it, so here it
+// watches an address that never emits a log.
+const NO_LOGS = "0x000000000000000000000000000000000000dEaD";
+
+function arbitrum() {
+  const missing = Object.entries(ARBITRUM)
+    .filter(([, v]) => v === null)
+    .map(([k]) => k);
+  if (missing.length)
+    throw new Error(
+      `PONDER_CHAIN=arbitrum_sepolia but the deployment is not recorded in ponder.config.ts (missing ${missing.join(", ")}).`,
+    );
+  const d = ARBITRUM as { [K in keyof typeof ARBITRUM]: NonNullable<(typeof ARBITRUM)[K]> };
+  const at = { chain: "arbitrumSepolia" as const, startBlock: d.startBlock };
+  return createConfig({
+    chains: {
+      arbitrumSepolia: { id: 421614, rpc: rpcUrl("PONDER_RPC_URL_421614", ARBITRUM_SEPOLIA_RPC) },
+    },
+    contracts: {
+      TokenFactory: { ...at, abi: TokenFactoryAbi, address: NO_LOGS },
+      TokenFactoryV3: { ...at, abi: TokenFactoryV3Abi, address: d.factory },
+      Timelock: { ...at, abi: TimelockControllerAbi, address: d.timelock },
+      MilestoneEscrow: { ...at, abi: MilestoneEscrowAbi, address: d.escrow },
+      JourneyUpdates: { ...at, abi: JourneyUpdatesAbi, address: d.updates },
+      AllocationSale: { ...at, abi: AllocationSaleAbi, address: d.sale },
+      LaunchAMM: { ...at, abi: LaunchAMMAbi, address: d.amm },
+      FeeSplitter: { ...at, abi: FeeSplitterAbi, address: d.splitter },
+      CurveLauncher: { ...at, abi: CurveLauncherAbi, address: d.curve },
+    },
+  });
+}
+
+// The Robinhood config above is untouched and stays the default, so the
+// running instance sees the same chains and contracts as before. The handler
+// types come from it; the Arbitrum config carries the same contract names.
+export default (process.env.PONDER_CHAIN?.trim() === "arbitrum_sepolia"
+  ? arbitrum()
+  : robinhood) as typeof robinhood;

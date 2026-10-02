@@ -3,6 +3,7 @@ import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checkli
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
+import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import { docSectors } from "@/lib/sectors";
 import {
@@ -23,7 +24,9 @@ import {
   effectiveSelection,
   effectiveSubsectors,
   environmentPlanFor,
+  flagsOnChain,
   kitShapes,
+  missingFamilies,
   packCounts,
   packFor,
   reviewPassesFor,
@@ -70,6 +73,10 @@ export interface ResourcePackView {
   shapeLabels: string[];
   subsectors: string[];
   startingPoint: string;
+  /** The testnet the project builds on and the mainnet it stands in for (M52). */
+  chain: { key: ProjectChain; name: string; testnetChainId: number; mainnetChainId: number };
+  /** Chosen shapes whose protocol has no deployment on that testnet, with the missing families. */
+  shapesMissingTestnet: Array<{ shape: ProductShape; missing: string[] }>;
   environment: { checkedOn: string | null; families: FamilyEnvironment[] };
   readFirst: string[];
   resources: PackResourceView[];
@@ -143,7 +150,7 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
 }
 
 export const HOW_TO_USE =
-  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest.";
+  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps.";
 
 export const NO_SHAPE_HINT =
   "This project has no product shape yet. Pick what you are building in the studio Basics step and the resource pack will follow.";
@@ -171,12 +178,14 @@ export function buildResourcePack(
     why: r.why,
     priority: r.priority,
     steps: r.steps,
-    flags: [...(r.flags ?? [])],
+    flags: flagsOnChain(r, projectChainOf(doc)),
     ...(ranks.has(r.id) ? { readOrder: ranks.get(r.id) } : {}),
     selected: selection.has(r.id),
   });
   const resources = filtered.filter((r) => opts.includeUnselected || selection.has(r.id)).map(view);
-  const families = environmentPlanFor(shapes, KIT_ENVIRONMENTS);
+  const chain = projectChainOf(doc);
+  const info = chainInfo(chain);
+  const families = environmentPlanFor(shapes, KIT_ENVIRONMENTS[chain], info.family);
   // Removed steps are left out and added steps appended (M50).
   const hiddenSteps = new Set(kit.hiddenSteps ?? []);
   const checklistItems: Array<ChecklistItem & { custom?: boolean }> = [
@@ -208,6 +217,10 @@ export function buildResourcePack(
     shapeLabels: shapeLabels(kit),
     subsectors: effectiveSubsectors(kit, doc),
     startingPoint: kit.startingPoint,
+    chain: { key: chain, name: info.name, testnetChainId: info.chainId, mainnetChainId: info.mainnetChainId },
+    shapesMissingTestnet: shapes
+      .filter((s) => missingFamilies(s, KIT_ENVIRONMENTS[chain]).length > 0)
+      .map((s) => ({ shape: s, missing: missingFamilies(s, KIT_ENVIRONMENTS[chain]) })),
     environment: { checkedOn, families },
     readFirst: fullPack
       .filter((r) => r.priority === "core" && selection.has(r.id))

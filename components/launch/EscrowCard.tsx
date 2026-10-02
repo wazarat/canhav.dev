@@ -1,7 +1,8 @@
+import type { ProjectChain } from "@/lib/chains";
 import { Milestone } from "lucide-react";
 
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedEscrow } from "@/lib/indexer";
 import type { JourneyMilestone } from "@/lib/journey";
@@ -26,16 +27,20 @@ function fmtTokens(wei: bigint, symbol: string): string {
  * tranches unlock at their dates and can only ever be claimed to the creator.
  */
 export function EscrowCard({
+  chain,
   escrows,
   symbol,
   milestones,
   nowSeconds,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   escrows: IndexedEscrow[];
   symbol: string;
   milestones: JourneyMilestone[] | null;
   nowSeconds: number;
 }) {
+  const net = launchChain(chain);
   const now = BigInt(nowSeconds);
 
   return (
@@ -130,7 +135,7 @@ export function EscrowCard({
               Locked by{" "}
               <span className="font-mono">{e.creator.slice(0, 6)}…{e.creator.slice(-4)}</span> ·{" "}
               <a
-                href={`${LAUNCH_CHAIN.explorerUrl}/tx/${e.txHash}`}
+                href={`${net.explorerUrl}/tx/${e.txHash}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-electric-300 hover:text-electric-200"

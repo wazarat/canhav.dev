@@ -6,7 +6,8 @@ import { useConnect, useDisconnect } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN, UNSUPPORTED_WALLETS } from "@/content/launch";
+import { UNSUPPORTED_WALLETS } from "@/content/launch";
+import type { ProjectChain } from "@/lib/chains";
 
 import { useLaunchChain } from "./useLaunchChain";
 
@@ -14,10 +15,11 @@ function shortAddress(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
-export function ConnectButton() {
+/** `chain` is the chain the page is about (M54). Left out, the guard holds to Robinhood. */
+export function ConnectButton({ chain }: { chain?: ProjectChain } = {}) {
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
-  const { isConnected, address, onCorrectChain, ensureChain, switchError } = useLaunchChain();
+  const { isConnected, address, onCorrectChain, ensureChain, switchError, target } = useLaunchChain(chain);
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -141,7 +143,7 @@ export function ConnectButton() {
           both state it where it is actually needed. */}
       {!onCorrectChain ? (
         <StatusChip tone="warning" onClick={() => void ensureChain()}>
-          Wrong network. Switch to {LAUNCH_CHAIN.name}
+          Wrong network. Switch to {target.name}
         </StatusChip>
       ) : null}
       <span className="rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 font-mono text-xs text-ink-200">

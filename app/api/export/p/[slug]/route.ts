@@ -8,6 +8,7 @@ import {
   getLinkedTokenDesign,
   getProjectBySlug,
   getSnapshot,
+  designDeployChain,
 } from "@/lib/ideation-db";
 
 export const runtime = "nodejs";
@@ -41,7 +42,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
         project: snapshot.doc,
         token: linkedSnap?.doc.kind === "token_design" ? linkedSnap.doc : undefined,
         deployedAddress: linked?.deployed_token_address,
-        curve: linked?.deployed_token_address ? await getCurve(linked?.deployed_token_address) : null,
+        curve: linked?.deployed_token_address ? await getCurve(linked.deployed_token_address, designDeployChain(linked)) : null,
       }),
     );
   }

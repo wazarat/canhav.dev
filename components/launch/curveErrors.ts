@@ -1,4 +1,3 @@
-import { LAUNCH_CHAIN } from "@/content/launch";
 import { describeTxError } from "@/lib/tx";
 
 /**
@@ -34,9 +33,10 @@ export function walletInternalCopy(detail: string): string {
 
 /**
  * Map a failed write to copy. `what` names the action for the generic revert
- * line ("the launch", "the buy"); `needs` says what the wallet lacked ETH for.
+ * line ("the launch", "the buy"); `needs` says what the wallet lacked ETH for,
+ * `chainName` where to fund it.
  */
-export function friendlyCurveError(err: unknown, what: string, needs: string): string {
+export function friendlyCurveError(err: unknown, what: string, needs: string, chainName: string): string {
   const d = describeTxError(err);
   switch (d.kind) {
     case "revert": {
@@ -47,7 +47,7 @@ export function friendlyCurveError(err: unknown, what: string, needs: string): s
     case "rejected":
       return REJECTED_COPY;
     case "insufficientFunds":
-      return `Not enough ETH in this wallet to cover ${needs} plus gas. Fund it on ${LAUNCH_CHAIN.name} and retry.`;
+      return `Not enough ETH in this wallet to cover ${needs} plus gas. Fund it on ${chainName} and retry.`;
     case "walletInternal":
       return walletInternalCopy(d.detail);
     case "other":

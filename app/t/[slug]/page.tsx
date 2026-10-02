@@ -30,12 +30,12 @@ import {
   DEPLOYABILITY_TIER_LABELS,
 } from "@/content/ideation-resources";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import { tokenBuildProgressOf } from "@/content/token-steps";
 import { getCurve } from "@/lib/indexer";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { isSaleEvent, vestedCohorts } from "@/lib/ideation";
-import { getLinkedProject, getSnapshot, getTokenDesignByAddress, getTokenDesignBySlug } from "@/lib/ideation-db";
+import { getLinkedProject, getSnapshot, getTokenDesignByAddress, getTokenDesignBySlug, designDeployChain } from "@/lib/ideation-db";
 import { deployabilityFindings, deriveTokenomics } from "@/lib/tokenDesign";
 import { cn } from "@/lib/utils";
 
@@ -160,7 +160,7 @@ export default async function TokenDesignPublicPage({
     published: true,
     linked: linked !== null,
     deployedAddress: deployed ?? null,
-    curve: deployed ? await getCurve(deployed) : null,
+    curve: deployed ? await getCurve(deployed, designDeployChain(row)) : null,
     now: Math.floor(Date.now() / 1000),
   });
   const onChainCommitIsOlder =
@@ -324,7 +324,7 @@ export default async function TokenDesignPublicPage({
                   <FactRow tone="success">{MARKET_FACTS[0]}</FactRow>
                 </ul>
                 <a
-                  href={explorerAddressUrl(deployed ?? LAUNCH_CHAIN.factoryAddress)}
+                  href={explorerAddressUrl(deployed ?? launchChain(designDeployChain(row)).factoryAddress, designDeployChain(row))}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-3 block text-xs text-electric-400 transition-colors hover:text-ink-50"

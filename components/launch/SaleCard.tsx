@@ -1,8 +1,9 @@
+import type { ProjectChain } from "@/lib/chains";
 import { Coins } from "lucide-react";
 import { formatEther } from "viem";
 
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedPurchase, IndexedSale } from "@/lib/indexer";
 import type { JourneyMilestone } from "@/lib/journey";
@@ -30,18 +31,22 @@ function shortAddr(a: string): string {
  * tranches unlock (and the sale has ended). All data from on-chain events.
  */
 export function SaleCard({
+  chain,
   sales,
   purchases,
   symbol,
   milestones,
   nowSeconds,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   sales: IndexedSale[];
   purchases: Record<string, IndexedPurchase[]>;
   symbol: string;
   milestones: JourneyMilestone[] | null;
   nowSeconds: number;
 }) {
+  const net = launchChain(chain);
   const now = BigInt(nowSeconds);
 
   return (
@@ -158,7 +163,7 @@ export function SaleCard({
                   {recent.map((p) => (
                     <li key={p.txHash + p.blockTimestamp} className="flex justify-between text-xs">
                       <a
-                        href={`${LAUNCH_CHAIN.explorerUrl}/tx/${p.txHash}`}
+                        href={`${net.explorerUrl}/tx/${p.txHash}`}
                         target="_blank"
                         rel="noreferrer"
                         className="font-mono text-electric-300 hover:text-electric-200"
@@ -178,7 +183,7 @@ export function SaleCard({
               100% of proceeds go to the creator&apos;s milestone-locked schedule;
               the platform takes nothing.{" "}
               <a
-                href={`${LAUNCH_CHAIN.explorerUrl}/tx/${s.txHash}`}
+                href={`${net.explorerUrl}/tx/${s.txHash}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-electric-300 hover:text-electric-200"

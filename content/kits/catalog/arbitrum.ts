@@ -1,0 +1,112 @@
+import type { KitResource } from "@/lib/kits";
+
+const DOCS = "https://docs.arbitrum.io";
+
+/**
+ * Arbitrum family (M52). Chain primitives for a project that builds on
+ * Arbitrum Sepolia and ships to Arbitrum One, the counterpart of the
+ * Robinhood Chain family. It only ever appears in a pack for a project on
+ * that chain. Every page was fetched on 2026-10-02. Ids are immutable.
+ */
+export const ARBITRUM_RESOURCES: readonly KitResource[] = [
+  {
+    id: "arbitrum.public-chains",
+    family: "arbitrum",
+    title: "Arbitrum chains overview",
+    kind: "docs",
+    href: `${DOCS}/build-decentralized-apps/public-chains`,
+    why: "Read first. Which Arbitrum chains exist, what Arbitrum One and Arbitrum Sepolia are for, and how they relate to Ethereum.",
+    shapes: "all",
+    steps: ["basics", "architecture"],
+    priority: "core",
+    readOrder: 21,
+  },
+  {
+    id: "arbitrum.differences-from-ethereum",
+    family: "arbitrum",
+    title: "Arbitrum compared with Ethereum",
+    kind: "docs",
+    href: `${DOCS}/build-decentralized-apps/arbitrum-vs-ethereum/comparison-overview`,
+    why: "Block numbers, time, gas, opcodes and cross-layer messaging all differ from Ethereum. Mandatory before writing a contract.",
+    shapes: "all",
+    steps: ["architecture"],
+    priority: "recommended",
+  },
+  {
+    id: "arbitrum.block-numbers-and-time",
+    family: "arbitrum",
+    title: "Block numbers and time",
+    kind: "docs",
+    href: `${DOCS}/build-decentralized-apps/arbitrum-vs-ethereum/block-numbers-and-time`,
+    why: "What block.number and block.timestamp return on an Arbitrum chain. Anything that measures a window, a lock or an accrual period should read this first.",
+    shapes: "all",
+    steps: ["architecture", "security"],
+    priority: "recommended",
+  },
+  {
+    id: "arbitrum.chain-info",
+    family: "arbitrum",
+    title: "Chain info, RPC endpoints and faucets",
+    kind: "docs",
+    href: `${DOCS}/for-devs/dev-tools-and-resources/chain-info`,
+    why: "Chain ids, public RPC endpoints, explorers and faucets for Arbitrum Sepolia and Arbitrum One. What you need to deploy and to fund a test wallet.",
+    shapes: "all",
+    steps: ["reality"],
+    priority: "recommended",
+  },
+  {
+    id: "arbitrum.contract-addresses",
+    family: "arbitrum",
+    title: "Arbitrum contract addresses",
+    kind: "addresses",
+    href: `${DOCS}/build-decentralized-apps/reference/contract-addresses`,
+    why: "The protocol and precompile addresses on each Arbitrum chain, Sepolia included. Read addresses from here, never from memory.",
+    shapes: "all",
+    steps: ["architecture"],
+    priority: "recommended",
+  },
+  {
+    id: "arbitrum.oracles",
+    family: "arbitrum",
+    title: "Oracles on Arbitrum",
+    kind: "docs",
+    href: `${DOCS}/build-decentralized-apps/oracles/overview-oracles`,
+    why: "Which oracle providers serve Arbitrum chains. Check that the feed you need exists on Sepolia before you design around it.",
+    shapes: "all",
+    steps: ["architecture", "security"],
+    priority: "recommended",
+  },
+  {
+    id: "arbitrum.transaction-lifecycle",
+    family: "arbitrum",
+    title: "Transaction lifecycle",
+    kind: "docs",
+    href: `${DOCS}/how-arbitrum-works/deep-dives/transaction-lifecycle`,
+    why: "Sequencer confirmation, posting to Ethereum and finality are separate stages. Deposits and collateral moves should know which one they trust.",
+    shapes: "all",
+    steps: ["reality"],
+    priority: "recommended",
+  },
+  {
+    id: "arbitrum.gas-estimation",
+    family: "arbitrum",
+    title: "How to estimate gas",
+    kind: "docs",
+    href: `${DOCS}/build-decentralized-apps/how-to-estimate-gas`,
+    why: "A transaction pays for execution and for the data posted to Ethereum. Explains the two parts and how to estimate both.",
+    shapes: "all",
+    steps: ["architecture"],
+    priority: "deep_dive",
+  },
+  {
+    id: "arbitrum.node-providers",
+    family: "arbitrum",
+    title: "RPC endpoints and node providers",
+    kind: "docs",
+    href: `${DOCS}/build-decentralized-apps/reference/node-providers`,
+    why: "The public endpoints are rate limited. The providers to move to before anything depends on uptime.",
+    shapes: "all",
+    steps: ["reality"],
+    priority: "deep_dive",
+  },
+];

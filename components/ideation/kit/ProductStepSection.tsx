@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { CHECKLIST_COPY, STEP_LABELS_KIT, shapeBlurb, shapeLabel } from "@/content/kits/copy";
+import { CHECKLIST_COPY, GATE_COPY, STEP_LABELS_KIT, shapeBlurb, shapeLabel } from "@/content/kits/copy";
 import {
   KIT_LIMITS,
   type ProductSection,
@@ -36,10 +36,15 @@ const TITLE_BY_ID = new Map(KIT_CATALOG.map((r) => [r.id, r] as const));
 export function ProductStepSection({
   section,
   removed = [],
+  missing = [],
+  chainName = "",
   kit,
   onPatchKit,
 }: {
   section: ProductSection;
+  /** Labels of the protocols this shape relies on that are not on the project's testnet (M52). */
+  missing?: readonly string[];
+  chainName?: string;
   /** Catalog steps the team removed from this section (M50). */
   removed?: readonly StepGroup[];
   kit: ProjectKit;
@@ -79,6 +84,12 @@ export function ProductStepSection({
         <span className="block">{CHECKLIST_COPY.productIntro}</span>
         <span className="mt-1 block text-ink-400">{CHECKLIST_COPY.intro}</span>
       </StatusChip>
+
+      {missing.length ? (
+        <StatusChip tone="info" variant="block">
+          {GATE_COPY.section(missing, chainName)}
+        </StatusChip>
+      ) : null}
 
       {section.groups.length === 0 && section.sharedAbove.length === 0 ? (
         <StatusChip tone="neutral" variant="block">

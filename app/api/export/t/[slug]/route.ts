@@ -5,7 +5,7 @@ import { getCurve } from "@/lib/indexer";
 
 import { buildAgentsMd, buildTokenDesignMarkdown } from "@/lib/export-md";
 import { gateExport, markdownResponse } from "@/lib/export-route";
-import { getLinkedProject, getSnapshot, getTokenDesignBySlug } from "@/lib/ideation-db";
+import { getLinkedProject, getSnapshot, getTokenDesignBySlug, designDeployChain } from "@/lib/ideation-db";
 
 export const runtime = "nodejs";
 
@@ -38,7 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
         project: linkedSnap?.doc.kind === "project" ? linkedSnap.doc : undefined,
         token: snapshot.doc,
         deployedAddress: row.deployed_token_address,
-        curve: row.deployed_token_address ? await getCurve(row.deployed_token_address) : null,
+        curve: row.deployed_token_address ? await getCurve(row.deployed_token_address, designDeployChain(row)) : null,
       }),
     );
   }
@@ -50,7 +50,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     published: true,
     linked: linkedForBuild !== null,
     deployedAddress: row.deployed_token_address ?? null,
-    curve: row.deployed_token_address ? await getCurve(row.deployed_token_address) : null,
+    curve: row.deployed_token_address ? await getCurve(row.deployed_token_address, designDeployChain(row)) : null,
     now: Math.floor(Date.now() / 1000),
   });
   return markdownResponse(

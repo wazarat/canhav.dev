@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProjectChain } from "@/lib/chains";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePublicClient, useWriteContract } from "wagmi";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { milestoneEscrowAbi } from "@/lib/abi/milestoneEscrow";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import type { JourneyMilestone } from "@/lib/journey";
 
 import { ConnectButton } from "./ConnectButton";
@@ -48,6 +49,7 @@ type Status =
  * creator, the lock-tokens flow (approve, then createEscrow).
  */
 export function EscrowActions({
+  chain,
   tokenAddress,
   creator,
   journeyHash,
@@ -55,6 +57,8 @@ export function EscrowActions({
   milestones,
   tranches,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   tokenAddress: string;
   creator: string;
   journeyHash: string;
@@ -62,10 +66,11 @@ export function EscrowActions({
   milestones: JourneyMilestone[] | null;
   tranches: EscrowActionTranche[];
 }) {
+  const net = launchChain(chain);
   const router = useRouter();
-  const { isConnected, address, ensureChain } = useLaunchChain();
+  const { isConnected, address, ensureChain } = useLaunchChain(chain);
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: net.chainId });
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [formOpen, setFormOpen] = useState(false);
@@ -87,7 +92,7 @@ export function EscrowActions({
     if (status.kind === "working") return;
     try {
       setStatus({ kind: "working", label: "Checking network…" });
-      if (!(await ensureChain())) throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
+      if (!(await ensureChain())) throw new Error(`Switch to ${net.name} to continue.`);
       setStatus({ kind: "working", label });
       await fn();
     } catch (err) {
@@ -110,7 +115,7 @@ export function EscrowActions({
     void run("Confirm the claim in your wallet…", async () => {
       const hash = await writeContractAsync({
         abi: milestoneEscrowAbi,
-        address: LAUNCH_CHAIN.escrowAddress,
+        address: net.escrowAddress,
         functionName: "claim",
         args: [BigInt(t.escrowId), BigInt(t.trancheIndex)],
       });
@@ -142,7 +147,7 @@ export function EscrowActions({
         abi: erc20ApproveAbi,
         address: tokenAddress as `0x${string}`,
         functionName: "approve",
-        args: [LAUNCH_CHAIN.escrowAddress, total],
+        args: [net.escrowAddress, total],
       });
       if (!publicClient) throw new Error("No RPC client.");
       setStatus({ kind: "working", label: "Waiting for the approval…" });
@@ -152,7 +157,7 @@ export function EscrowActions({
       setStatus({ kind: "working", label: "Confirm the escrow in your wallet…" });
       const hash = await writeContractAsync({
         abi: milestoneEscrowAbi,
-        address: LAUNCH_CHAIN.escrowAddress,
+        address: net.escrowAddress,
         functionName: "createEscrow",
         args: [tokenAddress as `0x${string}`, journeyHash as `0x${string}`, trancheArgs],
       });
@@ -172,7 +177,7 @@ export function EscrowActions({
               ? "Unlocked tranches can be claimed by anyone; tokens always go to the creator."
               : "Escrow actions"}
         </p>
-        <ConnectButton />
+        <ConnectButton chain={chain} />
       </div>
 
       {isConnected && claimable.length > 0 ? (

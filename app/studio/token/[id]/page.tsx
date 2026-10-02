@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { TokenDesignEditor } from "@/components/ideation/TokenDesignEditor";
 import { getSessionUser } from "@/lib/auth";
-import { getLinkedProject, getMyProjects, getSnapshot, getTokenDesign } from "@/lib/ideation-db";
+import { getLinkedProject, getMyProjects, getSnapshot, getTokenDesign, designDeployChain } from "@/lib/ideation-db";
 import { designMilestones } from "@/lib/launch-commitment";
 import { getCurve } from "@/lib/indexer";
 import { kitShapes } from "@/lib/kits";
@@ -31,7 +31,7 @@ export default async function TokenDesignEditorPage({
     getLinkedProject(row.id),
     getMyProjects(user.id),
     // The deployed token's curve feeds the computed build steps (M46).
-    row.deployed_token_address ? getCurve(row.deployed_token_address) : null,
+    row.deployed_token_address ? getCurve(row.deployed_token_address, designDeployChain(row)) : null,
     // The published snapshot, for the milestone hint on Review (M48).
     row.published_hash ? getSnapshot(row.published_hash) : null,
   ]);

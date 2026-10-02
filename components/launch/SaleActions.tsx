@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProjectChain } from "@/lib/chains";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatEther, parseEther } from "viem";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { allocationSaleAbi } from "@/lib/abi/allocationSale";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import type { JourneyMilestone } from "@/lib/journey";
 
 import { useLaunchChain } from "./useLaunchChain";
@@ -50,6 +51,7 @@ type Status =
  * flow, and permissionless claim/reclaim buttons once a sale has ended.
  */
 export function SaleActions({
+  chain,
   tokenAddress,
   creator,
   journeyHash,
@@ -57,6 +59,8 @@ export function SaleActions({
   milestones,
   sales,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   tokenAddress: string;
   creator: string;
   journeyHash: string;
@@ -64,10 +68,11 @@ export function SaleActions({
   milestones: JourneyMilestone[] | null;
   sales: SaleActionSale[];
 }) {
+  const net = launchChain(chain);
   const router = useRouter();
-  const { isConnected, address, ensureChain } = useLaunchChain();
+  const { isConnected, address, ensureChain } = useLaunchChain(chain);
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: net.chainId });
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [buyAmount, setBuyAmount] = useState("");
@@ -99,7 +104,7 @@ export function SaleActions({
     if (status.kind === "working") return;
     try {
       setStatus({ kind: "working", label: "Checking network…" });
-      if (!(await ensureChain())) throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
+      if (!(await ensureChain())) throw new Error(`Switch to ${net.name} to continue.`);
       setStatus({ kind: "working", label });
       await fn();
     } catch (err) {
@@ -127,7 +132,7 @@ export function SaleActions({
       const cost = BigInt(buyAmount) * BigInt(liveSale.price);
       const hash = await writeContractAsync({
         abi: allocationSaleAbi,
-        address: LAUNCH_CHAIN.saleAddress,
+        address: net.saleAddress,
         functionName: "buy",
         args: [BigInt(liveSale.saleId)],
         value: cost,
@@ -185,7 +190,7 @@ export function SaleActions({
         abi: erc20ApproveAbi,
         address: tokenAddress as `0x${string}`,
         functionName: "approve",
-        args: [LAUNCH_CHAIN.saleAddress, allocationWei],
+        args: [net.saleAddress, allocationWei],
       });
       if (!publicClient) throw new Error("No RPC client.");
       setStatus({ kind: "working", label: "Waiting for the approval…" });
@@ -195,7 +200,7 @@ export function SaleActions({
       setStatus({ kind: "working", label: "Confirm the sale in your wallet…" });
       const hash = await writeContractAsync({
         abi: allocationSaleAbi,
-        address: LAUNCH_CHAIN.saleAddress,
+        address: net.saleAddress,
         functionName: "createSale",
         args: [
           tokenAddress as `0x${string}`,
@@ -218,7 +223,7 @@ export function SaleActions({
     void run("Confirm the claim in your wallet…", async () => {
       const hash = await writeContractAsync({
         abi: allocationSaleAbi,
-        address: LAUNCH_CHAIN.saleAddress,
+        address: net.saleAddress,
         functionName: "claimProceeds",
         args: [BigInt(saleId), BigInt(trancheIndex)],
       });
@@ -231,7 +236,7 @@ export function SaleActions({
     void run("Confirm the reclaim in your wallet…", async () => {
       const hash = await writeContractAsync({
         abi: allocationSaleAbi,
-        address: LAUNCH_CHAIN.saleAddress,
+        address: net.saleAddress,
         functionName: "reclaimUnsold",
         args: [BigInt(saleId)],
       });

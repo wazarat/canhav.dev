@@ -1,8 +1,9 @@
+import type { ProjectChain } from "@/lib/chains";
 import { Waves } from "lucide-react";
 import { formatEther } from "viem";
 
 import { StatusChip } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN, LAUNCH_CURVE } from "@/content/launch";
+import { launchChain, LAUNCH_CURVE } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedPool, IndexedSwap } from "@/lib/indexer";
 
@@ -21,16 +22,20 @@ function shortAddr(a: string): string {
  * protocol split when opted in). All numbers from on-chain events.
  */
 export function PoolCard({
+  chain,
   pool,
   symbol,
   swapData,
   locked = false,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   pool: IndexedPool;
   symbol: string;
   swapData: { swaps: IndexedSwap[]; count: number; ethVolume: bigint } | null;
   locked?: boolean;
 }) {
+  const net = launchChain(chain);
   const ethReserve = BigInt(pool.ethReserve);
   const tokenReserve = BigInt(pool.tokenReserve);
   // Price in ETH per whole token, shown with enough precision for small pools.
@@ -86,7 +91,7 @@ export function PoolCard({
             {swapData.swaps.map((s) => (
               <li key={s.txHash + s.blockTimestamp} className="flex justify-between text-xs">
                 <a
-                  href={`${LAUNCH_CHAIN.explorerUrl}/tx/${s.txHash}`}
+                  href={`${net.explorerUrl}/tx/${s.txHash}`}
                   target="_blank"
                   rel="noreferrer"
                   className="font-mono text-electric-300 hover:text-electric-200"

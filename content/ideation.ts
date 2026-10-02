@@ -28,6 +28,7 @@ import type {
 // Values, used only inside functions. lib/ideation reaches this file through
 // content/kits/copy, so nothing here may read them at module load.
 import { PROJECT_LIMITS, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
+import type { ProjectChain } from "@/lib/chains";
 import { docSectors } from "@/lib/sectors";
 import type { DesignWarning } from "@/lib/tokenDesign";
 
@@ -359,6 +360,38 @@ export const PROJECT_SECURITY_FIELDS = [
   { key: "incidentResponse", label: "Incident response" },
   { key: "keyCustody", label: "Key custody" },
 ] as const;
+
+/** The team's own files, by reference (M53). */
+export const REFERENCES_COPY = {
+  label: "Project files",
+  hint: "Specs, diagrams, audits, spreadsheets, anything your build leans on. Give a link or a path on your own machine. Nothing is uploaded and none of this is published. Your agent sees the list through the MCP server and the draft exports.",
+  titleLabel: "File title",
+  titlePlaceholder: "Rate model spec",
+  locationLabel: "Link or local path",
+  locationPlaceholder: "https://... or ~/docs/rate-model.md",
+  noteLabel: "What it is for",
+  notePlaceholder: "What it is for (optional)",
+  link: "Link",
+  local: "Local file",
+  add: "Add a file",
+  remove: (title: string) => `Remove ${title || "this file"}`,
+  removeTitle: "Remove this file",
+  limit: (max: number) => `At most ${max} files.`,
+  exportTitle: "Your files",
+  exportIntro:
+    "Files the team keeps for this project. A local path is on the team's machine, so open it only when you are working there.",
+} as const;
+
+/** The chain a project builds on (M52). Its token launch follows it. */
+export const CHAIN_COPY = {
+  label: "Chain",
+  hint: "Where you build and test. A token launched from this project goes on the same chain.",
+  locked: "A token has launched from this project, so its chain is fixed.",
+  options: [
+    { value: "robinhood_testnet", label: "Robinhood testnet" },
+    { value: "arbitrum_sepolia", label: "Arbitrum Sepolia" },
+  ] satisfies Array<{ value: ProjectChain; label: string }>,
+} as const;
 
 /** The misconception this platform refuses to let stand quietly. */
 export const ROBINHOOD_MYTH = {

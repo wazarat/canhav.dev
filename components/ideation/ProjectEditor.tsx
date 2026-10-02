@@ -28,9 +28,11 @@ import {
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
+import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import {
   AUDIENCE_OPTIONS,
+  CHAIN_COPY,
   ORACLE_USE_OPTIONS,
   PAYER_OPTIONS,
   PERSONA_COPY,
@@ -56,7 +58,6 @@ import {
   GATE_COPY,
   KIT_COPY,
   STARTING_POINT_OPTIONS,
-  offeredShapes,
   shapeBlurb,
   shapeExamples,
   shapeGroupsFor,
@@ -79,19 +80,18 @@ import {
   type Subsector,
   docSectors,
   sectorOfSubsector,
-  subsectorsOf,
-  withSectors,
 } from "@/lib/sectors";
+import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { buildProgress, removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, RAIL_COPY, REVIEW_COPY, STEP_LABELS_KIT } from "@/content/kits/copy";
+import { CHECKLIST_COPY, FAMILY_LABELS, RAIL_COPY, REVIEW_COPY, STEP_LABELS_KIT } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   KIT_LIMITS,
   type ProductShape,
-  blockedShapesIn,
-  blockedShapes,
-  blockedSubsectors,
+  missingFamilies,
+  shapesFor,
   reviewPassesFor,
   reviewProgress,
   type KitStep,
@@ -100,13 +100,9 @@ import {
   effectiveSelection,
   emptyProjectKit,
   kitShapes,
-  kitsForSectors,
   overlappingSubsectors,
   packCounts,
   packFor,
-  withImpliedSubsectors,
-  withShapeSubsectors,
-  withShapes,
 } from "@/lib/kits";
 
 /**
@@ -117,10 +113,6 @@ import {
 type EditorStep = { kind: "doc"; key: KitStep } | { kind: "product"; shape: ProductShape };
 
 const DOC_STEPS: readonly KitStep[] = ["basics", "architecture", "security", "reality"];
-
-/** The testnet gate (M41), fixed per build from the environment rows. */
-const BLOCKED_SHAPES = new Set(blockedShapes(KIT_ENVIRONMENTS));
-const BLOCKED_SUBSECTORS = new Set(blockedSubsectors(KIT_ENVIRONMENTS));
 
 function stepProblems(doc: ProjectDoc): Record<KitStep, string | null> {
   const L = PROJECT_LIMITS;
@@ -140,9 +132,7 @@ function stepProblems(doc: ProjectDoc): Record<KitStep, string | null> {
     short(doc.whatItDoes, L.whatItDoes.min) ||
     !doc.stage
       ? "Basics incomplete"
-      : blockedShapesIn(kitShapes(doc.kit), KIT_ENVIRONMENTS).length
-        ? GATE_COPY.stepProblem
-        : null;
+      : null;
 
   const a = doc.architecture;
   const architecture =
@@ -164,7 +154,7 @@ function stepProblems(doc: ProjectDoc): Record<KitStep, string | null> {
       : null;
 
   const reality =
-    doc.mythAck !== true || short(doc.firstHundredUsers, L.firstHundredUsers.min)
+    (projectChainOf(doc) === "robinhood_testnet" && doc.mythAck !== true) || short(doc.firstHundredUsers, L.firstHundredUsers.min)
       ? "Reality check incomplete"
       : null;
 
@@ -177,6 +167,7 @@ export function ProjectEditor({
   initialStatus,
   initialSlug,
   initialRev,
+  chainLocked = false,
   linkPanel,
 }: {
   id: string;
@@ -185,6 +176,8 @@ export function ProjectEditor({
   initialSlug: string | null;
   /** The draft's agent revision at load. Undefined before the database update (M39). */
   initialRev?: number;
+  /** True once a token has launched from the project, which fixes its chain (M52). */
+  chainLocked?: boolean;
   linkPanel?: React.ReactNode;
 }) {
   const { doc, patch, patchSection, setDoc } = useDraftDoc(initialDoc);
@@ -224,52 +217,15 @@ export function ProjectEditor({
   const kit = doc.kit;
   const sectors = docSectors(doc);
   const subsectors = doc.subsectors ?? [];
+  const chainKey = projectChainOf(doc);
+  const chain = chainInfo(chainKey);
+  const envRows = KIT_ENVIRONMENTS[chainKey];
   const patchKit = (partial: Partial<ProjectKit>) =>
     patch({ kit: { ...(kit ?? emptyProjectKit(kitIds)), ...partial } });
   const showRail = kitIds.length > 0;
-  /**
-   * The kit fields that follow a change of sectors or subsectors. Shapes no
-   * longer offered are dropped and `kits` tracks what the sectors open,
-   * keeping a kit that already exists when they open nothing.
-   */
-  const kitAfter = (nextSectors: readonly Sector[], nextSubsectors: readonly Subsector[]) => {
-    if (!kit) return {};
-    const offered = offeredShapes(nextSubsectors);
-    const keep = kitShapes(kit).filter((s) => offered.includes(s));
-    const kits = kitsForSectors(nextSectors, nextSubsectors);
-    const next = { ...kit, ...withShapes(keep), kits: kits.length ? kits : kit.kits };
-    return { kit: { ...next, id: next.kits[0] } };
-  };
-  const onSectors = (v: Sector[]) => {
-    const next = withSectors(v);
-    const own = new Set(subsectorsOf(next.sectors));
-    const nextSubs = subsectors.filter((s) => own.has(s));
-    patch({
-      ...next,
-      ...(doc.subsectors ? { subsectors: nextSubs } : {}),
-      ...kitAfter(next.sectors, nextSubs),
-    });
-  };
-  const onSubsectors = (v: Subsector[]) => {
-    const implied = withImpliedSubsectors(v, sectors, v.filter((s) => !subsectors.includes(s)));
-    // The gate. A blocked subsector can only stay if the doc already had it.
-    const nextSubs = implied.filter((s) => !BLOCKED_SUBSECTORS.has(s) || subsectors.includes(s));
-    patch({ subsectors: nextSubs, ...kitAfter(sectors, nextSubs) });
-  };
-  const onShapes = (shapes: readonly string[]) => {
-    const held = kitShapes(kit);
-    const list = (shapes as ProjectKit["shapes"] ?? []).filter(
-      (s) => !BLOCKED_SHAPES.has(s) || held.includes(s),
-    ) as ProjectKit["shapes"];
-    const nextSubs = withShapeSubsectors(subsectors, list, sectors);
-    const kits = kitsForSectors(sectors, nextSubs);
-    const base = kit ?? emptyProjectKit(kitIds);
-    const nextKits = kits.length ? kits : base.kits;
-    patch({
-      ...(nextSubs.length !== subsectors.length ? { subsectors: nextSubs } : {}),
-      kit: { ...base, ...withShapes(list), kits: nextKits, id: nextKits[0] },
-    });
-  };
+  const onSectors = (v: Sector[]) => patch(sectorsChange(doc, v));
+  const onSubsectors = (v: Subsector[]) => patch(subsectorsChange(doc, v));
+  const onShapes = (shapes: readonly string[]) => patch(shapesChange(doc, shapes as ProductShape[]));
   /** One line per subsector the overlap rule ticked, from the click order stored in the doc. */
   const overlapHints = subsectors.flatMap((sub, i) => {
     const because = subsectors
@@ -282,25 +238,22 @@ export function ProjectEditor({
     .map((sec) => ({
       key: sec,
       heading: SECTOR_OPTIONS.find((o) => o.value === sec)?.title ?? optionLabel(SECTOR_OPTIONS, sec),
+      // A subsector whose every shape lacks a protocol on this testnet carries a note, and stays pickable (M52).
       options: subsectorOptionsFor(sec).map((o): ChipOption<Subsector> =>
-        BLOCKED_SUBSECTORS.has(o.value) && !subsectors.includes(o.value)
-          ? { ...o, disabled: true, disabledNote: GATE_COPY.chipSuffix }
+        shapesFor([o.value]).every((s) => missingFamilies(s, envRows).length > 0)
+          ? { ...o, note: GATE_COPY.chipSuffix(chain.short) }
           : o,
       ),
     }));
-  const subsectorGated = subsectorGroups.some((g) => g.options.some((o) => o.disabled));
+  const subsectorGated = subsectorGroups.some((g) => g.options.some((o) => o.note));
   const shapeGroups = shapeGroupsFor(subsectors).map((g) => ({
     key: g.subsector,
     heading: g.heading,
     options: g.options.map((o): ChipOption<ProductShape> =>
-      BLOCKED_SHAPES.has(o.value) && !kitShapes(kit).includes(o.value)
-        ? { ...o, disabled: true, disabledNote: GATE_COPY.chipSuffix }
-        : o,
+      missingFamilies(o.value, envRows).length > 0 ? { ...o, note: GATE_COPY.chipSuffix(chain.short) } : o,
     ),
   }));
-  const shapeGated = shapeGroups.some((g) => g.options.some((o) => o.disabled));
-  const heldBlocked = blockedShapesIn(kitShapes(kit), KIT_ENVIRONMENTS);
-  const removeBlocked = () => onShapes(kitShapes(kit).filter((s) => !BLOCKED_SHAPES.has(s)));
+  const shapeGated = shapeGroups.some((g) => g.options.some((o) => o.note));
   const audience = docAudience(doc);
   const shapesKey = kitShapes(kit).join(",");
   const editorSteps = useMemo<EditorStep[]>(
@@ -389,6 +342,18 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.name.max}
               placeholder="What is this called?"
             />
+            <ChipRadioGroup
+              label={CHAIN_COPY.label}
+              hint={chainLocked ? CHAIN_COPY.locked : CHAIN_COPY.hint}
+              value={chainKey}
+              onChange={(v) => {
+                // A radio can be unticked to "", and the chain always has a value.
+                if (v && !chainLocked) patch({ chain: v as ProjectChain });
+              }}
+              options={CHAIN_COPY.options.map((o) =>
+                chainLocked && o.value !== chainKey ? { ...o, disabled: true } : o,
+              )}
+            />
             <CardMultiSelectGroups
               label={SECTOR_COPY.label}
               required
@@ -423,7 +388,7 @@ export function ProjectEditor({
                   <p className="text-xs leading-relaxed text-ink-400">{overlapHints.join(" ")}</p>
                 ) : null}
                 {subsectorGated ? (
-                  <p className="text-xs leading-relaxed text-ink-500">{GATE_COPY.note}</p>
+                  <p className="text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
                 ) : null}
               </CardMultiSelectGroups>
             )}
@@ -438,14 +403,9 @@ export function ProjectEditor({
                   groups={shapeGroups}
                 >
                   {shapeGated ? (
-                    <p className="mt-2 text-xs leading-relaxed text-ink-500">{GATE_COPY.note}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
                   ) : null}
                 </ChipMultiSelectGroups>
-                {heldBlocked.length ? (
-                  <StatusChip tone="warning" variant="block" onClick={removeBlocked}>
-                    {GATE_COPY.warning(heldBlocked.map((s) => shapeLabel(s) ?? s))}
-                  </StatusChip>
-                ) : null}
                 {kitShapes(kit).length ? (
                   <div className="-mt-3 space-y-4 text-sm leading-relaxed text-ink-300">
                     {kitShapes(kit).map((s) => (
@@ -634,6 +594,10 @@ export function ProjectEditor({
               onChange={(v) => patchSection("architecture", { upgradeability: v })}
               options={UPGRADEABILITY_OPTIONS}
             />
+            <ReferencesEditor
+              references={doc.references ?? []}
+              onChange={(references) => patch({ references })}
+            />
           </>
         )}
 
@@ -670,20 +634,24 @@ export function ProjectEditor({
 
         {docStep === "reality" && (
           <>
-            <StatusChip tone="warning" variant="block">
-              <span className="block font-medium text-ink-100">{ROBINHOOD_MYTH.title}</span>
-              <span className="mt-1 block">{ROBINHOOD_MYTH.body}</span>
-            </StatusChip>
-            <label className="flex items-start gap-2.5 text-sm text-ink-200">
-              <input
-                type="checkbox"
-                checked={doc.mythAck}
-                onChange={(e) => patch({ mythAck: e.target.checked })}
-                className="mt-0.5 h-4 w-4 rounded border-ink-700 bg-ink-950 accent-electric-500"
-              />
-              {ROBINHOOD_MYTH.ack}
-            </label>
-            {showRail ? <EnvironmentBlock kit={kit} /> : null}
+            {chainKey === "robinhood_testnet" ? (
+              <>
+                <StatusChip tone="warning" variant="block">
+                  <span className="block font-medium text-ink-100">{ROBINHOOD_MYTH.title}</span>
+                  <span className="mt-1 block">{ROBINHOOD_MYTH.body}</span>
+                </StatusChip>
+                <label className="flex items-start gap-2.5 text-sm text-ink-200">
+                  <input
+                    type="checkbox"
+                    checked={doc.mythAck}
+                    onChange={(e) => patch({ mythAck: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 rounded border-ink-700 bg-ink-950 accent-electric-500"
+                  />
+                  {ROBINHOOD_MYTH.ack}
+                </label>
+              </>
+            ) : null}
+            {showRail ? <EnvironmentBlock kit={kit} chain={chainKey} /> : null}
             <TextField
               label={ROBINHOOD_MYTH.followUp}
               required
@@ -741,6 +709,8 @@ export function ProjectEditor({
         {productShape && kit ? (
           <ProductStepSection
             key={productShape}
+            missing={missingFamilies(productShape, envRows).map((f) => FAMILY_LABELS[f])}
+            chainName={chain.short}
             section={sections.find((x) => x.shape === productShape) ?? { shape: productShape, groups: [], sharedAbove: [] }}
             removed={removedByShape.get(productShape)}
             kit={kit}

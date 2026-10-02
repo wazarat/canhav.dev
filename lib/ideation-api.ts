@@ -3,6 +3,9 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { type SessionUser, getSessionUser, isAuthConfigured } from "@/lib/auth";
+import { projectChainOf } from "@/lib/chains";
+import type { ProjectDoc } from "@/lib/ideation";
+import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   emptyProjectDoc,
   emptyTokenDesignDoc,
@@ -106,6 +109,12 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       // envelope is checked so a stray payload can't change the doc type.
       if (!doc || doc.kind !== kind || doc.version !== 1)
         return NextResponse.json({ error: "Wrong document type." }, { status: 400 });
+      // A project's chain is fixed once a token has launched from it (M52).
+      if (kind === "project") {
+        const held = await getProject(id, gate.id);
+        if (held && projectChainOf(held.draft_doc) !== projectChainOf(doc as ProjectDoc) && (await projectChainLocked(id)))
+          return NextResponse.json({ error: CHAIN_LOCKED }, { status: 409 });
+      }
       const result =
         kind === "project"
           ? await updateProjectDraft(id, gate.id, doc as never, rev)

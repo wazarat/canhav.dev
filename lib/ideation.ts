@@ -1,8 +1,7 @@
 import { keccak256, stringToBytes } from "viem";
 
+import { type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
 import {
-  blockedShapesIn,
-  kitShapes,
   kitsForSectors,
   normalizeProjectKit,
   type ProductShape,
@@ -21,8 +20,6 @@ import {
   sectorOfSubsector,
   withSectors,
 } from "@/lib/sectors";
-import { GATE_COPY, shapeLabel } from "@/content/kits/copy";
-import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { LAUNCH_FORM } from "@/content/launch";
 
 export {
@@ -194,6 +191,24 @@ export interface ExternalDep {
   url?: string;
 }
 
+/**
+ * A file the team keeps for this project, by reference (M53). Nothing is
+ * uploaded. `location` is a link or a path on the team's own machine, so a
+ * local agent can open it. Stays on the draft and out of the published
+ * snapshot, the same as token build step ticks.
+ */
+export interface ProjectReference {
+  title: string;
+  location: string;
+  /** What it is for. May be empty. */
+  note: string;
+}
+
+/** True when a reference points at the web rather than a local path. */
+export function referenceIsLink(r: Pick<ProjectReference, "location">): boolean {
+  return /^https?:\/\/\S+$/.test(r.location.trim());
+}
+
 export interface ProjectDoc {
   kind: "project";
   version: 1;
@@ -221,6 +236,17 @@ export interface ProjectDoc {
    * shape; absent otherwise. Optional so normalizeProjectDoc never injects it.
    */
   kit?: ProjectKit;
+  /**
+   * The chain the project builds on and its token launches on (M52).
+   * Optional and never injected; absent reads as Robinhood testnet through
+   * projectChainOf(), so older documents keep their hash.
+   */
+  chain?: ProjectChain;
+  /**
+   * The team's own files, by reference (M53). Optional, never injected and
+   * never published; publishEntity strips it from the snapshot.
+   */
+  references?: ProjectReference[];
   /** What it does, one paragraph. */
   whatItDoes: string;
   /**
@@ -305,6 +331,10 @@ export const PROJECT_LIMITS = {
   externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
   testnetContracts: { max: 10 },
+  references: { max: 40 },
+  referenceTitle: { min: 2, max: 80 },
+  referenceLocation: { min: 1, max: 300 },
+  referenceNote: { max: 200 },
 } as const;
 
 /**
@@ -440,6 +470,26 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
   const { kit: rawKit, ...rest } = withoutAudience as ProjectDoc & { kit?: unknown };
   const kits = kitsForSectors(docSectors({ sector, ...sectorsPatch }), subsectorPatch.subsectors ?? []);
   const kit = rawKit === undefined ? null : normalizeProjectKit(rawKit, kits);
+  // Project files (M53): cleaned when the key exists, never invented.
+  const rawRefs = (rest as { references?: unknown }).references;
+  if (rawRefs !== undefined) {
+    const L = PROJECT_LIMITS;
+    const refs: ProjectReference[] = [];
+    for (const v of Array.isArray(rawRefs) ? (rawRefs as unknown[]) : []) {
+      if (!v || typeof v !== "object" || refs.length >= L.references.max) continue;
+      const r = v as Record<string, unknown>;
+      if (typeof r.title !== "string" || typeof r.location !== "string") continue;
+      refs.push({
+        title: r.title.slice(0, L.referenceTitle.max),
+        location: r.location.slice(0, L.referenceLocation.max),
+        note: typeof r.note === "string" ? r.note.slice(0, L.referenceNote.max) : "",
+      });
+    }
+    (rest as { references?: ProjectReference[] }).references = refs;
+  }
+  // Chain (M52): kept when it is a known chain, dropped when it is garbage, never invented.
+  if ("chain" in rest && !isProjectChain((rest as { chain?: unknown }).chain))
+    delete (rest as { chain?: unknown }).chain;
 
   return {
     ...(rest as ProjectDoc),
@@ -715,12 +765,10 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     if (n < L.subsectors.min) return "Pick at least one subsector.";
     if (n > L.subsectors.max) return `At most ${L.subsectors.max} subsectors.`;
   }
+  if (doc.chain !== undefined && !isProjectChain(doc.chain)) return "Unknown chain.";
   if (doc.kit) {
     p = validateProjectKit(doc.kit, kitsForSectors(sectors, subsectors));
     if (p) return p;
-    // The testnet gate (M41). A stored shape is kept, but it cannot publish.
-    const gated = blockedShapesIn(kitShapes(doc.kit), KIT_ENVIRONMENTS);
-    if (gated.length) return GATE_COPY.publishBlock(gated.map((g) => shapeLabel(g) ?? g));
   }
   p =
     checkText("What it does", doc.whatItDoes, L.whatItDoes) ??
@@ -800,7 +848,8 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     checkStatusDecl("Key custody", s.keyCustody);
   if (p) return p;
 
-  if (doc.mythAck !== true)
+  // The acknowledgement is about Robinhood Chain, so only a project there owes it (M52).
+  if (projectChainOf(doc) === "robinhood_testnet" && doc.mythAck !== true)
     return "Acknowledge the Robinhood distribution reality before publishing.";
   p = checkText("First hundred users", doc.firstHundredUsers, L.firstHundredUsers);
   if (p) return p;
@@ -1060,4 +1109,6 @@ export interface ProjectContext {
   shapeLabels: string[];
   /** https://www.canhav.com/p/<slug> when published, else null. */
   publicUrl: string | null;
+  /** The chain the project builds on, which its token launches on (M54). */
+  chain: ProjectChain;
 }

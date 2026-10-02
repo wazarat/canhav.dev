@@ -2,7 +2,7 @@ import "server-only";
 
 import type { ProjectContext } from "@/lib/ideation";
 import { getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
-import { getToken, type IndexedToken } from "@/lib/indexer";
+import { findToken, type IndexedToken } from "@/lib/indexer";
 import { projectContext } from "@/lib/launch-project";
 import { getLaunchesByOwner } from "@/lib/launches-db";
 
@@ -78,7 +78,8 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
   const launches = await Promise.all(
     [...byAddress.values()].map(async (entry) => ({
       ...entry,
-      launch: await getToken(entry.address),
+      // Looked for on every chain, so a launch on either one is found (M54).
+      launch: await findToken(entry.address),
     })),
   );
   launches.sort((a, b) => (b.launchedAt ?? "").localeCompare(a.launchedAt ?? ""));

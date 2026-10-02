@@ -1,6 +1,7 @@
+import type { ProjectChain } from "@/lib/chains";
 import { Lock } from "lucide-react";
 
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import { formatCount } from "@/lib/format";
 import type { IndexedVesting } from "@/lib/indexer";
 
@@ -31,14 +32,18 @@ export interface LiveVesting {
  * degrades to schedule-only.
  */
 export function VestingCard({
+  chain,
   vesting,
   symbol,
   live,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   vesting: IndexedVesting;
   symbol: string;
   live: LiveVesting | null;
 }) {
+  const net = launchChain(chain);
   const amount = BigInt(vesting.amount);
   const start = BigInt(vesting.startTimestamp);
   const duration = BigInt(vesting.durationSeconds);
@@ -120,7 +125,7 @@ export function VestingCard({
         <div className="flex justify-between sm:col-span-2">
           <span className="text-ink-500">Vesting wallet</span>
           <a
-            href={`${LAUNCH_CHAIN.explorerUrl}/address/${vesting.walletAddress}`}
+            href={`${net.explorerUrl}/address/${vesting.walletAddress}`}
             target="_blank"
             rel="noreferrer"
             className="break-all font-mono text-electric-300 hover:text-electric-200"

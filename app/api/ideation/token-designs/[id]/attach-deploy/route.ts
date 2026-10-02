@@ -3,9 +3,10 @@ import type { Hex } from "viem";
 
 import { type AttachProof, verifyAttachProof } from "@/lib/attach-proof";
 import { authGate } from "@/lib/ideation-api";
-import { attachDeploy, getSnapshot, getTokenDesign } from "@/lib/ideation-db";
-import { getToken } from "@/lib/indexer";
-import { publicClient } from "@/lib/publicClient";
+import { chainInfo, projectChainOf } from "@/lib/chains";
+import { attachDeploy, getLinkedProject, getSnapshot, getTokenDesign } from "@/lib/ideation-db";
+import { findToken } from "@/lib/indexer";
+import { publicClientFor } from "@/lib/publicClient";
 
 export const runtime = "nodejs";
 
@@ -46,10 +47,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "A deploy is already attached." }, { status: 409 });
 
   // The indexer may lag the receipt by a block or two — retry once.
-  let token = await getToken(tokenAddress);
+  let token = await findToken(tokenAddress);
   if (!token) {
     await sleep(3000);
-    token = await getToken(tokenAddress);
+    token = await findToken(tokenAddress);
   }
   if (!token)
     return NextResponse.json(
@@ -61,6 +62,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!snapshot || snapshot.entity_type !== "token_design" || snapshot.entity_id !== id)
     return NextResponse.json(
       { error: "The deployed token does not commit to this design." },
+      { status: 409 },
+    );
+
+  // A design linked to a project deploys on the project's chain (M54).
+  const project = await getLinkedProject(id);
+  if (project && token.chain && projectChainOf(project.draft_doc) !== token.chain)
+    return NextResponse.json(
+      {
+        error: `The linked project builds on ${chainInfo(projectChainOf(project.draft_doc)).name}, and this token is on ${chainInfo(token.chain).name}. A design deploys on its project's chain.`,
+      },
       { status: 409 },
     );
 
@@ -76,7 +87,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         },
         { status: 403 },
       );
-    const problem = await verifyAttachProof(publicClient, {
+    const problem = await verifyAttachProof(publicClientFor(token.chain), {
       tokenAddress,
       designId: id,
       expectedSigner: token.creator,
@@ -85,7 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (problem) return NextResponse.json({ error: problem }, { status: 403 });
   }
 
-  const ok = await attachDeploy(id, gate.id, tokenAddress, token.creator, token.journeyHash);
+  const ok = await attachDeploy(id, gate.id, tokenAddress, token.creator, token.journeyHash, token.chain);
   if (!ok) return NextResponse.json({ error: "Attach failed." }, { status: 409 });
   return NextResponse.json({ ok: true });
 }

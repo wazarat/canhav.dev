@@ -20,7 +20,8 @@ import { SaleActions, type SaleActionSale } from "@/components/launch/SaleAction
 import { SaleCard } from "@/components/launch/SaleCard";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { formatCount } from "@/lib/format";
 import {
   formatSupply,
@@ -31,7 +32,7 @@ import {
   getRecentPurchases,
   getRecentSwaps,
   getSales,
-  getTokenRead,
+  findTokenRead,
   getVesting,
   isCurveLaunch,
   type IndexedPurchase,
@@ -40,7 +41,7 @@ import {
 import { hasCommitment } from "@/lib/journey";
 import { getLaunchCommitment, getVerifiedUpdates } from "@/lib/journey-db";
 import { getLaunchProjectSummary } from "@/lib/launch-project";
-import { publicClient } from "@/lib/publicClient";
+import { publicClientFor } from "@/lib/publicClient";
 import { getVerifiedTokenMetadata } from "@/lib/token-metadata-db";
 
 const vestingWalletAbi = [
@@ -68,7 +69,8 @@ const vestingWalletAbi = [
 ] as const;
 
 /** Live vesting progress straight from the chain; null when the RPC fails. */
-async function getLiveVesting(v: IndexedVesting): Promise<LiveVesting | null> {
+async function getLiveVesting(v: IndexedVesting, chain: ProjectChain): Promise<LiveVesting | null> {
+  const publicClient = publicClientFor(chain);
   try {
     const wallet = v.walletAddress as `0x${string}`;
     const token = v.tokenAddress as `0x${string}`;
@@ -94,7 +96,8 @@ export const dynamic = "force-dynamic";
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
 /** Deduped so generateMetadata and the page share one indexer round trip. */
-const readToken = cache((address: string) => getTokenRead(address));
+// The token is looked for on every chain and carries the one it was found on (M54).
+const readToken = cache((address: string) => findTokenRead(address));
 
 export async function generateMetadata({
   params,
@@ -155,7 +158,7 @@ function UnresolvedLaunch({
           Refresh
         </Link>
         <a
-          href={`${LAUNCH_CHAIN.explorerUrl}/address/${address}`}
+          href={`${launchChain().explorerUrl}/address/${address}`}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-electric-300 transition-colors hover:text-electric-200"
@@ -205,19 +208,21 @@ export default async function TokenPage({
       />
     );
   const token = read.value;
+  const chain = token.chain ?? DEFAULT_PROJECT_CHAIN;
+  const net = launchChain(chain);
 
   const committed = hasCommitment(token.journeyHash);
   // The journey document or the design snapshot the launch committed (M48).
   const [commitment, vesting, escrows, sales, curve] = await Promise.all([
     committed ? getLaunchCommitment(token.journeyHash) : null,
-    getVesting(token.address),
-    getEscrows(token.address),
-    getSales(token.address),
-    getCurve(token.address),
+    getVesting(token.address, chain),
+    getEscrows(token.address, chain),
+    getSales(token.address, chain),
+    getCurve(token.address, chain),
   ]);
   // A graduated curve's pool belongs to the launcher, so it is found by id;
   // otherwise the creator's own pool (lib/indexer.ts getLaunchPool).
-  const ammPool = await getLaunchPool(token, curve);
+  const ammPool = await getLaunchPool(token, curve, chain);
   const [
     liveVesting,
     updates,
@@ -227,21 +232,21 @@ export default async function TokenPage({
     projectSummary,
     ...purchaseLists
   ] = await Promise.all([
-      vesting ? getLiveVesting(vesting) : null,
-      getVerifiedUpdates(token.address, token.creator),
+      vesting ? getLiveVesting(vesting, chain) : null,
+      getVerifiedUpdates(token.address, token.creator, chain),
       // The description text, only when it re-hashes to the on-chain value.
       getVerifiedTokenMetadata(token.descriptionHash, token.creator),
-      ammPool ? getRecentSwaps(ammPool.poolId) : null,
-      curve ? getCurveTrades(token.address) : null,
+      ammPool ? getRecentSwaps(ammPool.poolId, undefined, chain) : null,
+      curve ? getCurveTrades(token.address, undefined, chain) : null,
       // The studio project the token was launched from (M19d), or null.
       getLaunchProjectSummary(token.address),
-      ...(sales ?? []).map((s) => getRecentPurchases(s.saleId)),
+      ...(sales ?? []).map((s) => getRecentPurchases(s.saleId, undefined, chain)),
     ]);
   const purchases: Record<string, IndexedPurchase[]> = {};
   (sales ?? []).forEach((s, i) => {
     purchases[s.saleId] = (purchaseLists[i] as IndexedPurchase[] | null) ?? [];
   });
-  const explorer = LAUNCH_CHAIN.explorerUrl;
+  const explorer = net.explorerUrl;
 
   // Verified milestones from either document gate sales, escrow and updates.
   const milestones = commitment?.milestones ?? null;
@@ -401,15 +406,15 @@ export default async function TokenPage({
           }
         />
         <Row label="Block" value={token.blockNumber} />
-        <Row label="Network" value={LAUNCH_CHAIN.name} />
+        <Row label="Network" value={net.name} />
       </div>
 
       {vesting ? (
-        <VestingCard vesting={vesting} symbol={token.symbol} live={liveVesting} />
+        <VestingCard chain={chain} vesting={vesting} symbol={token.symbol} live={liveVesting} />
       ) : null}
 
       {escrows && escrows.length > 0 ? (
-        <EscrowCard
+        <EscrowCard chain={chain}
           escrows={escrows}
           symbol={token.symbol}
           milestones={milestones}
@@ -418,7 +423,7 @@ export default async function TokenPage({
       ) : null}
 
       {sales && sales.length > 0 ? (
-        <SaleCard
+        <SaleCard chain={chain}
           sales={sales}
           purchases={purchases}
           symbol={token.symbol}
@@ -427,7 +432,7 @@ export default async function TokenPage({
         />
       ) : null}
 
-      <SaleActions
+      <SaleActions chain={chain}
         tokenAddress={token.address}
         creator={token.creator}
         journeyHash={token.journeyHash}
@@ -437,20 +442,20 @@ export default async function TokenPage({
       />
 
       {curve ? (
-        <CurveCard
+        <CurveCard chain={chain}
           curve={curve}
           symbol={token.symbol}
           trades={curveTrades as Awaited<ReturnType<typeof getCurveTrades>>}
           nowSeconds={Math.floor(Date.now() / 1000)}
         >
           {!curve.graduated ? (
-            <CurveActions tokenAddress={token.address} symbol={token.symbol} />
+            <CurveActions chain={chain} tokenAddress={token.address} symbol={token.symbol} />
           ) : null}
         </CurveCard>
       ) : null}
 
       {ammPool ? (
-        <PoolCard
+        <PoolCard chain={chain}
           pool={ammPool}
           symbol={token.symbol}
           swapData={swapData as Awaited<ReturnType<typeof getRecentSwaps>>}
@@ -462,7 +467,7 @@ export default async function TokenPage({
         // While a curve is live its market is the curve, so the creator is
         // not offered a pool. After graduation the launcher's pool is
         // tradable by everyone, with the liquidity controls hidden.
-        <PoolActions
+        <PoolActions chain={chain}
           tokenAddress={token.address}
           creator={token.creator}
           symbol={token.symbol}
@@ -481,7 +486,7 @@ export default async function TokenPage({
         />
       )}
 
-      <EscrowActions
+      <EscrowActions chain={chain}
         tokenAddress={token.address}
         creator={token.creator}
         journeyHash={token.journeyHash}
@@ -490,7 +495,7 @@ export default async function TokenPage({
         tranches={actionTranches}
       />
 
-      <MilestoneUpdateComposer
+      <MilestoneUpdateComposer chain={chain}
         tokenAddress={token.address}
         creator={token.creator}
         milestoneTitles={(milestones ?? []).map((m) => m.title)}

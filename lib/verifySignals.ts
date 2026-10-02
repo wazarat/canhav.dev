@@ -1,7 +1,8 @@
 import "server-only";
 
-import { LAUNCH_CHAIN } from "@/content/launch";
-import { publicClient } from "@/lib/publicClient";
+import { launchChain } from "@/content/launch";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
+import { publicClientFor } from "@/lib/publicClient";
 
 /**
  * Verify, don't ask: where the truth is readable, read it. Every fetcher
@@ -21,11 +22,12 @@ export interface BlockscoutVerification {
 /** Blockscout REST: smart-contract verification + identity for one address. */
 export async function getBlockscoutVerification(
   address: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<BlockscoutVerification | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;
   try {
     const res = await fetch(
-      `${LAUNCH_CHAIN.explorerUrl}/api/v2/smart-contracts/${address}`,
+      `${launchChain(chain).explorerUrl}/api/v2/smart-contracts/${address}`,
       { next: { revalidate: 3600 } },
     );
     if (res.status === 404) {
@@ -50,10 +52,13 @@ export async function getBlockscoutVerification(
 }
 
 /** Total transactions ever sent by a wallet (nonce) — activity depth. */
-export async function getWalletTxCount(wallet: string): Promise<number | null> {
+export async function getWalletTxCount(
+  wallet: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
+): Promise<number | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) return null;
   try {
-    return await publicClient.getTransactionCount({ address: wallet as `0x${string}` });
+    return await publicClientFor(chain).getTransactionCount({ address: wallet as `0x${string}` });
   } catch {
     return null;
   }

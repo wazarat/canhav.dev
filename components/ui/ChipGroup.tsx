@@ -25,6 +25,8 @@ export interface ChipOption<V extends string> {
   /** Shown but not clickable, with `disabledNote` beside it (the testnet gate). Unlike `available: false` it stays on the cards. */
   disabled?: boolean;
   disabledNote?: string;
+  /** A short remark beside an option that can still be picked (M52). */
+  note?: string;
 }
 
 const CHIP_BASE =
@@ -63,7 +65,7 @@ function Chip({
     >
       {label}
       {soon ? <SoonBadge label="Coming soon" className="ml-0.5" /> : null}
-      {!soon && disabled && note ? (
+      {!soon && note ? (
         <span className="text-[10px] font-normal text-ink-500">{note}</span>
       ) : null}
     </button>
@@ -100,7 +102,7 @@ export function ChipMultiSelect<V extends string>({
               label={opt.label}
               soon={opt.available === false}
               disabled={opt.disabled}
-              note={opt.disabledNote}
+              note={opt.disabled ? opt.disabledNote : opt.note}
               selected={selected}
               onToggle={() => {
                 if (selected) onChange(value.filter((v) => v !== opt.value));
@@ -139,7 +141,7 @@ export function ChipRadioGroup<V extends string>({
             label={opt.label}
             soon={opt.available === false}
             disabled={opt.disabled}
-            note={opt.disabledNote}
+            note={opt.disabled ? opt.disabledNote : opt.note}
             selected={value === opt.value}
             onToggle={() => onChange(opt.value)}
           />
@@ -207,7 +209,7 @@ export function ChipMultiSelectGroups<V extends string>({
                     label={opt.label}
                     soon={opt.available === false}
                     disabled={opt.disabled}
-                    note={opt.disabledNote}
+                    note={opt.disabled ? opt.disabledNote : opt.note}
                     selected={selected}
                     onToggle={() => {
                       if (selected) onChange(value.filter((v) => v !== opt.value));
@@ -324,8 +326,10 @@ export function CardMultiSelectGroups<V extends string>({
                           {opt.sentence}
                         </span>
                       ) : null}
-                      {disabled && opt.disabledNote ? (
-                        <span className="mt-1 block text-[11px] text-ink-500">{opt.disabledNote}</span>
+                      {(disabled && opt.disabledNote) || opt.note ? (
+                        <span className="mt-1 block text-[11px] text-ink-500">
+                          {disabled ? opt.disabledNote : opt.note}
+                        </span>
                       ) : null}
                     </button>
                   );

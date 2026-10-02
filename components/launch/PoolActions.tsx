@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProjectChain } from "@/lib/chains";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { erc20Abi, formatEther, parseEther } from "viem";
@@ -10,7 +11,7 @@ import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { launchAmmAbi } from "@/lib/abi/launchAmm";
 import { describeTxError, writeWithGas } from "@/lib/tx";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 
 import { useLaunchChain } from "./useLaunchChain";
 
@@ -71,22 +72,26 @@ function friendlyPoolError(err: unknown): string {
  * can add to or remove that position from here.
  */
 export function PoolActions({
+  chain,
   tokenAddress,
   creator,
   symbol,
   pool,
   lockedLiquidity = false,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   tokenAddress: string;
   creator: string;
   symbol: string;
   pool: PoolActionPool | null;
   lockedLiquidity?: boolean;
 }) {
+  const net = launchChain(chain);
   const router = useRouter();
-  const { isConnected, address, ensureChain } = useLaunchChain();
+  const { isConnected, address, ensureChain } = useLaunchChain(chain);
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: net.chainId });
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [buyEth, setBuyEth] = useState("");
@@ -103,29 +108,33 @@ export function PoolActions({
   const hasLiquidity = pool !== null && BigInt(pool.totalShares) > 0n;
 
   const { data: myShares } = useReadContract({
+    chainId: net.chainId,
     abi: launchAmmAbi,
-    address: LAUNCH_CHAIN.ammAddress,
+    address: net.ammAddress,
     functionName: "sharesOf",
     args: poolId !== null && address ? [poolId, address] : undefined,
     query: { enabled: poolId !== null && !!address },
   });
   const { data: myAccruedEth } = useReadContract({
+    chainId: net.chainId,
     abi: launchAmmAbi,
-    address: LAUNCH_CHAIN.ammAddress,
+    address: net.ammAddress,
     functionName: "accruedEth",
     args: address ? [address] : undefined,
     query: { enabled: !!address },
   });
   const { data: myAccruedTokens } = useReadContract({
+    chainId: net.chainId,
     abi: launchAmmAbi,
-    address: LAUNCH_CHAIN.ammAddress,
+    address: net.ammAddress,
     functionName: "accruedTokens",
     args: address ? [tokenAddress as `0x${string}`, address] : undefined,
     query: { enabled: !!address },
   });
   const { data: defaultFeeBps } = useReadContract({
+    chainId: net.chainId,
     abi: launchAmmAbi,
-    address: LAUNCH_CHAIN.ammAddress,
+    address: net.ammAddress,
     functionName: "defaultProtocolFeeBps",
     query: { enabled: !pool && isCreator },
   });
@@ -141,7 +150,7 @@ export function PoolActions({
     if (status.kind === "working") return;
     try {
       setStatus({ kind: "working", label: "Checking network…" });
-      if (!(await ensureChain())) throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
+      if (!(await ensureChain())) throw new Error(`Switch to ${net.name} to continue.`);
       setStatus({ kind: "working", label });
       await fn();
     } catch (err) {
@@ -170,7 +179,7 @@ export function PoolActions({
       abi: erc20Abi,
       address: tokenAddress as `0x${string}`,
       functionName: "approve",
-      args: [LAUNCH_CHAIN.ammAddress, amount],
+      args: [net.ammAddress, amount],
     });
     setStatus({ kind: "working", label: "Waiting for the approval…" });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -182,7 +191,7 @@ export function PoolActions({
       const { publicClient, account } = gasClient();
       const hash = await writeWithGas(publicClient, account, writeContractAsync, {
         abi: launchAmmAbi,
-        address: LAUNCH_CHAIN.ammAddress,
+        address: net.ammAddress,
         functionName: "createPool",
         args: [tokenAddress as `0x${string}`, optIn],
       });
@@ -204,7 +213,7 @@ export function PoolActions({
       const q = quote(value, ethReserve, tokenReserve, pool!.protocolFeeBps);
       const hash = await writeContractAsync({
         abi: launchAmmAbi,
-        address: LAUNCH_CHAIN.ammAddress,
+        address: net.ammAddress,
         functionName: "swapEthForTokens",
         args: [poolId, (q * 99n) / 100n],
         value,
@@ -226,7 +235,7 @@ export function PoolActions({
       setStatus({ kind: "working", label: "Confirm the swap in your wallet…" });
       const hash = await writeContractAsync({
         abi: launchAmmAbi,
-        address: LAUNCH_CHAIN.ammAddress,
+        address: net.ammAddress,
         functionName: "swapTokensForEth",
         args: [poolId, amountIn, (q * 99n) / 100n],
       });
@@ -261,7 +270,7 @@ export function PoolActions({
       const { publicClient, account } = gasClient();
       const hash = await writeWithGas(publicClient, account, writeContractAsync, {
         abi: launchAmmAbi,
-        address: LAUNCH_CHAIN.ammAddress,
+        address: net.ammAddress,
         functionName: "addLiquidity",
         args: [poolId, tokenMax],
         value: ethIn,
@@ -286,7 +295,7 @@ export function PoolActions({
       const minTok = (((burn * tokenReserve) / total) * 99n) / 100n;
       const hash = await writeContractAsync({
         abi: launchAmmAbi,
-        address: LAUNCH_CHAIN.ammAddress,
+        address: net.ammAddress,
         functionName: "removeLiquidity",
         args: [poolId, burn, minEth, minTok],
       });
@@ -302,13 +311,13 @@ export function PoolActions({
         kind === "eth"
           ? await writeContractAsync({
               abi: launchAmmAbi,
-              address: LAUNCH_CHAIN.ammAddress,
+              address: net.ammAddress,
               functionName: "claimEth",
               args: [address],
             })
           : await writeContractAsync({
               abi: launchAmmAbi,
-              address: LAUNCH_CHAIN.ammAddress,
+              address: net.ammAddress,
               functionName: "claimTokens",
               args: [tokenAddress as `0x${string}`, address],
             });

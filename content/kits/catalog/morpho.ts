@@ -824,6 +824,7 @@ export const MORPHO_RESOURCES: readonly KitResource[] = [
     id: "canhav.testnet-manifest",
     family: "morpho",
     title: "Testnet 46630 manifest (CanHav copy)",
+    chains: ["robinhood_testnet"],
     kind: "addresses",
     href: `${KIT}/robinhood-testnet-46630.manifest.json`,
     rawHref: `${KIT}/robinhood-testnet-46630.manifest.json`,
@@ -837,6 +838,7 @@ export const MORPHO_RESOURCES: readonly KitResource[] = [
     id: "morpho.testnet-community-deployment",
     family: "morpho",
     title: "Community Morpho Blue deployment on testnet 46630",
+    chains: ["robinhood_testnet"],
     kind: "addresses",
     href: "https://github.com/EqualFiLabs/Statics/blob/master/deployments/robinhood-testnet-46630-morpho.json",
     rawHref:

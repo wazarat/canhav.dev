@@ -4,12 +4,13 @@ import { ArrowLeft, ExternalLink, ShieldCheck } from "lucide-react";
 import { decodeFunctionData, formatEther } from "viem";
 
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { LAUNCH_NOT_LIVE, type LaunchChain, launchChain } from "@/content/launch";
+import { PROJECT_CHAINS, PROJECT_CHAIN_INFO, isProjectChain } from "@/lib/chains";
 import { feeSplitterAbi } from "@/lib/abi/feeSplitter";
 import { launchAmmAbi } from "@/lib/abi/launchAmm";
 import { tokenFactoryAbi } from "@/lib/abi/tokenFactory";
 import { getTimelockOperations, type IndexedTimelockOperation } from "@/lib/indexer";
-import { publicClient } from "@/lib/publicClient";
+import { publicClientFor } from "@/lib/publicClient";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -46,9 +47,10 @@ interface AmmState {
   splitterShares: number[];
 }
 
-async function getAmmState(): Promise<AmmState | null> {
+async function getAmmState(net: LaunchChain): Promise<AmmState | null> {
   try {
-    const amm = { abi: launchAmmAbi, address: LAUNCH_CHAIN.ammAddress } as const;
+    const publicClient = publicClientFor(net.key);
+    const amm = { abi: launchAmmAbi, address: net.ammAddress } as const;
     const [defaultBps, maxBps, projectBps, ammOwner, payeesResult] = await Promise.all([
       publicClient.readContract({ ...amm, functionName: "defaultProtocolFeeBps" }),
       publicClient.readContract({ ...amm, functionName: "MAX_PROTOCOL_FEE_BPS" }),
@@ -56,7 +58,7 @@ async function getAmmState(): Promise<AmmState | null> {
       publicClient.readContract({ ...amm, functionName: "owner" }),
       publicClient.readContract({
         abi: feeSplitterAbi,
-        address: LAUNCH_CHAIN.splitterAddress,
+        address: net.splitterAddress,
         functionName: "payees",
       }),
     ]);
@@ -73,9 +75,10 @@ async function getAmmState(): Promise<AmmState | null> {
   }
 }
 
-async function getFactoryState(): Promise<FactoryState | null> {
+async function getFactoryState(net: LaunchChain): Promise<FactoryState | null> {
   try {
-    const factory = { abi: tokenFactoryAbi, address: LAUNCH_CHAIN.factoryAddress } as const;
+    const publicClient = publicClientFor(net.key);
+    const factory = { abi: tokenFactoryAbi, address: net.factoryAddress } as const;
     const [launchFee, maxLaunchFee, treasury, pauser, paused, owner, minDelay] =
       await Promise.all([
         publicClient.readContract({ ...factory, functionName: "launchFee" }),
@@ -86,7 +89,7 @@ async function getFactoryState(): Promise<FactoryState | null> {
         publicClient.readContract({ ...factory, functionName: "owner" }),
         publicClient.readContract({
           abi: timelockAbi,
-          address: LAUNCH_CHAIN.timelockAddress,
+          address: net.timelockAddress,
           functionName: "getMinDelay",
         }),
       ]);
@@ -97,9 +100,9 @@ async function getFactoryState(): Promise<FactoryState | null> {
 }
 
 /** Human sentence for a timelock operation's calldata, best-effort. */
-function describeCall(op: IndexedTimelockOperation): string {
+function describeCall(op: IndexedTimelockOperation, net: LaunchChain): string {
   const target = op.target.toLowerCase();
-  if (target === LAUNCH_CHAIN.factoryAddress.toLowerCase()) {
+  if (target === net.factoryAddress.toLowerCase()) {
     try {
       const { functionName, args } = decodeFunctionData({
         abi: tokenFactoryAbi,
@@ -123,7 +126,7 @@ function describeCall(op: IndexedTimelockOperation): string {
       return `Factory call (selector ${op.data.slice(0, 10)})`;
     }
   }
-  if (target === LAUNCH_CHAIN.ammAddress.toLowerCase()) {
+  if (target === net.ammAddress.toLowerCase()) {
     try {
       const { functionName, args } = decodeFunctionData({
         abi: launchAmmAbi,
@@ -137,7 +140,7 @@ function describeCall(op: IndexedTimelockOperation): string {
       return `AMM call (selector ${op.data.slice(0, 10)})`;
     }
   }
-  if (target === LAUNCH_CHAIN.splitterAddress.toLowerCase()) {
+  if (target === net.splitterAddress.toLowerCase()) {
     try {
       const { functionName } = decodeFunctionData({
         abi: feeSplitterAbi,
@@ -211,13 +214,18 @@ function Term({
   );
 }
 
-export default async function GovernancePage() {
-  const [state, amm, ops] = await Promise.all([
-    getFactoryState(),
-    getAmmState(),
-    getTimelockOperations(),
-  ]);
-  const explorer = LAUNCH_CHAIN.explorerUrl;
+export default async function GovernancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ chain?: string }>;
+}) {
+  // Each chain has its own deployment and its own timelock (M54). ?chain= picks one.
+  const { chain: picked } = await searchParams;
+  const net = launchChain(isProjectChain(picked) ? picked : undefined);
+  const [state, amm, ops] = net.live
+    ? await Promise.all([getFactoryState(net), getAmmState(net), getTimelockOperations(net.key)])
+    : [null, null, null];
+  const explorer = net.explorerUrl;
   const nowSec = Math.floor(Date.now() / 1000);
 
   return (
@@ -241,6 +249,29 @@ export default async function GovernancePage() {
           proposed publicly and can only execute after the delay below. The
           launch fee is capped by a constant no key can ever exceed.
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {PROJECT_CHAINS.map((c) => (
+            <Link
+              key={c}
+              href={`/launch/governance?chain=${c}`}
+              aria-current={c === net.key ? "page" : undefined}
+              className={
+                c === net.key
+                  ? "rounded-full border border-electric-500/50 bg-electric-500/20 px-3 py-1 text-xs font-medium text-electric-200"
+                  : "rounded-full border border-ink-600 bg-ink-900/50 px-3 py-1 text-xs font-medium text-ink-200 transition-colors hover:border-ink-500 hover:text-ink-50"
+              }
+            >
+              {PROJECT_CHAIN_INFO[c].short}
+            </Link>
+          ))}
+        </div>
+        {net.live ? null : (
+          <div className="mt-4 max-w-xl">
+            <StatusChip tone="neutral" variant="block">
+              {LAUNCH_NOT_LIVE(net.name)}
+            </StatusChip>
+          </div>
+        )}
       </div>
 
       <h2 className="mt-8 font-display text-xl font-semibold tracking-tight text-ink-50">
@@ -325,7 +356,7 @@ export default async function GovernancePage() {
               <span className="inline-flex flex-wrap items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-signal-400" />
                 <span className="font-mono text-xs">{state.owner}</span>
-                {state.owner.toLowerCase() === LAUNCH_CHAIN.timelockAddress.toLowerCase() ? (
+                {state.owner.toLowerCase() === net.timelockAddress.toLowerCase() ? (
                   <span className="text-signal-400">(the timelock)</span>
                 ) : null}
               </span>
@@ -337,19 +368,19 @@ export default async function GovernancePage() {
               <span className="flex flex-col gap-1 font-mono text-xs">
                 <a
                   className="text-electric-300 hover:text-electric-200"
-                  href={`${explorer}/address/${LAUNCH_CHAIN.factoryAddress}`}
+                  href={`${explorer}/address/${net.factoryAddress}`}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  factory {LAUNCH_CHAIN.factoryAddress.slice(0, 10)}…
+                  factory {net.factoryAddress.slice(0, 10)}…
                 </a>
                 <a
                   className="text-electric-300 hover:text-electric-200"
-                  href={`${explorer}/address/${LAUNCH_CHAIN.timelockAddress}`}
+                  href={`${explorer}/address/${net.timelockAddress}`}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  timelock {LAUNCH_CHAIN.timelockAddress.slice(0, 10)}…
+                  timelock {net.timelockAddress.slice(0, 10)}…
                 </a>
               </span>
             }
@@ -380,7 +411,7 @@ export default async function GovernancePage() {
               value={
                 <span className="inline-flex flex-wrap items-center gap-1.5">
                   <span className="font-mono text-xs">{amm.ammOwner}</span>
-                  {amm.ammOwner.toLowerCase() === LAUNCH_CHAIN.timelockAddress.toLowerCase() ? (
+                  {amm.ammOwner.toLowerCase() === net.timelockAddress.toLowerCase() ? (
                     <span className="text-signal-400">(the timelock)</span>
                   ) : null}
                 </span>
@@ -392,11 +423,11 @@ export default async function GovernancePage() {
                 <span className="flex flex-col gap-1 text-xs">
                   <a
                     className="font-mono text-electric-300 hover:text-electric-200"
-                    href={`${explorer}/address/${LAUNCH_CHAIN.splitterAddress}`}
+                    href={`${explorer}/address/${net.splitterAddress}`}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {LAUNCH_CHAIN.splitterAddress}
+                    {net.splitterAddress}
                   </a>
                   {amm.splitterPayees.map((p, i) => (
                     <span key={p} className="font-mono text-ink-300">
@@ -448,7 +479,7 @@ export default async function GovernancePage() {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ink-700/60 bg-ink-950/50 px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="text-sm text-ink-100">{describeCall(op)}</p>
+                  <p className="text-sm text-ink-100">{describeCall(op, net)}</p>
                   <p className="mt-0.5 text-xs text-ink-500">
                     Scheduled {fmtWhen(op.scheduledAt)} UTC ·{" "}
                     <a

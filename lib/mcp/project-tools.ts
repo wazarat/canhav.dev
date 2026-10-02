@@ -15,6 +15,7 @@ import {
   getLinkedTokenDesign,
   getProject,
   getSnapshot,
+  designDeployChain,
 } from "@/lib/ideation-db";
 import {
   designConstraints,
@@ -57,6 +58,7 @@ import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
+import { chainInfo, projectChainOf } from "@/lib/chains";
 import { kitShapes } from "@/lib/kits";
 import { shapeAdviceFor } from "@/lib/token-advice";
 import { deriveTokenomics } from "@/lib/tokenDesign";
@@ -132,7 +134,7 @@ function noTokenMessage(ctx: ProjectCtx): string {
 /** What the platform knows about the linked design's launch, for the token build steps (M46). */
 async function tokenFacts(design: TokenDesignRow, curve?: IndexedCurve | null): Promise<TokenLaunchFacts> {
   const address = design.deployed_token_address ?? null;
-  const read = curve === undefined ? (address ? await getCurve(address) : null) : curve;
+  const read = curve === undefined ? (address ? await getCurve(address, designDeployChain(design)) : null) : curve;
   return {
     published: design.status === "published",
     // The design is linked to this project by construction.
@@ -226,8 +228,10 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       // separate studio launch beside a design deployed elsewhere gets its own read.
       const launchedAddress = launched?.token_address ?? null;
       const [curve, launchedCurve] = await Promise.all([
-        tokenAddress ? getCurve(tokenAddress) : null,
-        launchedAddress && launchedAddress !== tokenAddress ? getCurve(launchedAddress) : null,
+        tokenAddress ? getCurve(tokenAddress, projectChainOf(project.draft_doc)) : null,
+        launchedAddress && launchedAddress !== tokenAddress
+          ? getCurve(launchedAddress, projectChainOf(project.draft_doc))
+          : null,
       ]);
       const derived = design
         ? deriveTokenomics(design.draft_doc, { shapes: kitShapes(project.draft_doc.kit) })
@@ -260,6 +264,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           slug: project.slug,
           firstProblem: projectProblem,
           publicUrl: publicUrl("p", project),
+          // The testnet the project builds on and its token launches on (M52).
+          chain: projectChainOf(project.draft_doc),
+          chainId: chainInfo(projectChainOf(project.draft_doc)).chainId,
         },
         kit: kit?.shape
           ? {
@@ -489,7 +496,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, testnetContracts, verifyWallet). Lists replace the stored list. Sectors, subsectors, product shapes and the distribution acknowledgement can only be set by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, testnetContracts, verifyWallet). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine) and note, which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -528,7 +535,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       if (!loaded.ok) return errorResult(loaded.message);
       const kit = loaded.value.project.draft_doc.kit;
       const items = checklistFor(kitShapes(kit));
-      if (!kit || items.length === 0) return errorResult(NO_SHAPE_HINT);
+      // A shape may hold only steps the team added, so the shapes decide, not the catalog (M52).
+      if (!kit || kitShapes(kit).length === 0) return errorResult(NO_SHAPE_HINT);
       const groupOf = new Map<string, readonly string[]>();
       for (const section of sectionsFor(kitShapes(kit), kit))
         for (const g of section.groups) for (const id of g.ids) groupOf.set(id, g.ids);
@@ -673,11 +681,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's resource pack",
       description:
-        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, and where the relevant protocols can run on Robinhood Chain today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family.",
+        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family.",
       inputSchema: z.object({
         step: z.enum(["basics", "architecture", "security", "reality", "review"]).optional(),
         priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
-        family: z.enum(["shared", "robinhood", "morpho", "pendle", "uniswap", "boros"]).optional(),
+        family: z.enum(["shared", "robinhood", "arbitrum", "morpho", "pendle", "uniswap", "boros"]).optional(),
         includeUnselected: z.boolean().optional(),
       }),
     },

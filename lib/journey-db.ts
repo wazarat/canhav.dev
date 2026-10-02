@@ -1,5 +1,6 @@
 import "server-only";
 
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { getDb } from "@/lib/db";
 import { getSnapshot } from "@/lib/ideation-db";
 import { getMilestoneUpdates } from "@/lib/indexer";
@@ -71,8 +72,9 @@ export async function getLaunchCommitment(journeyHash: string): Promise<LaunchCo
 export async function getVerifiedUpdates(
   tokenAddress: string,
   creator: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<Record<number, VerifiedMilestoneUpdate[]>> {
-  const anchors = await getMilestoneUpdates(tokenAddress);
+  const anchors = await getMilestoneUpdates(tokenAddress, chain);
   const db = getDb();
   if (!anchors || anchors.length === 0 || !db) return {};
 

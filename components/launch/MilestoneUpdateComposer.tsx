@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProjectChain } from "@/lib/chains";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePublicClient, useWriteContract } from "wagmi";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, TextArea, inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { journeyUpdatesAbi } from "@/lib/abi/journeyUpdates";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import {
   hashMilestoneUpdate,
   UPDATE_LIMITS,
@@ -31,18 +32,22 @@ type Status =
  * so the anchor can always be served.
  */
 export function MilestoneUpdateComposer({
+  chain,
   tokenAddress,
   creator,
   milestoneTitles,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   tokenAddress: string;
   creator: string;
   milestoneTitles: string[];
 }) {
+  const net = launchChain(chain);
   const router = useRouter();
-  const { address, ensureChain } = useLaunchChain();
+  const { address, ensureChain } = useLaunchChain(chain);
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: net.chainId });
 
   const [milestoneIndex, setMilestoneIndex] = useState(0);
   const [body, setBody] = useState("");
@@ -63,7 +68,7 @@ export function MilestoneUpdateComposer({
         throw new Error(`Keep updates under ${UPDATE_LIMITS.body.max} characters.`);
 
       setStatus({ kind: "working", label: "Checking network…" });
-      if (!(await ensureChain())) throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
+      if (!(await ensureChain())) throw new Error(`Switch to ${net.name} to continue.`);
 
       const doc: MilestoneUpdateDoc = {
         version: 1,
@@ -85,7 +90,7 @@ export function MilestoneUpdateComposer({
       setStatus({ kind: "working", label: "Confirm the anchor in your wallet…" });
       const txHash = await writeContractAsync({
         abi: journeyUpdatesAbi,
-        address: LAUNCH_CHAIN.updatesAddress,
+        address: net.updatesAddress,
         functionName: "postUpdate",
         args: [tokenAddress as `0x${string}`, milestoneIndex, updateHash],
       });

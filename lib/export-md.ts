@@ -1,3 +1,4 @@
+import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import {
   ALLOCATION_FIELDS,
   ANTI_SNIPING_OPTIONS,
@@ -18,6 +19,7 @@ import {
   RATIONALE_WHY_OPTIONS,
   RELEASE_TYPE_OPTIONS,
   REPORTING_OPTIONS,
+  REFERENCES_COPY,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
   STATUS_DECL_LABELS,
@@ -42,13 +44,14 @@ import {
   shapeLabels,
   startingPointLabel,
 } from "@/content/kits/copy";
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
 import { TOKEN_STEPS_COPY, TOKEN_STEP_LABELS } from "@/content/token-steps";
 import type { TokenBuildRow } from "@/lib/token-steps";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
 import { KIT_PRIORITY_ORDER, type ProductShape } from "@/lib/kits";
 import {
   type ProjectDoc,
+  referenceIsLink,
   type StatusDecl,
   type TokenDesignDoc,
   docAudience,
@@ -160,6 +163,7 @@ function kitLines(doc: ProjectDoc): string[] {
   const out: string[] = [];
   const shapes = shapeLabels(kit);
   if (shapes.length) out.push(`- **Building:** ${shapes.join(", ")}`);
+  out.push(`- **Chain:** ${chainInfo(projectChainOf(doc)).name}`);
   const start = startingPointLabel(kit);
   if (start) out.push(`- **Starting from:** ${start}`);
   return out;
@@ -234,7 +238,7 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
     lines.push("", `${heading} Where this runs today`, "");
     for (const f of pack.environment.families) {
       lines.push(
-        `- **${FAMILY_LABELS[f.family]}.** ${ENVIRONMENT_COPY.testnet}, ${ENVIRONMENT_COPY.status[f.testnet.status].toLowerCase()}. ${f.testnet.note} ${ENVIRONMENT_COPY.mainnet}, ${ENVIRONMENT_COPY.status[f.mainnet.status].toLowerCase()}. ${f.mainnet.note}`,
+        `- **${FAMILY_LABELS[f.family]}.** ${ENVIRONMENT_COPY.testnet(f.testnet.chainId)}, ${ENVIRONMENT_COPY.status[f.testnet.status].toLowerCase()}. ${f.testnet.note} ${ENVIRONMENT_COPY.mainnet(f.mainnet.chainId)}, ${ENVIRONMENT_COPY.status[f.mainnet.status].toLowerCase()}. ${f.mainnet.note}`,
       );
     }
     lines.push("", ENVIRONMENT_COPY.pathTitle, "");
@@ -248,6 +252,23 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
     if (pack.environment.checkedOn) lines.push("", ENVIRONMENT_COPY.checked(pack.environment.checkedOn));
   }
   return lines;
+}
+
+/** "## Your files", the team's own references (M53), or nothing. Draft exports only, a snapshot never carries them. */
+function referenceSections(doc: ProjectDoc): string[] {
+  const refs = (doc.references ?? []).filter((r) => r.title.trim() && r.location.trim());
+  if (!refs.length) return [];
+  return [
+    "",
+    `## ${REFERENCES_COPY.exportTitle}`,
+    "",
+    REFERENCES_COPY.exportIntro,
+    "",
+    ...refs.map((r) => {
+      const where = referenceIsLink(r) ? `[${r.title}](${r.location.trim()})` : `${r.title}, \`${r.location.trim()}\``;
+      return `- **${where}**${r.note.trim() ? `. ${r.note.trim()}` : ""}`;
+    }),
+  ];
 }
 
 /** RESOURCES.md, the pack on its own for a repo. */
@@ -265,6 +286,7 @@ export function buildResourcesMd(doc: ProjectDoc, draft = true): string {
   } else {
     lines.push("", pack.howToUse, ...resourcePackSections(doc, "##"));
   }
+  lines.push(...referenceSections(doc));
   lines.push("");
   return lines.join("\n");
 }
@@ -294,8 +316,10 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...customerLines(doc),
     "## Distribution reality",
     "",
-    `Acknowledged by the team: ${ROBINHOOD_MYTH.body}`,
-    "",
+    // The acknowledgement is about Robinhood Chain, so only a project there carries it (M52).
+    ...(projectChainOf(doc) === "robinhood_testnet"
+      ? [`Acknowledged by the team: ${ROBINHOOD_MYTH.body}`, ""]
+      : []),
     `**${ROBINHOOD_MYTH.followUp}**`,
     "",
     doc.firstHundredUsers,
@@ -320,7 +344,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     if (doc.verifyWallet)
       lines.push(`- **Team wallet (declared, unproven):** ${doc.verifyWallet}`);
     for (const c of doc.testnetContracts ?? [])
-      lines.push(`- **Testnet contract:** ${c} (${LAUNCH_CHAIN.explorerUrl}/address/${c})`);
+      lines.push(`- **Testnet contract:** ${c} (${launchChain(projectChainOf(doc)).explorerUrl}/address/${c})`);
   }
   lines.push("");
   return lines.join("\n");
@@ -585,8 +609,11 @@ export function buildAgentsMd(input: {
   curve?: AgentsCurve | null;
   /** True when built from the current draft rather than a published snapshot. */
   draft?: boolean;
+  /** The chain the token is on. Left out, the project's chain, else Robinhood (M54). */
+  chain?: ProjectChain;
 }): string {
   const { project, token } = input;
+  const net = launchChain(input.chain ?? (project ? projectChainOf(project) : undefined));
   const name = project?.name ?? token?.name ?? "CanHav record";
   const lines: string[] = [
     `# AGENTS.md: ${name}`,
@@ -599,11 +626,15 @@ export function buildAgentsMd(input: {
     "",
     "## Chain",
     "",
-    `- Network: ${LAUNCH_CHAIN.name} (chain id ${LAUNCH_CHAIN.chainId})`,
-    `- Explorer: ${LAUNCH_CHAIN.explorerUrl}`,
-    `- CanHav token factory (v4): ${LAUNCH_CHAIN.factoryAddress}`,
-    `- CanHav curve launcher: ${LAUNCH_CHAIN.curveAddress}`,
-    `- CanHav AMM: ${LAUNCH_CHAIN.ammAddress}`,
+    `- Network: ${net.name} (chain id ${net.chainId})`,
+    `- Explorer: ${net.explorerUrl}`,
+    ...(net.live
+      ? [
+          `- CanHav token factory (v4): ${net.factoryAddress}`,
+          `- CanHav curve launcher: ${net.curveAddress}`,
+          `- CanHav AMM: ${net.ammAddress}`,
+        ]
+      : ["- CanHav launch contracts: not deployed on this chain yet, so a token cannot launch here for now."]),
   ];
 
   if (project) {
@@ -633,6 +664,7 @@ export function buildAgentsMd(input: {
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
     lines.push(...resourcePackSections(project, "##"));
+    lines.push(...referenceSections(project));
   }
 
   if (token) {
@@ -643,7 +675,7 @@ export function buildAgentsMd(input: {
       `## Token: ${token.name} ($${token.ticker})`,
       "",
       input.deployedAddress
-        ? `Deployed at ${input.deployedAddress} (${LAUNCH_CHAIN.explorerUrl}/address/${input.deployedAddress}).`
+        ? `Deployed at ${input.deployedAddress} (${net.explorerUrl}/address/${input.deployedAddress}).`
         : "Not deployed yet.",
       ...(input.deployedAddress && input.curve ? ["", marketLine(input.curve)] : []),
       "",

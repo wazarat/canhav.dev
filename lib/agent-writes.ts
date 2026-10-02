@@ -1,6 +1,12 @@
 import { z } from "zod";
 
+import { SECTOR_OPTIONS } from "@/content/ideation";
+import { KIT_CATALOG } from "@/content/kits/catalog";
 import { checklistFor, groupsFor } from "@/content/kits/checklists";
+import { offeredShapes } from "@/content/kits/copy";
+import { REVIEW_PASSES } from "@/content/kits/review-passes";
+import { PROJECT_CHAINS } from "@/lib/chains";
+import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { TOKEN_STEPS } from "@/content/token-steps";
 import {
   AUDIENCE_VALUES,
@@ -15,14 +21,34 @@ import {
 import { JOURNEY_LIMITS } from "@/lib/journey";
 import {
   KIT_LIMITS,
+  PRODUCT_SHAPE_VALUES,
+  STARTING_POINT_VALUES,
   type ProductShape,
+  type ProjectKit,
+  type StartingPoint,
   type StepGroup,
   addCustomStep,
+  effectiveSelection,
+  emptyProjectKit,
   kitShapes,
+  kitsForSectors,
+  packFor,
   removeStepGroup,
   restoreSteps,
+  reviewPassesFor,
+  setReviewVerdict,
   toggleChecklistItem,
+  toggleResource,
 } from "@/lib/kits";
+import {
+  SECTOR_SUBSECTORS,
+  SECTOR_VALUES,
+  SUBSECTOR_VALUES,
+  type Sector,
+  type Subsector,
+  docSectors,
+  sectorOfSubsector,
+} from "@/lib/sectors";
 import { manualTokenStepIds, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
 
 /**
@@ -34,8 +60,10 @@ import { manualTokenStepIds, toggleTokenStep, tokenStepIds } from "@/lib/token-s
  *   propose  every change waits in the studio until the owner accepts it
  *   direct   changes land in the draft at once and are listed in the studio
  *
- * Agents never publish, never pick sectors, subsectors or product shapes, and
- * never tick the distribution acknowledgement. Those stay with a person.
+ * Since M51 a change may also set what the project is classed as (sectors,
+ * subsectors, product shapes, starting point), tick resources in the pack and
+ * record review verdicts. Agents never publish and never tick the
+ * distribution acknowledgement. Those stay with a person.
  *
  * This module is pure so the studio (client) and the MCP tools (server) apply
  * a change with the same code.
@@ -171,6 +199,47 @@ export const projectPatchSchema = z
     githubRepo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
     testnetContracts: z.array(z.string().regex(/^0x[0-9a-f]{40}$/)).max(L.testnetContracts.max),
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
+    // What the project is classed as (M51). Applied through lib/classify.ts,
+    // so the fields that follow a pick move with it, the same as in the editor.
+    // The team's own files, by reference (M53). The list replaces the stored list.
+    references: z
+      .array(
+        z.strictObject({
+          title: z.string().min(L.referenceTitle.min).max(L.referenceTitle.max),
+          location: z.string().min(L.referenceLocation.min).max(L.referenceLocation.max),
+          note: z.string().max(L.referenceNote.max).default(""),
+        }),
+      )
+      .max(L.references.max),
+    // The chain the project builds on (M52). Refused once a token has launched from it.
+    chain: z.enum(PROJECT_CHAINS),
+    sectors: z.array(z.enum(SECTOR_VALUES as [Sector, ...Sector[]])).min(L.sectors.min).max(L.sectors.max),
+    sectorOther: z.string().max(L.sectorOther.max),
+    subsectors: z.array(z.enum(SUBSECTOR_VALUES as [Subsector, ...Subsector[]])).max(SUBSECTOR_VALUES.length),
+    kit: z
+      .strictObject({
+        shapes: z
+          .array(z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]))
+          .max(KIT_LIMITS.shapes.max),
+        startingPoint: z.enum(STARTING_POINT_VALUES as [StartingPoint, ...StartingPoint[]]),
+        existingProduct: z.string().max(KIT_LIMITS.existingProduct.max),
+        resources: z
+          .strictObject({
+            tick: z.array(z.string().max(120)).max(KIT_LIMITS.ids.max),
+            untick: z.array(z.string().max(120)).max(KIT_LIMITS.ids.max),
+          })
+          .partial(),
+        review: z
+          .array(
+            z.strictObject({
+              pass: z.string().max(120),
+              // "open" clears a recorded verdict.
+              verdict: z.enum(["pass", "fail", "na", "open"]),
+            }),
+          )
+          .max(KIT_LIMITS.review.max),
+      })
+      .partial(),
   })
   .partial();
 
@@ -360,12 +429,92 @@ function deepMerge<D>(base: D, patch: unknown): D {
 }
 
 export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): ProjectDoc {
-  const next = deepMerge(doc, patch);
+  const { sectors, subsectors, kit: kitPatch, ...fields } = patch;
+  let next = deepMerge(doc, fields);
   const a = { ...next.architecture };
   // The two dependency answers exclude each other. The one the agent sent wins.
   if (patch.architecture?.externalDepsNone === true) a.externalDeps = [];
   else if (patch.architecture?.externalDeps?.length) a.externalDepsNone = false;
-  return { ...next, architecture: a };
+  next = { ...next, architecture: a };
+  // Classification in the order the editor asks for it, each with its cascade.
+  if (sectors) next = { ...next, ...sectorsChange(next, sectors) };
+  if (subsectors) next = { ...next, ...subsectorsChange(next, subsectors) };
+  if (kitPatch?.shapes) next = { ...next, ...shapesChange(next, kitPatch.shapes) };
+  // A kit exists from the first pick on, the same as the editor's patchKit.
+  const kits = kitsForSectors(docSectors(next), next.subsectors ?? []);
+  const base = next.kit ?? (kits.length ? emptyProjectKit(kits) : undefined);
+  if (kitPatch && base) {
+    let kit = base;
+    if (kitPatch.startingPoint !== undefined) kit = { ...kit, startingPoint: kitPatch.startingPoint };
+    if (kitPatch.existingProduct !== undefined) kit = { ...kit, existingProduct: kitPatch.existingProduct };
+    const { tick = [], untick = [] } = kitPatch.resources ?? {};
+    if (tick.length || untick.length) {
+      const pack = packFor(KIT_CATALOG, kit, next);
+      for (const [ids, on] of [[tick, true], [untick, false]] as const)
+        for (const id of ids) {
+          const r = pack.find((x) => x.id === id);
+          const ticked = effectiveSelection(pack, kit).has(id);
+          if (r && ticked !== on) kit = { ...kit, ...toggleResource(kit, r, ticked) };
+        }
+    }
+    for (const v of kitPatch.review ?? [])
+      kit = { ...kit, ...setReviewVerdict(kit, v.pass, v.verdict === "open" ? null : v.verdict) };
+    // Keys set to undefined by the helpers must not be stored.
+    next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
+  }
+  return next;
+}
+
+/**
+ * Null when the classification part of a change can be applied to this
+ * draft, else the problem in words an agent can act on. Field bounds are the
+ * schema's job; this checks what depends on the draft (M51).
+ */
+export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): string | null {
+  let next = doc;
+  if (patch.sectors) {
+    const closed = patch.sectors.filter((s) => SECTOR_OPTIONS.find((o) => o.value === s)?.available === false);
+    if (closed.length) return `${closed.join(", ")} is not open on CanHav yet. Open sectors are ${SECTOR_OPTIONS.filter((o) => o.available !== false).map((o) => o.value).join(" and ")}.`;
+    next = { ...next, ...sectorsChange(next, patch.sectors) };
+  }
+  const sectors = docSectors(next);
+  if (patch.subsectors) {
+    const stray = patch.subsectors.filter((s) => !sectors.includes(sectorOfSubsector(s)));
+    if (stray.length) return `${stray[0]} belongs to ${sectorOfSubsector(stray[0])}, which is not one of this project's sectors (${sectors.join(", ") || "none"}). Send sectors in the same change.`;
+    for (const sector of sectors) {
+      const n = patch.subsectors.filter((s) => SECTOR_SUBSECTORS[sector].includes(s)).length;
+      if (n > PROJECT_LIMITS.subsectors.max) return `At most ${PROJECT_LIMITS.subsectors.max} subsectors per sector.`;
+    }
+    next = { ...next, ...subsectorsChange(next, patch.subsectors) };
+  }
+  const k = patch.kit;
+  if (!k) return null;
+  if (kitsForSectors(sectors, next.subsectors ?? []).length === 0 && !next.kit)
+    return "This project has no subsector with product shapes yet. Send sectors and subsectors first, in the same change or an earlier one.";
+  if (k.shapes) {
+    const offered = offeredShapes(next.subsectors ?? []);
+    const stray = k.shapes.filter((s) => !offered.includes(s));
+    if (stray.length) return `${stray[0]} is not offered under this project's subsectors (${(next.subsectors ?? []).join(", ") || "none"}). Offered shapes are ${offered.join(", ") || "none"}.`;
+    next = { ...next, ...shapesChange(next, k.shapes) };
+  }
+  const shapes = kitShapes(next.kit);
+  const tick = k.resources?.tick ?? [];
+  const untick = k.resources?.untick ?? [];
+  if ((tick.length || untick.length || k.review?.length) && shapes.length === 0)
+    return "This project has no product shape yet, so it has no resource pack and no review passes. Send kit.shapes first.";
+  if (tick.length || untick.length) {
+    const pack = new Set(packFor(KIT_CATALOG, next.kit, next).map((r) => r.id));
+    const unknown = [...tick, ...untick].filter((id) => !pack.has(id));
+    if (unknown.length) return `Unknown resource ${unknown.slice(0, 3).join(", ")}. Read get_resource_pack with includeUnselected for the ids.`;
+    const both = tick.filter((id) => untick.includes(id));
+    if (both.length) return `${both[0]} is in both tick and untick.`;
+  }
+  if (k.review?.length) {
+    const passes = new Set(reviewPassesFor(REVIEW_PASSES, shapes).map((p) => p.id));
+    const unknown = k.review.filter((v) => !passes.has(v.pass));
+    if (unknown.length) return `Unknown review pass ${unknown[0].pass}. Read get_prelaunch_review for the ids.`;
+  }
+  return null;
 }
 
 export function applyTokenDesignPatch(doc: TokenDesignDoc, patch: TokenDesignPatch): TokenDesignDoc {
@@ -384,7 +533,7 @@ export function buildStepIds(doc: ProjectDoc): Set<string> {
 /** Null when every id belongs to this project's build steps, else the problem. */
 export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): string | null {
   if (!doc.kit || kitShapes(doc.kit).length === 0)
-    return "This project has no product shape yet, so it has no build steps. The owner picks a shape in the studio under What are you building.";
+    return "This project has no product shape yet, so it has no build steps. Set kit.shapes with update_project, or the owner picks a shape in the studio.";
   if (buildStepKeys(patch).length === 0) return "Name at least one build step.";
   const known = buildStepIds(doc);
   const add = patch.add ?? [];
@@ -518,8 +667,20 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
   return out;
 }
 
+/** Paths whose field name would read oddly (M51). */
+const PATH_LABELS: Record<string, string> = {
+  references: "Project files",
+  "kit.shapes": "Product shapes",
+  "kit.startingPoint": "Starting point",
+  "kit.existingProduct": "Existing product",
+  "kit.resources.tick": "Resources to tick",
+  "kit.resources.untick": "Resources to untick",
+  "kit.review": "Review verdicts",
+};
+
 /** architecture.externalDeps reads as "Architecture, external deps". */
 export function pathLabel(path: string): string {
+  if (path in PATH_LABELS) return PATH_LABELS[path];
   const words = path
     .split(".")
     .map((part) => part.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase())

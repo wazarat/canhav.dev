@@ -1,3 +1,4 @@
+import { type ProjectChain, projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
   SECTOR_SUBSECTORS,
@@ -804,16 +805,16 @@ export type DeploymentStatus = "official" | "community" | "manifest_only" | "non
 
 export interface FamilyEnvironment {
   family: Exclude<KitFamily, "shared">;
-  testnet: { chainId: 46630; status: DeploymentStatus; note: string; source?: string };
-  mainnet: { chainId: 4663; status: DeploymentStatus; note: string; source?: string };
+  testnet: { chainId: number; status: DeploymentStatus; note: string; source?: string };
+  mainnet: { chainId: number; status: DeploymentStatus; note: string; source?: string };
   /** The recommended path from first commit to production, in order. */
   devPath: readonly string[];
   /** ISO date the row was last checked against the world. */
   checkedOn: string;
 }
 
-/** Protocol families a shape relies on. Robinhood is always implied, Boros never. */
-export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "shared" | "robinhood">[]> = {
+/** Protocol families a shape relies on. The chain itself is always implied, Boros never. */
+export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "shared" | "robinhood" | "arbitrum">[]> = {
   curated_vault: ["morpho"],
   embedded_earn: ["morpho"],
   collateral_loans: ["morpho"],
@@ -829,12 +830,16 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
   hook_pool: ["uniswap"],
 };
 
-/** Environment rows for the given shapes, Robinhood first, each family once, from whatever rows exist. */
-export function environmentPlanFor(shapes: ShapeInput, rows: EnvironmentRows): FamilyEnvironment[] {
+/** Environment rows for the given shapes, the chain's own row first, each family once, from whatever rows exist. */
+export function environmentPlanFor(
+  shapes: ShapeInput,
+  rows: EnvironmentRows,
+  base: "robinhood" | "arbitrum" = "robinhood",
+): FamilyEnvironment[] {
   const list = toShapeList(shapes);
   if (!list.length) return [];
   const out: FamilyEnvironment[] = [];
-  const rh = rows.robinhood;
+  const rh = rows[base];
   if (rh) out.push(rh);
   const seen = new Set<FamilyEnvironment["family"]>();
   for (const shape of list)
@@ -849,53 +854,45 @@ export function environmentPlanFor(shapes: ShapeInput, rows: EnvironmentRows): F
 }
 
 // ---------------------------------------------------------------------------
-// The testnet gate (M41). A shape can only be picked when every protocol
-// family it relies on has a deployment on Robinhood Chain testnet 46630,
-// official or community. Pendle and Uniswap have none today, so their shapes
-// wait until one lands or another testnet is added. Rows are passed in so
-// this file keeps no content import; the editor and the validator pass
-// KIT_ENVIRONMENTS.
+// Where a shape runs on the project's testnet (M41, a note since M52). A
+// shape runs when every protocol family it relies on has a deployment on the
+// chain's testnet, official or community. Until M52 a shape that did not run
+// could not be picked. Now it can, the studio says which protocol is missing,
+// and the team or its agent writes the build steps that fit. Rows are passed
+// in so this file keeps no content import; callers pass the rows for the
+// project's chain.
 
 export type EnvironmentRows = Partial<Record<FamilyEnvironment["family"], FamilyEnvironment>>;
 
 export const TESTNET_LIVE_STATUSES: readonly DeploymentStatus[] = ["official", "community"];
 
-/** True when every family the shape relies on runs on testnet 46630. A missing row counts as not live. */
-export function shapeRunsOnTestnet(shape: ProductShape, rows: EnvironmentRows): boolean {
-  return SHAPE_FAMILIES[shape].every((f) => {
+/** The families a shape relies on that have no testnet deployment in these rows. A missing row counts as not live. */
+export function missingFamilies(shape: ProductShape, rows: EnvironmentRows): FamilyEnvironment["family"][] {
+  return SHAPE_FAMILIES[shape].filter((f) => {
     const row = rows[f];
-    return row !== undefined && TESTNET_LIVE_STATUSES.includes(row.testnet.status);
+    return row === undefined || !TESTNET_LIVE_STATUSES.includes(row.testnet.status);
   });
 }
 
-/** Every shape the gate closes, in table order. */
-export function blockedShapes(rows: EnvironmentRows): ProductShape[] {
+/** True when every family the shape relies on runs on the testnet these rows describe. */
+export function shapeRunsOnTestnet(shape: ProductShape, rows: EnvironmentRows): boolean {
+  return missingFamilies(shape, rows).length === 0;
+}
+
+/** Every shape with a family missing on the testnet, in table order. */
+export function shapesMissingTestnet(rows: EnvironmentRows): ProductShape[] {
   return PRODUCT_SHAPE_VALUES.filter((s) => !shapeRunsOnTestnet(s, rows));
-}
-
-/** The blocked shapes among the given ones, in table order. */
-export function blockedShapesIn(shapes: ShapeInput, rows: EnvironmentRows): ProductShape[] {
-  const list = new Set(toShapeList(shapes));
-  return blockedShapes(rows).filter((s) => list.has(s));
-}
-
-/** Subsectors whose every shape is blocked, in table order. */
-export function blockedSubsectors(rows: EnvironmentRows): Subsector[] {
-  const blocked = new Set(blockedShapes(rows));
-  return SUBSECTOR_VALUES.filter((sub) => {
-    const shapes = shapesFor([sub]);
-    return shapes.length > 0 && shapes.every((s) => blocked.has(s));
-  });
 }
 
 // ---------------------------------------------------------------------------
 // Resource catalog
 
-export type KitFamily = "shared" | "robinhood" | "morpho" | "pendle" | "uniswap" | "boros";
+export type KitFamily = "shared" | "robinhood" | "arbitrum" | "morpho" | "pendle" | "uniswap" | "boros";
 
 export const KIT_FAMILY_ORDER: readonly KitFamily[] = [
   "shared",
   "robinhood",
+  "arbitrum",
   "morpho",
   "pendle",
   "uniswap",
@@ -955,6 +952,11 @@ export interface KitResource {
   readOrder?: number;
   /** Absent means both starting points. */
   startingPoints?: readonly StartingPoint[];
+  /**
+   * Chains this entry is written for (M52). Absent means every chain, except
+   * that a chain's own family (robinhood, arbitrum) only ever applies there.
+   */
+  chains?: readonly ProjectChain[];
   flags?: readonly KitFlag[];
 }
 
@@ -964,13 +966,39 @@ export interface PackFilter {
   family?: KitFamily;
 }
 
+/** Chain families that only apply on their own chain. */
+const CHAIN_FAMILY: Partial<Record<KitFamily, ProjectChain>> = {
+  robinhood: "robinhood_testnet",
+  arbitrum: "arbitrum_sepolia",
+};
+
+/** True when a catalog entry belongs in a pack for this chain. */
+export function resourceOnChain(r: Pick<KitResource, "family" | "chains">, chain: ProjectChain): boolean {
+  const home = CHAIN_FAMILY[r.family];
+  if (home && home !== chain) return false;
+  return !r.chains || r.chains.includes(chain);
+}
+
+/**
+ * The flags an entry carries on this chain. The catalog's flags were written
+ * against Robinhood Chain; on Arbitrum "not on Robinhood" says nothing and
+ * the self deploy note does not hold, so both are left out there.
+ */
+export function flagsOnChain(r: Pick<KitResource, "flags">, chain: ProjectChain): KitFlag[] {
+  const flags = r.flags ?? [];
+  if (chain === "robinhood_testnet") return [...flags];
+  return flags.filter((f) => f !== "not_on_robinhood" && f !== "self_deploy");
+}
+
 function appliesTo(
   r: KitResource,
   shapes: readonly ProductShape[],
   kit: Pick<ProjectKit, "startingPoint" | "kits">,
   subsectors: readonly Subsector[],
+  chain: ProjectChain,
 ): boolean {
   if (!shapes.length) return false;
+  if (!resourceOnChain(r, chain)) return false;
   if (r.kits && !r.kits.some((k) => kit.kits.includes(k))) return false;
   if (r.shapes === "all") {
     if (r.subsectors && !r.subsectors.some((s) => subsectors.includes(s))) return false;
@@ -999,14 +1027,15 @@ function compareResources(a: KitResource, b: KitResource): number {
 export function packFor(
   catalog: readonly KitResource[],
   kit: ProjectKit | undefined,
-  doc: Pick<ProjectDoc, "subsectors" | "sector" | "sectors">,
+  doc: Pick<ProjectDoc, "subsectors" | "sector" | "sectors" | "chain">,
   filter: PackFilter = {},
 ): KitResource[] {
   const shapes = kitShapes(kit);
   if (!kit || !shapes.length) return [];
   const subs = effectiveSubsectors(kit, doc);
+  const chain = projectChainOf(doc);
   return catalog
-    .filter((r) => appliesTo(r, shapes, kit, subs))
+    .filter((r) => appliesTo(r, shapes, kit, subs, chain))
     .filter((r) => !filter.step || r.steps.includes(filter.step))
     .filter((r) => !filter.priority || r.priority === filter.priority)
     .filter((r) => !filter.family || r.family === filter.family)

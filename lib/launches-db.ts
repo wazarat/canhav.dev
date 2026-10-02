@@ -1,5 +1,6 @@
 import "server-only";
 
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } from "@/lib/chains";
 import { getDb } from "@/lib/db";
 
 /**
@@ -17,6 +18,13 @@ export interface LaunchRow {
   /** The studio project the launch was started from, when there was one. */
   project_id: string | null;
   created_at: string;
+  /** The chain the token launched on (M54). Absent before the column exists, which reads as Robinhood. */
+  chain_id?: number;
+}
+
+/** The project chain a launch row is on. */
+export function launchRowChain(row: Pick<LaunchRow, "chain_id"> | null | undefined): ProjectChain {
+  return (row?.chain_id ? chainByChainId(row.chain_id) : null) ?? DEFAULT_PROJECT_CHAIN;
 }
 
 export type RecordLaunchResult = "recorded" | "exists" | null;
@@ -32,23 +40,48 @@ export async function recordLaunch(input: {
   creatorAddress: string;
   txHash: string | null;
   projectId: string | null;
+  /** The chain the token was indexed on. Robinhood when left out. */
+  chain?: ProjectChain;
 }): Promise<RecordLaunchResult> {
   const sql = getDb();
   if (!sql) return null;
-  const rows = await sql`
-    insert into launchpad.launches (token_address, owner_id, creator_address, tx_hash, project_id)
-    values (
-      ${input.tokenAddress.toLowerCase()},
-      ${input.ownerId},
-      ${input.creatorAddress.toLowerCase()},
-      ${input.txHash},
-      ${input.projectId}
-    )
-    on conflict (token_address) do update
-      set project_id = coalesce(launchpad.launches.project_id, excluded.project_id)
-      where launchpad.launches.owner_id = excluded.owner_id
-    returning token_address
-  `;
+  const chain = input.chain ?? DEFAULT_PROJECT_CHAIN;
+  // A Robinhood row leans on the column default, so it also inserts before
+  // the chain_id column exists. Any other chain needs the column (M54).
+  const insert = async () => {
+    if (chain === DEFAULT_PROJECT_CHAIN) {
+      return sql`
+        insert into launchpad.launches (token_address, owner_id, creator_address, tx_hash, project_id)
+        values (
+          ${input.tokenAddress.toLowerCase()},
+          ${input.ownerId},
+          ${input.creatorAddress.toLowerCase()},
+          ${input.txHash},
+          ${input.projectId}
+        )
+        on conflict (token_address) do update
+          set project_id = coalesce(launchpad.launches.project_id, excluded.project_id)
+          where launchpad.launches.owner_id = excluded.owner_id
+        returning token_address
+      `;
+    }
+    return sql`
+      insert into launchpad.launches (token_address, owner_id, creator_address, tx_hash, project_id, chain_id)
+      values (
+        ${input.tokenAddress.toLowerCase()},
+        ${input.ownerId},
+        ${input.creatorAddress.toLowerCase()},
+        ${input.txHash},
+        ${input.projectId},
+        ${chainInfo(chain).chainId}
+      )
+      on conflict (token_address) do update
+        set project_id = coalesce(launchpad.launches.project_id, excluded.project_id)
+        where launchpad.launches.owner_id = excluded.owner_id
+      returning token_address
+    `;
+  };
+  const rows = await insert();
   return rows.length > 0 ? "recorded" : "exists";
 }
 
@@ -58,7 +91,7 @@ export async function getLaunchesByOwner(ownerId: string): Promise<LaunchRow[] |
   if (!sql) return null;
   try {
     const rows = await sql`
-      select token_address, owner_id, creator_address, tx_hash, project_id, created_at
+      select *
       from launchpad.launches
       where owner_id = ${ownerId}
       order by created_at desc
@@ -77,7 +110,7 @@ export async function getLaunchesByProject(projectId: string): Promise<LaunchRow
   if (!sql) return null;
   try {
     const rows = await sql`
-      select token_address, owner_id, creator_address, tx_hash, project_id, created_at
+      select *
       from launchpad.launches
       where project_id = ${projectId}
       order by created_at desc
@@ -97,7 +130,7 @@ export async function getLaunchByToken(tokenAddress: string): Promise<LaunchRow 
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
   try {
     const rows = await sql`
-      select token_address, owner_id, creator_address, tx_hash, project_id, created_at
+      select *
       from launchpad.launches
       where token_address = ${tokenAddress.toLowerCase()}
     `;

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } from "@/lib/chains";
 import { getDb } from "@/lib/db";
 import type { JourneyDoc } from "@/lib/journey";
 import {
@@ -47,6 +48,8 @@ export interface TokenDesignRow {
   deployed_by_wallet: string | null;
   deployed_snapshot_hash: string | null;
   deployed_at: string | null;
+  /** The chain the design's token is on (M54). Null or absent reads as Robinhood. */
+  deployed_chain_id?: number | null;
   /** Absent on rows read before scripts/db-setup.mjs added the column (M39). */
   agent_rev?: number;
   created_at: string;
@@ -368,9 +371,26 @@ export async function attachDeploy(
   tokenAddress: string,
   deployedBy: string,
   snapshotHash: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<boolean> {
   const sql = getDb();
   if (!sql) return false;
+  // Robinhood leaves deployed_chain_id null, which reads as Robinhood, so
+  // this also works before the M54 column exists. Another chain needs it.
+  if (chain !== DEFAULT_PROJECT_CHAIN) {
+    const rows = await sql`
+      update launchpad.token_designs
+      set deployed_token_address = ${tokenAddress.toLowerCase()},
+          deployed_by_wallet = ${deployedBy.toLowerCase()},
+          deployed_snapshot_hash = ${snapshotHash},
+          deployed_chain_id = ${chainInfo(chain).chainId},
+          deployed_at = now(),
+          updated_at = now()
+      where id = ${id} and owner_id = ${ownerId} and deployed_token_address is null
+      returning id
+    `;
+    return rows.length > 0;
+  }
   const rows = await sql`
     update launchpad.token_designs
     set deployed_token_address = ${tokenAddress.toLowerCase()},
@@ -450,9 +470,19 @@ export async function publishEntity(
   // Token build step ticks (M46) stay on the draft and out of the snapshot,
   // so ticking after launch never changes the hash the launch committed.
   const { checklist: ticks, ...draftBody } = row.draft_doc as TokenDesignDoc & { checklist?: unknown };
-  const base = table === "projects" ? row.draft_doc : (draftBody as IdeationDoc);
+  // A project's own files (M53) stay on the draft too. They may be paths on
+  // the team's machine, which have no place on a public page.
+  const { references: refs, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown };
+  const base = table === "projects" ? (projectBody as IdeationDoc) : (draftBody as IdeationDoc);
   const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
-  const draftOut = table === "projects" || ticks === undefined ? stamped : { ...stamped, checklist: ticks };
+  const draftOut =
+    table === "projects"
+      ? refs === undefined
+        ? stamped
+        : { ...stamped, references: refs }
+      : ticks === undefined
+        ? stamped
+        : { ...stamped, checklist: ticks };
   const problem = validateIdeationDoc(stamped);
   if (problem) return { ok: false, error: problem, status: 400 };
 
@@ -681,4 +711,9 @@ export async function getLinkedProject(tokenDesignId: string): Promise<ProjectRo
     where l.b_type = 'token_design' and l.b_id = ${tokenDesignId} and l.a_type = 'project'
   `;
   return mapProjectRow(rows[0] as ProjectRow | undefined);
+}
+
+/** The chain a design's deployed token is on. Robinhood for every deploy from before M54. */
+export function designDeployChain(row: Pick<TokenDesignRow, "deployed_chain_id">): ProjectChain {
+  return (row.deployed_chain_id ? chainByChainId(row.deployed_chain_id) : null) ?? DEFAULT_PROJECT_CHAIN;
 }

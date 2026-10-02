@@ -62,6 +62,7 @@ export const KIT_COPY = {
 export const FAMILY_LABELS: Record<KitFamily, string> = {
   shared: "Shared",
   robinhood: "Robinhood Chain",
+  arbitrum: "Arbitrum",
   morpho: "Morpho",
   pendle: "Pendle",
   uniswap: "Uniswap",
@@ -180,9 +181,9 @@ export const REVIEW_COPY = {
 export const ENVIRONMENT_COPY = {
   title: "Where this runs today",
   intro:
-    "Robinhood Chain and each protocol your shapes rely on, on testnet 46630 and mainnet 4663, checked by hand on the date shown. The same block reaches your agent through get_resource_pack.",
-  testnet: "Testnet 46630",
-  mainnet: "Mainnet 4663",
+    "Your chain and each protocol your shapes rely on, on its testnet and its mainnet, checked by hand on the date shown. The same block reaches your agent through get_resource_pack.",
+  testnet: (chainId: number) => `Testnet ${chainId}`,
+  mainnet: (chainId: number) => `Mainnet ${chainId}`,
   status: {
     official: "Official deployment",
     community: "Community deployment",
@@ -244,24 +245,19 @@ export function shapeExamples(shape: ProductShape | ""): readonly string[] {
 }
 
 /**
- * The testnet gate (M41). Shapes whose protocol has no deployment on
- * Robinhood Chain testnet are shown greyed and cannot be picked; a stored
- * one is kept, warned about and blocks publishing.
+ * The testnet note (M41, a note since M52). A shape whose protocol has no
+ * deployment on the project's testnet can still be picked. The studio says
+ * which protocol is missing and the team or its agent writes the build
+ * steps that fit.
  */
 export const GATE_COPY = {
-  chipSuffix: "Not on Robinhood testnet yet",
-  note: "Greyed options rely on a protocol with no deployment on Robinhood Chain testnet. They open when one lands.",
-  publishBlock: (labels: readonly string[]) =>
-    labels.length === 1
-      ? `${labels[0]} is not on Robinhood testnet yet. Remove it in Basics to publish.`
-      : `${joinAnd(labels)} are not on Robinhood testnet yet. Remove them in Basics to publish.`,
-  warning: (labels: readonly string[]) =>
-    labels.length === 1
-      ? `${labels[0]} is not on Robinhood testnet yet, so this project cannot publish. Click to remove it.`
-      : `${joinAnd(labels)} are not on Robinhood testnet yet, so this project cannot publish. Click to remove them.`,
-  stepProblem: "A shape is not on Robinhood testnet",
+  chipSuffix: (chain: string) => `Not on ${chain} yet`,
+  note: (chain: string) =>
+    `Marked options rely on a protocol with no deployment on ${chain}. You can still build them, with build steps you or your agent write to fit.`,
+  section: (families: readonly string[], chain: string) =>
+    `${joinAnd(families)} ${families.length === 1 ? "has" : "have"} no deployment on ${chain} yet. Remove the steps that do not fit and add your own below, or ask your agent to write them. Work against mocks, your own deployment or a fork of mainnet until one lands.`,
   catalogRule:
-    "A shape is blocked when a protocol family it relies on has no official or community deployment on testnet 46630.",
+    "A shape is marked when a protocol family it relies on has no official or community deployment on the project's testnet. It can still be picked, and the team or its agent writes the build steps that fit.",
 } as const;
 
 /** "A", "A and B", "A, B and C". */

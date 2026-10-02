@@ -10,7 +10,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { tokenBuildProgressOf } from "@/content/token-steps";
-import { type IndexedCurve, getCurves } from "@/lib/indexer";
+import { type IndexedCurve, getCurvesAllChains } from "@/lib/indexer";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import {
   type EntityLinkSummary,
@@ -241,7 +241,7 @@ export default async function StudioPage() {
   const deployedAny = (designs ?? []).some((d) => d.deployed_token_address);
   const token: TokenChipFacts = {
     linkedDesignIds: new Set(links.byDesign.keys()),
-    curves: deployedAny ? await getCurves() : null,
+    curves: deployedAny ? await getCurvesAllChains() : null,
     now: Math.floor(Date.now() / 1000),
   };
   // Newest first already, so the first hit per project wins.

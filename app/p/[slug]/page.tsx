@@ -1,3 +1,4 @@
+import { chainInfo, projectChainOf } from "@/lib/chains";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -23,7 +24,7 @@ import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { type ProjectDoc, type StatusDecl, docAudience } from "@/lib/ideation";
-import { getLaunchesByProject } from "@/lib/launches-db";
+import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
@@ -90,11 +91,11 @@ export default async function ProjectPublicPage({
 
   const [linked, deploys, txCount, github, contractChecks, projectLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
-    doc.verifyWallet ? getTokensByCreator(doc.verifyWallet) : null,
-    doc.verifyWallet ? getWalletTxCount(doc.verifyWallet) : null,
+    doc.verifyWallet ? getTokensByCreator(doc.verifyWallet, projectChainOf(doc)) : null,
+    doc.verifyWallet ? getWalletTxCount(doc.verifyWallet, projectChainOf(doc)) : null,
     doc.githubRepo ? getGithubActivity(doc.githubRepo) : null,
     doc.testnetContracts
-      ? Promise.all(doc.testnetContracts.map((a) => getBlockscoutVerification(a)))
+      ? Promise.all(doc.testnetContracts.map((a) => getBlockscoutVerification(a, projectChainOf(doc))))
       : null,
     // Tokens launched from this project through the studio (M19d).
     getLaunchesByProject(row.id),
@@ -103,7 +104,7 @@ export default async function ProjectPublicPage({
     (projectLaunches ?? []).slice(0, 5).map(async (l) => ({
       address: l.token_address,
       at: l.created_at,
-      curve: await getCurve(l.token_address),
+      curve: await getCurve(l.token_address, launchRowChain(l)),
     })),
   );
   const linkedPublished = linked && linked.status === "published" && linked.slug ? linked : null;
@@ -206,6 +207,7 @@ export default async function ProjectPublicPage({
                 ) : null}
               </div>
             ) : null}
+            <Prose label="Chain" text={chainInfo(projectChainOf(doc)).name} />
             {doc.whyThisChain.trim() ? (
               <Prose label="Why this chain" text={doc.whyThisChain} />
             ) : null}
@@ -216,9 +218,11 @@ export default async function ProjectPublicPage({
         </Section>
 
         <Section title="Distribution reality">
-          <p className="text-sm leading-relaxed text-ink-400">
-            The team has acknowledged this. {ROBINHOOD_MYTH.body}
-          </p>
+          {projectChainOf(doc) === "robinhood_testnet" ? (
+            <p className="text-sm leading-relaxed text-ink-400">
+              The team has acknowledged this. {ROBINHOOD_MYTH.body}
+            </p>
+          ) : null}
           <Prose label={ROBINHOOD_MYTH.followUp} text={doc.firstHundredUsers} />
         </Section>
 
@@ -326,7 +330,7 @@ export default async function ProjectPublicPage({
                       check && (
                         <StatusChip key={check.address} tone={check.verified ? "success" : "warning"}>
                           <a
-                            href={explorerAddressUrl(check.address)}
+                            href={explorerAddressUrl(check.address, projectChainOf(doc))}
                             target="_blank"
                             rel="noreferrer"
                             className="transition-colors hover:text-ink-50"

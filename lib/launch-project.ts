@@ -2,10 +2,11 @@ import "server-only";
 
 import { sectorLabels, subsectorLabels } from "@/content/ideation";
 import { shapeLabels } from "@/content/kits/copy";
+import { projectChainOf } from "@/lib/chains";
 import type { ProjectContext } from "@/lib/ideation";
-import { getProjectById, type ProjectRow } from "@/lib/ideation-db";
+import { getLinkedTokenDesign, getProjectById, type ProjectRow } from "@/lib/ideation-db";
 import { kitShapes } from "@/lib/kits";
-import { getLaunchByToken } from "@/lib/launches-db";
+import { getLaunchByToken, getLaunchesByProject } from "@/lib/launches-db";
 import { docSectors } from "@/lib/sectors";
 
 /**
@@ -29,6 +30,7 @@ export function projectContext(row: ProjectRow): ProjectContext {
     sectorLabels: sectorLabels(doc),
     subsectorLabels: subsectorLabels(doc),
     shapeLabels: shapeLabels(doc.kit),
+    chain: projectChainOf(doc),
     publicUrl:
       row.status === "published" && row.slug ? `https://www.canhav.com/p/${row.slug}` : null,
   };
@@ -43,4 +45,21 @@ export async function getLaunchProjectSummary(
   const row = await getProjectById(launch.project_id);
   if (!row) return null;
   return { ownerId: row.owner_id, project: projectContext(row) };
+}
+
+/** Shown when a change of chain is refused. */
+export const CHAIN_LOCKED =
+  "A token has launched from this project, so its chain is fixed.";
+
+/**
+ * True once a token exists for the project, a launch started from it or a
+ * deployed linked design. From then on the project's chain cannot change,
+ * because a token stays on the chain it launched on (M52).
+ */
+export async function projectChainLocked(projectId: string): Promise<boolean> {
+  const [launches, design] = await Promise.all([
+    getLaunchesByProject(projectId),
+    getLinkedTokenDesign(projectId),
+  ]);
+  return (launches?.length ?? 0) > 0 || Boolean(design?.deployed_token_address);
 }

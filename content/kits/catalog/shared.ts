@@ -420,6 +420,7 @@ export const SHARED_RESOURCES: readonly KitResource[] = [
     id: "thegraph.robinhood",
     family: "shared",
     title: "The Graph on Robinhood Chain",
+    chains: ["robinhood_testnet"],
     kind: "docs",
     href: "https://thegraph.com/docs/en/supported-networks/robinhood/",
     why: "Firehose and Substreams cover mainnet. Your historical layer for TVL, APY, allocations, balances and liquidations can start here instead of a custom indexer. Verify testnet coverage separately.",

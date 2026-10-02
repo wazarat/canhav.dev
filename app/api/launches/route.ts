@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { authGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
-import { getToken } from "@/lib/indexer";
+import { chainInfo, projectChainOf } from "@/lib/chains";
+import { findToken } from "@/lib/indexer";
 import { recordLaunch } from "@/lib/launches-db";
 
 export const runtime = "nodejs";
@@ -39,14 +40,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid token address." }, { status: 400 });
 
   // A launch may only be attached to a project the same account owns.
-  if (projectId && !(await getProject(projectId, gate.id)))
+  const project = projectId ? await getProject(projectId, gate.id) : null;
+  if (projectId && !project)
     return NextResponse.json({ error: "That project is not yours." }, { status: 403 });
 
-  // The indexer may lag the receipt by a block or two. Retry once.
-  let token = await getToken(tokenAddress);
+  // The indexer may lag the receipt by a block or two. Retry once. The token
+  // is looked for on every chain, so the chain comes from where it was
+  // indexed and never from the request (M54).
+  let token = await findToken(tokenAddress);
   if (!token) {
     await sleep(3000);
-    token = await getToken(tokenAddress);
+    token = await findToken(tokenAddress);
   }
   if (!token)
     return NextResponse.json({ error: "Token not indexed yet. Try again shortly." }, { status: 409 });
@@ -58,12 +62,22 @@ export async function POST(req: Request) {
       { status: 403 },
     );
 
+  // A token launches on the chain its project builds on (M54).
+  if (project && token.chain && projectChainOf(project.draft_doc) !== token.chain)
+    return NextResponse.json(
+      {
+        error: `This project builds on ${chainInfo(projectChainOf(project.draft_doc)).name}, and this token launched on ${chainInfo(token.chain).name}. A token is linked to a project on the same chain.`,
+      },
+      { status: 409 },
+    );
+
   const result = await recordLaunch({
     tokenAddress,
     ownerId: gate.id,
     creatorAddress: token.creator,
     txHash,
     projectId,
+    chain: token.chain,
   });
   if (result === null)
     return NextResponse.json({ error: "Storage not configured." }, { status: 503 });

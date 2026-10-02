@@ -46,6 +46,56 @@ CREATE2 addresses diverge from OZ `Clones` math for identical salts (pinned by
 LibClone's math. Blockscout still resolves the optimized proxy's
 implementation and token metadata (checked empirically on testnet).
 
+## Second chain, Arbitrum Sepolia (M55)
+
+The launchpad runs on two chains from one codebase. The contracts are
+unchanged; a chain is a deployment plus an entry in the app's registry.
+
+`script/DeployChain.s.sol` deploys the whole set on a fresh chain in one
+broadcast, in dependency order and with the Robinhood wiring: the two
+implementations, the TimelockController (proposer and canceller the deployer,
+executor open, no admin), the TokenFactory, MilestoneEscrow, JourneyUpdates,
+AllocationSale, FeeSplitter, LaunchAMM and CurveLauncher. Everything with an
+owner is owned by the timelock from construction. Treasury, pauser and fee
+payee start as the deployer, which is the same address on every chain. Launch
+fees start at zero and are set through the timelock.
+
+```bash
+forge script script/DeployChain.s.sol --fork-url arbitrum_sepolia
+forge script script/DeployChain.s.sol --rpc-url arbitrum_sepolia --broadcast --slow \
+  --verify --verifier blockscout --verifier-url https://arbitrum-sepolia.blockscout.com/api
+```
+
+Deployed on 2026-10-02 from `0x955fc594dd992Ef7bb7d175b6C9a68Be2b622DEB`,
+blocks 315002357 to 315002429, 0.00045 ETH in total.
+
+| Contract | Address on Arbitrum Sepolia (421614) |
+|---|---|
+| LaunchToken implementation | `0x3E8c9be8BB486abEc132B0d1C35266b2336b129B` |
+| LaunchVestingWallet implementation | `0x1dAaa8294806d216Df36dc07B3803ED26584c909` |
+| TimelockController | `0xeD66C31FFAC1C5dCf4f327536a7540B22DF2B5E1` |
+| TokenFactory (verified) | `0xdC3521DDEFfca6825771da6c23679A7BA1E82475` |
+| MilestoneEscrow | `0x3F7AcbFE98c5Ac72259F7e838886c310f3E0D8ce` |
+| JourneyUpdates | `0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC` |
+| AllocationSale | `0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0` |
+| FeeSplitter | `0x37dC58e2098b61249E12e0674D0C137EDf5248B4` |
+| LaunchAMM | `0x4EA372acAb7be21113f474CEd2B7b317019afeD3` |
+| CurveLauncher (verified) | `0x6Dde90B06b920565ccBA93D8ad7d5AfE5846426f` |
+
+The deployer starts from nonce zero on each chain, so some of these strings
+also name a different contract on Robinhood Chain (the sale address here is
+the paused v2 factory there). Always read an address together with its chain.
+The other eight contracts still need source verification on Blockscout
+(`forge clean`, then `forge verify-contract` for each).
+
+The fork run on 2026-10-02 used about 14.3M gas, roughly 0.0012 ETH. After
+the broadcast, copy the logged addresses and the first deploy block into
+`content/launch.ts` (`LAUNCH_CHAINS.arbitrum_sepolia`, then `live: true`) and
+`indexer/ponder.config.ts` (`ARBITRUM`), start the second indexer instance
+with `PONDER_CHAIN=arbitrum_sepolia`, and set `INDEXER_URL_ARBITRUM_SEPOLIA`
+for the app. Until then the app treats the chain as not live and refuses
+every write on it.
+
 ## Layout
 
 ```

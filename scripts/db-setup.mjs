@@ -234,6 +234,17 @@ await sql`
     add column if not exists project_id uuid references launchpad.projects(id) on delete set null
 `;
 
+// Two chains (M54): the chain a token launched on. Every row from before
+// the column is Robinhood Chain testnet, which the default states.
+await sql`
+  alter table launchpad.launches
+    add column if not exists chain_id integer not null default 46630
+`;
+await sql`
+  alter table launchpad.token_designs
+    add column if not exists deployed_chain_id integer
+`;
+
 await sql`
   create index if not exists launches_project_idx
     on launchpad.launches (project_id)

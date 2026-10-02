@@ -33,7 +33,7 @@ import type { IndexedCurve } from "@/lib/indexer";
 import { validateMilestones } from "@/lib/journey";
 import type { ProductShape } from "@/lib/kits";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
-import { LAUNCH_CHAIN, LAUNCH_FORM } from "@/content/launch";
+import { LAUNCH_FORM, launchChain } from "@/content/launch";
 import {
   ALLOCATION_ENFORCEMENT_NOTE,
   ANTI_SNIPING_OPTIONS,
@@ -721,7 +721,7 @@ export function TokenDesignEditor({
                   </span>
                 ))}
                 <a
-                  href={explorerAddressUrl(LAUNCH_CHAIN.factoryAddress)}
+                  href={explorerAddressUrl(launchChain().factoryAddress)}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-2 block text-electric-300 transition-colors hover:text-electric-200"

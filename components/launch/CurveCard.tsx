@@ -1,10 +1,11 @@
+import type { ProjectChain } from "@/lib/chains";
 import type { ReactNode } from "react";
 import { TrendingUp } from "lucide-react";
 import { formatEther } from "viem";
 
 import { StatusChip } from "@/components/ui/StatusChip";
 import {
-  LAUNCH_CHAIN,
+  launchChain,
   LAUNCH_CURVE,
   LAUNCH_CURVE_SHARE_PCT,
   LAUNCH_CURVE_TAX_PCT,
@@ -29,18 +30,22 @@ function shortAddr(a: string): string {
  * `children` is the wallet side (CurveActions) while the curve is live.
  */
 export function CurveCard({
+  chain,
   curve,
   symbol,
   trades,
   nowSeconds,
   children,
 }: {
+  /** The chain the token lives on (M54). */
+  chain: ProjectChain;
   curve: IndexedCurve;
   symbol: string;
   trades: { trades: IndexedCurveTrade[]; count: number } | null;
   nowSeconds: number;
   children?: ReactNode;
 }) {
+  const net = launchChain(chain);
   const L = LAUNCH_CURVE.labels;
   const inWindow = curveWindowOpen(curve, nowSeconds);
   const secondsLeft = Math.max(0, Number(curve.windowEnd) - nowSeconds);
@@ -106,7 +111,7 @@ export function CurveCard({
               return (
                 <li key={t.txHash + t.blockTimestamp + t.side} className="flex justify-between gap-3 text-xs">
                   <a
-                    href={`${LAUNCH_CHAIN.explorerUrl}/tx/${t.txHash}`}
+                    href={`${net.explorerUrl}/tx/${t.txHash}`}
                     target="_blank"
                     rel="noreferrer"
                     className="font-mono text-electric-300 hover:text-electric-200"

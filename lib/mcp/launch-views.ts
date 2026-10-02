@@ -1,6 +1,7 @@
 import "server-only";
 
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { launchChain } from "@/content/launch";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { getTokenDesignByAddress } from "@/lib/ideation-db";
 import {
   curveProgressPct,
@@ -13,8 +14,8 @@ import {
   getRecentPurchases,
   getRecentSwaps,
   getSales,
-  getToken,
-  getTokenRead,
+  findToken,
+  findTokenRead,
   getVesting,
   isCurveLaunch,
   type IndexedCurve,
@@ -50,8 +51,8 @@ export function launchUrl(address: string): string {
   return `https://www.canhav.com/launch/t/${address}`;
 }
 
-export function explorerAddress(address: string): string {
-  return `${LAUNCH_CHAIN.explorerUrl}/address/${address}`;
+export function explorerAddress(address: string, chain?: ProjectChain): string {
+  return `${launchChain(chain).explorerUrl}/address/${address}`;
 }
 
 export function summarizeToken(t: IndexedToken) {
@@ -73,9 +74,11 @@ export function summarizeToken(t: IndexedToken) {
     launcher: t.factory,
     launchedAt: isoTime(t.blockTimestamp),
     launchTxHash: t.txHash,
-    chainId: LAUNCH_CHAIN.chainId,
+    // The chain the token lives on (M54). Every read for it goes there.
+    chain: t.chain ?? DEFAULT_PROJECT_CHAIN,
+    chainId: launchChain(t.chain).chainId,
     launchUrl: launchUrl(t.address),
-    explorerUrl: explorerAddress(t.address),
+    explorerUrl: explorerAddress(t.address, t.chain),
   };
 }
 
@@ -134,11 +137,11 @@ export function curveState(c: IndexedCurve, now: number): CurveState {
 }
 
 /** The bonding curve behind a launch, in the shape every tool returns. */
-export function summarizeCurve(c: IndexedCurve, now: number) {
+export function summarizeCurve(c: IndexedCurve, now: number, chain?: ProjectChain) {
   return {
     state: curveState(c, now),
     developer: c.developer,
-    launcherContract: LAUNCH_CHAIN.curveAddress,
+    launcherContract: launchChain(chain).curveAddress,
     supplyWei: c.supply,
     curveSupplyWei: c.curveSupply,
     poolSupplyWei: c.poolSupply,
@@ -170,11 +173,11 @@ export function summarizeCurve(c: IndexedCurve, now: number) {
 /** Pool block shared by launchView and get_pool_status. `lockedLiquidity` is
  *  true for a pool the curve launcher seeded: it holds the shares and has no
  *  path to remove them. */
-export function summarizePool(pool: IndexedPool) {
+export function summarizePool(pool: IndexedPool, chain?: ProjectChain) {
   return {
     poolId: pool.poolId,
     creator: pool.creator,
-    lockedLiquidity: pool.creator.toLowerCase() === LAUNCH_CHAIN.curveAddress.toLowerCase(),
+    lockedLiquidity: pool.creator.toLowerCase() === launchChain(chain).curveAddress.toLowerCase(),
     ethReserveWei: pool.ethReserve,
     tokenReserveWei: pool.tokenReserve,
     totalShares: pool.totalShares,
@@ -235,7 +238,7 @@ export async function journeyBlock(token: IndexedToken) {
   }
   const [commitment, updates] = await Promise.all([
     getLaunchCommitment(token.journeyHash),
-    getVerifiedUpdates(token.address, token.creator),
+    getVerifiedUpdates(token.address, token.creator, token.chain),
   ]);
   return {
     onChainHash: token.journeyHash,
@@ -278,7 +281,7 @@ export async function launchView(
 ): Promise<View<unknown>> {
   // getTokenRead keeps "indexer down" apart from "no such token", so this no
   // longer needs a second getTokens() call purely as an offline probe.
-  const read = await getTokenRead(address);
+  const read = await findTokenRead(address);
   if (read.status === "unavailable") return { ok: false, message: INDEXER_HINT };
   if (read.status === "empty")
     return { ok: false, message: `No CanHav launch at ${address}.` };
@@ -287,15 +290,15 @@ export async function launchView(
   const [journey, meta, vesting, escrows, sales, curve, design, project] = await Promise.all([
     journeyBlock(token),
     getVerifiedTokenMetadata(token.descriptionHash, token.creator),
-    getVesting(token.address),
-    getEscrows(token.address),
-    getSales(token.address),
-    getCurve(token.address),
+    getVesting(token.address, token.chain),
+    getEscrows(token.address, token.chain),
+    getSales(token.address, token.chain),
+    getCurve(token.address, token.chain),
     linkedDesign(token.address),
     projectBlock(token.address, opts.includePrivateProject),
   ]);
   // A graduated curve's pool belongs to the launcher, so it is found by id.
-  const pool = await getLaunchPool(token, curve);
+  const pool = await getLaunchPool(token, curve, token.chain);
   return {
     ok: true,
     value: {
@@ -321,9 +324,9 @@ export async function launchView(
         : null,
       escrows: (escrows ?? []).map(summarizeEscrow),
       sales: (sales ?? []).map((s) => summarizeSale(s, now)),
-      pool: pool ? summarizePool(pool) : null,
+      pool: pool ? summarizePool(pool, token.chain) : null,
       // Null for factory launches. Fields are only ever added.
-      curve: curve ? summarizeCurve(curve, now) : null,
+      curve: curve ? summarizeCurve(curve, now, token.chain) : null,
       design,
       // The studio project the launch was started from (M19d), or null.
       project,
@@ -340,7 +343,7 @@ export function noLaunchMessage(address: string): string {
 }
 
 export async function journeyView(address: string): Promise<View<unknown>> {
-  const token = await getToken(address);
+  const token = await findToken(address);
   if (!token) return { ok: false, message: noLaunchMessage(address) };
   if (!hasCommitment(token.journeyHash)) {
     return {
@@ -412,7 +415,7 @@ export async function journeyView(address: string): Promise<View<unknown>> {
 }
 
 export async function milestoneUpdatesView(address: string): Promise<View<unknown>> {
-  const token = await getToken(address);
+  const token = await findToken(address);
   if (!token) return { ok: false, message: noLaunchMessage(address) };
   const block = await journeyBlock(token);
   return {
@@ -427,13 +430,15 @@ export async function milestoneUpdatesView(address: string): Promise<View<unknow
 }
 
 export async function saleStatusView(address: string, recentLimit = 10): Promise<View<unknown>> {
-  const sales = await getSales(address);
+  // A sale is read from the chain its token lives on (M54). An unknown token reads as Robinhood.
+  const chain = (await findToken(address))?.chain;
+  const sales = await getSales(address, chain);
   if (sales === null) return { ok: false, message: INDEXER_HINT };
   const now = Math.floor(Date.now() / 1000);
   const withPurchases = await Promise.all(
     sales.map(async (s) => ({
       ...summarizeSale(s, now),
-      recentPurchases: ((await getRecentPurchases(s.saleId, recentLimit)) ?? []).map((p) => ({
+      recentPurchases: ((await getRecentPurchases(s.saleId, recentLimit, chain)) ?? []).map((p) => ({
         buyer: p.buyer,
         tokenAmountWei: p.tokenAmount,
         costWei: p.cost,
@@ -442,24 +447,24 @@ export async function saleStatusView(address: string, recentLimit = 10): Promise
       })),
     })),
   );
-  return { ok: true, value: { address, saleContract: LAUNCH_CHAIN.saleAddress, sales: withPurchases } };
+  return { ok: true, value: { address, saleContract: launchChain(chain).saleAddress, sales: withPurchases } };
 }
 
 export async function poolStatusView(address: string, recentLimit = 10): Promise<View<unknown>> {
-  const token = await getToken(address);
+  const token = await findToken(address);
   if (!token) return { ok: false, message: noLaunchMessage(address) };
-  const pool = await getLaunchPool(token, await getCurve(token.address));
+  const pool = await getLaunchPool(token, await getCurve(token.address, token.chain), token.chain);
   if (!pool) {
-    return { ok: true, value: { address: token.address, ammContract: LAUNCH_CHAIN.ammAddress, pool: null } };
+    return { ok: true, value: { address: token.address, ammContract: launchChain(token.chain).ammAddress, pool: null } };
   }
-  const swaps = await getRecentSwaps(pool.poolId, recentLimit);
+  const swaps = await getRecentSwaps(pool.poolId, recentLimit, token.chain);
   return {
     ok: true,
     value: {
       address: token.address,
-      ammContract: LAUNCH_CHAIN.ammAddress,
+      ammContract: launchChain(token.chain).ammAddress,
       pool: {
-        ...summarizePool(pool),
+        ...summarizePool(pool, token.chain),
         swapCount: swaps?.count ?? null,
         ethVolumeWei: swaps ? swaps.ethVolume.toString() : null,
         recentSwaps: (swaps?.swaps ?? []).map((x) => ({
@@ -477,23 +482,23 @@ export async function poolStatusView(address: string, recentLimit = 10): Promise
 }
 
 export async function curveStatusView(address: string, recentLimit = 10): Promise<View<unknown>> {
-  const token = await getToken(address);
+  const token = await findToken(address);
   if (!token) return { ok: false, message: noLaunchMessage(address) };
-  const curve = await getCurve(token.address);
+  const curve = await getCurve(token.address, token.chain);
   if (!curve) {
     return {
       ok: true,
-      value: { address: token.address, launcherContract: LAUNCH_CHAIN.curveAddress, curve: null, recentTrades: [] },
+      value: { address: token.address, launcherContract: launchChain(token.chain).curveAddress, curve: null, recentTrades: [] },
     };
   }
-  const trades = await getCurveTrades(token.address, recentLimit);
+  const trades = await getCurveTrades(token.address, recentLimit, token.chain);
   const now = Math.floor(Date.now() / 1000);
   return {
     ok: true,
     value: {
       address: token.address,
-      launcherContract: LAUNCH_CHAIN.curveAddress,
-      curve: summarizeCurve(curve, now),
+      launcherContract: launchChain(token.chain).curveAddress,
+      curve: summarizeCurve(curve, now, token.chain),
       tradeCount: trades?.count ?? null,
       recentTrades: (trades?.trades ?? []).map((x) => ({
         trader: x.trader,

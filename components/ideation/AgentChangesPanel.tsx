@@ -15,6 +15,7 @@ import {
   type ChangeLine,
   type Decision,
   type LeafSpec,
+  type ProjectPatch,
   applyBuildSteps,
   applyProjectPatch,
   buildStepKeys,
@@ -24,6 +25,7 @@ import {
   firstIssue,
   leafSpec,
   pathLabel,
+  projectPatchProblem,
   projectPatchSchema,
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
@@ -157,6 +159,11 @@ export function AgentChangesPanel({
           : tokenDesignPatchSchema;
     const parsed = schema.safeParse(patch);
     if (!parsed.success) return { ok: false, message: firstIssue(parsed.error) };
+    // Dropping a line can leave the rest without what it relied on (M51).
+    if (change.kind === "fields" && change.target === "project") {
+      const problem = projectPatchProblem(doc, parsed.data as ProjectPatch);
+      if (problem) return { ok: false, message: problem };
+    }
     return { ok: true, patch: parsed.data };
   }
 

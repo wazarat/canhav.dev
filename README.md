@@ -24,6 +24,7 @@ Vercel values with `npx vercel env pull .env.local --environment=preview`.
 | --- | --- |
 | `DATABASE_URL` | Neon Postgres — journeys + ideation records (`launchpad` schema only; one-time setup `node --env-file=.env.local scripts/db-setup.mjs`) |
 | `INDEXER_URL` | Launch indexer (Ponder, `indexer/`; deploy config in `indexer/fly.toml`) |
+| `INDEXER_URL_ARBITRUM_SEPOLIA` | The same indexer run a second time with `PONDER_CHAIN=arbitrum_sepolia`. Unset until the contracts are deployed on Arbitrum Sepolia |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Clerk accounts for `/studio`, export downloads, and the MCP server |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token images |
 | `DUNE_API_KEY` | Landing-page protocol analytics |
@@ -399,5 +400,23 @@ event window so judges can verify it.
   and restored, and a team can add its own steps under a product shape.
   An agent on the project's MCP server can do the same, and each entry of
   its proposal is decided on its own.
+- Oct 2, 2026. The agent edits the rest. An agent on a project's MCP server
+  can now set the sectors, subsectors, product shapes and starting point,
+  tick resources in the pack and record review verdicts, through the same
+  proposal flow. The distribution acknowledgement stays with a person.
+- Oct 2, 2026. Pick your chain. A project builds on Robinhood testnet or
+  Arbitrum Sepolia. The resource pack and the environment block follow the
+  chain, and Fixed income, Leveraged yield and Pools are open on both. A
+  shape whose protocol is not on the chosen testnet carries a note, and the
+  team or its agent writes the build steps that fit.
+- Oct 2, 2026. Project files. A project can list its own files by link or by
+  a path on the team's machine. Nothing is uploaded or published, and the
+  list reaches the team's agent through the MCP server and the draft exports.
+- Oct 2, 2026. The launch layer on two chains. Every token read and write
+  goes to the chain the token lives on, a launch from a project goes on the
+  project's chain, and the governance page shows each chain's deployment.
+  One script deploys the whole contract set on Arbitrum Sepolia, and the
+  indexer runs a second time for it. Launches there open once that
+  deployment is recorded.
 
 This list grows as work lands on the branch.

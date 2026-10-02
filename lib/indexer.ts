@@ -1,6 +1,7 @@
 import "server-only";
 
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { LIVE_LAUNCH_CHAINS, launchChain } from "@/content/launch";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 
 /**
  * Data layer for the launchpad indexer (Ponder GraphQL API). Local-first: the
@@ -9,7 +10,21 @@ import { LAUNCH_CHAIN } from "@/content/launch";
  * instead of crashing.
  */
 
-const INDEXER_URL = process.env.INDEXER_URL ?? "http://localhost:42069";
+/**
+ * One indexer per chain (M54), the same Ponder code run once for each. A
+ * chain with no URL configured reads as unreachable, the same as an indexer
+ * that is down. Every reader takes the chain last and defaults to Robinhood,
+ * where every token from before M54 lives.
+ */
+const INDEXER_URLS: Record<ProjectChain, string | null> = {
+  robinhood_testnet: process.env.INDEXER_URL ?? "http://localhost:42069",
+  arbitrum_sepolia: process.env.INDEXER_URL_ARBITRUM_SEPOLIA ?? null,
+};
+
+/** Chains whose contracts are deployed and whose indexer is configured, in table order. */
+export function indexedChains(): ProjectChain[] {
+  return LIVE_LAUNCH_CHAINS.filter((c) => INDEXER_URLS[c] !== null);
+}
 
 export interface IndexedToken {
   address: string;
@@ -35,6 +50,8 @@ export interface IndexedToken {
   blockNumber: string;
   blockTimestamp: string;
   txHash: string;
+  /** The chain the token was read from (M54). Set by the readers, not by the indexer. */
+  chain?: ProjectChain;
 }
 
 const TOKEN_FIELDS =
@@ -53,9 +70,17 @@ export type IndexerRead<T> =
   | { status: "empty" }
   | { status: "unavailable" };
 
-async function query<T>(gql: string): Promise<T | null> {
+/** `query` bound to a chain, so a reader's body stays one call. */
+const queryOn =
+  (chain: ProjectChain) =>
+  <T>(gql: string): Promise<T | null> =>
+    query<T>(gql, chain);
+
+async function query<T>(gql: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<T | null> {
+  const url = INDEXER_URLS[chain];
+  if (!url) return null;
   try {
-    const res = await fetch(`${INDEXER_URL}/graphql`, {
+    const res = await fetch(`${url}/graphql`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: gql }),
@@ -71,11 +96,20 @@ async function query<T>(gql: string): Promise<T | null> {
 }
 
 /** Newest-first token list, or null when the indexer is unreachable. */
-export async function getTokens(): Promise<IndexedToken[] | null> {
-  const data = await query<{ tokens: { items: IndexedToken[] } }>(
+export async function getTokens(chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedToken[] | null> {
+  const data = await queryOn(chain)<{ tokens: { items: IndexedToken[] } }>(
     `{ tokens(orderBy: "blockNumber", orderDirection: "desc", limit: 100) { items { ${TOKEN_FIELDS} } } }`,
   );
-  return data?.tokens.items ?? null;
+  return data?.tokens.items.map((t) => ({ ...t, chain })) ?? null;
+}
+
+/** Newest-first tokens across every indexed chain. Null only when no chain answered. */
+export async function getTokensAllChains(): Promise<IndexedToken[] | null> {
+  const lists = await Promise.all(indexedChains().map((c) => getTokens(c)));
+  if (lists.every((l) => l === null)) return null;
+  return lists
+    .flatMap((l) => l ?? [])
+    .sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp));
 }
 
 export interface CreatorDeployHistory {
@@ -84,9 +118,9 @@ export interface CreatorDeployHistory {
 }
 
 /** Every factory launch by a wallet — the verify-don't-ask deploy record. */
-export async function getTokensByCreator(creator: string): Promise<CreatorDeployHistory | null> {
+export async function getTokensByCreator(creator: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<CreatorDeployHistory | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(creator)) return null;
-  const data = await query<{ tokens: CreatorDeployHistory }>(
+  const data = await queryOn(chain)<{ tokens: CreatorDeployHistory }>(
     `{ tokens(where: { creator: "${creator.toLowerCase()}" }, orderBy: "blockNumber", orderDirection: "desc", limit: 10) {
       totalCount items { address name symbol blockTimestamp }
     } }`,
@@ -105,6 +139,7 @@ export type TokenIdentityMatch = Pick<IndexedToken, "address" | "name" | "symbol
 export async function findTokensByNameOrSymbol(
   name: string,
   symbol: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<{ byName: TokenIdentityMatch[]; bySymbol: TokenIdentityMatch[] } | null> {
   const parts: string[] = [];
   // JSON.stringify produces a GraphQL-safe quoted string literal.
@@ -117,7 +152,7 @@ export async function findTokensByNameOrSymbol(
       `bySymbol: tokens(where: { symbol: ${JSON.stringify(symbol)} }, limit: 5) { items { address name symbol } }`,
     );
   if (parts.length === 0) return { byName: [], bySymbol: [] };
-  const data = await query<{
+  const data = await queryOn(chain)<{
     byName?: { items: TokenIdentityMatch[] };
     bySymbol?: { items: TokenIdentityMatch[] };
   }>(`{ ${parts.join(" ")} }`);
@@ -134,18 +169,40 @@ export async function findTokensByNameOrSymbol(
  * while the indexer catches up, which is not the same as a bad address.
  * A malformed address is "empty", never "unavailable".
  */
-export async function getTokenRead(address: string): Promise<IndexerRead<IndexedToken>> {
+export async function getTokenRead(address: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexerRead<IndexedToken>> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return { status: "empty" };
-  const data = await query<{ token: IndexedToken | null }>(
+  const data = await queryOn(chain)<{ token: IndexedToken | null }>(
     `{ token(address: "${address.toLowerCase()}") { ${TOKEN_FIELDS} } }`,
   );
   if (data === null) return { status: "unavailable" };
-  return data.token ? { status: "ok", value: data.token } : { status: "empty" };
+  return data.token ? { status: "ok", value: { ...data.token, chain } } : { status: "empty" };
+}
+
+/**
+ * A token on whichever indexed chain has it (M54), tagged with that chain.
+ * Addresses do not repeat across chains in practice, since each chain's
+ * factories sit at different addresses. "unavailable" when no chain had it
+ * and at least one could not be asked.
+ */
+export async function findTokenRead(address: string): Promise<IndexerRead<IndexedToken>> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return { status: "empty" };
+  const reads = await Promise.all(indexedChains().map((c) => getTokenRead(address, c)));
+  const hit = reads.find((r) => r.status === "ok");
+  if (hit) return hit;
+  return reads.some((r) => r.status === "unavailable") || reads.length === 0
+    ? { status: "unavailable" }
+    : { status: "empty" };
+}
+
+/** `findTokenRead` for callers that only need the token. */
+export async function findToken(address: string): Promise<IndexedToken | null> {
+  const read = await findTokenRead(address);
+  return read.status === "ok" ? read.value : null;
 }
 
 /** Single token by address (lowercase hex), or null if unknown/offline. */
-export async function getToken(address: string): Promise<IndexedToken | null> {
-  const read = await getTokenRead(address);
+export async function getToken(address: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedToken | null> {
+  const read = await getTokenRead(address, chain);
   return read.status === "ok" ? read.value : null;
 }
 
@@ -162,9 +219,9 @@ export interface IndexedVesting {
 }
 
 /** Vesting schedule for a token (from the VestingCreated event), if any. */
-export async function getVesting(tokenAddress: string): Promise<IndexedVesting | null> {
+export async function getVesting(tokenAddress: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedVesting | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const data = await query<{ vestings: { items: IndexedVesting[] } }>(
+  const data = await queryOn(chain)<{ vestings: { items: IndexedVesting[] } }>(
     `{ vestings(where: { tokenAddress: "${tokenAddress.toLowerCase()}" }, limit: 1) { items {
       walletAddress tokenAddress beneficiary amount startTimestamp durationSeconds cliffSeconds txHash
     } } }`,
@@ -194,9 +251,9 @@ export interface IndexedEscrow {
 }
 
 /** All escrows for a token (oldest first), each with its tranches. */
-export async function getEscrows(tokenAddress: string): Promise<IndexedEscrow[] | null> {
+export async function getEscrows(tokenAddress: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedEscrow[] | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const data = await query<{
+  const data = await queryOn(chain)<{
     escrows: { items: Omit<IndexedEscrow, "tranches">[] };
     escrowTranches: { items: IndexedEscrowTranche[] };
   }>(
@@ -230,9 +287,10 @@ export interface IndexedMilestoneUpdate {
  *  must filter to author === token.creator before display. */
 export async function getMilestoneUpdates(
   tokenAddress: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<IndexedMilestoneUpdate[] | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const data = await query<{ milestoneUpdates: { items: IndexedMilestoneUpdate[] } }>(
+  const data = await queryOn(chain)<{ milestoneUpdates: { items: IndexedMilestoneUpdate[] } }>(
     `{ milestoneUpdates(where: { tokenAddress: "${tokenAddress.toLowerCase()}" }, orderBy: "blockTimestamp", orderDirection: "asc", limit: 100) { items {
       txHash logIndex tokenAddress author milestoneIndex updateHash blockTimestamp
     } } }`,
@@ -254,8 +312,8 @@ export interface IndexedTimelockOperation {
 }
 
 /** Timelock operations, newest first — the governance page's table. */
-export async function getTimelockOperations(): Promise<IndexedTimelockOperation[] | null> {
-  const data = await query<{ timelockOperations: { items: IndexedTimelockOperation[] } }>(
+export async function getTimelockOperations(chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedTimelockOperation[] | null> {
+  const data = await queryOn(chain)<{ timelockOperations: { items: IndexedTimelockOperation[] } }>(
     `{ timelockOperations(orderBy: "scheduledAt", orderDirection: "desc", limit: 50) { items {
       id callIndex target data delay scheduledAt readyAt status scheduledTxHash executedTxHash
     } } }`,
@@ -297,9 +355,9 @@ const SALE_FIELDS =
   "startTime endTime perWalletCap unsoldReclaimed blockTimestamp txHash";
 
 /** All sales for a token (oldest first), each with its proceeds tranches. */
-export async function getSales(tokenAddress: string): Promise<IndexedSale[] | null> {
+export async function getSales(tokenAddress: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedSale[] | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const data = await query<{
+  const data = await queryOn(chain)<{
     sales: { items: Omit<IndexedSale, "tranches">[] };
     saleTranches: { items: IndexedSaleTranche[] };
   }>(
@@ -329,9 +387,10 @@ export interface IndexedPurchase {
 export async function getRecentPurchases(
   saleId: string,
   limit = 10,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<IndexedPurchase[] | null> {
   if (!/^[0-9]+$/.test(saleId)) return null;
-  const data = await query<{ purchases: { items: IndexedPurchase[] } }>(
+  const data = await queryOn(chain)<{ purchases: { items: IndexedPurchase[] } }>(
     `{ purchases(where: { saleId: "${saleId}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: ${limit}) { items {
       buyer tokenAmount cost blockTimestamp txHash
     } } }`,
@@ -340,9 +399,9 @@ export async function getRecentPurchases(
 }
 
 /** Lowercase token addresses that currently have a live sale window. */
-export async function getActiveSaleTokens(): Promise<Set<string> | null> {
+export async function getActiveSaleTokens(chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<Set<string> | null> {
   const now = Math.floor(Date.now() / 1000);
-  const data = await query<{
+  const data = await queryOn(chain)<{
     sales: { items: { tokenAddress: string; startTime: string; endTime: string }[] };
   }>(
     `{ sales(where: { endTime_gt: "${now}" }, limit: 100) { items { tokenAddress startTime endTime } } }`,
@@ -371,10 +430,11 @@ export interface IndexedPool {
 export async function getPool(
   tokenAddress: string,
   creator: string,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<IndexedPool | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
   if (!/^0x[a-fA-F0-9]{40}$/.test(creator)) return null;
-  const data = await query<{ pools: { items: IndexedPool[] } }>(
+  const data = await queryOn(chain)<{ pools: { items: IndexedPool[] } }>(
     `{ pools(where: { tokenAddress: "${tokenAddress.toLowerCase()}", creator: "${creator.toLowerCase()}" }, limit: 1) { items {
       poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
     } } }`,
@@ -387,11 +447,11 @@ export async function getPool(
  * a whole board, where getPool would be one round trip per card. The caller
  * supplies each token's creator so the same authorship filter applies.
  */
-export async function getPools(): Promise<{
+export async function getPools(chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<{
   byTokenCreator: Map<string, IndexedPool>;
   byPoolId: Map<string, IndexedPool>;
 } | null> {
-  const data = await query<{ pools: { items: IndexedPool[] } }>(
+  const data = await queryOn(chain)<{ pools: { items: IndexedPool[] } }>(
     `{ pools(limit: 100) { items {
       poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
     } } }`,
@@ -423,9 +483,10 @@ export interface IndexedSwap {
 export async function getRecentSwaps(
   poolId: string,
   limit = 10,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<{ swaps: IndexedSwap[]; count: number; ethVolume: bigint } | null> {
   if (!/^[0-9]+$/.test(poolId)) return null;
-  const data = await query<{ swaps: { items: IndexedSwap[]; totalCount: number } }>(
+  const data = await queryOn(chain)<{ swaps: { items: IndexedSwap[]; totalCount: number } }>(
     `{ swaps(where: { poolId: "${poolId}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: 100) { totalCount items {
       trader ethToToken amountIn amountOut protocolFeePaid blockTimestamp txHash
     } } }`,
@@ -440,15 +501,15 @@ export async function getRecentSwaps(
 }
 
 /** True when the token was launched through the bonding-curve launcher. */
-export function isCurveLaunch(token: Pick<IndexedToken, "factory">): boolean {
-  return token.factory.toLowerCase() === LAUNCH_CHAIN.curveAddress.toLowerCase();
+export function isCurveLaunch(token: Pick<IndexedToken, "factory" | "chain">): boolean {
+  return token.factory.toLowerCase() === launchChain(token.chain).curveAddress.toLowerCase();
 }
 
 /** A pool by id, whoever created it. Graduated curves seed a pool whose
  *  creator is the launcher, so the creator filter cannot find it. */
-export async function getPoolById(poolId: string): Promise<IndexedPool | null> {
+export async function getPoolById(poolId: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedPool | null> {
   if (!/^[0-9]+$/.test(poolId)) return null;
-  const data = await query<{ pool: IndexedPool | null }>(
+  const data = await queryOn(chain)<{ pool: IndexedPool | null }>(
     `{ pool(poolId: "${poolId}") {
       poolId tokenAddress creator protocolFeeBps ethReserve tokenReserve totalShares txHash
     } }`,
@@ -496,21 +557,28 @@ const CURVE_FIELDS =
 
 /** The bonding curve behind a token, or null when the token was not launched
  *  through the launcher (or the indexer is unreachable). */
-export async function getCurve(tokenAddress: string): Promise<IndexedCurve | null> {
+export async function getCurve(tokenAddress: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexedCurve | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const data = await query<{ curve: IndexedCurve | null }>(
+  const data = await queryOn(chain)<{ curve: IndexedCurve | null }>(
     `{ curve(token: "${tokenAddress.toLowerCase()}") { ${CURVE_FIELDS} } }`,
   );
   return data?.curve ?? null;
 }
 
 /** Every curve, keyed by lowercase token address. One query for a board. */
-export async function getCurves(): Promise<Map<string, IndexedCurve> | null> {
-  const data = await query<{ curves: { items: IndexedCurve[] } }>(
+export async function getCurves(chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<Map<string, IndexedCurve> | null> {
+  const data = await queryOn(chain)<{ curves: { items: IndexedCurve[] } }>(
     `{ curves(limit: 100) { items { ${CURVE_FIELDS} } } }`,
   );
   if (!data) return null;
   return new Map(data.curves.items.map((c) => [c.token.toLowerCase(), c]));
+}
+
+/** Curves across every indexed chain, by token address. Null only when no chain answered. */
+export async function getCurvesAllChains(): Promise<Map<string, IndexedCurve> | null> {
+  const maps = await Promise.all(indexedChains().map((c) => getCurves(c)));
+  if (maps.every((m) => m === null)) return null;
+  return new Map(maps.flatMap((m) => (m ? [...m] : [])));
 }
 
 export interface IndexedCurveTrade {
@@ -527,9 +595,10 @@ export interface IndexedCurveTrade {
 export async function getCurveTrades(
   tokenAddress: string,
   limit = 10,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<{ trades: IndexedCurveTrade[]; count: number } | null> {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const data = await query<{ curveTrades: { items: IndexedCurveTrade[]; totalCount: number } }>(
+  const data = await queryOn(chain)<{ curveTrades: { items: IndexedCurveTrade[]; totalCount: number } }>(
     `{ curveTrades(where: { token: "${tokenAddress.toLowerCase()}" }, orderBy: "blockTimestamp", orderDirection: "desc", limit: ${limit}) { totalCount items {
       trader side ethWei taxWei tokensWei blockTimestamp txHash
     } } }`,
@@ -546,9 +615,10 @@ export async function getCurveTrades(
 export async function getLaunchPool(
   token: Pick<IndexedToken, "address" | "creator">,
   curve: IndexedCurve | null,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
 ): Promise<IndexedPool | null> {
-  if (curve?.poolId) return getPoolById(curve.poolId);
-  return getPool(token.address, token.creator);
+  if (curve?.poolId) return getPoolById(curve.poolId, chain);
+  return getPool(token.address, token.creator, chain);
 }
 
 /** Graduation progress in whole percent, clamped to 100. */

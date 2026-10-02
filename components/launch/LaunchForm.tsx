@@ -23,7 +23,9 @@ import {
 } from "@/lib/journey";
 import { preflightWrite, writeWithGas, type TxParams } from "@/lib/tx";
 import {
-  LAUNCH_CHAIN,
+  LAUNCH_CHAIN_COPY,
+  LAUNCH_NOT_LIVE,
+  launchChain,
   LAUNCH_DEV_BUY,
   LAUNCH_FORM,
   LAUNCH_CURVE,
@@ -40,6 +42,9 @@ import {
   validateWebsite,
   validateXHandle,
 } from "@/content/launch";
+
+import { ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 
 import { AccountLink } from "./AccountLink";
 import { ConnectButton } from "./ConnectButton";
@@ -79,8 +84,8 @@ const GAS_BUFFER_WEI = 500_000_000_000_000n; // 0.0005 ETH
 const fmtEth = (wei: bigint) =>
   `${Number(formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 })} ETH`;
 
-function friendlyLaunchError(err: unknown): string {
-  return friendlyCurveError(err, "the launch", "the launch fee plus your developer buy");
+function friendlyLaunchError(err: unknown, chainName: string): string {
+  return friendlyCurveError(err, "the launch", "the launch fee plus your developer buy", chainName);
 }
 
 /** Values seeded from a published token design (?design=<id>). */
@@ -112,7 +117,20 @@ export function LaunchForm({
   prefill,
   designCommitment,
   project,
+  chain: fixedChain,
+  launchable = [DEFAULT_PROJECT_CHAIN],
 }: {
+  /**
+   * Chains a launch can be sent on right now, deployed and indexed. Worked
+   * out on the server, which is the only side that knows whether a chain's
+   * indexer is configured. A launch that is not indexed cannot be linked.
+   */
+  launchable?: readonly ProjectChain[];
+  /**
+   * The chain the launch must go on (M54), set when it starts from a project
+   * or from a design linked to one. Left out, the launcher picks.
+   */
+  chain?: ProjectChain;
   prefill?: LaunchPrefill;
   designCommitment?: DesignCommitment;
   /** The studio project this launch was started from (?project=<id>). */
@@ -142,23 +160,28 @@ export function LaunchForm({
   const [commitmentOn, setCommitmentOn] = useState(false);
   const [status, setStatus] = useState<FlowStatus>({ kind: "idle" });
 
-  const { isConnected, address, ensureChain } = useLaunchChain();
+  const [pickedChain, setPickedChain] = useState<ProjectChain>(DEFAULT_PROJECT_CHAIN);
+  const chain = fixedChain ?? pickedChain;
+  const net = launchChain(chain);
+  const open = net.live && launchable.includes(chain);
+  const { isConnected, address, ensureChain } = useLaunchChain(chain);
   const { connector } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: net.chainId });
 
   // Launch fee is read live from the launcher (settable only through the
   // timelock, hard-capped by MAX_LAUNCH_FEE). Shown on the review step and
   // sent, plus the developer buy, as the exact tx value; the launcher
   // requires strict equality.
   const { data: launchFee } = useReadContract({
+    chainId: net.chainId,
     abi: curveLauncherAbi,
-    address: LAUNCH_CHAIN.curveAddress,
+    address: net.curveAddress,
     functionName: "launchFee",
   });
   const { data: balance } = useBalance({
     address,
-    chainId: LAUNCH_CHAIN.chainId,
+    chainId: net.chainId,
     query: { enabled: Boolean(address) },
   });
 
@@ -212,8 +235,9 @@ export function LaunchForm({
   // The launcher quotes the first buy for this supply, so the opening price
   // on the card is the number the transaction will produce.
   const { data: devBuyQuote } = useReadContract({
+    chainId: net.chainId,
     abi: curveLauncherAbi,
-    address: LAUNCH_CHAIN.curveAddress,
+    address: net.curveAddress,
     functionName: "quoteLaunch",
     args: [totalSupplyWei, devBuyWei],
     query: { enabled: devBuyWei > 0n && devBuyWei <= LAUNCH_CURVE.devBuyMaxWei },
@@ -268,11 +292,12 @@ export function LaunchForm({
     try {
       if (!isConnected || !address) throw new Error("Connect a wallet first.");
       if (!publicClient) throw new Error("No RPC client.");
+      if (!open) throw new Error(LAUNCH_NOT_LIVE(net.name));
 
-      // Hard network guard — never sign on any chain but 46630.
+      // Hard network guard. Never sign on any chain but the one this launch is for.
       working("Checking network…");
       if (!(await ensureChain())) {
-        throw new Error(`Switch to ${LAUNCH_CHAIN.name} to continue.`);
+        throw new Error(`Switch to ${net.name} to continue.`);
       }
 
       // Preflight: fail fast on missing fee data or an underfunded wallet,
@@ -287,8 +312,8 @@ export function LaunchForm({
       if (liveBalance < neededWei) {
         throw new Error(
           buying
-            ? `Not enough ETH to launch. This wallet holds ${fmtEth(liveBalance)}, but launching needs the ${fmtEth(launchFee)} launch fee, your ${fmtEth(devBuyWei)} developer buy and gas (about ${fmtEth(neededWei)} total). Fund the wallet on ${LAUNCH_CHAIN.name} and retry.`
-            : `Not enough ETH to launch. This wallet holds ${fmtEth(liveBalance)}, but launching needs the ${fmtEth(launchFee)} launch fee plus gas (about ${fmtEth(neededWei)} total). Fund the wallet on ${LAUNCH_CHAIN.name} and retry.`,
+            ? `Not enough ETH to launch. This wallet holds ${fmtEth(liveBalance)}, but launching needs the ${fmtEth(launchFee)} launch fee, your ${fmtEth(devBuyWei)} developer buy and gas (about ${fmtEth(neededWei)} total). Fund the wallet on ${net.name} and retry.`
+            : `Not enough ETH to launch. This wallet holds ${fmtEth(liveBalance)}, but launching needs the ${fmtEth(launchFee)} launch fee plus gas (about ${fmtEth(neededWei)} total). Fund the wallet on ${net.name} and retry.`,
         );
       }
 
@@ -309,7 +334,7 @@ export function LaunchForm({
       // makes the developer buy. msg.value is the fee plus the buy, exactly.
       const launchTx = (imageURI: string): TxParams<typeof curveLauncherAbi, "launch"> => ({
         abi: curveLauncherAbi,
-        address: LAUNCH_CHAIN.curveAddress,
+        address: net.curveAddress,
         functionName: "launch",
         args: [
           {
@@ -382,7 +407,7 @@ export function LaunchForm({
       let token: `0x${string}` | null = null;
       let devBuy: { ethWei: bigint; tokensWei: bigint } | null = null;
       for (const log of receipt.logs) {
-        if (log.address.toLowerCase() !== LAUNCH_CHAIN.curveAddress.toLowerCase()) continue;
+        if (log.address.toLowerCase() !== net.curveAddress.toLowerCase()) continue;
         try {
           const decoded = decodeEventLog({ abi: curveLauncherAbi, ...log });
           if (decoded.eventName === "TokenLaunched") {
@@ -403,7 +428,7 @@ export function LaunchForm({
       try {
         const c = await publicClient.readContract({
           abi: curveLauncherAbi,
-          address: LAUNCH_CHAIN.curveAddress,
+          address: net.curveAddress,
           functionName: "curve",
           args: [token],
         });
@@ -430,7 +455,7 @@ export function LaunchForm({
       setStatus({ kind: "success", token, txHash, devBuy, curve });
     } catch (err) {
       console.error("launch failed", err, connector?.id);
-      setStatus({ kind: "error", message: friendlyLaunchError(err) });
+      setStatus({ kind: "error", message: friendlyLaunchError(err, net.name) });
     }
   }
 
@@ -438,7 +463,7 @@ export function LaunchForm({
     return (
       <div className="glass mx-auto max-w-xl rounded-2xl border border-ink-700/70 p-8 text-center">
         <StatusChip tone="success" variant="pill">
-          Deployed on {LAUNCH_CHAIN.name}
+          Deployed on {net.name}
         </StatusChip>
         <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-ink-50">
           {name.trim()} is live
@@ -498,7 +523,7 @@ export function LaunchForm({
             <Link href={`/launch/t/${status.token.toLowerCase()}`}>View token page</Link>
           </Button>
           <a
-            href={`${LAUNCH_CHAIN.explorerUrl}/tx/${status.txHash}`}
+            href={`${net.explorerUrl}/tx/${status.txHash}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-sm text-electric-300 hover:text-electric-200"
@@ -540,8 +565,29 @@ export function LaunchForm({
               </button>
             ))}
           </div>
-          <ConnectButton />
+          <ConnectButton chain={chain} />
         </div>
+
+        {fixedChain ? null : (
+          <div className="mb-5">
+            <ChipRadioGroup
+              label={LAUNCH_CHAIN_COPY.label}
+              hint={LAUNCH_CHAIN_COPY.hint}
+              value={chain}
+              onChange={(v) => {
+                if (v) setPickedChain(v);
+              }}
+              options={LAUNCH_CHAIN_COPY.options}
+            />
+          </div>
+        )}
+        {open ? null : (
+          <div className="mb-5">
+            <StatusChip tone="neutral" variant="block">
+              {LAUNCH_NOT_LIVE(net.name)}
+            </StatusChip>
+          </div>
+        )}
 
         {step === 1 ? (
           <div className="space-y-5">
@@ -815,7 +861,7 @@ export function LaunchForm({
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Network</span>
-                <span className="text-ink-100">{LAUNCH_CHAIN.name}</span>
+                <span className="text-ink-100">{net.name}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-ink-500">Launch fee</span>
@@ -883,7 +929,7 @@ export function LaunchForm({
                   </span>
                 ) : null}
                 <Button
-                  disabled={!isConnected || !!journeyProblem || !step1Valid || status.kind === "working"}
+                  disabled={!isConnected || !open || !!journeyProblem || !step1Valid || status.kind === "working"}
                   onClick={() => void launch()}
                 >
                   {status.kind === "working" ? "Launching…" : "Launch token"}

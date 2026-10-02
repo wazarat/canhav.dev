@@ -3,12 +3,13 @@ import "server-only";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
-import { LAUNCH_CHAIN } from "@/content/launch";
+import { LIVE_LAUNCH_CHAINS, launchChain } from "@/content/launch";
+import { DEFAULT_PROJECT_CHAIN, PROJECT_CHAINS } from "@/lib/chains";
 import {
   formatSupply,
   getActiveSaleTokens,
   getCurve,
-  getCurves,
+  getCurvesAllChains,
   getCurveTrades,
   getEscrows,
   getLaunchPool,
@@ -17,7 +18,8 @@ import {
   getSales,
   getTimelockOperations,
   getToken,
-  getTokens,
+  getTokensAllChains,
+  indexedChains,
   getTokensByCreator,
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
@@ -72,7 +74,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "List token launches",
       description:
-        "Newest-first list of tokens launched through CanHav on Robinhood Chain Testnet (the factory or the bonding-curve launcher), with a flag for launches that have a sale open right now and, for curve launches, the curve state and graduation progress. Pass creator to see one wallet's launches.",
+        "Newest-first list of tokens launched through CanHav on Robinhood Chain Testnet or Arbitrum Sepolia (the factory or the bonding-curve launcher), each with the chain it lives on, with a flag for launches that have a sale open right now and, for curve launches, the curve state and graduation progress. Pass creator to see one wallet's launches.",
       inputSchema: z.object({
         limit: z.number().int().min(1).max(100).optional(),
         creator: ADDRESS.optional(),
@@ -81,8 +83,15 @@ export function registerLaunchTools(server: McpServer): void {
     async ({ limit, creator }) => {
       const max = limit ?? 25;
       if (creator) {
-        const history = await getTokensByCreator(creator);
-        if (!history) return errorResult(INDEXER_HINT);
+        // One wallet's launches across every indexed chain, newest first (M54).
+        const perChain = await Promise.all(indexedChains().map((c) => getTokensByCreator(creator, c)));
+        if (perChain.every((h) => h === null)) return errorResult(INDEXER_HINT);
+        const history = {
+          totalCount: perChain.reduce((n, h) => n + (h?.totalCount ?? 0), 0),
+          items: perChain
+            .flatMap((h) => h?.items ?? [])
+            .sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp)),
+        };
         return jsonResult({
           creator,
           totalCount: history.totalCount,
@@ -96,9 +105,12 @@ export function registerLaunchTools(server: McpServer): void {
         });
       }
       const [tokens, active, curves] = await Promise.all([
-        getTokens(),
-        getActiveSaleTokens(),
-        getCurves(),
+        getTokensAllChains(),
+        // Token addresses do not repeat across chains, so the open sales merge into one set.
+        Promise.all(indexedChains().map((c) => getActiveSaleTokens(c))).then((sets) =>
+          sets.every((x) => x === null) ? null : new Set(sets.flatMap((x) => (x ? [...x] : []))),
+        ),
+        getCurvesAllChains(),
       ]);
       if (!tokens) return errorResult(INDEXER_HINT);
       const now = Math.floor(Date.now() / 1000);
@@ -110,7 +122,7 @@ export function registerLaunchTools(server: McpServer): void {
             ...summarizeToken(t),
             saleOpen: active?.has(t.address.toLowerCase()) ?? null,
             curve: curve
-              ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct }
+              ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now, t.chain).progressPct }
               : null,
           };
         }),
@@ -223,14 +235,25 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "Get launch governance",
       description:
-        "The contract addresses behind CanHav launches on Robinhood Chain Testnet and the timelock queue that gates every admin change to the factory and AMM, newest first.",
-      inputSchema: z.object({}),
+        "The contract addresses behind CanHav launches and the timelock queue that gates every admin change to the factory and AMM, newest first. Each chain has its own deployment and its own timelock. Pass chain (robinhood_testnet or arbitrum_sepolia) to pick one; left out, Robinhood Chain Testnet. liveChains lists the chains that have a deployment.",
+      inputSchema: z.object({ chain: z.enum(PROJECT_CHAINS).optional() }),
     },
-    async () => {
-      const ops = await getTimelockOperations();
+    async ({ chain }) => {
+      const LAUNCH_CHAIN = launchChain(chain ?? DEFAULT_PROJECT_CHAIN);
+      if (!LAUNCH_CHAIN.live)
+        return jsonResult({
+          chain: { key: LAUNCH_CHAIN.key, name: LAUNCH_CHAIN.name, chainId: LAUNCH_CHAIN.chainId, explorerUrl: LAUNCH_CHAIN.explorerUrl },
+          live: false,
+          liveChains: LIVE_LAUNCH_CHAINS,
+          note: "The launch contracts are not deployed on this chain yet.",
+        });
+      const ops = await getTimelockOperations(LAUNCH_CHAIN.key);
       if (ops === null) return errorResult(INDEXER_HINT);
       return jsonResult({
+        live: true,
+        liveChains: LIVE_LAUNCH_CHAINS,
         chain: {
+          key: LAUNCH_CHAIN.key,
           name: LAUNCH_CHAIN.name,
           chainId: LAUNCH_CHAIN.chainId,
           explorerUrl: LAUNCH_CHAIN.explorerUrl,

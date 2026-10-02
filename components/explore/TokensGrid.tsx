@@ -1,3 +1,4 @@
+import { DEFAULT_PROJECT_CHAIN } from "@/lib/chains";
 import Link from "next/link";
 
 import { EmptyCard } from "@/components/explore/EmptyCard";
@@ -12,7 +13,8 @@ import {
   getActiveSaleTokens,
   getCurves,
   getPools,
-  getTokens,
+  getTokensAllChains,
+  indexedChains,
 } from "@/lib/indexer";
 import { hasCommitment } from "@/lib/journey";
 
@@ -37,18 +39,20 @@ function liquidityEth(pool: IndexedPool): string {
 
 /** Deployed tokens, read from the on-chain event log via the indexer. */
 export async function TokensGrid() {
-  const [tokens, liveSaleTokens, pools, curves] = await Promise.all([
-    getTokens(),
-    getActiveSaleTokens(),
-    getPools(),
-    getCurves(),
+  // Sales, pools and curves are read per chain, since pool ids repeat across chains (M54).
+  const chains = indexedChains();
+  const [tokens, ...perChain] = await Promise.all([
+    getTokensAllChains(),
+    ...chains.map((c) => Promise.all([getActiveSaleTokens(c), getPools(c), getCurves(c)])),
   ]);
+  const byChain = new Map(chains.map((c, i) => [c, perChain[i]] as const));
   if (tokens === null)
     return <EmptyCard>Token data is temporarily unavailable. Try again shortly.</EmptyCard>;
   if (tokens.length === 0) return <EmptyCard>No tokens launched yet.</EmptyCard>;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {tokens.map((t) => {
+        const [liveSaleTokens, pools, curves] = byChain.get(t.chain ?? DEFAULT_PROJECT_CHAIN) ?? [null, null, null];
         const liveSale = liveSaleTokens?.has(t.address.toLowerCase()) ?? false;
         const committed = hasCommitment(t.journeyHash);
         // Pools are per (token, creator) and only the creator's own pool is

@@ -13,6 +13,7 @@ import {
   applyTokenDesignPatch,
   buildStepsPatchSchema,
   buildStepsProblem,
+  projectPatchProblem,
   projectPatchSchema,
   tokenBuildStepsProblem,
   tokenDesignPatchSchema,
@@ -24,6 +25,8 @@ import {
   writeProjectDraftAsAgent,
   writeTokenDesignDraftAsAgent,
 } from "@/lib/agent-writes-db";
+import { isProjectChain, projectChainOf } from "@/lib/chains";
+import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   type ProjectRow,
   type TokenDesignRow,
@@ -60,6 +63,13 @@ type Input =
   | { target: "token_design"; kind: "fields"; patch: TokenDesignPatch }
   | { target: "token_design"; kind: "build_steps"; patch: BuildStepsPatch };
 
+/** True when a change moves the project to another chain after a token launched from it (M52). */
+async function chainChangeRefused(project: ProjectRow, patch: unknown): Promise<boolean> {
+  const chain = (patch as { chain?: unknown } | null)?.chain;
+  if (!isProjectChain(chain) || chain === projectChainOf(project.draft_doc)) return false;
+  return projectChainLocked(project.id);
+}
+
 /** The project draft with one change applied. Shared with the studio's accept. */
 export function nextProjectDoc(
   row: ProjectRow,
@@ -75,6 +85,8 @@ export function nextProjectDoc(
   }
   const parsed = projectPatchSchema.safeParse(patch);
   if (!parsed.success) return { ok: false, message: "The change is not valid." };
+  const problem = projectPatchProblem(row.draft_doc, parsed.data);
+  if (problem) return { ok: false, message: problem };
   return { ok: true, doc: applyProjectPatch(row.draft_doc, parsed.data) };
 }
 
@@ -114,6 +126,7 @@ export async function writeChange(
       if (rev === null) return { ok: false, message: NOT_READY };
       const next = nextProjectDoc(project, kind, patch);
       if (!next.ok) return next;
+      if (kind === "fields" && (await chainChangeRefused(project, patch))) return { ok: false, message: CHAIN_LOCKED };
       if (await writeProjectDraftAsAgent(project.id, ownerId, next.doc, rev)) return { ok: true };
       continue;
     }
@@ -150,6 +163,10 @@ export async function submitAgentChange(
   } else if (input.kind === "build_steps") {
     const problem = buildStepsProblem(project.draft_doc, input.patch);
     if (problem) return { ok: false, message: problem };
+  } else {
+    const problem = projectPatchProblem(project.draft_doc, input.patch);
+    if (problem) return { ok: false, message: problem };
+    if (await chainChangeRefused(project, input.patch)) return { ok: false, message: CHAIN_LOCKED };
   }
   if (Object.keys(input.patch).length === 0)
     return { ok: false, message: "The change is empty. Send at least one field." };

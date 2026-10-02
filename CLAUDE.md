@@ -33,6 +33,22 @@ turns `signal-400`) props. Don't repeat the numbers in the `hint` below the
 field. Limits come from their single source of truth (e.g. `JOURNEY_LIMITS` in
 `lib/journey.ts`) — never inline new constants.
 
+## Chains
+
+A project builds on one of two chains, `robinhood_testnet` or
+`arbitrum_sepolia` (`lib/chains.ts`). `ProjectDoc.chain` is optional and never
+injected, so read it with `projectChainOf()`; absent means Robinhood. A token
+lives on its project's chain. Never reach for a single global chain:
+
+- Launch config comes from `launchChain(chain)` in `content/launch.ts`. A chain
+  with `live: false` has no contracts yet and every write path must refuse it.
+- Indexer readers in `lib/indexer.ts` take the chain last. Use `findToken` or
+  `findTokenRead` when only an address is known; the token carries its chain.
+- Launch components take a required `chain` prop and call
+  `useLaunchChain(chain)`; wagmi reads pass `chainId`.
+- Kit environments are `KIT_ENVIRONMENTS[chain]`. A shape whose protocol is
+  missing on the testnet gets a note, never a block.
+
 ## Workflow
 
 - `CHANGELOG.local.md` (gitignored, repo root): append an entry for completed

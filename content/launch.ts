@@ -5,39 +5,113 @@
 import { formatEther } from "viem";
 
 import type { AgentWriteMode } from "@/lib/agent-writes";
+import { DEFAULT_PROJECT_CHAIN, PROJECT_CHAINS, PROJECT_CHAIN_INFO, type ProjectChain } from "@/lib/chains";
 
-/** Chain metadata — single source for the hidden launchpad pages and the
- *  future wallet layer's hard network guard. */
-export const LAUNCH_CHAIN = {
-  name: "Robinhood Chain Testnet",
-  chainId: 46630,
-  explorerUrl: "https://explorer.testnet.chain.robinhood.com",
-  // v4 factory (Solady LibClone validation swap; ABI identical to v3, owned
-  // by the timelock). v1 (0x1dAaa829…c909), v2 (0x10F33eE0…9Bc0) and v3
-  // (0xD6166E15…d4c5) are paused but their tokens remain indexed and browsable.
-  factoryAddress: "0x30Db3A828F65B92434c6aDB27AEeD01850277b08",
-  // TimelockController that owns the factory: every admin change (fee,
-  // treasury, implementation, unpause) waits out its public delay.
-  timelockAddress: "0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae",
-  // Admin-less singletons: milestone-dated token lockups + content-addressed
-  // progress-update anchor. No owner, no attester, nothing to rug.
-  escrowAddress: "0x90C71DBA8A61Da14CA699f72D311e404094Cf192",
-  updatesAddress: "0x31358209375591b1285EaA437c2c9f189c48D073",
-  // Fixed-price allocation sales: fee-free (zero platform cut), proceeds
-  // claimable only in milestone-dated tranches. Also admin-less.
-  saleAddress: "0x869cE70ff8174802d98D26835ce4040754Ad284A",
-  // Minimal AMM (token ⇄ ETH pools). 0.30% LP fee; opt-in protocol fee
-  // (hard-capped, 70/30 project/platform enforced in bytecode) routed to the
-  // FeeSplitter. Both knobs owned by the timelock.
-  ammAddress: "0xDd070b1f8e000D27491A3d38543ef0D72C758Df4",
-  splitterAddress: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
-  // Bonding-curve launcher (M19a, 2026-09-29, block 126200516). Clones the
-  // same LaunchToken implementation, holds the supply on a constant-product
-  // curve with virtual reserves, taxes buys in the first minute and holds
-  // the tax for graduation, and at the threshold seeds a LaunchAMM pool whose
-  // shares it keeps forever. Fee and pause owned by the timelock.
-  curveAddress: "0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981",
-} as const;
+/**
+ * One chain the launchpad runs on (M54). The same contracts are deployed on
+ * each; only the addresses differ. `live` is false until the chain has its
+ * deployment, and every write path refuses a chain that is not live.
+ */
+export interface LaunchChain {
+  key: ProjectChain;
+  name: string;
+  chainId: number;
+  rpcUrl: string;
+  /** A Blockscout instance, for links and the verification API. */
+  explorerUrl: string;
+  live: boolean;
+  factoryAddress: `0x${string}`;
+  timelockAddress: `0x${string}`;
+  escrowAddress: `0x${string}`;
+  updatesAddress: `0x${string}`;
+  saleAddress: `0x${string}`;
+  ammAddress: `0x${string}`;
+  splitterAddress: `0x${string}`;
+  curveAddress: `0x${string}`;
+}
+
+/**
+ * Chain metadata and contract addresses, the single source for the launch
+ * pages and the wallet layer's hard network guard. A token lives on one of
+ * these and every read and write for it goes to that chain.
+ */
+export const LAUNCH_CHAINS: Record<ProjectChain, LaunchChain> = {
+  robinhood_testnet: {
+    key: "robinhood_testnet",
+    name: PROJECT_CHAIN_INFO.robinhood_testnet.name,
+    chainId: PROJECT_CHAIN_INFO.robinhood_testnet.chainId,
+    rpcUrl: "https://rpc.testnet.chain.robinhood.com",
+    explorerUrl: "https://explorer.testnet.chain.robinhood.com",
+    live: true,
+    // v4 factory (Solady LibClone validation swap; ABI identical to v3, owned
+    // by the timelock). v1 (0x1dAaa829…c909), v2 (0x10F33eE0…9Bc0) and v3
+    // (0xD6166E15…d4c5) are paused but their tokens remain indexed and browsable.
+    factoryAddress: "0x30Db3A828F65B92434c6aDB27AEeD01850277b08",
+    // TimelockController that owns the factory: every admin change (fee,
+    // treasury, implementation, unpause) waits out its public delay.
+    timelockAddress: "0x080cCDC07e2a0a5D11e9dDaA873ea68F540109ae",
+    // Admin-less singletons: milestone-dated token lockups + content-addressed
+    // progress-update anchor. No owner, no attester, nothing to rug.
+    escrowAddress: "0x90C71DBA8A61Da14CA699f72D311e404094Cf192",
+    updatesAddress: "0x31358209375591b1285EaA437c2c9f189c48D073",
+    // Fixed-price allocation sales: fee-free (zero platform cut), proceeds
+    // claimable only in milestone-dated tranches. Also admin-less.
+    saleAddress: "0x869cE70ff8174802d98D26835ce4040754Ad284A",
+    // Minimal AMM (token ⇄ ETH pools). 0.30% LP fee; opt-in protocol fee
+    // (hard-capped, 70/30 project/platform enforced in bytecode) routed to the
+    // FeeSplitter. Both knobs owned by the timelock.
+    ammAddress: "0xDd070b1f8e000D27491A3d38543ef0D72C758Df4",
+    splitterAddress: "0x9FDFae007b65d4c8F3CCA6AC242E3f141eC9DA18",
+    // Bonding-curve launcher (M19a, 2026-09-29, block 126200516). Clones the
+    // same LaunchToken implementation, holds the supply on a constant-product
+    // curve with virtual reserves, taxes buys in the first minute and holds
+    // the tax for graduation, and at the threshold seeds a LaunchAMM pool whose
+    // shares it keeps forever. Fee and pause owned by the timelock.
+    curveAddress: "0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981",
+  },
+  // Arbitrum Sepolia (M55). The same contracts, deployed in one broadcast by
+  // contracts/script/DeployChain.s.sol on 2026-10-02, blocks 315002357 to
+  // 315002429. Record: contracts/broadcast/DeployChain.s.sol/421614. The
+  // launch form also waits for this chain's indexer (INDEXER_URL_ARBITRUM_SEPOLIA),
+  // since a launch that is not indexed cannot be linked or shown.
+  arbitrum_sepolia: {
+    key: "arbitrum_sepolia",
+    name: PROJECT_CHAIN_INFO.arbitrum_sepolia.name,
+    chainId: PROJECT_CHAIN_INFO.arbitrum_sepolia.chainId,
+    rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc",
+    explorerUrl: "https://arbitrum-sepolia.blockscout.com",
+    live: true,
+    factoryAddress: "0xdC3521DDEFfca6825771da6c23679A7BA1E82475",
+    timelockAddress: "0xeD66C31FFAC1C5dCf4f327536a7540B22DF2B5E1",
+    escrowAddress: "0x3F7AcbFE98c5Ac72259F7e838886c310f3E0D8ce",
+    updatesAddress: "0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC",
+    saleAddress: "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0",
+    ammAddress: "0x4EA372acAb7be21113f474CEd2B7b317019afeD3",
+    splitterAddress: "0x37dC58e2098b61249E12e0674D0C137EDf5248B4",
+    curveAddress: "0x6Dde90B06b920565ccBA93D8ad7d5AfE5846426f",
+  },
+};
+
+/** The launch config for a project chain. Robinhood when none is given, where every launch before M54 lives. */
+export function launchChain(key: ProjectChain = DEFAULT_PROJECT_CHAIN): LaunchChain {
+  return LAUNCH_CHAINS[key];
+}
+
+/** Chains with a deployment, in table order. */
+export const LIVE_LAUNCH_CHAINS: readonly ProjectChain[] = PROJECT_CHAINS.filter(
+  (c) => LAUNCH_CHAINS[c].live,
+);
+
+/** The chain chooser on the launch form, shown when the launch does not start from a project. */
+export const LAUNCH_CHAIN_COPY = {
+  label: "Chain",
+  hint: "Where the token launches. A launch started from a project goes on the project's chain.",
+  options: PROJECT_CHAINS.map((c) => ({ value: c, label: PROJECT_CHAIN_INFO[c].short })),
+};
+
+/** Shown where a launch would start on a chain whose contracts are not deployed yet. */
+export const LAUNCH_NOT_LIVE = (name: string) =>
+  `Launches on ${name} open soon. You can plan the token now and launch it once the chain is switched on here.`;
 
 /**
  * Mirrors of CurveLauncher's immutables (contracts/src/CurveLauncher.sol),

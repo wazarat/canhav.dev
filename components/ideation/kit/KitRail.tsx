@@ -1,5 +1,7 @@
 "use client";
 
+import { projectChainOf } from "@/lib/chains";
+import { flagsOnChain } from "@/lib/kits";
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
@@ -46,7 +48,11 @@ export function KitRail({
   const [scope, setScope] = useState<"step" | "all">("step");
   const [deepOpen, setDeepOpen] = useState(false);
 
-  const fullPack = useMemo(() => packFor(KIT_CATALOG, kit, doc), [kit, doc]);
+  // Flags are shown as they hold on the project's chain (M52).
+  const fullPack = useMemo(() => {
+    const chain = projectChainOf(doc);
+    return packFor(KIT_CATALOG, kit, doc).map((r) => ({ ...r, flags: flagsOnChain(r, chain) }));
+  }, [kit, doc]);
   const selection = useMemo(
     () => (kit ? effectiveSelection(fullPack, kit) : new Set<string>()),
     [fullPack, kit],
