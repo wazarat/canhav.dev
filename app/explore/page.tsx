@@ -10,7 +10,7 @@ import { EXPLORE_COPY, type ExploreView } from "@/content/launch";
 export const metadata: Metadata = {
   title: "Explore",
   description:
-    "Every token launched through CanHav on Robinhood Chain Testnet and every project published from the studio, newest first.",
+    "Every token launched through CanHav on Robinhood Chain Testnet and Arbitrum Sepolia and every project published from the studio, newest first.",
 };
 
 export const dynamic = "force-dynamic";

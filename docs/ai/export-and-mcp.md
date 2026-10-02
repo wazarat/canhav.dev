@@ -1,6 +1,8 @@
 # Markdown export and MCP
 
-**Available now.** Both are free and require only a CanHav account. See [Accounts](../accounts/clerk-accounts.md).
+**Available now.** Both are free. Exports, the `get_my_` tools and project servers need a CanHav account; public data over the shared MCP server needs none. See [Accounts](../accounts/clerk-accounts.md).
+
+In short: there are two kinds of MCP server. The **shared server** reads every launch and every published design. A **project server** is bound to one studio project, reads that project and its token, and can write to its draft when the owner allows it. The studio hands you a ready prompt for each, so you rarely type any of this by hand. See [Connecting](#connecting).
 
 ## Markdown export
 
@@ -8,17 +10,17 @@ Every published Product or Token design page (`/p/[slug]` and `/t/[slug]`) has t
 
 | Artifact | Purpose |
 |----------|---------|
-| `canhav-[slug].md` | Markdown export of the published design snapshot, never the draft. For a project with a product shape it ends with the resource pack and where the protocols run today |
-| `AGENTS.md` | Agent-oriented summary of the design for IDE and coding agents. For a token design linked to a project, the project's published snapshot is merged in. Carries the resource pack for a project with a product shape |
+| `canhav-[slug].md` | Markdown export of the published design snapshot. For a project with a product shape it carries the resource pack and where the protocols run today. A token design's export takes its build step ticks from the current draft, since those change after publishing |
+| `AGENTS.md` | Agent-oriented summary of the design for IDE and coding agents. A linked pair is merged: a token design's file carries its project's published snapshot, and a project's file carries its linked design's. Carries the resource pack for a project with a product shape |
 
 ### Exports from a draft
 
-A project's research happens before publishing, so its owner can export from the current draft. The Review step of the project editor offers both files; the route is `/api/export/project/<project id>` and answers only to the signed-in owner, 404 to anyone else.
+A project's research happens before publishing, so its owner can export from the current draft. The Review step of the project editor offers both files once the project has a product shape; the route is `/api/export/project/<project id>` and answers only to the signed-in owner, 404 to anyone else.
 
 | Artifact | Purpose |
 |----------|---------|
-| `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, then the build steps with their done state, the review passes with their verdicts, and an environment section |
-| `?file=agents` | `AGENTS.md` built from the draft plus the linked token design's draft, marked as a draft export in its first paragraph |
+| `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, then the build steps with their done state, the review passes with their verdicts, an environment section, and "Your files", the file references you added to the project |
+| `?file=agents` | `AGENTS.md` built from the draft plus the linked token design's draft, marked as a draft export in its first paragraph. Opens with the project's chain and includes "Your files" |
 
 ## MCP server
 
@@ -32,6 +34,8 @@ claude mcp add --transport http canhav https://www.canhav.com/mcp
 
 Other MCP clients (Cursor, ChatGPT connectors, Claude Desktop) take the same URL. Dynamic client registration is enabled, so no manual OAuth app setup is needed.
 
+Launches live on two chains, Robinhood Chain Testnet and Arbitrum Sepolia. You never tell a launch tool which chain: it finds the token on either chain from its address, and every token it returns carries `chain` and `chainId`. The one exception is `get_launch_governance`, which takes an optional `chain` because it describes a chain's contracts rather than a token.
+
 ### Design tools
 
 | Tool | Purpose |
@@ -42,7 +46,7 @@ Other MCP clients (Cursor, ChatGPT connectors, Claude Desktop) take the same URL
 | `get_token` | Fetch one published token design by slug, including derived tokenomics |
 | `get_design_constraints` | For one published design, which parts the CanHav contracts enforce on-chain versus what the team merely states, plus deployability and float figures |
 | `check_design` | Run the warning rules and deployability classification against a published slug or an inline design document. For a slug whose design is linked to a published project, the rationale is also checked against that project's product shapes |
-| `get_resource_catalog` | The public catalog of resources for credit and liquidity products on Robinhood Chain, with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags, where each protocol family runs today, `runsOnTestnet` and `examples` per shape and a `testnetGate` block naming the shapes the studio blocks. Filter by `shape`, `family` or `priority`. No sign-in |
+| `get_resource_catalog` | The public catalog of resources for credit and liquidity products, with the product shapes each applies to, the subsectors and sectors each shape belongs to, caveat flags, where each protocol family runs today, `examples` per shape, and per chain a `chains` entry and `runsOnTestnetByChain` saying which shapes have their protocol on that testnet. Nothing is blocked: `testnetGate.blockedShapes` is always empty. Filter by `shape`, `family` or `priority`. No sign-in |
 
 ### Launch tools
 
@@ -50,7 +54,7 @@ These read the same launch indexer and journey tables as the launch pages, so an
 
 | Tool | Purpose |
 |------|---------|
-| `list_launches` | Newest-first tokens launched through CanHav (the factory or the bonding-curve launcher), with a flag for launches that have a sale open right now and, for curve launches, a `curve` block with `state` and `progressPct`. Pass `creator` for one wallet |
+| `list_launches` | Newest-first tokens launched through CanHav on both chains (the factory or the bonding-curve launcher), each with its `chain`, a flag for launches that have a sale open right now and, for curve launches, a `curve` block with `state` and `progressPct`. `limit` is 1 to 100, 25 by default. Pass `creator` for one wallet's launches across both chains, which returns a shorter row (address, name, symbol, launch time and URL) |
 | `get_launch` | Everything about one deployed token by address. Metadata (with `launchedVia`, `curve` or `factory`, and `launcher`), the description text and Telegram handle verified against the on-chain description hash, the verified commitment (a journey, or a design snapshot with its milestones), milestone updates, vesting, escrow tranches, sales, the launch's pool (the creator's, or the locked one the curve seeded, with `lockedLiquidity`), the bonding `curve` block for a curve launch, the linked design, and the studio `project` the token was launched from (sectors, subsectors and shapes always; id, name and URL only when the project is published) |
 | `get_launch_journey` | The committed document with the on-chain hash, the recomputed hash and whether they match. `source` is `journey` for the quick launch form or `design` for a launch from a published design, in which case `design` names the snapshot and `milestones` carries the design's milestones |
 | `get_milestone_updates` | Creator-authored progress updates whose stored body matches the anchored hash, grouped by milestone. `milestones` comes from the journey or from the committed design snapshot |
@@ -58,19 +62,38 @@ These read the same launch indexer and journey tables as the launch pages, so an
 | `get_pool_status` | The launch's AMM pool with reserves, fees, swap count, volume, and recent swaps. For a curve launch this is the pool the launcher seeded at graduation, flagged `lockedLiquidity` |
 | `get_curve_status` | The bonding curve behind a launch made through the curve launcher. Reserves and price, ETH raised against the graduation threshold with `progressPct`, the snipe tax window and the tax held for graduation, trade counts and volume, recent trades (the developer buy flagged), and after graduation the locked pool id and what was seeded. `curve` is null for a factory launch |
 | `get_launch_governance` | Contract addresses and the timelock queue gating admin changes. Each chain has its own deployment and timelock. Takes an optional `chain` (`robinhood_testnet` or `arbitrum_sepolia`), Robinhood when left out. `liveChains` lists the chains with a deployment |
-| `get_my_launches` | Your own launches, tokens launched while signed in plus tokens attached to your token designs, each joined with its live launch record and the studio `project` it was launched from |
+| `get_my_launches` | Your own launches, the launches recorded to your account plus tokens attached to your token designs, each with its `chain`, its live launch record and the studio `project` it is linked to |
+
+`get_sale_status`, `get_pool_status` and `get_curve_status` take an optional `recentLimit`, 1 to 50, 10 by default, for how many recent purchases, swaps or trades to return.
 
 Every launch tool returns an error result with a retry hint when the indexer is unreachable, and a validation error for a malformed address.
 
-### One prompt for a launch
+## Connecting
 
-The launch success screen and each launch row in the studio carry one prompt to paste into Claude Code, the Claude desktop app or another AI IDE that speaks MCP. It adds the shared server, reads the launch by address and reports where the token stands. The account that launched a token also gets an Agent prompt button and a project link button across from the name on the token page. Other visitors see neither. When the launch is linked to one of your projects, the studio version of the prompt also adds that project's server and reads the project.
+You do not have to assemble commands yourself. The site gives you one prompt to paste into Claude Code, the Claude desktop app or another AI IDE that speaks MCP. The prompt tells the agent to add the server, sign in where needed, read, and report back.
 
-A launch is linked to a project on the launch form (pick one of your projects on the same chain, or start a draft for the token), or afterwards in the studio, where the link can be changed or removed. Linking is done by the owner in the studio. An agent cannot link or unlink a launch.
+### The launch prompt
+
+It adds the shared server, reads the launch by address (curve, pool, sales, and the commitment when there is one) and reports where the token stands. When the launch is linked to one of your projects, the same prompt also adds that project's server and reads the project.
+
+| Where | What you see |
+|-------|--------------|
+| Launch success screen | The prompt in a copy block, right after launching |
+| Studio, Launches list | An **Agent prompt** button on each launch row |
+| Token page | An **Agent prompt** button across from the name, for the account the launch is recorded to. Other visitors do not see it |
+| Studio, project page | An **Agent prompt** button beside each launch in the Token launch panel |
+
+Reading a launch needs no sign-in. The prompt only asks you to authenticate if you want your own launches through `get_my_launches`.
+
+A launch is linked to a project on the launch form or afterwards in the studio, where the link can be changed or removed. See [Projects and launches](../token-launch/projects-and-launches.md). An agent cannot link or unlink a launch.
+
+### The project prompt
+
+Open a project in the studio. The **Agent prompt** button across from the project's name, and the connect card at the bottom of the page, open the guide for that project's server. It leads with one prompt to paste, and its last step follows the write mode you pick at the top of the guide. Under "Read the steps yourself" the guide also has every step by hand: the add command, signing in with `/mcp`, checking with `claude mcp list`, example prompts, the server address for other apps, troubleshooting and the command to remove the server.
 
 ## Project-scoped servers
 
-Every project in the studio also has its own MCP server at `https://www.canhav.com/mcp/p/<project id>`. Its tools are bound to that one project, so none of them takes a slug or an address. Open the project in the studio and copy the `claude mcp add` command from the connect card, which names the server after the project so several can be added side by side.
+Every project in the studio also has its own MCP server at `https://www.canhav.com/mcp/p/<project id>`. Its tools are bound to that one project, so none of them takes a slug or an address. The guide described under [Connecting](#connecting) gives you the prompt and the exact command. The server is named after the project so several can be added side by side: `canhav-` plus the project name in lowercase with dashes (up to 24 characters), or `canhav-` plus the first eight characters of the project id while the project has no name.
 
 ```bash
 claude mcp add --transport http canhav-<project> https://www.canhav.com/mcp/p/<project id>
@@ -81,27 +104,27 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | Tool | Purpose |
 |------|---------|
 | `get_project` | The bound project. Current draft, publication status, and the published snapshot when there is one |
-| `get_project_status` | What is left before the project can publish and launch, ending in one next action. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). The `tokenDesign` block carries a `derived` summary (`floatAtLaunchPct`, `fdvToFloat`, `treasuryPct`) and the `warnings` codes. When a token exists (deployed from the linked design or launched from the project), `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct`; `launchedToken` carries the newest launch made from the project in the studio with the same `curve` block |
+| `get_project_status` | What is left before the project can publish and launch, ending in one next action. The `project` block carries the project's `chain` and `chainId`. For a project with a product shape, a `kit` block with `kits` (the research kits its sectors open), `shape` (the first), `shapes` and `shapeLabels` (every shape the project builds) and build progress (`done` of `total` steps across them). The `tokenDesign` block carries a `derived` summary (`floatAtLaunchPct`, `fdvToFloat`, `treasuryPct`) and the `warnings` codes. When a token exists (deployed from the linked design, or a launch linked to the project), `deployedToken` carries its `launchUrl` and, for a curve launch, the curve `state` and `progressPct`; `launchedToken` carries the newest launch linked to the project, whether it was linked at launch or afterwards, with the same `curve` block |
 | `get_linked_token_design` | The token design linked to this project, with derived tokenomics, `warnings` (code, title, body), `deployability` (what the CanHav contracts can deploy of it), `build` (token build step progress), `advice` (per product shape, whether a token fits, which reasons fit or to avoid, what to lock) and the deployed address when it has one |
 | `get_design_constraints` | The linked design as testable assertions, enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the draft |
 | `check_design` | Warning rules and deployability against the linked design draft, or against an inline document passed as `doc`, including whether the rationale fits this project's product shapes |
 | `check_project` | Validate the project draft against the project rules and report the first problem |
 | `get_resource_pack` | The reading list the team ticked for this project's product shapes (the union when it builds several), in read-first order, with fetchable `rawUrl`s, the family each resource comes from, caveat flags and an `environment` block. Pass `includeUnselected` for everything, or narrow with `step`, `priority` or `family` |
 | `get_prelaunch_review` | The review passes for this project's product shapes, each once, each with what a reviewer checks, the resources that define it and the team's recorded verdict |
-| `get_launch` | The token deployed from this project's design or launched from the project in the studio, in the same shape the shared server returns, including the `curve` block and the full `project` block (the scoped server is owner-only, so the name and id are always present) |
+| `get_launch` | The project's token (the one deployed from its linked design, otherwise the newest launch linked to the project), in the same shape the shared server returns, including the `curve` block and the full `project` block (the scoped server is owner-only, so the name and id are always present) |
 | `get_curve_status` | The shared tool bound to this project's token. No address. The curve with progress, the tax window, trade counts and recent trades |
 | `get_pool_status` | The shared tool bound to this project's token. No address. The pool with reserves, LP shares, swap count, volume and recent swaps |
 | `get_sale_status` | The shared tool bound to this project's token. No address. Allocation sales with phase, amounts, tranches and recent purchases |
 | `get_launch_journey` | The shared tool bound to this project's token. No arguments. The committed document with the on-chain and recomputed hashes |
 | `get_milestone_updates` | The shared tool bound to this project's token. No arguments. Creator updates grouped by milestone |
 
-The five activity tools answer with an error until a token has been launched from the project or deployed from its linked design. Their names match the shared server's on purpose, so a prompt written for `canhav` reads the same on `canhav-<project>`; Claude Code keeps the two apart by server name.
+The token tools answer with an error until a token is linked to the project, by a launch or through its deployed linked design. Their names match the shared server's on purpose, so a prompt written for `canhav` reads the same on `canhav-<project>`; Claude Code keeps the two apart by server name.
 
 The scoped server also registers one prompt, `prelaunch_review`. In Claude Code it appears as a slash command named after the server; it walks the passes against the open repository and reports a verdict with evidence for each. Clients that do not surface prompts get the same content through `get_prelaunch_review`.
 
 ### Writing to a draft
 
-An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how on the project page in the studio, under Agent changes. A proposal is decided line by line there: the owner can drop a line, edit a value before accepting it, or accept and reject the whole change. Only the lines the owner kept reach the draft, and `get_agent_changes` shows them as `appliedPatch` beside the original `patch`.
+An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how, either at the top of the project's agent guide or on the project page under Agent changes. A proposal is decided line by line there: the owner can drop a line, edit a value before accepting it, or accept and reject the whole change. Only the lines the owner kept reach the draft, and `get_agent_changes` shows them as `appliedPatch` beside the original `patch`.
 
 | Mode | What happens to a change |
 |------|--------------------------|
@@ -111,7 +134,7 @@ An agent on a project's server can change that project's draft, tick build steps
 
 | Tool | What it does |
 |------|--------------|
-| `update_project` | Change fields of the project draft. Basics (name, what it does, audience b2b or b2c, personas for B2B, consumerPersonas for B2C, who pays, why this chain, stage), architecture, security, reality and the verification fields. Also what the project is classed as, `sectors`, `sectorOther`, `subsectors` and under `kit` the product `shapes`, `startingPoint`, `existingProduct`, `resources` (`tick` and `untick` lists of resource ids) and `review` (pass and verdict pairs, `open` clears one). A subsector must belong to a chosen sector and a shape must be offered under the chosen subsectors, and changing sectors or subsectors drops the shapes they no longer offer. Send only the fields being changed. Lists replace the stored list |
+| `update_project` | Change fields of the project draft. Basics (name, what it does, audience b2b or b2c, personas for B2B, consumerPersonas for B2C, who pays, why this chain, stage), architecture, security, reality and the verification fields, the project's file `references`, and its `chain` (refused once a token is linked, since the chain is then fixed). Also what the project is classed as, `sectors`, `sectorOther`, `subsectors` and under `kit` the product `shapes`, `startingPoint`, `existingProduct`, `resources` (`tick` and `untick` lists of resource ids) and `review` (pass and verdict pairs, `open` clears one). A sector marked Coming soon is refused. A subsector must belong to a chosen sector and a shape must be offered under the chosen subsectors, and changing sectors or subsectors drops the shapes they no longer offer. Send only the fields being changed. Lists replace the stored list |
 | `get_build_steps` | The build steps for the project's product shapes with their ids, their shape, whether each is ticked and `sharedWith`, the ids of the same step under the project's other shapes. Progress counts a shared step once, so tick every id in `sharedWith` together. Steps the team added carry `custom: true` and no editor step, removed catalog steps are listed under `removed` and left out of progress |
 | `set_build_steps` | Tick or untick build steps by id (`done`, `undone`), add steps under one of the project's product shapes (`add` with `shape`, `title` and an optional `detail`), remove steps (`remove`, a step shared between shapes goes for all of them, a step the team added is deleted) and bring removed catalog steps back (`restore`). The owner decides each entry of a proposal on its own |
 | `get_token_build_steps` | The linked design's token build steps, eight design steps and eight launch stages, each with its id, phase, state and whether it is computed from the platform (publish, link, launch, the snipe window, graduation). Rows that do not apply leave the progress count |
@@ -121,13 +144,13 @@ An agent on a project's server can change that project's draft, tick build steps
 
 Every write tool takes an optional `note` for the owner and answers with `outcome`, either `proposed` or `applied`.
 
-What an agent cannot do. Publish or unpublish. Tick the distribution acknowledgement. Link or unlink a token design. These stay with a person in the studio.
+What an agent cannot do. Publish or unpublish. Tick the distribution acknowledgement. Link or unlink a token design or a launch. Change the chain of a project that already has a token. These stay with a person in the studio.
 
 If an agent writes while the editor is open, the editor takes the new draft when nothing is unsaved. If there is unsaved typing, saving pauses and the editor asks for a reload, so neither side overwrites the other without anyone seeing it.
 
 ### Resource pack fields
 
-`get_resource_pack` and `get_resource_catalog` share one vocabulary. A project is in one or more sectors; `sector` stays as the first of them for older readers and `sectors` lists all of them. A research kit opens for each sector that has one (`credit` for Credit, `liquidity` for Liquidity) once a subsector of that sector is chosen; `kit` is the first and `kits` lists all of them, and a catalog entry that belongs to one kit's own files carries `kits`. A product shape can be reached from subsectors of different sectors (Curated vault and Earn inside your app from both Lending and Vaults) and carries the same resources, build steps and review passes either way, minus the other kit's own files. `family` is one of `shared`, `robinhood`, `morpho`, `pendle`, `uniswap`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain), `testnet_only` and `self_deploy` (the protocol has no deployment on testnet 46630, so the team deploys these contracts itself and records them in its own manifest). A project may build several shapes at once. `shape` and `shapeLabel` stay as the first of them for older readers; `shapes` and `shapeLabels` list all of them in table order, and the resources, environment families, build steps and review passes are the union across them, each once. `environment.families` lists, for Robinhood Chain and each protocol family the shapes rely on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. Rows exist for `robinhood`, `morpho`, `pendle`, `uniswap` and `boros`, each with its own `devPath` (Uniswap's starts with a self-deploy on testnet); a shape plan never includes `boros`, which runs on Arbitrum, but `get_resource_catalog` lists every row. A project builds on one chain, `robinhood_testnet` or `arbitrum_sepolia`. `get_resource_pack` carries `chain` (key, name and the testnet and mainnet chain ids) and `shapesMissingTestnet`, the chosen shapes whose protocol has no deployment on that testnet with the missing families; the environment rows, the chain family (`robinhood` or `arbitrum`) and the flags follow the chain. The catalog carries `chains`, one entry per chain with its environment rows and `shapesMissingTestnet`, and `runsOnTestnetByChain` per shape; `runsOnTestnet` and the top level `environments` describe Robinhood Chain for older readers. Nothing is blocked. `testnetGate.blockedShapes` stays as an empty list, and a shape whose protocol is missing can be picked, with build steps the team or its agent writes through `set_build_steps`. A catalog entry written for one chain carries `chains`. Every token view carries `chain` beside `chainId`, the chain the token lives on. `checklist` carries the build steps. `done` and `total` count a step shared between shapes once. `items` stays one entry per id (134 across the thirteen shapes) with the step it informs, the resource ids that help, whether the team has ticked it, its `shape` and `sharedWith`, the other ids of the same work. `groups` is what the studio shows, one entry per step in section order with its `shape`, the `shapes` it serves, its `ids` and whether every id is ticked; eleven steps are shared (the review passes across every shape, the fork and staging plan across the Pendle shapes, and the markets, roles, testnet deployment, dead deposit and scenario walks across the vault shapes). `review` carries the passes for the shape with a progress block (`pass`, `fail`, `na`, `open`, `total`) and, per pass, the detail, the defining resources with URLs and the verdict or `null`. Fields are only ever added, never renamed.
+`get_resource_pack` and `get_resource_catalog` share one vocabulary. A project is in one or more sectors; `sector` stays as the first of them for older readers and `sectors` lists all of them. A research kit opens for each sector that has one (`credit` for Credit, `liquidity` for Liquidity) once a subsector of that sector is chosen; `kit` is the first and `kits` lists all of them, and a catalog entry that belongs to one kit's own files carries `kits`. A product shape can be reached from subsectors of different sectors (Curated vault and Earn inside your app from both Lending and Vaults) and carries the same resources, build steps and review passes either way, minus the other kit's own files. `family` is one of `shared`, `robinhood`, `arbitrum`, `morpho`, `pendle`, `uniswap`, `boros`. `priority` is `core`, `recommended` or `deep_dive`. `steps` names the editor steps a resource informs, `basics`, `architecture`, `security`, `reality`, `review`. `flags` is always an array and may contain `unofficial` (a community artifact to verify before trusting), `mainnet_only` (no testnet deployment exists), `not_on_robinhood` (background reading, the protocol does not run on this chain), `testnet_only` and `self_deploy` (the protocol has no deployment on testnet 46630, so the team deploys these contracts itself and records them in its own manifest). A project may build several shapes at once. `shape` and `shapeLabel` stay as the first of them for older readers; `shapes` and `shapeLabels` list all of them in table order, and the resources, environment families, build steps and review passes are the union across them, each once. `environment.families` lists, for Robinhood Chain and each protocol family the shapes rely on, the testnet 46630 and mainnet 4663 status (`official`, `community`, `manifest_only`, `none`), a note, a source and the recommended development path. On Robinhood Chain rows exist for `robinhood`, `morpho`, `pendle`, `uniswap` and `boros` (an Arbitrum Sepolia project gets an `arbitrum` row in place of `robinhood`), each with its own `devPath` (Uniswap's starts with a self-deploy on testnet); a shape plan never includes `boros`, which runs on Arbitrum, but `get_resource_catalog` lists every row. A project builds on one chain, `robinhood_testnet` or `arbitrum_sepolia`. `get_resource_pack` carries `chain` (key, name and the testnet and mainnet chain ids) and `shapesMissingTestnet`, the chosen shapes whose protocol has no deployment on that testnet with the missing families; the environment rows, the chain family (`robinhood` or `arbitrum`) and the flags follow the chain. The catalog carries `chains`, one entry per chain with its environment rows and `shapesMissingTestnet`, and `runsOnTestnetByChain` per shape; `runsOnTestnet` and the top level `environments` describe Robinhood Chain for older readers. Nothing is blocked. `testnetGate.blockedShapes` stays as an empty list, and a shape whose protocol is missing can be picked, with build steps the team or its agent writes through `set_build_steps`. A catalog entry written for one chain carries `chains`. Every token view carries `chain` beside `chainId`, the chain the token lives on. `checklist` carries the build steps. `done` and `total` count a step shared between shapes once. `items` stays one entry per id (134 across the thirteen shapes) with the step it informs, the resource ids that help, whether the team has ticked it, its `shape` and `sharedWith`, the other ids of the same work. `groups` is what the studio shows, one entry per step in section order with its `shape`, the `shapes` it serves, its `ids` and whether every id is ticked; eleven steps are shared (the review passes across every shape, the fork and staging plan across the Pendle shapes, and the markets, roles, testnet deployment, dead deposit and scenario walks across the vault shapes). `review` carries the passes for the shape with a progress block (`pass`, `fail`, `na`, `open`, `total`) and, per pass, the detail, the defining resources with URLs and the verdict or `null`. Fields are only ever added, never renamed.
 
 Two notes on what the URL is and is not. Clerk issues access tokens for the origin rather than for a path, so a token minted at `/mcp` is accepted at `/mcp/p/<id>` as well. The scoped URL is a tool surface, not a secret and not a capability: ownership is checked on every call against the signed-in account. And because the URL keys on the project id rather than its slug, a brand-new draft is connectable before it is ever published.
 
@@ -148,5 +171,7 @@ This page reflects the tools registered in the repository. When a tool is added 
 ## Related
 
 - [Accounts](../accounts/clerk-accounts.md)
+- [Studio](../ideation/studio.md)
+- [Projects and launches](../token-launch/projects-and-launches.md)
 - [The two ideation tracks](../ideation/two-tracks.md)
 - [Token Launch overview](../token-launch/overview.md)

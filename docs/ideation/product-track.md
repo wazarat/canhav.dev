@@ -4,7 +4,7 @@
 
 The Product track is a design document for what you are building. A product with no token is a legitimate published outcome.
 
-Editor steps: Basics, Architecture, Security, Reality, Review.
+Editor steps: Basics, Architecture, Security, Reality, then one step for each product shape the project is building, then Review.
 
 ---
 
@@ -15,7 +15,7 @@ Editor steps: Basics, Architecture, Security, Reality, Review.
 | Field | Notes |
 |-------|-------|
 | Project name | Required |
-| Chain | Robinhood testnet or Arbitrum Sepolia. Where the project builds and tests, and the chain a token launched from it goes on. Projects from before the choice existed read as Robinhood testnet. Fixed once a token has launched from the project. The resource pack, the environment block and the testnet notes follow it, and the Robinhood distribution acknowledgement is only asked of a Robinhood project. |
+| Chain | Robinhood testnet or Arbitrum Sepolia. Where the project builds and tests, and the chain a token launched from it goes on. Projects from before the choice existed read as Robinhood testnet. Fixed once a token is linked to the project, by a launch or by a deployed linked token design. The resource pack, the environment block and the testnet notes follow it, and the Robinhood distribution acknowledgement is only asked of a Robinhood project. |
 | Sector | Credit and Liquidity. Each is a card with its name ("Credit sector application") and a sentence that starts "I am looking to". Pick every sentence that fits. More sectors are coming soon. |
 | Subsector | Asked for each chosen sector that has subsectors, grouped under the sector name when more than one does. Each subsector is a card with its name and a sentence. Credit offers Lending, Leveraged yield and Fixed income; Liquidity offers Vaults and Pools. All five are open. A subsector whose every shape relies on a protocol with no deployment on the project's testnet carries a note such as "Not on Robinhood testnet yet" and can still be picked. Pick one to three per sector. When a project is in more than one sector and a subsector shares product shapes with one under another chosen sector, that one is ticked too and a line under the cards says why; it can be unticked again. |
 | What are you building | Asked once a chosen sector has a subsector. Product shapes are grouped by subsector. Lending offers Curated vault, Earn inside your app and Collateral-backed loans; Fixed income offers Fixed-rate yield on your asset, Fixed-rate savings inside your app, Borrow against fixed-rate positions and Leveraged fixed-yield loop; Leveraged yield offers Leveraged fixed-yield loop and Yield-token products; Vaults offers Curated vault and Earn inside your app (the same two shapes reached through Lending), Liquidity allocator and Permissioned vault; Pools offers Basic AMM pool, Concentrated liquidity pool and Pool with custom hooks. Thirteen shapes in all. A shape that spans subsectors is offered whenever one of them is chosen and appears once, and the picker shows subsector headings only when more than one subsector is chosen. Picking a shape also ticks its subsectors under any other chosen sector. Pick as many as apply; the resource pack, build steps and review passes are the union across the chosen shapes. Optional, but the research kit that follows is filtered by it. Each option has a "Why this matters" card with a worked example, and each chosen shape lists two or three things you could build with it. The testnet note: a shape carries a note when a protocol family it relies on has no official or community deployment on the project's testnet (on Robinhood testnet the Pendle and Uniswap shapes, with Morpho's community deployment counting; on Arbitrum Sepolia the Morpho and Pendle shapes, with Uniswap deployed). It can still be picked and published. Its Build section names the missing protocol, and the team or its agent removes the steps that do not fit and adds its own. |
@@ -92,7 +92,7 @@ On the public page, “not yet” on high blast-radius answers reads as a live r
 
 ## Reality
 
-Before publish, the editor requires an explicit acknowledgement:
+Before publish, the editor requires an explicit acknowledgement from a project on Robinhood testnet (an Arbitrum Sepolia project is not asked):
 
 > Robinhood Chain does not provide distribution to Robinhood brokerage customers. Deploying here puts your app in front of nobody by default. CanHav is an independent project with no affiliation with Robinhood Markets, Inc. Listing here is not a channel to its users either.
 

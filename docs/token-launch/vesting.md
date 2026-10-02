@@ -1,10 +1,14 @@
 # Vesting
 
-**Available now.**
+**Available now** for launches made by script through a TokenFactory. **Not offered on the launch form.**
 
-Optional vesting can be created in the **same transaction** as the token launch. The factory deploys a vesting wallet clone and funds it with a percent of supply.
+A TokenFactory launch can create vesting in the **same transaction** as the token. The factory deploys a vesting wallet clone and funds it with a percent of supply.
 
-## Parameters (UI constraints)
+The **Launch** tab does not do this. A launch from `/launch` goes through the CurveLauncher, which mints the whole supply onto the bonding curve and creates no vesting wallet. When a launch starts from a token design that declares team vesting, the form says so: the schedule stays a published commitment in the design and is not applied on-chain. See [Enforced versus stated](../ideation/enforced-vs-stated.md).
+
+Tokens that were launched with vesting show a vesting card on [the token page](token-page.md).
+
+## Parameters (contract path)
 
 | Parameter | Range |
 |-----------|--------|
@@ -31,4 +35,5 @@ Vesting clone salt is derived from the **token address** (`keccak256(abi.encode(
 ## Related
 
 - [Create a token](create-a-token.md)
+- [Deploy paths](deploy-paths.md)
 - [Governance](governance.md)

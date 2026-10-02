@@ -1,6 +1,6 @@
 # Welcome to CanHav
 
-**Available now** for Token Launch and Projects on testnet. **In development** for Clerk accounts and AI/IDE export. **Deferred** for a Foundry scaffold generator. **Not started** for Agent / ERC-8004.
+**Available now** for Token Launch, Projects, accounts and AI/IDE export, all on testnet. **Deferred** for a Foundry scaffold generator. **Not started** for Agent / ERC-8004.
 
 CanHav is a research-led platform for EVM builders and capital-markets practitioners. The product site at [canhav.com](https://canhav.com) focuses on DeFi ecosystem solutions. These docs cover the testnet products that ship alongside that research.
 
@@ -8,7 +8,7 @@ CanHav is a research-led platform for EVM builders and capital-markets practitio
 
 CanHav has **no affiliation** with Robinhood Markets, Inc. or its affiliates.
 
-Robinhood Chain does **not** provide distribution to Robinhood brokerage customers. Deploying a token or app on Robinhood Chain Testnet puts your work in front of nobody by default. Listing on CanHav is not a channel to Robinhood users either.
+Robinhood Chain does **not** provide distribution to Robinhood brokerage customers. Deploying a token or app on Robinhood Chain or its testnet puts your work in front of nobody by default. Listing on CanHav is not a channel to Robinhood users either.
 
 ## What you will find here
 
@@ -20,16 +20,18 @@ Robinhood Chain does **not** provide distribution to Robinhood brokerage custome
 | [Product track](../ideation/product-track.md) | Sector, users and payers, architecture, security decls | Available now |
 | [Token track](../ideation/token-track.md) | Eight design sections, computed outputs, warnings | Available now |
 | [Public pages](../ideation/public-pages.md) | Separate `/p` and `/t` pages, scoped signals | Available now |
-| [Token Launch](../token-launch/overview.md) | Create and operate tokens on Robinhood Chain Testnet | Available now |
+| [Token Launch](../token-launch/overview.md) | Launch and trade tokens on Robinhood Chain Testnet and Arbitrum Sepolia | Available now |
+| [Quickstart](../token-launch/quickstart.md) | From wallet to a live token in five steps | Available now |
 | [Deploy paths](../token-launch/deploy-paths.md) | Quick deploy vs design deploy | Available now |
+| [Studio](../ideation/studio.md) | Your launches, projects and token designs in one place | Available now |
 | [Fees and guarantees](../token-launch/fees-and-economics.md) | Fee switches, caps, timelock, contract guarantees | Available now |
-| [Accounts](../accounts/clerk-accounts.md) | Clerk-based accounts | In development |
-| [AI and IDE](../ai/export-and-mcp.md) | Markdown export, AGENTS.md, MCP server for designs and launches | Available now |
+| [Accounts](../accounts/clerk-accounts.md) | Clerk-based accounts | Available now |
+| [AI and IDE](../ai/export-and-mcp.md) | Markdown export, AGENTS.md, MCP servers for designs, launches and projects | Available now |
 | [Agent Launch](../agent-launch/overview.md) | ERC-8004 on Base Sepolia | Not started |
 
 ## Product surfaces (today)
 
-1. **Token Launch** on Robinhood Chain Testnet (chain ID `46630`). Factory launches, journeys, vesting, escrow, sales, AMM, hosted indexer, explore.
+1. **Token Launch** on Robinhood Chain Testnet (chain ID `46630`) and Arbitrum Sepolia (chain ID `421614`). Bonding curve launches, trading, optional on-chain commitments, escrow, sales, AMM, hosted indexers, explore.
 2. **Projects** (Product and Token ideation tracks, studio, public pages, design deploy). Available now on testnet.
 
 **Deferred:** Foundry scaffold generator (not a product feature yet).
@@ -53,4 +55,4 @@ The docs site should use a **light** theme with a white background. That is a Gi
 - New here: [What CanHav is](what-canhav-is.md), then the [litepaper](litepaper.md).
 - Product design: [Product track](../ideation/product-track.md).
 - Token design: [Token track](../ideation/token-track.md).
-- Ready to launch: [Token Launch overview](../token-launch/overview.md).
+- Ready to launch: [Quickstart](../token-launch/quickstart.md), then the [Token Launch overview](../token-launch/overview.md).

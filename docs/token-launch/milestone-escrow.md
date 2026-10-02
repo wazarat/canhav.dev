@@ -2,7 +2,9 @@
 
 **Available now.**
 
-**MilestoneEscrow** is an admin-less singleton on Robinhood Chain Testnet. It holds token lockups that unlock on milestone dates.
+**MilestoneEscrow** is an admin-less singleton, deployed once on each chain. It holds token lockups that unlock on milestone dates.
+
+Lockups are made against a token's milestones, so only a token launched with a [commitment](journey-and-credibility.md) can use it. The creator locks supply from [the token page](token-page.md).
 
 ## Properties
 

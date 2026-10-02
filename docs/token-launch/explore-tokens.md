@@ -2,29 +2,36 @@
 
 **Available now.**
 
-Launches are indexed by a dedicated Ponder indexer so you can browse without scanning the explorer manually.
+The **Explore** tab (`/explore`) is the board of everything launched and published through CanHav, on both chains. A toggle switches it between two views.
 
-## Surfaces
+## Views
 
-| Path | Purpose |
-|------|---------|
-| `/explore` | Indexed list of launched tokens, with price and pool depth when a pool exists, or the curve price and graduation progress while a token is on its curve. The Explore tab in the nav |
-| `/launch/t/[address]` | Token detail: the bonding curve or the pool, vesting, escrow, sales, journey updates |
+| View | URL | What it lists |
+|------|-----|---------------|
+| Tokens (the default) | `/explore` | Every token launched through CanHav, newest first. Each card shows the price and liquidity when a pool exists, or the curve price and graduation progress while the token is on its curve, plus the supply and launch date. |
+| Projects | `/explore?view=projects` | Every project published from the studio, newest first. A project needs no token to be listed. Published token designs are not on the board. |
 
-`/explore` is the Explore tab in the nav. `/launch/t/[address]` is reached from a card there or from a launch. `/projects` and the old `/launch/explore` both redirect to `/explore`.
+A token card opens [the token page](token-page.md) at `/launch/t/[address]`. A project card opens its public page at `/p/[slug]`.
+
+`/projects` redirects to the Projects view, and the old `/launch/explore` redirects to `/explore`.
 
 ## What the indexer sees
 
-- Launch events from the curve launcher and every factory version (including paused v1-v3 tokens)
+Launches are indexed by a Ponder indexer, one instance per chain, so you can browse without scanning an explorer.
+
+- Launch events from the curve launcher and every factory version (including tokens from the paused v1 to v3 factories on Robinhood Chain Testnet)
 - Curve creation, buys, sells and graduation
 - Vesting creation
-- Related escrow, updates, sale, and AMM activity as implemented
+- Escrow, updates, sale, and AMM activity
 
-If the indexer is offline, explore pages degrade gracefully. On-chain truth remains on the [explorer](https://explorer.testnet.chain.robinhood.com).
+Token transfers are not indexed, so there is no holders list.
+
+If an indexer is offline, the board and token pages for that chain say so rather than failing. On-chain truth stays on the chain's explorer: [Robinhood Chain Testnet](https://explorer.testnet.chain.robinhood.com) or [Arbitrum Sepolia](https://arbitrum-sepolia.blockscout.com).
 
 ## Related
 
+- [The token page](token-page.md)
 - [Bonding curve](bonding-curve.md)
-- [Journey updates](journey-updates.md)
+- [Public pages](../ideation/public-pages.md)
 - [Contract addresses](contract-addresses.md)
 - [FAQ](faq.md)

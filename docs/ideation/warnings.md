@@ -48,7 +48,7 @@ Related: [Computed outputs](computed-outputs.md) (4% float → 25× FDV:float).
 
 ## The reason does not fit the product shape
 
-**Trigger:** The design is linked to a project with a product shape, and the rationale "why" is a reason every one of that project's shapes lists under "reasons to avoid" (for example Fundraising for a curated vault, or Bootstrapping a supply side for an earn feature inside an app). Fires only through the linked project; the public design page and an unlinked design never show it.
+**Trigger:** The design is linked to a project with a product shape, and the rationale "why" is a reason every one of that project's shapes lists under "reasons to avoid" (for example Fundraising for a curated vault, or Bootstrapping a supply side for an earn feature inside an app). Fires only through the linked project. The public design page and an unlinked design never show it. The public `check_design` MCP tool reports it once the linked project is published.
 
 **Meaning:** Each product shape carries advice on whether a token fits, which reasons hold up and what a token for that shape should lock. The advice block on the Rationale step lists them. Pick a reason that fits, or write down in the "beyond a database row" field why this product is the exception. Advisory only; it never blocks publishing and never changes the launch.
 

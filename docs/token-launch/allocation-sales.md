@@ -2,7 +2,9 @@
 
 **Available now.**
 
-**AllocationSale** is an admin-less singleton for fixed-price token sales on Robinhood Chain Testnet.
+**AllocationSale** is an admin-less singleton for fixed-price token sales, deployed once on each chain.
+
+A sale is scheduled against a token's milestones, so only a token launched with a [commitment](journey-and-credibility.md) can run one. The creator opens a sale from [the token page](token-page.md).
 
 ## Properties
 

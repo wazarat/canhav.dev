@@ -1,6 +1,6 @@
 # The two ideation tracks
 
-**Available now.** Studio, draft editors, public project/token pages, explore tabs, and optional linking are live on the product site (testnet / URL-only studio).
+**Available now.** The studio, draft editors, public project and token design pages, the Explore board and optional linking are live on the product site (testnet).
 
 CanHav Projects has two tracks: **Product** and **Token**. They are independent by design.
 
@@ -19,11 +19,13 @@ The point is to make the design document honest before anyone confuses a plan wi
 Linking is optional and owned by you in studio.
 
 1. Open a project or token design editor. The link panel lists entities you own.
-2. Create a link only when you own both sides. v1 linking is **one-to-one** (one project to one token design).
-3. After you link, each public page shows a cross-card to the other entity (`/p/...` ↔ `/t/...`).
+2. Create a link only when you own both sides. v1 linking is **one-to-one** (one project to one token design). You can link an existing record or create the other one and link it in one step.
+3. Once **both** sides are published, each public page shows a cross-card to the other entity (`/p/...` ↔ `/t/...`).
 4. Credibility signals stay scoped to the entity they belong to. Linking does **not** copy project verify signals onto the token page, or float/unlock metrics onto the project page.
 
-Unlinking (when available in studio) removes the cross-reference. It does not delete either document.
+Unlinking, from the same panel, removes the cross-reference. It does not delete either document.
+
+A project can also be linked to a **launched token**, which is a separate link. See [Projects and launches](../token-launch/projects-and-launches.md).
 
 See [Public pages](public-pages.md).
 
@@ -45,6 +47,6 @@ Both tracks use the same answer model: decisions you make, outputs the platform 
 
 ## Studio and publish
 
-You draft in studio (`/studio`), publish snapshots to public pages (`/p/...` for projects, `/t/...` for token designs), and optionally attach a deployed token address to a published design. Explore includes tabs for tokens, projects, and designs. Details: [Public pages](public-pages.md) and [Deploy paths](../token-launch/deploy-paths.md).
+You draft in the [studio](studio.md) (`/studio`), publish snapshots to public pages (`/p/...` for projects, `/t/...` for token designs), and optionally attach a deployed token address to a published design. Explore has two views, Tokens and Projects; published token designs are not on the board. Details: [Public pages](public-pages.md) and [Deploy paths](../token-launch/deploy-paths.md).
 
-Studio editing requires an account ([Clerk](../accounts/clerk-accounts.md), in development for production keys). Reading published pages does not.
+Studio editing requires an [account](../accounts/clerk-accounts.md). Reading published pages does not.

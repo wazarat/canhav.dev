@@ -288,7 +288,7 @@ export function registerLaunchTools(server: McpServer): void {
     {
       title: "My launches",
       description:
-        "The authenticated user's own launches. Tokens launched while signed in to CanHav plus tokens attached to the user's token designs, each joined with its live launch record and the studio project it was launched from.",
+        "The authenticated user's own launches on either chain. Launches recorded to the CanHav account plus tokens attached to the user's token designs, each with its chain, its live launch record and the studio project it is linked to.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -299,6 +299,7 @@ export function registerLaunchTools(server: McpServer): void {
       const launches = mine.map((entry) => ({
         address: entry.address,
         source: entry.source,
+        chain: entry.chain,
         launchedAt: entry.launchedAt,
         creatorWallet: entry.creatorWallet,
         launchTxHash: entry.launchTxHash,

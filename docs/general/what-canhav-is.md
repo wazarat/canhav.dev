@@ -1,13 +1,13 @@
 # What CanHav is (and is not)
 
-**Available now** for Token Launch and Projects on testnet. Accounts and AI/IDE are **in development**. Agent / ERC-8004 is **not started**.
+**Available now** for Token Launch, Projects, accounts and AI/IDE export, all on testnet. Agent / ERC-8004 is **not started**.
 
 ## What CanHav is
 
 CanHav is a research-led platform for EVM builders and capital-markets practitioners.
 
 - **Research** on [canhav.com](https://canhav.com): DeFi ecosystem solutions and sector context.
-- **Token Launch**: a testnet launchpad on Robinhood Chain Testnet for fixed-supply tokens, journeys, vesting, escrow, sales, and a minimal AMM.
+- **Token Launch**: a testnet launchpad on Robinhood Chain Testnet and Arbitrum Sepolia. Fixed-supply tokens on a bonding curve, optional on-chain commitments, escrow, sales, and a minimal AMM.
 - **Projects**: two independent ideation tracks (Product and Token) so teams can design, publish, and optionally link before or instead of deploying.
 
 Everything in these docs that describes product surfaces is **testnet only** unless a page says otherwise.

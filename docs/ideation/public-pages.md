@@ -1,6 +1,6 @@
 # Public pages
 
-**Available now.** Project pages live at `/p/[slug]`. Token design pages live at `/t/[slug]`. Launches are listed at `/explore`.
+**Available now.** Project pages live at `/p/[slug]`. Token design pages live at `/t/[slug]`. Launched tokens are listed at `/explore`, and published projects at `/explore?view=projects`.
 
 ## Separate entities
 
@@ -8,7 +8,7 @@ Projects and token designs are **separate** public documents.
 
 - A project page describes the product.
 - A token page describes the token design (and computed outputs).
-- They can be **cross-linked** when the team links them in studio.
+- They can be **cross-linked** when the team links them in studio and both are published.
 - They are **not merged** into a single page. Readers should always know which entity they are looking at.
 
 ## Credibility signals stay scoped
@@ -46,7 +46,9 @@ A Credit project's research kit (its product shape, starting point and resource 
 
 A published token design may attach a deployed contract address after a design deploy. That attachment is optional. A design that is never deployed remains a legitimate public document.
 
-For tokens launched through the factory without a Projects design, explore and `/launch/t/[address]` remain the Token Launch surface, with a Quick deploy label when applicable. See [Deploy paths](../token-launch/deploy-paths.md).
+For tokens launched from the launch form without a token design, Explore and `/launch/t/[address]` remain the Token Launch surface, with a Quick deploy label when the launch carries a commitment. See [Deploy paths](../token-launch/deploy-paths.md).
+
+A project page also lists the tokens launched from or linked to the project. See [Projects and launches](../token-launch/projects-and-launches.md).
 
 ## Related
 

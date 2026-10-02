@@ -595,7 +595,7 @@ export const MCP_GUIDE = {
       cannot: "What an agent cannot do",
       cannotItems: [
         "Publish or unpublish.",
-        "Choose sectors, subsectors or what you are building.",
+        "Change the chain of a project that already has a token.",
         "Tick the distribution acknowledgement.",
         "Link or unlink a token design or a launch.",
       ],
@@ -680,7 +680,7 @@ export const MCP_GUIDE = {
 export const LAUNCH_COPY = {
   kicker: "Launchpad",
   title: "Launch a token",
-  subtitleLead: "Create a token on Robinhood Chain Testnet in two steps.",
+  subtitleLead: "Create a token on Robinhood Chain Testnet or Arbitrum Sepolia in two steps.",
   subtitleDetail:
     "Name it, describe it, add an image and launch. Trading opens on a bonding curve in the same transaction, with an optional first buy for you, and the curve seeds a locked pool when it graduates. Any agent can read the launch over MCP.",
   previewTitle: "Your token",

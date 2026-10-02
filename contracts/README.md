@@ -5,8 +5,8 @@ deployed as EIP-1167 clones from a deterministic (CREATE2) factory with a
 version registry, factory-level pause, and two-step ownership.
 
 > Testnet only. The site's `/launch` page launches through the CurveLauncher
-> once it is deployed (M19); the v4 factory stays live for script launches
-> that need vesting.
+> on Robinhood Chain Testnet and Arbitrum Sepolia; a TokenFactory stays live
+> on each chain for script launches that need vesting.
 
 ## Deployments — Robinhood Chain Testnet
 
@@ -31,7 +31,7 @@ version registry, factory-level pause, and two-step ownership.
 | **LaunchVestingWallet impl** | [`0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC`](https://explorer.testnet.chain.robinhood.com/address/0x97d41F630025f83AdF72f00BaD8dC9B5e01eBEFC) ✅ verified — reused by v2 + v3 factories |
 | TokenFactory v1 (**PAUSED**) | [`0x1dAaa8294806d216Df36dc07B3803ED26584c909`](https://explorer.testnet.chain.robinhood.com/address/0x1dAaa8294806d216Df36dc07B3803ED26584c909) ✅ verified — paused after v2 migration; its tokens remain live and indexed |
 | **LaunchToken impl (v1)** | [`0x3E8c9be8BB486abEc132B0d1C35266b2336b129B`](https://explorer.testnet.chain.robinhood.com/address/0x3E8c9be8BB486abEc132B0d1C35266b2336b129B) ✅ verified — reused by all three factories |
-| Fee constants | `MAX_LAUNCH_FEE = 0.05 ether` (hardcoded ceiling — no admin can exceed it); `launchFee` currently `0`; treasury + pauser = deployer EOA |
+| Fee constants | `MAX_LAUNCH_FEE = 0.05 ether` (hardcoded ceiling — no admin can exceed it); `launchFee` 0.0002 ETH on the launcher and the v4 factory, set through the timelock; treasury + pauser = deployer EOA |
 | Deployer EOA | `0x955fc594dd992Ef7bb7d175b6C9a68Be2b622DEB` (throwaway testnet key in local `.env` only; is timelock proposer, v3 treasury + pause guardian, and still direct owner of paused v1/v2) |
 | Compiler | solc 0.8.28, optimizer 200 runs, `via_ir = true`, `evm_version = cancun` |
 | First launch (smoke test) | token [`0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe`](https://explorer.testnet.chain.robinhood.com/address/0x9a0dD4f0d0753256CeD122184d7Fb91c11B79Abe) ("CanHav First" / CHF1), tx `0x08aec516d847ababe5b6c39496358fa350fd87f02fa49e59eb342899f3bb8fdc` |

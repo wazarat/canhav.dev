@@ -1,6 +1,6 @@
 # Litepaper
 
-**Research preview.** Token Launch and Projects are available now on testnet. Accounts and AI/IDE export are in development. Agent / ERC-8004 is not started. This document states product thesis and sequencing. It is not a legal whitepaper, not an offering, and not financial advice. All product surfaces described here are **testnet only**.
+**Research preview.** Token Launch, Projects, accounts and AI/IDE export are available now on testnet. Agent / ERC-8004 is not started. This document states product thesis and sequencing. It is not a legal whitepaper, not an offering, and not financial advice. All product surfaces described here are **testnet only**.
 
 ## Problem
 
@@ -21,7 +21,7 @@ CanHav combines research on [canhav.com](https://canhav.com) with testnet produc
 
 | Track | Network | Role | Status |
 |-------|---------|------|--------|
-| Token Launch | Robinhood Chain Testnet (`46630`) | Factory tokens, journey hashes, vesting, milestone escrow, allocation sales, AMM, timelocked admin, hosted indexer. | Available now |
+| Token Launch | Robinhood Chain Testnet (`46630`) and Arbitrum Sepolia (`421614`) | Bonding curve launches, optional commitment hashes, milestone escrow, allocation sales, AMM, timelocked admin, hosted indexers. | Available now |
 | Projects | Same product site | Independent Product and Token design tracks, computed tokenomics, optional link, public pages, design deploy. | Available now |
 | Accounts / AI export | Same product site | Clerk accounts, markdown export, MCP server for designs and deployed launches. | Available now |
 | Foundry scaffold generator | N/A | Generate a Foundry project from a design. | Deferred |
@@ -34,10 +34,10 @@ Token Launch and Projects do not gate each other. A product with no token is leg
 A launch should leave a trail that others can check:
 
 - **Fixed supply** minted at initialize; pause stops new launches, not existing tokens
-- **Journey and description hashes** commit off-chain narrative to on-chain events (including design snapshot hashes on the design-deploy path)
-- **Optional vesting** in the same launch transaction
+- **Description hashes always, and commitment hashes when the launcher adds one**, tie off-chain narrative to on-chain events (including design snapshot hashes on the design-deploy path)
+- **Locked liquidity** at graduation, with no path to withdraw it
 - **Admin-less** escrow, updates, and sales where possible so there is no EOA “attester” to rug progress mechanics
-- **Timelocked** factory and AMM knobs so fee and implementation changes are public and delayed
+- **Timelocked** launcher, factory and AMM knobs so fee and implementation changes are public and delayed
 - **Indexed explore** so launches are discoverable without scraping explorers by hand
 
 The design deliberately avoids unaudited “pump clone” patterns. Concentration and bundler risk belong on a future metrics list, not as a product feature.
@@ -58,8 +58,8 @@ Details: [The two ideation tracks](../ideation/two-tracks.md).
 
 | Guarantee | Reality |
 |-----------|---------|
-| Testnet only | Contracts and UIs target Robinhood Chain Testnet |
-| Public delay on admin | Factory and AMM ownership sit behind a TimelockController on Token Launch |
+| Testnet only | Contracts and UIs target Robinhood Chain Testnet and Arbitrum Sepolia |
+| Public delay on admin | Launcher, factory and AMM ownership sit behind a TimelockController, one per chain |
 | Admin-less progress rails | MilestoneEscrow, JourneyUpdates, AllocationSale have no owner |
 | Indexed, not oracle-trusted | Explore pages read indexed chain events; content hashes verify off-chain blobs |
 | Research preview | Site and docs may change; nothing here is audited mainnet software |
@@ -76,9 +76,9 @@ Details: [The two ideation tracks](../ideation/two-tracks.md).
 
 ## Sequencing
 
-1. Token Launch on Robinhood Chain Testnet (available now).
+1. Token Launch on Robinhood Chain Testnet and Arbitrum Sepolia (available now).
 2. Projects ideation, public pages, and design deploy (available now).
-3. Clerk accounts and AI/IDE export (in development).
+3. Clerk accounts and AI/IDE export (available now).
 4. Only after those loops are proven, consider mainnet. Agent / ERC-8004 remains not started.
 
 ## Related reading

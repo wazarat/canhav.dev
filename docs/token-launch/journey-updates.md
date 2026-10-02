@@ -2,7 +2,9 @@
 
 **Available now.**
 
-**JourneyUpdates** is an admin-less singleton that anchors **content-addressed** progress updates for a launched token.
+**JourneyUpdates** is an admin-less singleton, deployed once on each chain, that anchors **content-addressed** progress updates for a launched token.
+
+Updates are posted against a milestone, so only a token launched with a [commitment](journey-and-credibility.md) has them. The page shows an update only when it was posted by the token's creator and its stored text re-hashes to the anchored value.
 
 ## Properties
 
@@ -21,7 +23,7 @@ Token detail pages load update hashes from the indexer and resolve stored docume
 ## Related
 
 - [Journey and credibility](journey-and-credibility.md)
-- [Explore tokens](explore-tokens.md)
+- [The token page](token-page.md)
 
 ## Design launches
 

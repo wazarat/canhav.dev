@@ -9,6 +9,36 @@
 * [The two ideation tracks](ideation/two-tracks.md)
 * [The three answer types](ideation/three-answer-types.md)
 
+## Token Launch
+
+* [Overview](token-launch/overview.md)
+* [Quickstart](token-launch/quickstart.md)
+* [Network setup](token-launch/network-setup.md)
+* [The launch form](token-launch/launch-form.md)
+* [Create a token](token-launch/create-a-token.md)
+* [Bonding curve](token-launch/bonding-curve.md)
+* [Buying and selling](token-launch/trading.md)
+* [The token page](token-launch/token-page.md)
+* [Explore tokens](token-launch/explore-tokens.md)
+* [Projects and launches](token-launch/projects-and-launches.md)
+* [Deploy paths](token-launch/deploy-paths.md)
+* [Journey and credibility](token-launch/journey-and-credibility.md)
+* [Milestone escrow](token-launch/milestone-escrow.md)
+* [Journey updates](token-launch/journey-updates.md)
+* [Allocation sales](token-launch/allocation-sales.md)
+* [Vesting](token-launch/vesting.md)
+* [AMM and fees](token-launch/amm-and-fees.md)
+* [Fees and economics](token-launch/fees-and-economics.md)
+* [Contract guarantees](token-launch/contract-guarantees.md)
+* [Governance](token-launch/governance.md)
+* [Contract addresses](token-launch/contract-addresses.md)
+* [Risks](token-launch/risks.md)
+* [FAQ](token-launch/faq.md)
+
+## Studio
+
+* [Studio](ideation/studio.md)
+
 ## Product track
 
 * [Product track](ideation/product-track.md)
@@ -24,33 +54,13 @@
 
 * [Public pages](ideation/public-pages.md)
 
-## Token Launch
+## AI and IDE
 
-* [Overview](token-launch/overview.md)
-* [Network setup](token-launch/network-setup.md)
-* [Create a token](token-launch/create-a-token.md)
-* [Bonding curve](token-launch/bonding-curve.md)
-* [Deploy paths](token-launch/deploy-paths.md)
-* [Journey and credibility](token-launch/journey-and-credibility.md)
-* [Vesting](token-launch/vesting.md)
-* [Milestone escrow](token-launch/milestone-escrow.md)
-* [Journey updates](token-launch/journey-updates.md)
-* [Allocation sales](token-launch/allocation-sales.md)
-* [AMM and fees](token-launch/amm-and-fees.md)
-* [Fees and economics](token-launch/fees-and-economics.md)
-* [Contract guarantees](token-launch/contract-guarantees.md)
-* [Governance](token-launch/governance.md)
-* [Explore tokens](token-launch/explore-tokens.md)
-* [Contract addresses](token-launch/contract-addresses.md)
-* [FAQ](token-launch/faq.md)
+* [Markdown export and MCP](ai/export-and-mcp.md)
 
 ## Accounts
 
 * [Clerk accounts](accounts/clerk-accounts.md)
-
-## AI and IDE
-
-* [Markdown export and MCP](ai/export-and-mcp.md)
 
 ## Reference
 
