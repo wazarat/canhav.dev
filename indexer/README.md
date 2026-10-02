@@ -134,6 +134,23 @@ memory, scale that machine up rather than the indexers. The public Arbitrum
 Sepolia RPC is the default; set `PONDER_RPC_URL_421614` as a secret on the new
 app to use a dedicated one.
 
+### Keeping the bill in check
+
+Fly has no spending cap, and prepaid credits do not act as one. What bounds
+the bill is that Fly never adds or resizes machines by itself, so the
+configured machines and volumes are the cost. From the repo root:
+
+```sh
+npm run check:fly
+```
+
+It lists every machine, volume and dedicated IPv4 on the account with an
+estimated monthly price, and exits 1 when the total is over 20 dollars
+(`FLY_BUDGET` changes that), when an indexer has more than one machine, or
+when a machine is not the size its fly config says, which is what a backfill
+size left on looks like. Run it after every deploy or scale. On 2026-10-02 it
+read 17.38 dollars for the two indexers and the database.
+
 ### What is deliberate
 
 - **`auto_stop_machines = false`.** This is a continuous chain sync, not a
