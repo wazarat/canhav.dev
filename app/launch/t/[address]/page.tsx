@@ -11,7 +11,7 @@ import { EscrowActions, type EscrowActionTranche } from "@/components/launch/Esc
 import { EscrowCard } from "@/components/launch/EscrowCard";
 import { DesignCommitmentCard } from "@/components/launch/DesignCommitmentCard";
 import { JourneyCard } from "@/components/launch/JourneyCard";
-import { McpConnectCard } from "@/components/launch/McpConnectCard";
+import { OwnerLaunchActions } from "@/components/launch/OwnerLaunchActions";
 import { MilestoneUpdateComposer } from "@/components/launch/MilestoneUpdateComposer";
 import { PoolActions, type PoolActionPool } from "@/components/launch/PoolActions";
 import { PoolCard } from "@/components/launch/PoolCard";
@@ -284,7 +284,8 @@ export default async function TokenPage({
         <ArrowLeft className="h-4 w-4" /> All launches
       </Link>
 
-      <div className="mt-6 flex items-center gap-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex min-w-0 items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-ink-700/60 bg-ink-900/80">
           {token.imageURI ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -328,6 +329,13 @@ export default async function TokenPage({
             ) : null}
           </div>
         </div>
+      </div>
+        {/* The agent prompt and the project link, for the account that launched it only (M56). */}
+        <OwnerLaunchActions
+          address={token.address.toLowerCase()}
+          name={token.name}
+          committed={committed}
+        />
       </div>
 
       <div className="card-surface glow-ring mt-8 rounded-2xl border border-ink-700/70 p-6">
@@ -542,11 +550,6 @@ export default async function TokenPage({
         // owner here; a draft project shows its chips without its name.
         <ProjectCard project={projectSummary.project} isOwner={false} />
       ) : null}
-
-      <McpConnectCard
-        target={{ kind: "launch", address: token.address.toLowerCase(), committed, name: token.name }}
-        className="mt-8"
-      />
 
       <p className="mt-4 text-xs text-ink-500">
         Token fields are read from the on-chain TokenLaunched event via the

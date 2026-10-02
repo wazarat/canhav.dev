@@ -2,13 +2,43 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { authGate } from "@/lib/ideation-api";
-import { getProject } from "@/lib/ideation-db";
+import { getMyProjects, getProject } from "@/lib/ideation-db";
 import { projectChainOf } from "@/lib/chains";
 import { findToken } from "@/lib/indexer";
 import { chainMismatch, createProjectForToken } from "@/lib/launch-project";
 import { getLaunchByToken, launchRowChain, setLaunchProject } from "@/lib/launches-db";
 
 export const runtime = "nodejs";
+
+/**
+ * What the owner of a launch needs for the controls on the token page (M56).
+ * The linked project and the account's projects on the launch's chain. 404
+ * for anyone else, so the public token page shows the controls to nobody but
+ * the account that recorded the launch.
+ */
+export async function GET(_req: Request, ctx: { params: Promise<{ address: string }> }) {
+  const gate = await authGate();
+  if (gate instanceof NextResponse) return gate;
+
+  const address = (await ctx.params).address.toLowerCase();
+  const launch = await getLaunchByToken(address);
+  if (!launch || launch.owner_id !== gate.id)
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
+
+  const chain = launchRowChain(launch);
+  const projects = ((await getMyProjects(gate.id)) ?? []).map((row) => ({
+    id: row.id,
+    name: row.draft_doc.name,
+    hasKit: Boolean(row.draft_doc.kit?.shape),
+    chain: projectChainOf(row.draft_doc),
+  }));
+  const strip = ({ id, name, hasKit }: (typeof projects)[number]) => ({ id, name, hasKit });
+  const linked = projects.find((p) => p.id === launch.project_id);
+  return NextResponse.json({
+    project: linked ? strip(linked) : null,
+    candidates: projects.filter((p) => p.chain === chain).map(strip),
+  });
+}
 
 /**
  * Link, move or unlink the project of a launch after the fact (M56). Only a

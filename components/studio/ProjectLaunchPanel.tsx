@@ -56,7 +56,10 @@ export function ProjectLaunchPanel({
   }
 
   return (
-    <div className="glass mt-6 max-w-2xl rounded-2xl border border-ink-800/70 p-5">
+    <div
+      id={LAUNCH_PROJECT_COPY.panelAnchor}
+      className="glass mt-6 max-w-2xl scroll-mt-28 rounded-2xl border border-ink-800/70 p-5"
+    >
       <h3 className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.panelTitle}</h3>
       <p className="mt-1 text-xs text-ink-500">{LAUNCH_PROJECT_COPY.panelLead}</p>
 

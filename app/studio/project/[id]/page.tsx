@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { ProjectEditor } from "@/components/ideation/ProjectEditor";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
+import { ProjectHeaderActions } from "@/components/studio/ProjectHeaderActions";
 import { type PanelLaunch, ProjectLaunchPanel } from "@/components/studio/ProjectLaunchPanel";
 import { getSessionUser } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
@@ -55,6 +56,14 @@ export default async function ProjectEditorPage({
       initialSlug={row.slug}
       initialRev={row.agent_rev}
       chainLocked={chainLocked}
+      headerActions={
+        <ProjectHeaderActions
+          projectId={row.id}
+          name={row.draft_doc.name}
+          hasKit={hasKit}
+          hasLaunch={recorded.some((l) => l.project?.id === row.id)}
+        />
+      }
       linkPanel={
         <>
           <LinkPanel

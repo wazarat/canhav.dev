@@ -64,7 +64,7 @@ Every launch tool returns an error result with a retry hint when the indexer is 
 
 ### One prompt for a launch
 
-The launch success screen, the token page and each launch row in the studio carry one prompt to paste into Claude Code, the Claude desktop app or another AI IDE that speaks MCP. It adds the shared server, reads the launch by address and reports where the token stands. When the launch is linked to one of your projects, the studio version of the prompt also adds that project's server and reads the project.
+The launch success screen and each launch row in the studio carry one prompt to paste into Claude Code, the Claude desktop app or another AI IDE that speaks MCP. It adds the shared server, reads the launch by address and reports where the token stands. The account that launched a token also gets an Agent prompt button and a project link button across from the name on the token page. Other visitors see neither. When the launch is linked to one of your projects, the studio version of the prompt also adds that project's server and reads the project.
 
 A launch is linked to a project on the launch form (pick one of your projects on the same chain, or start a draft for the token), or afterwards in the studio, where the link can be changed or removed. Linking is done by the owner in the studio. An agent cannot link or unlink a launch.
 

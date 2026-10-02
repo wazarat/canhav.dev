@@ -169,6 +169,7 @@ export function ProjectEditor({
   initialRev,
   chainLocked = false,
   linkPanel,
+  headerActions,
 }: {
   id: string;
   initialDoc: ProjectDoc;
@@ -179,6 +180,8 @@ export function ProjectEditor({
   /** True once a token has launched from the project, which fixes its chain (M52). */
   chainLocked?: boolean;
   linkPanel?: React.ReactNode;
+  /** Buttons across from the project name (the agent prompt and the token link, M56). */
+  headerActions?: React.ReactNode;
 }) {
   const { doc, patch, patchSection, setDoc } = useDraftDoc(initialDoc);
   const [step, setStep] = useState(0);
@@ -313,6 +316,7 @@ export function ProjectEditor({
       steps={steps}
       current={step}
       onSelectStep={(i) => setStep(Math.max(0, Math.min(steps.length - 1, i)))}
+      headerActions={headerActions}
     >
       <div className={showRail ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]" : undefined}>
       <div>

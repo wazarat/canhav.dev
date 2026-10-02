@@ -441,6 +441,10 @@ export const LAUNCH_PROJECT_COPY = {
   change: "Change",
   failed: "The link could not be changed.",
   panelTitle: "Token launch",
+  /** Anchor the project header button scrolls to. */
+  panelAnchor: "project-launch",
+  headerLink: "Link a token",
+  headerLinked: "Token launch",
   panelLead:
     "A project can carry a launched token. Linking fixes the project to the chain the token launched on.",
   panelNone: "No token is linked to this project yet.",

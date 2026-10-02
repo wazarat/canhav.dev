@@ -28,6 +28,7 @@ export function EditorShell({
   steps,
   current,
   onSelectStep,
+  headerActions,
   children,
 }: {
   kicker: string;
@@ -45,6 +46,8 @@ export function EditorShell({
   steps: StepDef[];
   current: number;
   onSelectStep: (i: number) => void;
+  /** Buttons shown first on the right of the header, across from the name. */
+  headerActions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const isPublished =
@@ -67,6 +70,7 @@ export function EditorShell({
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {headerActions}
           <AutosaveIndicator state={saveState} />
           {isPublished && slug ? (
             <StatusChip tone="success">

@@ -43,6 +43,7 @@ export function LaunchRowActions({
   linkable,
   project,
   candidates,
+  onChanged,
 }: {
   address: string;
   name?: string;
@@ -51,6 +52,8 @@ export function LaunchRowActions({
   linkable: boolean;
   project: LaunchLinkProject | null;
   candidates: LaunchLinkProject[];
+  /** Called after the link changed, for a host that holds its own copy. */
+  onChanged?: () => void;
 }) {
   const router = useRouter();
   const [promptOpen, setPromptOpen] = useState(false);
@@ -68,6 +71,7 @@ export function LaunchRowActions({
       const { project: linked } = await patchLaunchProject(address, body);
       setPanelOpen(false);
       setChoice("");
+      onChanged?.();
       if ("createProject" in body && linked) router.push(`/studio/project/${linked.id}`);
       else router.refresh();
     } catch (e) {
