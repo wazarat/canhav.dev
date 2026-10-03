@@ -33,12 +33,39 @@ import type { useWriteContract } from "wagmi";
  */
 export const GAS_MARGIN_BPS = 12_000n;
 
+/**
+ * 200% of the latest base fee as the fee cap. A wallet left to price the
+ * transaction itself can quote a base fee that is already stale, and the node
+ * then refuses it with "max fee per gas less than block base fee" (seen on
+ * Arbitrum Sepolia, where the base fee moves between blocks). Only the real
+ * base fee is charged, so the headroom costs nothing.
+ */
+export const FEE_CAP_BPS = 20_000n;
+
 export type WriteFn = ReturnType<typeof useWriteContract>["writeContractAsync"];
 
 /** The subset of a viem public client the helper needs. */
 export interface GasClient {
   simulateContract(args: never): Promise<unknown>;
   estimateContractGas(args: never): Promise<bigint>;
+  getBlock?(): Promise<{ baseFeePerGas?: bigint | null }>;
+  estimateMaxPriorityFeePerGas?(): Promise<bigint>;
+}
+
+/** Fees read on our RPC. Empty when the chain has no base fee or the read fails, and the wallet prices it. */
+async function suggestedFees(
+  publicClient: GasClient,
+): Promise<{ maxFeePerGas: bigint; maxPriorityFeePerGas: bigint } | Record<string, never>> {
+  try {
+    const block = await publicClient.getBlock?.();
+    const baseFee = block?.baseFeePerGas;
+    if (!baseFee) return {};
+    const tip = (await publicClient.estimateMaxPriorityFeePerGas?.().catch(() => 0n)) ?? 0n;
+    return { maxFeePerGas: (baseFee * FEE_CAP_BPS) / 10_000n + tip, maxPriorityFeePerGas: tip };
+  } catch (err) {
+    console.warn("fee read failed, letting the wallet price the transaction", err);
+    return {};
+  }
 }
 
 export type TxParams<
@@ -90,7 +117,7 @@ export async function preflightWrite<
 
 /**
  * simulate + estimate on our transport, then write with an explicit gas
- * limit. Falls back to a gas-less write when estimation fails for a reason
+ * limit and fee cap. Falls back to a gas-less write when estimation fails for a reason
  * other than a revert.
  */
 export async function writeWithGas<
@@ -104,9 +131,16 @@ export async function writeWithGas<
   opts: { marginBps?: bigint } = {},
 ): Promise<Hash> {
   const call = { ...params, account } as never;
-  const [sim, est] = await Promise.allSettled([
-    publicClient.simulateContract(call),
-    publicClient.estimateContractGas(call),
+  const [sim, est, fees] = await Promise.all([
+    publicClient.simulateContract(call).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (reason: unknown) => ({ status: "rejected" as const, reason }),
+    ),
+    publicClient.estimateContractGas(call).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (reason: unknown) => ({ status: "rejected" as const, reason }),
+    ),
+    suggestedFees(publicClient),
   ]);
   if (sim.status === "rejected") {
     const revert = decodedRevert(sim.reason);
@@ -119,7 +153,7 @@ export async function writeWithGas<
   } else {
     console.warn("gas estimate failed, letting the wallet estimate", est.reason);
   }
-  return write({ ...params, ...(gas !== undefined ? { gas } : {}) } as never);
+  return write({ ...params, ...fees, ...(gas !== undefined ? { gas } : {}) } as never);
 }
 
 export type TxErrorKind =
