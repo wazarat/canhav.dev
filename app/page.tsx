@@ -43,19 +43,23 @@ export default function LandingPage() {
         <div className="container relative z-[2] flex min-h-[calc(100svh-4rem)] items-center py-16">
           <div className="max-w-2xl space-y-7 animate-fade-in-up">
             <h1
-              className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink-50 md:text-6xl"
+              className="font-display text-[clamp(1.75rem,9.5vw,2.25rem)] font-semibold leading-[1.05] tracking-tight text-ink-50 md:text-6xl"
               style={{ textShadow: "0 2px 20px rgba(4,10,20,0.35)" }}
             >
-              <span
-                className="bg-clip-text text-transparent"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(120deg,#7cb0ff 0%,#b79bff 50%,#4fe3f5 100%)",
-                }}
-              >
-                Launch with proof
+              {/* Two fixed lines at every width, so the break never falls mid-phrase. */}
+              <span className="block whitespace-nowrap">
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(120deg,#7cb0ff 0%,#b79bff 50%,#4fe3f5 100%)",
+                  }}
+                >
+                  Launch with proof
+                </span>
+                ,
               </span>
-              , not promises.
+              <span className="block">not promises.</span>
             </h1>
             <p
               className="max-w-xl text-lg leading-relaxed text-ink-50/90 md:text-xl"

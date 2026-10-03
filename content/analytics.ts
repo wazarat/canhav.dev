@@ -131,13 +131,13 @@ const ARBITRUM_STAT_QUERIES: StatQueryConfig[] = [
   {
     id: "arb-stablecoin-market-cap",
     label: "Stablecoin market cap",
-    hint: "Circulating on Arbitrum",
+    hint: "Circulating on Arbitrum One",
     provider: "llama-stablecoins",
   },
   {
     id: "arb-protocol-tvl",
     label: "Protocol TVL",
-    hint: "Across Arbitrum protocols",
+    hint: "Across Arbitrum One protocols",
     provider: "llama-chain-tvl",
   },
   {
@@ -158,14 +158,14 @@ const ARBITRUM_CHART_QUERIES: ChartQueryConfig[] = [
   {
     id: "arb-chain-tvl",
     label: "Protocol TVL",
-    description: "Value locked across Arbitrum protocols.",
+    description: "Value locked across Arbitrum One protocols.",
     unit: "usd",
     provider: "llama-chain-tvl",
   },
   {
     id: "arb-dex-volume",
     label: "DEX volume",
-    description: "Daily trading volume on Arbitrum exchanges.",
+    description: "Daily trading volume on Arbitrum One exchanges.",
     unit: "usd",
     provider: "llama-dex-volume",
   },
@@ -202,8 +202,8 @@ export const ANALYTICS_CHAINS: Record<AnalyticsChain, AnalyticsChainConfig> = {
     charts: CHART_QUERIES,
   },
   arbitrum: {
-    toggle: "Arbitrum",
-    title: "Arbitrum, live from the chain.",
+    toggle: "Arbitrum One",
+    title: "Arbitrum One, live from the chain.",
     lead: "Independent onchain reporting for Arbitrum One, from DefiLlama.",
     footnote:
       "Data is supplied by DefiLlama from indexed onchain activity on Arbitrum One. The 24h view and the volume and fee figures use the latest completed UTC day.",
