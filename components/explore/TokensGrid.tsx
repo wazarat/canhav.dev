@@ -8,7 +8,6 @@ import { LAUNCH_CURVE } from "@/content/launch";
 import { formatCount, formatPriceEth } from "@/lib/format";
 import {
   type IndexedPool,
-  curveProgressPct,
   formatSupply,
   getActiveSaleTokens,
   getCurves,
@@ -16,7 +15,6 @@ import {
   getTokensAllChains,
   indexedChains,
 } from "@/lib/indexer";
-import { hasCommitment } from "@/lib/journey";
 
 function launchedOn(blockTimestamp: string): string {
   return new Date(Number(blockTimestamp) * 1000).toLocaleDateString("en-US", {
@@ -54,7 +52,6 @@ export async function TokensGrid() {
       {tokens.map((t) => {
         const [liveSaleTokens, pools, curves] = byChain.get(t.chain ?? DEFAULT_PROJECT_CHAIN) ?? [null, null, null];
         const liveSale = liveSaleTokens?.has(t.address.toLowerCase()) ?? false;
-        const committed = hasCommitment(t.journeyHash);
         // Pools are per (token, creator) and only the creator's own pool is
         // shown, the same authorship rule the token page applies. A curve
         // launch's pool belongs to the launcher, so it is found by the id the
@@ -86,23 +83,14 @@ export async function TokensGrid() {
                 <p className="font-mono text-xs text-electric-300">${t.symbol}</p>
               </div>
               <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
-                {curve ? (
-                  <StatusChip
-                    tone={curve.graduated ? "success" : "info"}
-                    className="px-2 py-0.5 text-[11px]"
-                  >
-                    {curve.graduated
-                      ? LAUNCH_CURVE.labels.graduated
-                      : `${LAUNCH_CURVE.labels.live} ${curveProgressPct(curve)}%`}
+                {curve?.graduated ? (
+                  <StatusChip tone="success" className="px-2 py-0.5 text-[11px]">
+                    {LAUNCH_CURVE.labels.graduated}
                   </StatusChip>
                 ) : null}
                 {liveSale ? (
                   <StatusChip tone="success" className="px-2 py-0.5 text-[11px]">
                     Live sale
-                  </StatusChip>
-                ) : !committed ? (
-                  <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
-                    No commitment
                   </StatusChip>
                 ) : null}
               </div>

@@ -1069,6 +1069,14 @@ export function LaunchForm({
           devBuyWei={devBuyError ? 0n : devBuyWei}
           openingPrice={devBuyError ? null : openingPrice}
           project={project ?? null}
+          projectLabel={
+            project?.name ||
+            (pickedProject
+              ? pickedProject.name || "Untitled"
+              : startProject
+                ? LAUNCH_PARAMS.project.create
+                : LAUNCH_PARAMS.project.none)
+          }
         />
       </div>
     </div>

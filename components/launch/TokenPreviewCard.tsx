@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Globe, ImageIcon } from "lucide-react";
+import { Clock, Globe, ImageIcon, Lock, ShieldCheck } from "lucide-react";
 import { formatEther } from "viem";
 
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -17,9 +17,18 @@ import type { ProjectContext } from "@/lib/ideation";
  */
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-3">
+    <div className="flex items-center justify-between gap-3">
       <span className="shrink-0 text-ink-500">{label}</span>
-      <span className="text-right text-ink-200">{children}</span>
+      <span className="min-w-0 truncate text-right font-medium text-ink-100">{children}</span>
+    </div>
+  );
+}
+
+function Note({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="mt-0.5 shrink-0 text-ink-500">{icon}</span>
+      <p className="leading-relaxed text-ink-400">{children}</p>
     </div>
   );
 }
@@ -43,6 +52,7 @@ export function TokenPreviewCard({
   devBuyWei,
   openingPrice,
   project = null,
+  projectLabel,
 }: {
   name: string;
   ticker: string;
@@ -59,9 +69,15 @@ export function TokenPreviewCard({
   openingPrice: string | null;
   /** The studio project the launch was started from, when there is one. */
   project?: ProjectContext | null;
+  /** The linked project's name, or the words for a new draft or for none. */
+  projectLabel: string;
 }) {
   const initial = name.trim().charAt(0).toUpperCase();
   const L = LAUNCH_PARAMS.labels;
+  const S = LAUNCH_PARAMS.short;
+  const projectChips = project
+    ? [...project.sectorLabels, ...project.subsectorLabels, ...project.shapeLabels]
+    : [];
   const hasDevBuy = devBuyWei > 0n;
 
   return (
@@ -115,47 +131,56 @@ export function TokenPreviewCard({
         <p className="mt-3 text-sm text-ink-600">A short description of the token.</p>
       )}
 
-      {project ? (
-        <div className="mt-4 border-t border-ink-800/70 pt-4">
-          <p className="text-xs text-ink-500">Project</p>
-          <p className="mt-1 text-sm text-ink-100">{project.name}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {[...project.sectorLabels, ...project.subsectorLabels, ...project.shapeLabels].map((label) => (
-              <StatusChip key={label} tone="neutral" className="px-2 py-0.5 text-[11px]">
-                {label}
-              </StatusChip>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-5 space-y-2.5 border-t border-ink-800/70 pt-4 text-xs">
-        <Row label={L.totalSupply}>
-          <span className="tabular">{totalSupply.toLocaleString("en-US")}</span>
-        </Row>
-        <Row label={L.launchFee}>
-          <span className="tabular">{feeValue(launchFeeWei)}</span>
-        </Row>
-        <Row label={L.devBuy}>
-          <span className="tabular">
-            {hasDevBuy ? `${formatEther(devBuyWei)} ETH` : LAUNCH_DEV_BUY.none}
-          </span>
-        </Row>
-        <Row label={L.curveShare}>{LAUNCH_PARAMS.curveShare}</Row>
-        <Row label={L.pairedWith}>{LAUNCH_PARAMS.pairedWith}</Row>
-        <Row label={L.tradeFee}>
-          <span className="tabular">{LAUNCH_PARAMS.tradeFee}</span>
-        </Row>
-        <Row label={L.launchWindow}>{LAUNCH_PARAMS.launchWindow}</Row>
-        <Row label={L.graduation}>{LAUNCH_PARAMS.graduation}</Row>
-        <Row label={L.liquidity}>{LAUNCH_PARAMS.liquidity}</Row>
-        {hasDevBuy && openingPrice ? (
-          <Row label={L.openingPrice}>
+      <div className="mt-5 border-t border-ink-800/70 pt-4">
+        <p className="text-xs font-medium text-ink-300">{LAUNCH_PARAMS.summaryTitle}</p>
+        <div className="mt-3 space-y-2.5 text-xs">
+          <Row label={LAUNCH_PARAMS.project.label}>{projectLabel}</Row>
+          {projectChips.length > 0 ? (
+            <div className="flex flex-wrap justify-end gap-1.5">
+              {projectChips.map((label) => (
+                <StatusChip key={label} tone="neutral" className="px-2 py-0.5 text-[11px]">
+                  {label}
+                </StatusChip>
+              ))}
+            </div>
+          ) : null}
+          <Row label={L.totalSupply}>
+            <span className="tabular">{totalSupply.toLocaleString("en-US")}</span>
+          </Row>
+          <Row label={L.curveShare}>
+            <span className="tabular">{S.curveShare}</span>
+          </Row>
+          <Row label={L.pairedWith}>{LAUNCH_PARAMS.pairedWith}</Row>
+          <Row label={L.launchFee}>
+            <span className="tabular">{feeValue(launchFeeWei)}</span>
+          </Row>
+          <Row label={L.devBuy}>
             <span className="tabular">
-              {openingPrice} ETH per {ticker || "token"}
+              {hasDevBuy ? `${formatEther(devBuyWei)} ETH` : LAUNCH_DEV_BUY.none}
             </span>
           </Row>
-        ) : null}
+          {hasDevBuy && openingPrice ? (
+            <Row label={L.openingPrice}>
+              <span className="tabular">{openingPrice} ETH</span>
+            </Row>
+          ) : null}
+          <Row label={L.tradeFee}>
+            <span className="tabular">{S.tradeFee}</span>
+          </Row>
+          <Row label={L.launchWindow}>
+            <span className="tabular">{S.launchWindow}</span>
+          </Row>
+          <Row label={L.graduation}>
+            <span className="tabular">{S.graduation}</span>
+          </Row>
+          <Row label={L.liquidity}>{S.liquidity}</Row>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2.5 border-t border-ink-800/70 pt-4 text-[11px]">
+        <Note icon={<Lock className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.liquidity}</Note>
+        <Note icon={<Clock className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.window}</Note>
+        <Note icon={<ShieldCheck className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.fixed}</Note>
       </div>
     </div>
   );

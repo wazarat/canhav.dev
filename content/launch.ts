@@ -211,6 +211,21 @@ export const LAUNCH_PARAMS = {
   launchWindow: `First ${LAUNCH_CURVE.windowSeconds} seconds, ${LAUNCH_CURVE_TAX_PCT}% snipe tax on buys`,
   graduation: `At ${LAUNCH_CURVE.thresholdEth} ETH raised, the curve seeds a locked pool`,
   liquidity: "Locked forever in the pool at graduation",
+  /** The same facts in a few words, for the summary beside the launch form. The notes carry the detail. */
+  short: {
+    curveShare: `${LAUNCH_CURVE_SHARE_PCT}%`,
+    tradeFee: "0% curve, 0.30% pool",
+    launchWindow: `${LAUNCH_CURVE_TAX_PCT}% snipe tax, ${LAUNCH_CURVE.windowSeconds}s`,
+    graduation: `${LAUNCH_CURVE.thresholdEth} ETH`,
+    liquidity: "Locked",
+  },
+  summaryTitle: "Launch summary",
+  notes: {
+    liquidity: `At ${LAUNCH_CURVE.thresholdEth} ETH raised the curve seeds a pool with the rest of the supply. That liquidity is locked forever.`,
+    window: `Buys in the first ${LAUNCH_CURVE.windowSeconds} seconds pay a ${LAUNCH_CURVE_TAX_PCT}% snipe tax. Sells are never taxed.`,
+    fixed: "Name, ticker, supply and image cannot be changed after launch.",
+  },
+  project: { label: "Project", none: "None", create: "New draft" },
   labels: {
     totalSupply: "Total supply",
     launchFee: "Launch fee",
