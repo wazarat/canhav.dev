@@ -1,12 +1,6 @@
-# Litepaper
+# CanHav Litepaper
 
-**Available now.** Version 0.1, October 1, 2026. A testnet research preview by Wazarat Ali Hussain, CanHav Research.
-
-{% file src="../.gitbook/assets/CanHav_Litepaper_v0.1.pdf" %}
-Download the CanHav Litepaper v0.1 (PDF, 14 pages)
-{% endfile %}
-
-The full text is below for reading in the browser. The PDF and this page say the same thing; if they ever differ, the contracts and [Contract addresses](../token-launch/contract-addresses.md) are the source of truth.
+Version 0.1 draft, October 2026. Testnet research preview.
 
 ---
 
@@ -59,7 +53,7 @@ A project starts with a few plain sentences about the product, who it serves and
 | Credit | Lending, Fixed income, Leveraged yield | Eight shapes, including a curated lending vault, earn inside an existing app, collateral-backed loans, fixed rate yield, fixed rate savings, borrowing against fixed rate positions, leveraged fixed yield loops and yield token products |
 | Liquidity | Vaults, Pools | Five shapes, a liquidity allocator, a permissioned vault, a basic AMM pool, a concentrated liquidity pool and a pool with custom hooks |
 
-More sectors are listed as coming soon. Each shape comes with a short teaching card and worked examples, written in CanHav's own words.
+Further sectors are listed as coming soon. Each shape comes with a short teaching card and worked examples, written in CanHav's own words.
 
 ### 3.2 The research kit
 
@@ -291,11 +285,3 @@ Explorer https://arbitrum-sepolia.blockscout.com
 ---
 
 *This litepaper describes testnet software in a research preview. It is not a legal whitepaper, not an offering of any token, and not financial advice. Details may change. Numbers and addresses should always be confirmed on the contracts themselves.*
-
-## Related reading
-
-- [Welcome to CanHav](welcome-to-canhav.md)
-- [What CanHav is](what-canhav-is.md)
-- [Token Launch overview](../token-launch/overview.md)
-- [Contract addresses](../token-launch/contract-addresses.md)
-- [Risks](../token-launch/risks.md)

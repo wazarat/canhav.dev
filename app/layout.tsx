@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { AppClerkProvider } from "@/components/layout/AppClerkProvider";
 import { Background } from "@/components/layout/Background";
 import { Footer } from "@/components/layout/Footer";
@@ -78,6 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppClerkProvider>
           <Background />
           <div className="relative flex min-h-screen flex-col">
+            <AnnouncementBar />
             <Nav />
             <main className="flex-1">{children}</main>
             <Footer />
