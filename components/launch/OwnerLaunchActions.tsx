@@ -14,7 +14,7 @@ interface OwnerView {
 /**
  * The owner's controls on the token page, across from the token name (M56).
  * The agent prompt and the project link. The page itself is public and
- * session free, so this asks GET /api/launches/<address>, which answers only
+ * session free (its write controls sit behind SignInGate), so this asks GET /api/launches/<address>, which answers only
  * the account that owns the launch. The connected creator wallet whose
  * account does not own it yet gets the claim button instead (M57). Everyone
  * else sees nothing.

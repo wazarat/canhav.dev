@@ -21,8 +21,10 @@ import { TokenContextCard } from "@/components/launch/token/TokenContextCard";
 import { TradesTable } from "@/components/launch/token/TradesTable";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
 import { SaleCard } from "@/components/launch/SaleCard";
+import { SignInGate } from "@/components/launch/SignInGate";
 import { VestingCard, type LiveVesting } from "@/components/launch/VestingCard";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { AUTH_COPY } from "@/content/auth";
 import {
   LAUNCH_CURVE,
   LAUNCH_CURVE_SHARE_PCT,
@@ -426,22 +428,24 @@ export default async function TokenPage({
               ) : null}
             </div>
           ) : null}
-          {onCurve ? (
-            <CurveActions chain={chain} tokenAddress={token.address} symbol={token.symbol} />
-          ) : (
-            // While a curve is live its market is the curve, so the creator is
-            // not offered a pool. After graduation the launcher's pool is
-            // tradable by everyone, with the liquidity controls hidden.
-            <PoolActions
-              chain={chain}
-              panel
-              tokenAddress={token.address}
-              creator={token.creator}
-              symbol={token.symbol}
-              lockedLiquidity={graduated}
-              pool={actionPool}
-            />
-          )}
+          <SignInGate prompt={AUTH_COPY.actSignInHint} label={AUTH_COPY.actSignIn}>
+            {onCurve ? (
+              <CurveActions chain={chain} tokenAddress={token.address} symbol={token.symbol} />
+            ) : (
+              // While a curve is live its market is the curve, so the creator is
+              // not offered a pool. After graduation the launcher's pool is
+              // tradable by everyone, with the liquidity controls hidden.
+              <PoolActions
+                chain={chain}
+                panel
+                tokenAddress={token.address}
+                creator={token.creator}
+                symbol={token.symbol}
+                lockedLiquidity={graduated}
+                pool={actionPool}
+              />
+            )}
+          </SignInGate>
           {!onCurve && !poolLive ? (
             <p className="mt-4 text-sm text-ink-400">{TOKEN_PAGE_COPY.trade.noMarket}</p>
           ) : null}
@@ -570,29 +574,31 @@ export default async function TokenPage({
         />
       ) : null}
 
-      <SaleActions chain={chain}
-        tokenAddress={token.address}
-        creator={token.creator}
-        journeyHash={token.journeyHash}
-        symbol={token.symbol}
-        milestones={milestones}
-        sales={actionSales}
-      />
+      <SignInGate>
+        <SaleActions chain={chain}
+          tokenAddress={token.address}
+          creator={token.creator}
+          journeyHash={token.journeyHash}
+          symbol={token.symbol}
+          milestones={milestones}
+          sales={actionSales}
+        />
 
-      <EscrowActions chain={chain}
-        tokenAddress={token.address}
-        creator={token.creator}
-        journeyHash={token.journeyHash}
-        symbol={token.symbol}
-        milestones={milestones}
-        tranches={actionTranches}
-      />
+        <EscrowActions chain={chain}
+          tokenAddress={token.address}
+          creator={token.creator}
+          journeyHash={token.journeyHash}
+          symbol={token.symbol}
+          milestones={milestones}
+          tranches={actionTranches}
+        />
 
-      <MilestoneUpdateComposer chain={chain}
-        tokenAddress={token.address}
-        creator={token.creator}
-        milestoneTitles={(milestones ?? []).map((m) => m.title)}
-      />
+        <MilestoneUpdateComposer chain={chain}
+          tokenAddress={token.address}
+          creator={token.creator}
+          milestoneTitles={(milestones ?? []).map((m) => m.title)}
+        />
+      </SignInGate>
 
       <div id={TOKEN_PAGE_COPY.commitmentAnchor} className="scroll-mt-28" />
       {commitment?.source === "journey" ? (

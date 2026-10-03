@@ -7,6 +7,8 @@ import {
   type LaunchProjectOption,
   LaunchForm,
 } from "@/components/launch/LaunchForm";
+import { SignInCard } from "@/components/studio/SignInCard";
+import { AUTH_COPY } from "@/content/auth";
 import { LAUNCH_COPY, LAUNCH_FORM, MCP_CONNECT } from "@/content/launch";
 import { type ProjectChain, projectChainOf } from "@/lib/chains";
 import { designMilestones } from "@/lib/launch-commitment";
@@ -111,6 +113,11 @@ export default async function LaunchPage({
   searchParams: Promise<{ design?: string; project?: string }>;
 }) {
   const params = await searchParams;
+  // Launching is for signed-in accounts, so the launch is always tied to one.
+  const signedOut = isAuthConfigured() && !(await getSessionUser());
+  const query = new URLSearchParams(
+    Object.entries(params).filter((e): e is [string, string] => typeof e[1] === "string"),
+  ).toString();
   const { project, designId } = await loadProject(params.project);
   const { prefill, designCommitment, chain: designChain } = await loadDesign(params.design ?? designId);
   // A launch from a project, or from a design linked to one, goes on that project's chain (M54).
@@ -156,7 +163,14 @@ export default async function LaunchPage({
       </div>
 
       <div className="mt-10 md:mt-12">
-        <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} projects={projects} chain={chain} launchable={indexedChains()} />
+        {signedOut ? (
+          <>
+            <p className="mb-6 max-w-md text-sm leading-relaxed text-ink-300">{AUTH_COPY.launchSignIn}</p>
+            <SignInCard redirectTo={query ? `/launch?${query}` : "/launch"} />
+          </>
+        ) : (
+          <LaunchForm prefill={prefill} designCommitment={designCommitment} project={project} projects={projects} chain={chain} launchable={indexedChains()} />
+        )}
       </div>
     </div>
   );

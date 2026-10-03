@@ -68,7 +68,7 @@ Two buttons appear across from the token's name, only for the signed-in CanHav a
 
 Everyone else sees neither. See [Projects and launches](projects-and-launches.md) and [Markdown export and MCP](../ai/export-and-mcp.md).
 
-Separately, the wallet that created the token sees its creator actions further down the page (escrow, sales and progress updates) when the token has a commitment with milestones. Those depend on the connected wallet, not on a CanHav account.
+Separately, the wallet that created the token sees its creator actions further down the page (escrow, sales and progress updates) when the token has a commitment with milestones. Those depend on the connected wallet, and like trading they are shown only while you are signed in to a CanHav account.
 
 ## If the page cannot load the token
 

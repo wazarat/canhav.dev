@@ -52,7 +52,7 @@ The whole launch is one wallet confirmation. `msg.value` must equal the launch f
 - Your token trades on its curve until 0.1 ETH has been raised, then in the locked pool. See [Bonding curve](bonding-curve.md).
 - Tokens from the factories (v1 to v4) remain live and indexed beside curve launches.
 - Open [the token page](token-page.md), find it on [Explore](explore-tokens.md), or check the chain's explorer.
-- Launched while signed in, the token is recorded to your CanHav account. See [Projects and launches](projects-and-launches.md).
+- The token is recorded to your CanHav account. See [Projects and launches](projects-and-launches.md).
 
 ## Next
 

@@ -2,7 +2,7 @@
 
 **Available now** on Robinhood Chain Testnet and Arbitrum Sepolia.
 
-From nothing to a live, tradable testnet token in five steps. You need a browser wallet and a little testnet ETH. You do not need a CanHav account to launch.
+From nothing to a live, tradable testnet token in five steps. You need a CanHav account, a browser wallet and a little testnet ETH. Sign in first, since the launch form only opens for a signed-in account.
 
 ## 1. Get testnet ETH
 
@@ -27,7 +27,7 @@ The success screen shows the token address. **View token page** opens it at `/la
 ## What happens next
 
 - The token trades on its [bonding curve](bonding-curve.md) until 0.1 ETH has been raised, then in a pool whose liquidity is locked.
-- If you were signed in to CanHav when you launched, the launch is recorded to your account and appears in the [studio](../ideation/studio.md). From there you can [link it to a project](projects-and-launches.md) and get a prompt that lets an AI agent [read it over MCP](../ai/export-and-mcp.md).
+- The launch is recorded to your account and appears in the [studio](../ideation/studio.md). From there you can [link it to a project](projects-and-launches.md) and get a prompt that lets an AI agent [read it over MCP](../ai/export-and-mcp.md).
 - Nothing about the token can be changed after launch. See what is fixed in [The launch form](launch-form.md#fixed-at-launch).
 
 {% hint style="warning" %}

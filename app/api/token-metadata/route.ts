@@ -4,6 +4,7 @@ import { validateDescription, validateTelegram } from "@/content/launch";
 import { getDb } from "@/lib/db";
 import { hashDescription } from "@/lib/journey";
 import { putTokenMetadata } from "@/lib/token-metadata-db";
+import { authGate } from "@/lib/ideation-api";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,10 @@ export const runtime = "nodejs";
  * Idempotent: a repeat of the same (hash, creator) is a no-op.
  */
 export async function POST(req: Request) {
+  // Every write through the app needs a signed-in account.
+  const gate = await authGate();
+  if (gate instanceof NextResponse) return gate;
+
   const db = getDb();
   if (!db) {
     return NextResponse.json({ error: "Database not configured." }, { status: 503 });

@@ -7,6 +7,7 @@ import {
   validateMilestoneUpdate,
   type MilestoneUpdateDoc,
 } from "@/lib/journey";
+import { authGate } from "@/lib/ideation-api";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,10 @@ export const runtime = "nodejs";
  * Content-addressed — identical docs are a no-op.
  */
 export async function POST(req: Request) {
+  // Every write through the app needs a signed-in account.
+  const gate = await authGate();
+  if (gate instanceof NextResponse) return gate;
+
   const db = getDb();
   if (!db) {
     return NextResponse.json({ error: "Database not configured." }, { status: 503 });

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { AttachDeployFlow } from "@/components/launch/AttachDeployFlow";
+import { SignInGate } from "@/components/launch/SignInGate";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { AUTH_COPY } from "@/content/auth";
 
 // URL-only like the rest of /launch; reached from the token design editor.
 export const metadata: Metadata = {
@@ -33,7 +35,9 @@ export default async function AttachPage({
       </div>
       <div className="mt-10">
         {designId ? (
-          <AttachDeployFlow designId={designId} />
+          <SignInGate prompt={AUTH_COPY.attachSignIn}>
+            <AttachDeployFlow designId={designId} />
+          </SignInGate>
         ) : (
           <StatusChip tone="warning" variant="block">
             Missing design id. Open this page from your token design editor

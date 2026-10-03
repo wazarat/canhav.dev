@@ -9,7 +9,7 @@ import { type LaunchRow, claimLaunch, getLaunchByToken } from "@/lib/launches-db
  * Who owns a launch (M57). The account on the launches row, or any account
  * that holds the token's creator wallet as a verified wallet. The second
  * case has no time limit and is recorded the moment it is seen, so a launch
- * made while signed out is picked up once its wallet is on an account.
+ * whose link was missed is picked up once its wallet is on an account.
  */
 
 /** The launch row when the account owns the token, claiming it by wallet if needed. Null otherwise. */

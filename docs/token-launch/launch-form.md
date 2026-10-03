@@ -59,9 +59,9 @@ The review lists the token, the project when there is one, the supply and how mu
 
 After the transaction confirms you see the token address, your developer buy and opening price when you made one, the curve's progress, and links to the token page and the transaction.
 
-If you are signed in, the launch is recorded to your CanHav account, along with the project you picked or the new draft. The screen then shows a prompt you can paste into an AI IDE to read the launch over MCP. See [Markdown export and MCP](../ai/export-and-mcp.md).
+The launch is recorded to your CanHav account, along with the project you picked or the new draft. The screen then shows a prompt you can paste into an AI IDE to read the launch over MCP. See [Markdown export and MCP](../ai/export-and-mcp.md).
 
-If you are not signed in, the token is just as live and tradable. It is simply not attached to an account, so it does not appear in the studio.
+The launch form needs a signed-in account, so every launch made through it is attached to one.
 
 ## Fixed at launch
 

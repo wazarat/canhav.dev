@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 import { authGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
-import { DEFAULT_PROJECT_CHAIN, projectChainOf } from "@/lib/chains";
-import { findToken } from "@/lib/indexer";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain, projectChainOf } from "@/lib/chains";
+import { findTokenRead } from "@/lib/indexer";
 import { chainMismatch, createProjectForToken } from "@/lib/launch-project";
+import { launchFromReceipt } from "@/lib/launch-receipt";
 import { getLaunchByToken, recordLaunch } from "@/lib/launches-db";
 
 export const runtime = "nodejs";
@@ -13,10 +14,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Link a freshly launched token to the signed-in account. Trust comes from
- * the chain, not the request body: the token must already be indexed, and
- * the recorded creator is the indexed TokenLaunched creator. The client only
- * names the address. A launch older than the freshness window is refused so
- * an account cannot claim someone else's old token by address.
+ * the chain, not the request body: the launch is read from its transaction
+ * receipt, or from the indexer when no transaction is named, and the recorded
+ * creator is the TokenLaunched creator. A launch older than the freshness
+ * window is refused so an account cannot claim someone else's old token by
+ * address. Past the window the creator wallet claims it instead (M57).
  */
 const FRESH_LAUNCH_WINDOW_S = 900;
 
@@ -53,24 +55,43 @@ export async function POST(req: Request) {
   if (projectId && !project)
     return NextResponse.json({ error: "That project is not yours." }, { status: 403 });
 
-  // The indexer may lag the receipt by a block or two. Retry once. The token
-  // is looked for on every chain, so the chain comes from where it was
-  // indexed and never from the request (M54).
-  let token = await findToken(tokenAddress);
+  // The receipt is enough to prove the launch, so the link does not wait for
+  // the indexer. The chain comes from where the launch was found and never
+  // from the request (M54).
+  const receipt = txHash ? await launchFromReceipt(txHash) : null;
+  if (receipt && receipt.address !== tokenAddress)
+    return NextResponse.json({ error: "That transaction launched a different token." }, { status: 400 });
+
+  let token: { creator: string; name: string; blockTimestamp: string; chain?: ProjectChain } | null = receipt;
   if (!token) {
-    await sleep(3000);
-    token = await findToken(tokenAddress);
+    // No usable receipt. The indexer may lag by a block or two, so retry once.
+    let read = await findTokenRead(tokenAddress);
+    if (read.status !== "ok") {
+      await sleep(3000);
+      read = await findTokenRead(tokenAddress);
+    }
+    if (read.status !== "ok")
+      return NextResponse.json(
+        {
+          error:
+            read.status === "unavailable"
+              ? "The indexer is not answering. Try again shortly."
+              : "Token not indexed yet. Try again shortly.",
+          code: "not_indexed",
+        },
+        { status: 409 },
+      );
+    token = read.value;
   }
-  if (!token)
-    return NextResponse.json(
-      { error: "Token not indexed yet. Try again shortly.", code: "not_indexed" },
-      { status: 409 },
-    );
 
   const ageS = Math.floor(Date.now() / 1000) - Number(token.blockTimestamp);
   if (ageS > FRESH_LAUNCH_WINDOW_S)
     return NextResponse.json(
-      { error: "This launch is not fresh. Only a launch made moments ago can be linked." },
+      {
+        error:
+          "This launch is older than 15 minutes. Open its token page and claim it with the wallet you launched from.",
+        code: "stale",
+      },
       { status: 403 },
     );
 

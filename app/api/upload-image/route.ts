@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { keccak256 } from "viem";
 
 import { LAUNCH_FORM } from "@/content/launch";
+import { authGate } from "@/lib/ideation-api";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,10 @@ const EXT: Record<string, string> = {
  * idempotent, and nothing can be swapped after launch.
  */
 export async function POST(req: Request) {
+  // Every write through the app needs a signed-in account.
+  const gate = await authGate();
+  if (gate instanceof NextResponse) return gate;
+
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return NextResponse.json(
       {

@@ -13,12 +13,13 @@ Your CanHav account and your wallet are two different things.
 - The **wallet** signs on-chain actions: launching, buying, selling, and creator actions on a token.
 - The **account** owns your studio records: projects, token designs, and the launches recorded to it.
 
-Connecting a wallet does not sign you in, and signing in does not connect a wallet.
+Connecting a wallet does not sign you in, and signing in does not connect a wallet. On-chain actions through CanHav need both: you sign in first, then the wallet signs.
 
-A launch is recorded to your account when you launch **while signed in**. A token launched while signed out is just as live and tradable, but it is not attached to an account, so it does not appear in the studio.
+A launch is recorded to your account the moment its transaction confirms, so it appears in the studio. A token launched before sign-in was required, or one whose link did not complete, can be claimed from its token page with the wallet that created it.
 
 ## What requires an account
 
+- Launching a token, buying and selling, and creator actions on a token page (pools, sales, escrow and progress updates)
 - Creating and editing project and token design drafts in the [studio](../ideation/studio.md) (`/studio`)
 - Publishing and unpublishing those drafts
 - Linking a project to a token design
@@ -30,7 +31,7 @@ A launch is recorded to your account when you launch **while signed in**. A toke
 
 - Reading research on [canhav.com](https://canhav.com)
 - Reading published docs on [docs.canhav.com](https://docs.canhav.com)
-- Using Token Launch with a **wallet** on testnet: launching, trading, exploring, and on-chain creator actions stay wallet-based
+- Exploring launched tokens
 - Reading public token, project and token design pages (`/launch/t/...`, `/p/...`, `/t/...`)
 - Reading public data over the shared MCP server
 

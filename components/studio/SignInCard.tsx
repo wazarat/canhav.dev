@@ -12,13 +12,13 @@ import { AUTH_COPY } from "@/content/auth";
  * Clerk sign-in, hash-routed so no catch-all route is needed. Clerk reads
  * ?redirect_url= from the page URL automatically — this powers the export
  * download round-trip, and it still wins over the fallback below.
- * fallbackRedirectUrl keeps everyone else on /studio; Clerk's own default is
+ * fallbackRedirectUrl keeps everyone else on /studio (or redirectTo); Clerk's own default is
  * "/", and the nav has no Studio link until the session hydrates, so a
  * successful sign-in used to look like a failure. Email or wallet (M57): the
  * wallet buttons appear once Web3 sign-in is on in the Clerk dashboard.
  * Sign-up is open, at /sign-up.
  */
-export function SignInCard() {
+export function SignInCard({ redirectTo = "/studio" }: { redirectTo?: string }) {
   if (!isAuthConfiguredClient()) {
     return (
       <StatusChip tone="warning" variant="block">
@@ -29,7 +29,7 @@ export function SignInCard() {
   }
   return (
     <div className="max-w-md">
-      <SignIn routing="hash" signUpUrl={AUTH_COPY.signUpPath} fallbackRedirectUrl="/studio" />
+      <SignIn routing="hash" signUpUrl={AUTH_COPY.signUpPath} fallbackRedirectUrl={redirectTo} />
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <span className="text-sm text-ink-400">{AUTH_COPY.noAccount}</span>
         <Button asChild variant="outline" size="sm">

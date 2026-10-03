@@ -6,41 +6,29 @@ import { useUser } from "@clerk/nextjs";
 
 import { StatusChip } from "@/components/ui/StatusChip";
 import { isAuthConfiguredClient } from "@/components/studio/authConfig";
-import { AUTH_COPY } from "@/content/auth";
 import { LAUNCH_PROJECT_COPY } from "@/content/launch";
 
 /**
  * On the launch success screen: link the new token to the signed-in CanHav
  * account so get_my_launches can list it, and to the project picked on the
- * form, or to a new draft started for the token (M56). Best effort. Signed
- * out, it only points at sign-in. The server re-reads the token from the
- * indexer before storing anything (app/api/launches/route.ts).
+ * form, or to a new draft started for the token (M56). The server reads the
+ * launch from its transaction receipt before storing anything, so the link
+ * does not wait for the indexer (app/api/launches/route.ts).
  */
 type LinkState =
   | { kind: "idle" }
   | { kind: "linking" }
   | { kind: "linked"; project: LinkedProject | null }
-  | { kind: "failed"; message: string | null };
+  | { kind: "failed"; message: string | null; retry: boolean };
 
 export interface LinkedProject {
   id: string;
   name: string;
 }
 
-/** The indexer may lag the receipt, so "not indexed yet" is tried again. */
+/** Without a readable receipt the server falls back to the indexer, which may lag, so "not indexed yet" is tried again. */
 const INDEX_RETRIES = 4;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-function SignedOutHint() {
-  return (
-    <p className="mt-3 text-xs text-ink-500">
-      <Link href="/studio" className="text-electric-300 transition-colors hover:text-electric-200">
-        Sign in
-      </Link>{" "}
-      {AUTH_COPY.launchSignedOut}
-    </p>
-  );
-}
 
 interface LinkerProps {
   tokenAddress: string;
@@ -89,7 +77,8 @@ function Linker({ tokenAddress, txHash, projectId, projectName, createProject, o
           await sleep(4000);
           continue;
         }
-        throw new Error(json.error ?? "");
+        // Past the freshness window a retry cannot succeed. The message points at the wallet claim.
+        throw Object.assign(new Error(json.error ?? ""), { retry: json.code !== "stale" });
       }
     })()
       .then((project) => {
@@ -97,12 +86,16 @@ function Linker({ tokenAddress, txHash, projectId, projectName, createProject, o
         onLinkedRef.current?.(project);
       })
       .catch((err: unknown) =>
-        setState({ kind: "failed", message: err instanceof Error && err.message ? err.message : null }),
+        setState({
+          kind: "failed",
+          message: err instanceof Error && err.message ? err.message : null,
+          retry: (err as { retry?: boolean }).retry !== false,
+        }),
       );
   }, [isLoaded, isSignedIn, state.kind, tokenAddress, txHash, projectId, projectName, description]);
 
   if (!isLoaded) return null;
-  if (!isSignedIn) return <SignedOutHint />;
+  if (!isSignedIn) return null;
   if (state.kind === "linked") {
     const project = state.project;
     return (
@@ -128,9 +121,11 @@ function Linker({ tokenAddress, txHash, projectId, projectName, createProject, o
           {state.message ??
             "Could not link this launch to your account. It is still readable by address."}
         </StatusChip>
-        <StatusChip tone="info" variant="pill" onClick={() => setState({ kind: "idle" })}>
-          Retry
-        </StatusChip>
+        {state.retry ? (
+          <StatusChip tone="info" variant="pill" onClick={() => setState({ kind: "idle" })}>
+            Retry
+          </StatusChip>
+        ) : null}
       </div>
     );
   return <p className="mt-3 text-xs text-ink-500">Linking to your account…</p>;

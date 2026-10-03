@@ -18,5 +18,9 @@ export const AUTH_COPY = {
   claiming: "Check your wallet…",
   claimSignIn: "Sign in to claim this launch",
   claimFailed: "The wallet could not be added to your account.",
-  launchSignedOut: "with the wallet you launched from, or add it to your account, and this launch is yours in the studio.",
+  /** Every write on the launch pages needs a signed-in account. */
+  launchSignIn: "Sign in to launch a token. Your launches are kept on your account and listed in the studio.",
+  actSignIn: "Sign in to trade",
+  actSignInHint: "Trading and creator actions need a CanHav account. Reading stays open to everyone.",
+  attachSignIn: "Sign in to attach a deployed token to your design.",
 } as const;

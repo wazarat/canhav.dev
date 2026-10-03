@@ -8,7 +8,7 @@ Robinhood Chain Testnet (`46630`) and Arbitrum Sepolia (`421614`). Pick one at t
 
 ## Do I need a CanHav account to launch?
 
-No. A wallet is enough. An account matters afterwards: a launch made while signed in is recorded to your account, so it shows in the studio, can be linked to a project, and comes with a prompt for reading it over MCP. See [Clerk accounts](../accounts/clerk-accounts.md).
+Yes. The launch form opens once you are signed in, and buying, selling and creator actions on a token page need an account too. Your launch is recorded to your account, so it shows in the studio, can be linked to a project, and comes with a prompt for reading it over MCP. Reading token pages and Explore needs no account. See [Clerk accounts](../accounts/clerk-accounts.md).
 
 ## Why does my wallet show as disabled?
 
