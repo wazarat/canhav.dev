@@ -18,6 +18,10 @@ export const AUTH_COPY = {
   claiming: "Check your wallet…",
   claimSignIn: "Sign in to claim this launch",
   claimFailed: "The wallet could not be added to your account.",
+  claimWalletTaken:
+    "This wallet already belongs to another CanHav account. Sign in with the wallet itself, or remove it from that account first.",
+  claimWalletsOff: "Wallets are not switched on for accounts yet. Web3 sign-in has to be enabled in Clerk.",
+  claimCancelled: "Cancelled. Nothing was changed.",
   /** Every write on the launch pages needs a signed-in account. */
   launchSignIn: "Sign in to launch a token. Your launches are kept on your account and listed in the studio.",
   actSignIn: "Sign in to trade",

@@ -34,6 +34,12 @@ export interface MyLaunch {
   launch: IndexedToken | null;
 }
 
+/** The driver hands timestamps back as Date objects, whatever the row types say. */
+function isoTime(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString();
+  return typeof value === "string" ? value : null;
+}
+
 /** Null only when storage is unconfigured. Indexer outages leave `launch` null per row. */
 export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> {
   const [designs, firstRead, projects] = await Promise.all([
@@ -59,7 +65,7 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
       address: r.token_address,
       source: "launch",
       chain: launchRowChain(r),
-      launchedAt: r.created_at,
+      launchedAt: isoTime(r.created_at),
       creatorWallet: r.creator_address,
       launchTxHash: r.tx_hash,
       design: null,
@@ -79,7 +85,7 @@ export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> 
         address,
         source: "design",
         chain: designDeployChain(r),
-        launchedAt: r.deployed_at,
+        launchedAt: isoTime(r.deployed_at),
         creatorWallet: r.deployed_by_wallet,
         launchTxHash: null,
         design,
