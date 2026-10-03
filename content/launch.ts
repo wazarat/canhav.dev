@@ -220,6 +220,7 @@ export const LAUNCH_PARAMS = {
     liquidity: "Locked",
   },
   summaryTitle: "Launch summary",
+  notesTitle: "How this works",
   notes: {
     liquidity: `At ${LAUNCH_CURVE.thresholdEth} ETH raised the curve seeds a pool with the rest of the supply. That liquidity is locked forever.`,
     window: `Buys in the first ${LAUNCH_CURVE.windowSeconds} seconds pay a ${LAUNCH_CURVE_TAX_PCT}% snipe tax. Sells are never taxed.`,

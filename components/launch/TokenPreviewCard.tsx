@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Clock, Globe, ImageIcon, Lock, ShieldCheck } from "lucide-react";
+import { ChevronDown, Clock, Globe, ImageIcon, Lock, ShieldCheck } from "lucide-react";
 import { formatEther } from "viem";
 
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -177,11 +177,17 @@ export function TokenPreviewCard({
         </div>
       </div>
 
-      <div className="mt-4 space-y-2.5 border-t border-ink-800/70 pt-4 text-[11px]">
-        <Note icon={<Lock className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.liquidity}</Note>
-        <Note icon={<Clock className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.window}</Note>
-        <Note icon={<ShieldCheck className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.fixed}</Note>
-      </div>
+      <details className="group mt-4 border-t border-ink-800/70 pt-3 text-[11px]">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-xs text-ink-400 transition-colors hover:text-ink-200 [&::-webkit-details-marker]:hidden">
+          {LAUNCH_PARAMS.notesTitle}
+          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-3 space-y-2.5">
+          <Note icon={<Lock className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.liquidity}</Note>
+          <Note icon={<Clock className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.window}</Note>
+          <Note icon={<ShieldCheck className="h-3.5 w-3.5" />}>{LAUNCH_PARAMS.notes.fixed}</Note>
+        </div>
+      </details>
     </div>
   );
 }

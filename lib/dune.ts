@@ -1,12 +1,11 @@
 import "server-only";
 
 import {
-  CHART_QUERIES,
+  ANALYTICS_CHAINS,
   FALLBACK_SERIES,
   FALLBACK_STATS,
-  LLAMA_CHAIN_SLUG,
   SNAPSHOT_DATE,
-  STAT_QUERIES,
+  type AnalyticsChain,
   type ChartQueryConfig,
   type StatQueryConfig,
 } from "@/content/analytics";
@@ -78,9 +77,9 @@ async function fetchDuneRows(queryId: number, limit: number) {
 }
 
 /** DefiLlama chain TVL history: [{date: unixSeconds, tvl}] */
-async function fetchLlamaChainTvl(): Promise<{ points: SeriesPoint[]; asOf: string }> {
+async function fetchLlamaChainTvl(slug: string): Promise<{ points: SeriesPoint[]; asOf: string }> {
   const res = await fetch(
-    `https://api.llama.fi/v2/historicalChainTvl/${encodeURIComponent(LLAMA_CHAIN_SLUG)}`,
+    `https://api.llama.fi/v2/historicalChainTvl/${encodeURIComponent(slug)}`,
     { next: { revalidate: REVALIDATE_SECONDS } },
   );
   if (!res.ok) throw new Error(`DefiLlama chain TVL responded ${res.status}`);
@@ -94,9 +93,9 @@ async function fetchLlamaChainTvl(): Promise<{ points: SeriesPoint[]; asOf: stri
 }
 
 /** DefiLlama stablecoin circulating history for the chain. */
-async function fetchLlamaStablecoins(): Promise<{ points: SeriesPoint[]; asOf: string }> {
+async function fetchLlamaStablecoins(slug: string): Promise<{ points: SeriesPoint[]; asOf: string }> {
   const res = await fetch(
-    `https://stablecoins.llama.fi/stablecoincharts/${encodeURIComponent(LLAMA_CHAIN_SLUG)}`,
+    `https://stablecoins.llama.fi/stablecoincharts/${encodeURIComponent(slug)}`,
     { next: { revalidate: REVALIDATE_SECONDS } },
   );
   if (!res.ok) throw new Error(`DefiLlama stablecoins responded ${res.status}`);
@@ -113,6 +112,26 @@ async function fetchLlamaStablecoins(): Promise<{ points: SeriesPoint[]; asOf: s
     .sort((a, b) => (a.date < b.date ? -1 : 1));
   if (points.length === 0) throw new Error("DefiLlama stablecoins returned no points");
   return { points, asOf: new Date().toISOString() };
+}
+
+/** DefiLlama daily totals for a chain, DEX volume or fees: totalDataChart is [[unixSeconds, usd]]. */
+async function fetchLlamaDailyTotals(
+  kind: "dexs" | "fees",
+  slug: string,
+): Promise<{ points: SeriesPoint[]; asOf: string }> {
+  const res = await fetch(
+    `https://api.llama.fi/overview/${kind}/${encodeURIComponent(slug)}?excludeTotalDataChartBreakdown=true&excludeTotalDataChart=false`,
+    { next: { revalidate: REVALIDATE_SECONDS } },
+  );
+  if (!res.ok) throw new Error(`DefiLlama ${kind} responded ${res.status}`);
+  const json = (await res.json()) as { totalDataChart?: Array<[number, number]> };
+  const points = (json.totalDataChart ?? [])
+    .filter((p) => Number.isFinite(p[1]))
+    .map((p) => ({ date: new Date(p[0] * 1000).toISOString().slice(0, 10), value: p[1] }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (points.length === 0) throw new Error(`DefiLlama ${kind} returned no points`);
+  // A daily flow, so the partial current day would read as a collapse.
+  return { points: dropPartialToday(points), asOf: new Date().toISOString() };
 }
 
 // ---------------------------------------------------------------------------
@@ -199,13 +218,15 @@ function statFromSeries(config: StatQueryConfig, points: SeriesPoint[], asOf: st
 }
 
 function statFromSnapshot(config: StatQueryConfig): StatMetric {
-  const value = FALLBACK_STATS[config.id] ?? 0;
+  const known = FALLBACK_STATS[config.id];
+  const value = known ?? 0;
   return {
     id: config.id,
     label: config.label,
     hint: config.hint,
     value,
-    formatted: formatUsdCompact(value),
+    // No committed figure means no figure, never a zero.
+    formatted: known === undefined ? "n/a" : formatUsdCompact(value),
     change24hPct: null,
     asOf: SNAPSHOT_DATE,
     source: "snapshot",
@@ -245,12 +266,19 @@ function chartFromSnapshot(config: ChartQueryConfig): ChartMetric {
   };
 }
 
-async function seriesForProvider(config: StatQueryConfig | ChartQueryConfig): Promise<{ points: SeriesPoint[]; asOf: string }> {
+async function seriesForProvider(
+  config: StatQueryConfig | ChartQueryConfig,
+  slug: string,
+): Promise<{ points: SeriesPoint[]; asOf: string }> {
   switch (config.provider) {
     case "llama-chain-tvl":
-      return fetchLlamaChainTvl();
+      return fetchLlamaChainTvl(slug);
     case "llama-stablecoins":
-      return fetchLlamaStablecoins();
+      return fetchLlamaStablecoins(slug);
+    case "llama-dex-volume":
+      return fetchLlamaDailyTotals("dexs", slug);
+    case "llama-fees":
+      return fetchLlamaDailyTotals("fees", slug);
     case "dune": {
       if (!config.queryId) throw new Error(`${config.id}: dune provider requires queryId`);
       const { rows, asOf } = await fetchDuneRows(config.queryId, 1000);
@@ -269,16 +297,17 @@ async function seriesForProvider(config: StatQueryConfig | ChartQueryConfig): Pr
  * Fetches all analytics in parallel. Never throws: each metric that fails
  * falls back to the committed snapshot individually.
  */
-export async function getAnalytics(): Promise<AnalyticsData> {
+export async function getAnalytics(chain: AnalyticsChain = "robinhood"): Promise<AnalyticsData> {
+  const { stats: STAT_QUERIES, charts: CHART_QUERIES, llamaSlug } = ANALYTICS_CHAINS[chain];
   const statResults = await Promise.allSettled(
     STAT_QUERIES.map(async (config) => {
-      const { points, asOf } = await seriesForProvider(config);
+      const { points, asOf } = await seriesForProvider(config, llamaSlug);
       return statFromSeries(config, points, asOf);
     }),
   );
   const chartResults = await Promise.allSettled(
     CHART_QUERIES.map(async (config) => {
-      const { points, asOf } = await seriesForProvider(config);
+      const { points, asOf } = await seriesForProvider(config, llamaSlug);
       return chartFromSeries(config, points, asOf);
     }),
   );

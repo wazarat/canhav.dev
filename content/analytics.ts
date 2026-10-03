@@ -9,15 +9,21 @@
  *                        so we use public community queries instead.)
  * - "llama-chain-tvl":   DefiLlama chain TVL history (free, keyless).
  * - "llama-stablecoins": DefiLlama stablecoin circulating supply history.
+ * - "llama-dex-volume":  DefiLlama daily DEX volume on the chain.
+ * - "llama-fees":        DefiLlama daily fees paid on the chain.
  * - "snapshot":          no public live source; committed value below.
  */
 
 export const DUNE_DASHBOARD_URL =
   "https://dune.com/entropy_advisors/robinhood-chain-network-overview";
 
-export const LLAMA_CHAIN_SLUG = "Robinhood Chain";
-
-export type MetricProvider = "dune" | "llama-chain-tvl" | "llama-stablecoins" | "snapshot";
+export type MetricProvider =
+  | "dune"
+  | "llama-chain-tvl"
+  | "llama-stablecoins"
+  | "llama-dex-volume"
+  | "llama-fees"
+  | "snapshot";
 
 export interface StatQueryConfig {
   id: string;
@@ -114,3 +120,99 @@ export const FALLBACK_SERIES: Record<string, Array<{ date: string; value: number
   transactions: [],
   "chain-tvl": [],
 };
+
+/**
+ * Arbitrum One, every figure live from DefiLlama. The two Robinhood counters
+ * that come from a private dashboard have no public equivalent here, so the
+ * strip shows DEX volume and fees instead. No committed fallback: a metric
+ * that cannot be fetched reads "n/a".
+ */
+const ARBITRUM_STAT_QUERIES: StatQueryConfig[] = [
+  {
+    id: "arb-stablecoin-market-cap",
+    label: "Stablecoin market cap",
+    hint: "Circulating on Arbitrum",
+    provider: "llama-stablecoins",
+  },
+  {
+    id: "arb-protocol-tvl",
+    label: "Protocol TVL",
+    hint: "Across Arbitrum protocols",
+    provider: "llama-chain-tvl",
+  },
+  {
+    id: "arb-dex-volume",
+    label: "DEX volume",
+    hint: "Latest completed day",
+    provider: "llama-dex-volume",
+  },
+  {
+    id: "arb-fees",
+    label: "Fees paid",
+    hint: "Latest completed day",
+    provider: "llama-fees",
+  },
+];
+
+const ARBITRUM_CHART_QUERIES: ChartQueryConfig[] = [
+  {
+    id: "arb-chain-tvl",
+    label: "Protocol TVL",
+    description: "Value locked across Arbitrum protocols.",
+    unit: "usd",
+    provider: "llama-chain-tvl",
+  },
+  {
+    id: "arb-dex-volume",
+    label: "DEX volume",
+    description: "Daily trading volume on Arbitrum exchanges.",
+    unit: "usd",
+    provider: "llama-dex-volume",
+  },
+];
+
+export type AnalyticsChain = "robinhood" | "arbitrum";
+
+export interface AnalyticsChainConfig {
+  /** The pill on the chain toggle. */
+  toggle: string;
+  title: string;
+  lead: string;
+  footnote: string;
+  /** DefiLlama's name for the chain. */
+  llamaSlug: string;
+  sourceUrl: string;
+  sourceLabel: string;
+  stats: StatQueryConfig[];
+  charts: ChartQueryConfig[];
+}
+
+/** The chains the landing page analytics can show, Robinhood first. */
+export const ANALYTICS_CHAINS: Record<AnalyticsChain, AnalyticsChainConfig> = {
+  robinhood: {
+    toggle: "Robinhood Chain",
+    title: "Robinhood Chain, live from the chain.",
+    lead: "Independent onchain reporting for Robinhood Chain, indexed by Dune.",
+    footnote:
+      "Data is supplied by Dune and DefiLlama from indexed onchain activity. The 24h view uses the latest completed UTC day. Asset market cap and tokenized value are periodic snapshots from the Entropy Advisors dashboard.",
+    llamaSlug: "Robinhood Chain",
+    sourceUrl: DUNE_DASHBOARD_URL,
+    sourceLabel: "View on Dune",
+    stats: STAT_QUERIES,
+    charts: CHART_QUERIES,
+  },
+  arbitrum: {
+    toggle: "Arbitrum",
+    title: "Arbitrum, live from the chain.",
+    lead: "Independent onchain reporting for Arbitrum One, from DefiLlama.",
+    footnote:
+      "Data is supplied by DefiLlama from indexed onchain activity on Arbitrum One. The 24h view and the volume and fee figures use the latest completed UTC day.",
+    llamaSlug: "Arbitrum",
+    sourceUrl: "https://defillama.com/chain/arbitrum",
+    sourceLabel: "View on DefiLlama",
+    stats: ARBITRUM_STAT_QUERIES,
+    charts: ARBITRUM_CHART_QUERIES,
+  },
+};
+
+export const ANALYTICS_CHAIN_KEYS = Object.keys(ANALYTICS_CHAINS) as AnalyticsChain[];

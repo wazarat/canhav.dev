@@ -46,7 +46,6 @@ export default function LandingPage() {
               className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink-50 md:text-6xl"
               style={{ textShadow: "0 2px 20px rgba(4,10,20,0.35)" }}
             >
-              Where token launches get{" "}
               <span
                 className="bg-clip-text text-transparent"
                 style={{
@@ -54,9 +53,9 @@ export default function LandingPage() {
                     "linear-gradient(120deg,#7cb0ff 0%,#b79bff 50%,#4fe3f5 100%)",
                 }}
               >
-                real scrutiny
+                Launch with proof
               </span>
-              {" "}before they get a market.
+              , not promises.
             </h1>
             <p
               className="max-w-xl text-lg leading-relaxed text-ink-50/90 md:text-xl"
@@ -79,7 +78,7 @@ export default function LandingPage() {
       </section>
 
       <div className="container space-y-16 py-14 md:py-20">
-        {/* Robinhood Chain protocol analytics, sourced from Dune */}
+        {/* Protocol analytics for Robinhood Chain and Arbitrum, from Dune and DefiLlama */}
         <AnalyticsSection />
 
         <BuiltForBuilders />

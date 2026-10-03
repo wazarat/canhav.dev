@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { BarChart } from "@/components/ui/BarChart";
 import { buttonClasses } from "@/components/ui/Button";
-import { DUNE_DASHBOARD_URL } from "@/content/analytics";
+import { ANALYTICS_CHAINS, ANALYTICS_CHAIN_KEYS, type AnalyticsChain } from "@/content/analytics";
 import type { AnalyticsData, ChartMetric } from "@/lib/dune";
 import { formatAsOf, formatDayShort, formatPct, formatUnit } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -77,7 +77,31 @@ function ChartCard({ metric }: { metric: ChartMetric }) {
   );
 }
 
-export function AnalyticsView({ data }: { data: AnalyticsData }) {
+function ChainToggle({ chain, onChange }: { chain: AnalyticsChain; onChange: (c: AnalyticsChain) => void }) {
+  return (
+    <div className="glass inline-flex rounded-full p-0.5" role="group" aria-label="Chain">
+      {ANALYTICS_CHAIN_KEYS.map((c) => (
+        <button
+          key={c}
+          type="button"
+          aria-pressed={chain === c}
+          onClick={() => onChange(c)}
+          className={cn(
+            "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
+            chain === c ? "bg-electric-500/25 text-ink-50" : "text-ink-300 hover:text-ink-100",
+          )}
+        >
+          {ANALYTICS_CHAINS[c].toggle}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function AnalyticsView({ chains }: { chains: Record<AnalyticsChain, AnalyticsData> }) {
+  const [chain, setChain] = useState<AnalyticsChain>("robinhood");
+  const data = chains[chain];
+  const copy = ANALYTICS_CHAINS[chain];
   const latestCompleteDay = data.charts.find((c) => c.daily14.length > 0)?.daily14.at(-1)?.date;
   const caption = data.updatedAt
     ? `Updated ${formatAsOf(data.updatedAt)}${latestCompleteDay ? `, latest complete day ${formatDayShort(latestCompleteDay)} UTC` : ""}`
@@ -91,21 +115,22 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
           <div className="max-w-xl space-y-2">
             <p className="kicker">Protocol analytics</p>
             <h2 className="font-display text-3xl font-semibold tracking-tight text-ink-50">
-              Robinhood Chain, live from the chain.
+              {copy.title}
             </h2>
             <p className="text-sm leading-relaxed text-ink-300">
-              Independent onchain reporting for Robinhood Chain, indexed by Dune.
+              {copy.lead}
             </p>
             <p className="pt-1 font-mono text-[11px] text-ink-400">{caption}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <ChainToggle chain={chain} onChange={setChain} />
             <a
-              href={DUNE_DASHBOARD_URL}
+              href={copy.sourceUrl}
               target="_blank"
               rel="noreferrer"
               className={buttonClasses({ variant: "primary", size: "sm" })}
             >
-              View on Dune
+              {copy.sourceLabel}
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           </div>
@@ -127,9 +152,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
         </div>
 
         <p className="mt-4 text-xs leading-relaxed text-ink-500">
-          Data is supplied by Dune and DefiLlama from indexed onchain activity. The 24h
-          view uses the latest completed UTC day. Asset market cap and tokenized value
-          are periodic snapshots from the Entropy Advisors dashboard.
+          {copy.footnote}
         </p>
       </div>
 
