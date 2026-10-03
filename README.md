@@ -1,10 +1,45 @@
+<p align="center">
+  <img src=".github/banner.webp" alt="CanHav Research. From idea to a live token, with agents built in. Arbitrum Open House Singapore Buildathon." width="100%" />
+</p>
+
 # canhav.dev
 
-Marketing site plus the CanHav launchpad: token launches on Robinhood Chain
-testnet (`/launch`), the two-track ideation studio (`/studio` → public pages
-at `/p/[slug]` and `/t/[slug]`), markdown export, and a remote MCP server
-(`/mcp`) exposing a user's own designs to Claude Code, Cursor, and other MCP
-clients.
+CanHav takes a builder from an idea to a live token, with agents built in.
+Live at [canhav.com](https://www.canhav.com), docs at
+[docs.canhav.com](https://docs.canhav.com).
+
+- **Token launch** (`/launch`). One transaction puts a token on a bonding
+  curve, on Robinhood Chain Testnet (46630) or Arbitrum Sepolia (421614). At
+  0.1 ETH raised the curve seeds a pool whose liquidity is locked forever. A
+  launch can carry an on-chain commitment with dated milestones, which opens
+  milestone escrow, allocation sales and anchored progress updates.
+- **Explore** (`/explore`). Every launched token and every published project.
+  Each token has a public page with its curve or pool, trades and commitment.
+- **Studio** (`/studio`). Projects and token designs, drafted and published to
+  public pages at `/p/[slug]` and `/t/[slug]`. A project picks its chain,
+  sectors and product shapes, and gets a resource pack, build steps and
+  pre-launch review passes for them. Your launches are listed here.
+- **Agents** (`/mcp`). A remote MCP server any MCP client can connect to
+  (Claude Code, Cursor and others). Reading launches needs no sign-in. Every
+  project also has its own server at `/mcp/p/<project id>`, where an agent can
+  read the project and propose or write changes to its draft, as the owner
+  chooses. Agents never publish.
+- **Accounts**. Clerk, by email or wallet. Launching, trading and creator
+  actions through the app need a signed-in account, and a launch is tied to
+  that account from its transaction receipt. A wallet added to an account
+  brings every launch it made with it.
+
+## Repository layout
+
+| Path | What it is |
+| --- | --- |
+| `app/`, `components/`, `content/`, `lib/` | The Next.js app (app router, Tailwind) |
+| `contracts/` | Foundry contracts and deployment records for both chains |
+| `indexer/` | Ponder indexer for launches, run once per chain (Fly configs included) |
+| `indexer-agents/` | Indexer for the unlinked `/agents` track |
+| `docs/` | Source of docs.canhav.com, including the litepaper |
+| `public/kits/` | Kit files for credit and liquidity builders, served raw |
+| `scripts/` | Database setup and checks |
 
 ## Develop
 
@@ -23,10 +58,11 @@ Vercel values with `npx vercel env pull .env.local --environment=preview`.
 | Variable | Powers |
 | --- | --- |
 | `DATABASE_URL` | Neon Postgres — journeys + ideation records (`launchpad` schema only; one-time setup `node --env-file=.env.local scripts/db-setup.mjs`) |
-| `INDEXER_URL` | Launch indexer (Ponder, `indexer/`; deploy config in `indexer/fly.toml`) |
-| `INDEXER_URL_ARBITRUM_SEPOLIA` | The same indexer run a second time with `PONDER_CHAIN=arbitrum_sepolia`. Unset until the contracts are deployed on Arbitrum Sepolia |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Clerk accounts for `/studio`, export downloads, and the MCP server |
+| `INDEXER_URL` | Launch indexer for Robinhood Chain Testnet (Ponder, `indexer/`; deploy config in `indexer/fly.toml`) |
+| `INDEXER_URL_ARBITRUM_SEPOLIA` | The same indexer run a second time with `PONDER_CHAIN=arbitrum_sepolia` (`indexer/fly.arbitrum.toml`). Arbitrum launches are offered only when this is set |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Clerk accounts for `/studio`, `/launch`, the write controls on token pages, export downloads, and the MCP server |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token images |
+| `RESEND_API_KEY`, `LEADS_NOTIFY_EMAIL`, `LEADS_FROM_EMAIL` | Email notice for `/api/leads`. The row is stored in Neon either way |
 | `DUNE_API_KEY` | Landing-page protocol analytics |
 | `AGENTS_INDEXER_URL`, `AGENTS_RPC_URL`, `NEXT_PUBLIC_AGENTS_*` | Hidden `/agents` track (Base Sepolia) |
 
@@ -35,21 +71,25 @@ Vercel values with `npx vercel env pull .env.local --environment=preview`.
 Auth lives in Clerk; all data stays in Neon (`owner_id` columns store the
 Clerk user id — no FK, no user data mirrored). One-time dashboard steps:
 
-1. Create an application at clerk.com with email sign-in enabled.
+1. Create an application at clerk.com with email sign-in enabled and sign-up
+   set to public.
 2. Copy the publishable + secret keys into `.env.local` and Vercel (all
    environments).
 3. For the MCP server: **OAuth applications → enable "Dynamic client
    registration"** so MCP clients can self-register.
-4. Optional: add a session-token custom claim
+4. For wallet ownership of launches: **User & authentication → Web3 → enable
+   MetaMask** (others optional). Without it a wallet cannot be added to an
+   account, and "Claim with this wallet" on a token page fails.
+5. Optional: add a session-token custom claim
    `{"email": "{{user.primary_email_address}}"}` — saves a Backend API call
    on every authenticated request.
 
 ## Edit the content
 
 - **Copy that appears in more than one place + summary stats**: `content/site.ts`
-- **Product-line cards** (title, description, tags, badge, graphic): `content/product-lines.ts`
+- **Product-line cards** (title, description, tags, badge, graphic): `content/product-lines.ts`. Not on the landing page today, kept for a later section
 - **Hero headline & subline**: `app/page.tsx`
-- **Section copy**: `components/home/ProductLines.tsx`, `components/home/BuiltForBuilders.tsx`
+- **Section copy**: `components/home/BuiltForBuilders.tsx`, `components/home/BuildWithUsCards.tsx`
 - **Launchpad + ideation copy/limits**: `content/launch.ts`, `content/ideation.ts` (limits live in `lib/journey.ts` / `lib/ideation.ts`)
 - **Contact form**: `components/home/ContactModal.tsx`, posts to `/api/leads` (Neon + Resend)
 - **Sign up and log in copy**: `content/auth.ts`. Sign-up lives at `/sign-up`, log in at `/studio`
@@ -58,7 +98,9 @@ Clerk user id — no FK, no user data mirrored). One-time dashboard steps:
 
 Push to a Git repo and import into Vercel, or run `vercel` from this
 directory. The site builds and runs with no environment variables — features
-light up as their variables are added.
+light up as their variables are added. The indexers deploy to Fly from
+`indexer/` (see `indexer/README.md`), and contracts deploy with the Foundry
+scripts in `contracts/script`.
 
 ## Arbitrum Open House Singapore Buildathon Work
 
@@ -418,5 +460,32 @@ event window so judges can verify it.
   One script deploys the whole contract set on Arbitrum Sepolia, and the
   indexer runs a second time for it. Launches there open once that
   deployment is recorded.
+- Oct 2, 2026. Arbitrum Sepolia is live. The whole contract set is deployed
+  there in one broadcast, recorded under `contracts/broadcast`, its indexer
+  runs beside the Robinhood one, and the launch form offers both chains.
+- Oct 2, 2026. Launch to project linking. The launch form can link the token
+  to one of your projects or start a draft project for it, and the success
+  screen and the token page give the owner one prompt to paste into an agent.
+- Oct 2, 2026. Wallet identity. A token belongs to the account that holds its
+  creator wallet. Adding the wallet to an account, from the token page or the
+  studio, brings every launch it made, whenever it was launched.
+- Oct 2, 2026. Token page in a market layout. The trade panel sits beside the
+  price, market cap, chart and recent trades, with the project, commitment and
+  fees in one card above.
+- Oct 2, 2026. Docs pass. Token Launch, projects and MCP pages on
+  docs.canhav.com match what the platform does on both chains.
+- Oct 3, 2026. Litepaper v0.1 on the docs, as a page and a PDF.
+- Oct 3, 2026. Sign-in on every write. The launch form, trading and creator
+  actions on a token page, and the APIs behind them need a signed-in account.
+  Reading stays open. The contracts stay permissionless.
+- Oct 3, 2026. Launches link from the receipt. A new launch is tied to its
+  account from the transaction receipt, with no wait for the indexer, so it
+  shows in the studio straight away.
+- Oct 3, 2026. Fee cap on Arbitrum. Launch and curve trades send a fee cap
+  read from CanHav's own RPC, after a wallet's stale quote was refused by the
+  network.
+- Oct 3, 2026. Shorter launch summary. The card beside the launch form shows
+  each parameter in a few words, says whether a project is linked, and keeps
+  the detail in three notes. Explore cards drop two chips.
 
 This list grows as work lands on the branch.
