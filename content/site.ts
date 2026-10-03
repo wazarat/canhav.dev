@@ -21,20 +21,3 @@ export const NAV_LINKS: ReadonlyArray<{ label: string; href: string; soon?: bool
   { label: "Explore", href: "/explore" },
   { label: "Docs", href: SITE.docsUrl },
 ];
-
-/**
- * The dismissible strip above the nav. Bump `id` for a new announcement so
- * visitors who closed the last one see it again; set it to null to hide the
- * strip everywhere.
- */
-export const ANNOUNCEMENT: {
-  id: string;
-  text: string;
-  linkLabel: string;
-  href: string;
-} | null = {
-  id: "litepaper-v0.1",
-  text: "The CanHav Litepaper v0.1 is out.",
-  linkLabel: "Click here",
-  href: `${SITE.docsUrl}/getting-started/litepaper`,
-};
