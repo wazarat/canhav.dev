@@ -1,8 +1,7 @@
+# CanHav Research - Arbitrum Founder House Singapore Online Buildathon
 <p align="center">
   <img src=".github/banner.webp" alt="CanHav Research. From idea to a live token, with agents built in. Arbitrum Open House Singapore Buildathon." width="100%" />
 </p>
-
-# canhav.dev
 
 CanHav takes a builder from an idea to a live token, with agents built in.
 Live at [canhav.com](https://www.canhav.com), docs at
