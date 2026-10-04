@@ -874,6 +874,11 @@ export function missingFamilies(shape: ProductShape, rows: EnvironmentRows): Fam
   });
 }
 
+/** True when every given family is officially listed on the mainnet these rows describe. A manifest alone does not count. */
+export function familiesOnMainnet(families: readonly FamilyEnvironment["family"][], rows: EnvironmentRows): boolean {
+  return families.length > 0 && families.every((f) => rows[f]?.mainnet.status === "official");
+}
+
 /** True when every family the shape relies on runs on the testnet these rows describe. */
 export function shapeRunsOnTestnet(shape: ProductShape, rows: EnvironmentRows): boolean {
   return missingFamilies(shape, rows).length === 0;

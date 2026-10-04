@@ -90,6 +90,7 @@ import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import {
   KIT_LIMITS,
   type ProductShape,
+  familiesOnMainnet,
   missingFamilies,
   shapesFor,
   reviewPassesFor,
@@ -236,25 +237,34 @@ export function ProjectEditor({
       .find((prev) => sectorOfSubsector(prev) !== sectorOfSubsector(sub) && overlappingSubsectors(prev).includes(sub));
     return because ? [SECTOR_COPY.overlapHint(subsectorLabel(sub), subsectorLabel(because))] : [];
   });
+  /** Names the protocols missing on this testnet, and the mainnet when they all run there. */
+  const gateNote = (missing: ReturnType<typeof missingFamilies>) =>
+    GATE_COPY.chipSuffix(
+      missing.map((f) => FAMILY_LABELS[f]),
+      chain.short,
+      familiesOnMainnet(missing, envRows) ? chain.mainnetName : null,
+    );
   const subsectorGroups = sectors
     .filter((sec) => subsectorOptionsFor(sec).length > 0)
     .map((sec) => ({
       key: sec,
       heading: SECTOR_OPTIONS.find((o) => o.value === sec)?.title ?? optionLabel(SECTOR_OPTIONS, sec),
       // A subsector whose every shape lacks a protocol on this testnet carries a note, and stays pickable (M52).
-      options: subsectorOptionsFor(sec).map((o): ChipOption<Subsector> =>
-        shapesFor([o.value]).every((s) => missingFamilies(s, envRows).length > 0)
-          ? { ...o, note: GATE_COPY.chipSuffix(chain.short) }
-          : o,
-      ),
+      options: subsectorOptionsFor(sec).map((o): ChipOption<Subsector> => {
+        const shapes = shapesFor([o.value]);
+        return shapes.every((s) => missingFamilies(s, envRows).length > 0)
+          ? { ...o, note: gateNote([...new Set(shapes.flatMap((s) => missingFamilies(s, envRows)))]) }
+          : o;
+      }),
     }));
   const subsectorGated = subsectorGroups.some((g) => g.options.some((o) => o.note));
   const shapeGroups = shapeGroupsFor(subsectors).map((g) => ({
     key: g.subsector,
     heading: g.heading,
-    options: g.options.map((o): ChipOption<ProductShape> =>
-      missingFamilies(o.value, envRows).length > 0 ? { ...o, note: GATE_COPY.chipSuffix(chain.short) } : o,
-    ),
+    options: g.options.map((o): ChipOption<ProductShape> => {
+      const missing = missingFamilies(o.value, envRows);
+      return missing.length > 0 ? { ...o, note: gateNote(missing) } : o;
+    }),
   }));
   const shapeGated = shapeGroups.some((g) => g.options.some((o) => o.note));
   const audience = docAudience(doc);

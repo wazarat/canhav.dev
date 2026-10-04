@@ -251,9 +251,15 @@ export function shapeExamples(shape: ProductShape | ""): readonly string[] {
  * steps that fit.
  */
 export const GATE_COPY = {
-  chipSuffix: (chain: string) => `Not on ${chain} yet`,
+  /** `mainnet` is the mainnet's name when every missing family runs there, otherwise null. */
+  chipSuffix: (families: readonly string[], chain: string, mainnet: string | null) => {
+    const one = families.length === 1;
+    return mainnet
+      ? `${joinAnd(families)} ${one ? "runs" : "run"} on ${mainnet} but ${one ? "has" : "have"} no ${chain} deployment yet`
+      : `${joinAnd(families)} ${one ? "has" : "have"} no ${chain} deployment yet`;
+  },
   note: (chain: string) =>
-    `Marked options rely on a protocol with no deployment on ${chain}. You can still build them, with build steps you or your agent write to fit.`,
+    `Marked options rely on a protocol with no deployment on ${chain}, the testnet this project builds on. You can still build them against mocks or a fork of mainnet, with build steps you or your agent write to fit.`,
   section: (families: readonly string[], chain: string) =>
     `${joinAnd(families)} ${families.length === 1 ? "has" : "have"} no deployment on ${chain} yet. Remove the steps that do not fit and add your own below, or ask your agent to write them. Work against mocks, your own deployment or a fork of mainnet until one lands.`,
   catalogRule:

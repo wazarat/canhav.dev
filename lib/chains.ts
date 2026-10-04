@@ -18,6 +18,8 @@ export interface ProjectChainInfo {
   chainId: number;
   /** The mainnet the testnet stands in for. */
   mainnetChainId: number;
+  /** Name of that mainnet, for notes. */
+  mainnetName: string;
   name: string;
   /** Short name for chips and notes. */
   short: string;
@@ -30,6 +32,7 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     key: "robinhood_testnet",
     chainId: 46630,
     mainnetChainId: 4663,
+    mainnetName: "Robinhood Chain",
     name: "Robinhood Chain Testnet",
     short: "Robinhood testnet",
     family: "robinhood",
@@ -38,6 +41,7 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     key: "arbitrum_sepolia",
     chainId: 421614,
     mainnetChainId: 42161,
+    mainnetName: "Arbitrum One",
     name: "Arbitrum Sepolia",
     short: "Arbitrum Sepolia",
     family: "arbitrum",
