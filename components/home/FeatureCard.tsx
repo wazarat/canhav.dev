@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -36,8 +35,9 @@ export function FeatureSectionHeader({
 
 /**
  * Marketing feature card following the studio track card anatomy
- * (StudioTrackCards.tsx): icon tile header, tinted visual band with a
- * floating graphic panel and bottom fade, then title/description/footer.
+ * (StudioTrackCards.tsx): tinted visual band with a floating graphic panel
+ * and bottom fade, then title/description/footer. The icon tile header was
+ * removed on 2026-10-09.
  * Pass `href` + `ctaLabel` for a simple arrow link, or `action` for a
  * custom footer (e.g. a Button or ContactCta).
  */
@@ -48,14 +48,7 @@ const TINTS = {
   signal: "bg-[radial-gradient(120%_90%_at_50%_8%,rgba(34,211,238,0.12),transparent_62%)]",
 } as const;
 
-const ICON_TINTS = {
-  electric: "text-electric-400",
-  neon: "text-neon-400",
-  signal: "text-signal-400",
-} as const;
-
 export function FeatureCard({
-  icon: Icon,
   tint,
   graphic,
   title,
@@ -65,7 +58,6 @@ export function FeatureCard({
   action,
   className,
 }: {
-  icon: LucideIcon;
   tint: keyof typeof TINTS;
   graphic: React.ReactNode;
   title: string;
@@ -84,15 +76,10 @@ export function FeatureCard({
         className,
       )}
     >
-      <div className="flex items-center justify-between p-5 pb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-ink-700/60 bg-ink-900/80">
-          <Icon className={cn("h-4 w-4", ICON_TINTS[tint])} aria-hidden="true" />
-        </div>
-      </div>
       <div
         aria-hidden
         className={cn(
-          "relative h-[130px] overflow-hidden border-y border-ink-800/60 bg-ink-950/40",
+          "relative h-[130px] overflow-hidden border-b border-ink-800/60 bg-ink-950/40",
           TINTS[tint],
         )}
       >

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Building2, Code2 } from "lucide-react";
 
 import { ContactCta } from "@/components/home/ContactCta";
 import { FeatureCard, FeatureSectionHeader } from "@/components/home/FeatureCard";
@@ -73,7 +72,6 @@ export function BuildWithUsCards({ sourcePage = "explore-enterprise" }: { source
 
       <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:mt-14 md:grid-cols-2">
         <FeatureCard
-          icon={Code2}
           tint="electric"
           graphic={<DeveloperGraphic />}
           title="Independent Developers"
@@ -85,7 +83,6 @@ export function BuildWithUsCards({ sourcePage = "explore-enterprise" }: { source
           }
         />
         <FeatureCard
-          icon={Building2}
           tint="neon"
           graphic={<EnterpriseGraphic />}
           title="Enterprise Solutions"

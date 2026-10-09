@@ -4,17 +4,6 @@ import { ContactCta } from "@/components/home/ContactCta";
 import { FeatureCard, FeatureSectionHeader } from "@/components/home/FeatureCard";
 import { SITE } from "@/content/site";
 import { STUDIO_PRO_COPY } from "@/content/studio-pro";
-import {
-  Braces,
-  Cable,
-  FlaskConical,
-  Megaphone,
-  PiggyBank,
-  Radar,
-  Rocket,
-  Scale,
-  Users,
-} from "lucide-react";
 
 export const metadata: Metadata = {
   title: STUDIO_PRO_COPY.metaTitle,
@@ -222,12 +211,12 @@ function OperationsGraphic() {
 export default function StudioProPage() {
   const copy = STUDIO_PRO_COPY;
   const serviceCards = [
-    { key: "legal", icon: Scale, tint: "electric", graphic: <LegalGraphic /> },
-    { key: "development", icon: Braces, tint: "neon", graphic: <DevelopmentGraphic /> },
-    { key: "discovery", icon: Users, tint: "signal", graphic: <DiscoveryGraphic /> },
-    { key: "content", icon: Megaphone, tint: "electric", graphic: <ContentGraphic /> },
-    { key: "fundraising", icon: PiggyBank, tint: "neon", graphic: <FundraisingGraphic /> },
-    { key: "operations", icon: Rocket, tint: "signal", graphic: <OperationsGraphic /> },
+    { key: "legal", tint: "electric", graphic: <LegalGraphic /> },
+    { key: "development", tint: "neon", graphic: <DevelopmentGraphic /> },
+    { key: "discovery", tint: "signal", graphic: <DiscoveryGraphic /> },
+    { key: "content", tint: "electric", graphic: <ContentGraphic /> },
+    { key: "fundraising", tint: "neon", graphic: <FundraisingGraphic /> },
+    { key: "operations", tint: "signal", graphic: <OperationsGraphic /> },
   ] as const;
 
   return (
@@ -261,7 +250,6 @@ export default function StudioProPage() {
 
       <div className="mt-10 grid gap-5 md:mt-14 lg:grid-cols-3">
         <FeatureCard
-          icon={FlaskConical}
           tint="electric"
           graphic={<TestnetGraphic />}
           title={copy.cards.testnet.title}
@@ -270,7 +258,6 @@ export default function StudioProPage() {
           ctaLabel={copy.cards.testnet.cta}
         />
         <FeatureCard
-          icon={Cable}
           tint="neon"
           graphic={<ConnectorGraphic />}
           title={copy.cards.workflow.title}
@@ -279,7 +266,6 @@ export default function StudioProPage() {
           ctaLabel={copy.cards.workflow.cta}
         />
         <FeatureCard
-          icon={Radar}
           tint="signal"
           graphic={<ValidationGraphic />}
           title={copy.cards.validation.title}
@@ -294,7 +280,6 @@ export default function StudioProPage() {
         {serviceCards.map((c) => (
           <FeatureCard
             key={c.key}
-            icon={c.icon}
             tint={c.tint}
             graphic={c.graphic}
             title={copy.services[c.key].title}

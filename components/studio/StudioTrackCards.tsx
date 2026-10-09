@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bot, Coins, FolderKanban } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { SoonBadge } from "@/components/ui/SoonBadge";
 import { STUDIO_TRACKS } from "@/content/ideation";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
  * Token Design and Projects (both live) → Agents Launch (coming soon).
  * Card shell follows the ProductLines conventions (glass, tinted visual
  * area, floating panel, bottom fade); graphics are purpose-built minis.
+ * The icon tile header was removed on 2026-10-09.
  */
 
 const TINTS = {
@@ -102,7 +103,6 @@ function AgentsGraphic() {
 
 function CardShell({
   tint,
-  icon,
   badge,
   graphic,
   title,
@@ -111,7 +111,7 @@ function CardShell({
   muted,
 }: {
   tint: keyof typeof TINTS;
-  icon: React.ReactNode;
+  /** Sits over the top right of the visual band. */
   badge?: React.ReactNode;
   graphic: React.ReactNode;
   title: string;
@@ -121,19 +121,13 @@ function CardShell({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between p-5 pb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-ink-700/60 bg-ink-900/80">
-          {icon}
-        </div>
-        {badge}
-      </div>
       <div
-        aria-hidden
         className={cn(
-          "relative h-[130px] overflow-hidden border-y border-ink-800/60 bg-ink-950/40",
+          "relative h-[130px] overflow-hidden border-b border-ink-800/60 bg-ink-950/40",
           TINTS[tint],
         )}
       >
+        {badge && <div className="absolute right-4 top-4 z-10">{badge}</div>}
         <div
           className={cn(
             "mx-5 mt-5 rounded-t-xl border border-b-0 border-ink-700/70 bg-ink-950/90 p-3.5 shadow-[0_24px_50px_-24px_rgba(0,0,0,0.7)]",
@@ -204,7 +198,6 @@ export function StudioTrackCards() {
         >
           <CardShell
             tint="electric"
-            icon={<Coins className="h-4 w-4 text-electric-400" />}
             graphic={<TokenGraphic />}
             title={STUDIO_TRACKS.token.title}
             description={STUDIO_TRACKS.token.description}
@@ -228,7 +221,6 @@ export function StudioTrackCards() {
         >
           <CardShell
             tint="neon"
-            icon={<FolderKanban className="h-4 w-4 text-neon-400" />}
             graphic={<ProjectsGraphic />}
             title={STUDIO_TRACKS.projects.title}
             description={STUDIO_TRACKS.projects.description}
@@ -247,7 +239,6 @@ export function StudioTrackCards() {
           <CardShell
             muted
             tint="signal"
-            icon={<Bot className="h-4 w-4 text-ink-500" />}
             badge={<SoonBadge accent="signal" />}
             graphic={<AgentsGraphic />}
             title={STUDIO_TRACKS.agents.title}
