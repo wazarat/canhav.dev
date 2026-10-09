@@ -10,7 +10,7 @@ import { AUTH_COPY } from "@/content/auth";
 /**
  * The nav's auth slot. Signed out it shows one "Log in or sign up" button to
  * /studio, where the sign-in card lives and links on to sign-up (M40). On a
- * phone the same button reads "Log in" so the four nav links still fit.
+ * phone the same button reads "Log in" so the nav links still fit.
  * Signed in it shows "Studio". Client-side Clerk state, so marketing pages
  * stay statically rendered. While Clerk loads (or when unconfigured) it
  * shows the signed-out look.

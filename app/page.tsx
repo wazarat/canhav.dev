@@ -1,12 +1,8 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-
 import { AnalyticsSection } from "@/components/home/AnalyticsSection";
 import { BuiltForBuilders } from "@/components/home/BuiltForBuilders";
 import { ContactCta } from "@/components/home/ContactCta";
+import { HeroAuthCta } from "@/components/home/HeroAuthCta";
 import { HeroVideo } from "@/components/home/HeroVideo";
-import { Button } from "@/components/ui/Button";
-import { AUTH_COPY } from "@/content/auth";
 
 export default function LandingPage() {
   return (
@@ -65,16 +61,11 @@ export default function LandingPage() {
               className="max-w-xl text-lg leading-relaxed text-ink-50/90 md:text-xl"
               style={{ textShadow: "0 1px 12px rgba(4,10,20,0.4)" }}
             >
-              Design your token, publish the evidence, and let anyone verify what is enforced
+              Research and Develop your DeFi offering, publish the evidence, and let anyone verify what is enforced
               on-chain versus what is merely stated.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <Button asChild>
-                <Link href={AUTH_COPY.signUpPath}>
-                  {AUTH_COPY.signUp}
-                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                </Link>
-              </Button>
+              <HeroAuthCta />
               <ContactCta variant="secondary" sourcePage="home-hero" />
             </div>
           </div>

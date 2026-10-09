@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 
+import { ContactCta } from "@/components/home/ContactCta";
 import { FeatureCard, FeatureSectionHeader } from "@/components/home/FeatureCard";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { SITE } from "@/content/site";
+import { STUDIO_PRO_COPY } from "@/content/studio-pro";
 import { Cable, FlaskConical, Radar } from "lucide-react";
 
 export const metadata: Metadata = {
-  description:
-    "Token design, testnet deployment, MCP connectors, and market validation through CanHav Research.",
+  title: STUDIO_PRO_COPY.metaTitle,
+  description: STUDIO_PRO_COPY.metaDescription,
 };
 
 /** Mini allocation meters, echoing the studio's token track graphic. */
@@ -36,7 +39,7 @@ function TestnetGraphic() {
   );
 }
 
-/** Data flowing from CanHav into AI tools over MCP. */
+/** Launch data flowing from CanHav into the tools a team works in, over MCP. */
 function ConnectorGraphic() {
   return (
     <svg viewBox="0 0 200 64" className="h-16 w-full" aria-hidden>
@@ -88,42 +91,61 @@ function ValidationGraphic() {
 
 // The explore grids (components/explore/TokensGrid.tsx, DesignsGrid.tsx) return
 // here when the launch track reopens; both are kept on disk for that relaunch.
-export default function TokensPage() {
+// Was /tokens ("Everything a token needs before a market") until 2026-10-09.
+export default function StudioProPage() {
+  const copy = STUDIO_PRO_COPY;
   return (
     <div className="container py-14 md:py-20">
-      <FeatureSectionHeader
-        kicker="Launchpad"
-        title="Everything a token needs before a market"
-        lead="Design in the open, validate with evidence, and connect your launch data to the tools your team already uses."
-      />
+      <div className="flex justify-end">
+        <ContactCta label={copy.reachOut} variant="secondary" sourcePage="studiopro" />
+      </div>
+
+      <div className="mt-6 md:mt-4">
+        <FeatureSectionHeader kicker={copy.kicker} title={copy.title} lead={copy.lead} />
+      </div>
+
+      {/* Everything on a small team's plate, as one strip of neutral chips. */}
+      <div className="mx-auto mt-8 max-w-3xl text-center">
+        <ul className="flex flex-wrap justify-center gap-2" aria-label="Workstreams we take on">
+          {copy.plate.map((item) => (
+            <li key={item}>
+              <StatusChip tone="neutral">{item}</StatusChip>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <p className="text-sm text-ink-300">{copy.plateNote}</p>
+          <ContactCta label={copy.plateCta} size="sm" sourcePage="studiopro-plate" />
+        </div>
+      </div>
 
       <div className="mt-10 grid gap-5 md:mt-14 lg:grid-cols-3">
         <FeatureCard
           icon={FlaskConical}
           tint="electric"
           graphic={<TestnetGraphic />}
-          title="Testnet Design"
-          description="Design your token in the studio and deploy it to testnet in minutes. Supply, allocations, and vesting captured as a verifiable record."
+          title={copy.cards.testnet.title}
+          description={copy.cards.testnet.description}
           href="/studio"
-          ctaLabel="Open the studio"
+          ctaLabel={copy.cards.testnet.cta}
         />
         <FeatureCard
           icon={Cable}
           tint="neon"
           graphic={<ConnectorGraphic />}
-          title="MCP Connectors"
-          description="Bring CanHav data into your AI tools through MCP. Query published designs, deployed launches, verified journeys, sales and pools from the agents you already work with."
+          title={copy.cards.workflow.title}
+          description={copy.cards.workflow.description}
           href={SITE.docsUrl}
-          ctaLabel="Read the docs"
+          ctaLabel={copy.cards.workflow.cta}
         />
         <FeatureCard
           icon={Radar}
           tint="signal"
           graphic={<ValidationGraphic />}
-          title="Market Validation"
-          description="Publish the evidence behind your launch and gather real market feedback before a market exists. Scrutiny first, speculation later."
+          title={copy.cards.validation.title}
+          description={copy.cards.validation.description}
           href="/studio"
-          ctaLabel="Start validating"
+          ctaLabel={copy.cards.validation.cta}
         />
       </div>
     </div>

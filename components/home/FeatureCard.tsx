@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Centered section header for the marketing feature pages (/tokens) and for
+ * Centered section header for the marketing feature pages (/studiopro) and for
  * the closing section of /explore. Pass as="h2" when the page already has an
  * h1 above it, which /explore does.
  */

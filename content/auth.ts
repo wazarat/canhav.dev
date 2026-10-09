@@ -3,6 +3,7 @@ export const AUTH_COPY = {
   logIn: "Log in",
   signUp: "Sign up",
   logInOrSignUp: "Log in or sign up",
+  openStudio: "Open Studio",
   signUpKicker: "Accounts",
   signUpTitle: "Create your account",
   signUpLead:

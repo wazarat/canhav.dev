@@ -647,6 +647,10 @@ export const STUDIO_COPY = {
     launched: "Token launched",
     fromProject: "From",
   },
+  /** The services offer for small teams, under the account row (2026-10-09). */
+  pro: {
+    join: "Join Studio Pro",
+  },
 } as const;
 
 /** Agent changes panel on a project's studio page, and the stale draft notice (M39). */

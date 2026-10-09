@@ -9,6 +9,8 @@ const nextConfig = {
       { source: "/launch/explore", destination: "/explore", permanent: false },
       // The waitlist closed when sign-up opened to everyone.
       { source: "/waitlist", destination: "/sign-up", permanent: true },
+      // The Tokens tab became the Studio Pro page, reached from the studio (2026-10-09).
+      { source: "/tokens", destination: "/studiopro", permanent: true },
     ];
   },
   webpack: (config) => {

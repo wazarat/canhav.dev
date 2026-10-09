@@ -7,6 +7,7 @@ import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { SignOutButton } from "@/components/studio/SignOutButton";
 import { WalletsButton } from "@/components/studio/WalletsButton";
+import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
@@ -256,10 +257,15 @@ export default async function StudioPage() {
     <div className="container py-14 md:py-20">
       <div className="flex flex-wrap items-start justify-between gap-4">
         {header}
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-ink-500">{user.email}</span>
-          <WalletsButton />
-          <SignOutButton />
+        <div className="flex flex-col items-end gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-ink-500">{user.email}</span>
+            <WalletsButton />
+            <SignOutButton />
+          </div>
+          <Button asChild variant="secondary">
+            <Link href="/studiopro">{STUDIO_COPY.pro.join}</Link>
+          </Button>
         </div>
       </div>
 

@@ -14,10 +14,9 @@ export const SITE = {
   footerLegal: "Research preview, not financial advice.",
 } as const;
 
-/** Primary nav links, rendered right-aligned before the log in and sign up buttons. */
+/** Primary nav links, rendered right-aligned before the auth button. Studio Pro (/studiopro) is reached from the studio, not from here. */
 export const NAV_LINKS: ReadonlyArray<{ label: string; href: string; soon?: boolean }> = [
   { label: "Launch", href: "/launch" },
-  { label: "Tokens", href: "/tokens" },
   { label: "Explore", href: "/explore" },
   { label: "Docs", href: SITE.docsUrl },
 ];
