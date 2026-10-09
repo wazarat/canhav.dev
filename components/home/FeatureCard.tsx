@@ -16,8 +16,9 @@ export function FeatureSectionHeader({
   as: Heading = "h1",
 }: {
   kicker: string;
-  title: string;
-  lead: string;
+  /** A string, or spans when part of the title carries a gradient. */
+  title: React.ReactNode;
+  lead: React.ReactNode;
   as?: "h1" | "h2";
 }) {
   return (

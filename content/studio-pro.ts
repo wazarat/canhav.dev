@@ -6,25 +6,21 @@
 export const STUDIO_PRO_COPY = {
   metaTitle: "Studio Pro",
   metaDescription:
-    "Studio Pro from CanHav Research. Legalities, market validation, development, reachouts, customer discovery and content, handled and managed for small teams.",
-  reachOut: "Reach out",
-  kicker: "Studio Pro",
-  title: "Your team is small. Your to do list is not.",
+    "Studio Pro from CanHav Research. Legal and compliance, product development, customer discovery, content, fundraising prep and launch operations, handled and managed for small Web3 teams.",
+  kicker: "Are you developing a DeFi product?",
+  /** Two fixed lines. The second one carries the hero gradient. */
+  titleLine1: "Your team may be small.",
+  titleLine2: "Your to do list is not.",
+  /**
+   * CoinGecko counted 53% of every token listed on GeckoTerminal as dead by
+   * late 2025 (52.7% in its April 2025 report). The sentence stays "over half"
+   * so it holds as the number moves.
+   */
+  leadFact: "Over half of all tokens ever listed are already dead.",
   lead:
-    "Legalities, market validation, development, reachouts, customer discovery, content and more. We help small teams do all of it and manage all of it, so you can stay on the product.",
-  /** The workstreams a small team carries on top of the product. */
-  plate: [
-    "Legal and compliance",
-    "Market validation",
-    "Development",
-    "Reachouts",
-    "Customer discovery",
-    "Content",
-    "Fundraising prep",
-    "Launch operations",
-  ],
-  plateNote: "Pick what you want off your plate. We take it from there.",
-  plateCta: "Talk to us",
+    "Small teams find it increasingly complicated to juggle everything needed to bring a Web3 project to market.",
+  cta: "Let's talk",
+  ctaNote: "Pick what you want off your plate. We take it from there.",
   cards: {
     testnet: {
       title: "Testnet Design",
@@ -43,6 +39,40 @@ export const STUDIO_PRO_COPY = {
       description:
         "Publish the evidence behind your launch and gather real market feedback before a market exists. Scrutiny first, speculation later.",
       cta: "Start validating",
+    },
+  },
+  /** The six services, each card opens the contact form. */
+  serviceCta: "Ask about this",
+  services: {
+    legal: {
+      title: "Legal and Compliance",
+      description:
+        "Entity setup, token classification, terms and disclosures, and the KYC or AML path that fits your market. Reviewed before anything goes live.",
+    },
+    development: {
+      title: "Product Development",
+      description:
+        "Contracts, indexers and front ends built to the design you published, with audits scoped early and shipped on a schedule you can see.",
+    },
+    discovery: {
+      title: "Customer Discovery",
+      description:
+        "Interviews, surveys and usage signals that tell you who actually wants the product, before the token decides it for you.",
+    },
+    content: {
+      title: "Content and Media",
+      description:
+        "Docs, launch posts, explainers and the social cadence that keeps your community informed, written from the evidence you publish.",
+    },
+    fundraising: {
+      title: "Fundraising Prep",
+      description:
+        "Data room, deck, tokenomics narrative and investor reachouts, grounded in the on-chain record so every claim checks out.",
+    },
+    operations: {
+      title: "Launch Operations",
+      description:
+        "Timeline, listings, liquidity, milestone updates and the day of launch itself, run as one plan with someone accountable for each step.",
     },
   },
 } as const;
