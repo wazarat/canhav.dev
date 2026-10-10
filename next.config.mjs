@@ -13,6 +13,17 @@ const nextConfig = {
       { source: "/tokens", destination: "/studiopro", permanent: true },
     ];
   },
+  // meet.canhav.com is the booking page. Every path on that host renders
+  // /meet, so the Google Calendar embed lives on a canhav address.
+  async rewrites() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "meet.canhav.com" }],
+        destination: "/meet",
+      },
+    ];
+  },
   webpack: (config) => {
     // wagmi's tempo connector optionally imports the "accounts" SDK with a
     // turbopack-only optional marker; alias it to an empty module so webpack

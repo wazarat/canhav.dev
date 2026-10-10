@@ -102,8 +102,11 @@ export const CONTACT_COPY = {
   solutionsLabel: "How can we help?",
   solutionsPlaceholder: "Pick one or more",
   solutionsCount: (n: number) => `${n} selected`,
-  /** Google Calendar appointment schedule for the discovery call. The invite and Meet link go out by email on booking. */
-  bookingUrl: "https://calendar.app.google/9Ct1cwDNUwMmhzei6",
+  /** meet.canhav.com shows the Google Calendar appointment schedule below on a canhav address. */
+  bookingUrl: "https://meet.canhav.com",
+  /** The schedule's embed URL (gv=true is Google's embed mode). The invite and Meet link go out by email on booking. */
+  bookingEmbedUrl:
+    "https://calendar.google.com/calendar/appointments/schedules/AcZssZ1ZOzTURzo3nsTBJlRHJ-3b8_ChbPqR4SPBfGctUKPCqZK6Ite3d9MbMKaSTORT01a-QzRA_TCE?gv=true",
   bookingLabel: "Let's talk it through!",
   bookingCta: "Book a discovery call",
   commentsLabel: "Comments",
