@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { CalendarDays, Check, X } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Check, X } from "lucide-react";
 import { track } from "@vercel/analytics";
 
 import { Button } from "@/components/ui/Button";
@@ -139,11 +139,6 @@ export function ContactModal({
                 <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink-50">
                   Explore solutions with us
                 </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-300">
-                  We help small businesses put tokenization and agentic solutions to
-                  work. Tell us what you are exploring and we will map the right
-                  approach together.
-                </p>
 
                 <form onSubmit={handleSubmit} className="mt-4 space-y-3.5" noValidate>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -207,19 +202,28 @@ export function ContactModal({
                     <SolutionsDropdown value={solutions} onChange={setSolutions} />
                   </div>
 
-                  {/* Discovery call, booked on Google Calendar in a new tab. */}
-                  <div className="rounded-xl border border-ink-700/60 bg-ink-950/40 p-3.5 sm:flex sm:items-center sm:justify-between sm:gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-ink-200">{CONTACT_COPY.bookingLabel}</p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-ink-400">{CONTACT_COPY.bookingHint}</p>
-                    </div>
-                    <Button asChild variant="secondary" size="sm" className="mt-3 shrink-0 sm:mt-0">
-                      <a href={CONTACT_COPY.bookingUrl} target="_blank" rel="noreferrer">
-                        <CalendarDays aria-hidden="true" className="h-4 w-4" />
-                        {CONTACT_COPY.bookingCta}
-                      </a>
-                    </Button>
-                  </div>
+                  {/* Discovery call, booked on Google Calendar in a new tab. One row in the input styling. */}
+                  <a
+                    href={CONTACT_COPY.bookingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={cn(
+                      inputClasses,
+                      "group flex items-center justify-between gap-3 transition-colors hover:border-electric-500/60",
+                    )}
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <CalendarDays aria-hidden="true" className="h-4 w-4 shrink-0 text-electric-400" />
+                      <span className="truncate font-medium">{CONTACT_COPY.bookingCta}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2 text-xs text-ink-400">
+                      <span className="hidden sm:inline">{CONTACT_COPY.bookingLabel}</span>
+                      <ArrowUpRight
+                        aria-hidden="true"
+                        className="h-4 w-4 text-ink-400 transition-transform group-hover:translate-x-0.5 group-hover:text-ink-50"
+                      />
+                    </span>
+                  </a>
 
                   <label className="block space-y-1.5">
                     <span className="text-xs font-medium text-ink-200">

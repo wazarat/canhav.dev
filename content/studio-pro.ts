@@ -106,8 +106,6 @@ export const CONTACT_COPY = {
   bookingUrl: "https://calendar.app.google/9Ct1cwDNUwMmhzei6",
   bookingLabel: "Prefer to talk it through?",
   bookingCta: "Book a discovery call",
-  bookingHint:
-    "Pick a time for a CanHav discovery call on Google Meet. The invite and the meeting link land in your inbox right away.",
   commentsLabel: "Comments",
   commentsPlaceholder: "Anything else we should know?",
 } as const;
