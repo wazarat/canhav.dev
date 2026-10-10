@@ -104,7 +104,7 @@ export const CONTACT_COPY = {
   solutionsCount: (n: number) => `${n} selected`,
   /** Google Calendar appointment schedule for the discovery call. The invite and Meet link go out by email on booking. */
   bookingUrl: "https://calendar.app.google/9Ct1cwDNUwMmhzei6",
-  bookingLabel: "Prefer to talk it through?",
+  bookingLabel: "Let's talk it through!",
   bookingCta: "Book a discovery call",
   commentsLabel: "Comments",
   commentsPlaceholder: "Anything else we should know?",
