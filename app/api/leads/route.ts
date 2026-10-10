@@ -141,7 +141,7 @@ async function sendLeadEmail(lead: Lead): Promise<boolean> {
     `Name: ${lead.fullName ?? "none"}`, // copy-ok
     `Email: ${lead.email}`, // copy-ok
     `Individual or team: ${lead.leadType ?? "none"}`, // copy-ok
-    `Looking for: ${lead.solutions.length > 0 ? lead.solutions.map(solutionLabel).join(", ") : "(none)"}`, // copy-ok
+    `How can we help: ${lead.solutions.length > 0 ? lead.solutions.map(solutionLabel).join(", ") : "(none)"}`, // copy-ok
     `Source page: ${lead.sourcePage}`, // copy-ok
     `Received: ${new Date().toISOString()}`, // copy-ok
     "",

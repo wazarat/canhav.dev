@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { Check, X } from "lucide-react";
+import { CalendarDays, Check, X } from "lucide-react";
 import { track } from "@vercel/analytics";
 
 import { Button } from "@/components/ui/Button";
 import { inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { SolutionsDropdown } from "@/components/home/SolutionsDropdown";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
-import { CONTACT_COPY, STUDIO_PRO_SOLUTIONS, type SolutionKey } from "@/content/studio-pro";
+import { CONTACT_COPY, type SolutionKey } from "@/content/studio-pro";
 import { cn } from "@/lib/utils";
 
 type LeadType = "individual" | "team";
@@ -56,10 +57,6 @@ export function ContactModal({
   useModalBehavior({ onClose, containerRef, active: open });
 
   if (!open) return null;
-
-  function toggleSolution(key: SolutionKey) {
-    setSolutions((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -118,7 +115,7 @@ export function ContactModal({
         </button>
 
         <div className="grid md:grid-cols-[1fr_240px]">
-          <div className="p-6 md:p-7">
+          <div className="min-w-0 p-6 md:p-7">
             {status === "success" ? (
               <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-300">
@@ -207,38 +204,33 @@ export function ContactModal({
                       {CONTACT_COPY.solutionsLabel}{" "}
                       <span className="text-ink-500">{CONTACT_COPY.optional}</span>
                     </span>
-                    <div className="flex flex-wrap gap-2" role="group" aria-label={CONTACT_COPY.solutionsLabel}>
-                      {STUDIO_PRO_SOLUTIONS.map((s) => {
-                        const on = solutions.includes(s.key);
-                        return (
-                          <button
-                            key={s.key}
-                            type="button"
-                            onClick={() => toggleSolution(s.key)}
-                            aria-pressed={on}
-                            className={cn(
-                              pillClasses,
-                              on
-                                ? "border-electric-500/60 bg-electric-500/15 text-electric-300"
-                                : "border-ink-700/70 bg-ink-900/40 text-ink-300 hover:text-ink-100",
-                            )}
-                          >
-                            {s.label}
-                          </button>
-                        );
-                      })}
+                    <SolutionsDropdown value={solutions} onChange={setSolutions} />
+                  </div>
+
+                  {/* Discovery call, booked on Google Calendar in a new tab. */}
+                  <div className="rounded-xl border border-ink-700/60 bg-ink-950/40 p-3.5 sm:flex sm:items-center sm:justify-between sm:gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-ink-200">{CONTACT_COPY.bookingLabel}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-ink-400">{CONTACT_COPY.bookingHint}</p>
                     </div>
+                    <Button asChild variant="secondary" size="sm" className="mt-3 shrink-0 sm:mt-0">
+                      <a href={CONTACT_COPY.bookingUrl} target="_blank" rel="noreferrer">
+                        <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                        {CONTACT_COPY.bookingCta}
+                      </a>
+                    </Button>
                   </div>
 
                   <label className="block space-y-1.5">
                     <span className="text-xs font-medium text-ink-200">
-                      Comments <span className="text-ink-500">{CONTACT_COPY.optional}</span>
+                      {CONTACT_COPY.commentsLabel}{" "}
+                      <span className="text-ink-500">{CONTACT_COPY.optional}</span>
                     </span>
                     <textarea
                       rows={2}
                       value={comments}
                       onChange={(e) => setComments(e.target.value)}
-                      placeholder="How can we help?"
+                      placeholder={CONTACT_COPY.commentsPlaceholder}
                       className={cn(inputClasses, "resize-y leading-relaxed")}
                     />
                   </label>
