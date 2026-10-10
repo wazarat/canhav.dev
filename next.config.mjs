@@ -14,15 +14,19 @@ const nextConfig = {
     ];
   },
   // meet.canhav.com is the booking page. Every path on that host renders
-  // /meet, so the Google Calendar embed lives on a canhav address.
+  // /meet, so the Google Calendar embed lives on a canhav address. It has to
+  // run beforeFiles: "/" matches the landing page, and an afterFiles rewrite
+  // never gets a turn once a page has matched.
   async rewrites() {
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "meet.canhav.com" }],
-        destination: "/meet",
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: "/:path*",
+          has: [{ type: "host", value: "meet.canhav.com" }],
+          destination: "/meet",
+        },
+      ],
+    };
   },
   webpack: (config) => {
     // wagmi's tempo connector optionally imports the "accounts" SDK with a
