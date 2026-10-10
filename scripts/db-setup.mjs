@@ -168,7 +168,7 @@ await sql`
     on launchpad.entity_links (b_id) where a_type = 'project' and b_type = 'token_design'
 `;
 
-// Marketing leads (For Teams contact form). `kind` still allows "waitlist"
+// Marketing leads (Pro Services contact form). `kind` still allows "waitlist"
 // for rows from the waitlist that ran until sign-up opened. Anonymous,
 // insert-only, one table discriminated by `kind`. No IP address on purpose
 // (no consent/retention story for it); user_agent is kept, coarse, for
@@ -192,6 +192,12 @@ await sql`
 await sql`
   create index if not exists leads_created_idx
     on launchpad.leads (created_at desc)
+`;
+
+// The solutions a lead picked in the contact form (2026-10-10). Keys from
+// STUDIO_PRO_SOLUTIONS in content/studio-pro.ts, null when none were picked.
+await sql`
+  alter table launchpad.leads add column if not exists solutions text[]
 `;
 
 // Owner columns were uuid when the tables were first created (Supabase-era

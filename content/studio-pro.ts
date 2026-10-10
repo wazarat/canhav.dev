@@ -26,23 +26,20 @@ export const STUDIO_PRO_COPY = {
       title: "Testnet Design",
       description:
         "Design your token in the studio and deploy it to testnet in minutes. Supply, allocations, and vesting captured as a verifiable record.",
-      cta: "Open the studio",
     },
     workflow: {
       title: "Manage Workflow",
       description:
         "Run your launch work from the tools your team already uses. Query published designs, deployed launches, verified journeys, sales and pools over MCP and keep every workstream moving from one place.",
-      cta: "Read the docs",
     },
     validation: {
       title: "Market Validation",
       description:
         "Publish the evidence behind your launch and gather real market feedback before a market exists. Scrutiny first, speculation later.",
-      cta: "Start validating",
     },
   },
-  /** The six services, each card opens the contact form. */
-  serviceCta: "Ask about this",
+  /** Every one of the nine cards opens the contact form with this label. */
+  cardCta: "Ask about this",
   services: {
     legal: {
       title: "Legal and Compliance",
@@ -75,4 +72,32 @@ export const STUDIO_PRO_COPY = {
         "Timeline, listings, liquidity, milestone updates and the day of launch itself, run as one plan with someone accountable for each step.",
     },
   },
+} as const;
+
+/** The nine solutions a lead can pick in the contact form, cards first then services. */
+export const STUDIO_PRO_SOLUTIONS = [
+  { key: "testnet", label: STUDIO_PRO_COPY.cards.testnet.title },
+  { key: "workflow", label: STUDIO_PRO_COPY.cards.workflow.title },
+  { key: "validation", label: STUDIO_PRO_COPY.cards.validation.title },
+  { key: "legal", label: STUDIO_PRO_COPY.services.legal.title },
+  { key: "development", label: STUDIO_PRO_COPY.services.development.title },
+  { key: "discovery", label: STUDIO_PRO_COPY.services.discovery.title },
+  { key: "content", label: STUDIO_PRO_COPY.services.content.title },
+  { key: "fundraising", label: STUDIO_PRO_COPY.services.fundraising.title },
+  { key: "operations", label: STUDIO_PRO_COPY.services.operations.title },
+] as const;
+
+export type SolutionKey = (typeof STUDIO_PRO_SOLUTIONS)[number]["key"];
+
+export const SOLUTION_KEYS = STUDIO_PRO_SOLUTIONS.map((s) => s.key) as [SolutionKey, ...SolutionKey[]];
+
+export function solutionLabel(key: SolutionKey): string {
+  return STUDIO_PRO_SOLUTIONS.find((s) => s.key === key)?.label ?? key;
+}
+
+/** The contact modal, opened from Pro Services, Contact us and every Ask about this. */
+export const CONTACT_COPY = {
+  kicker: "Bespoke Solutions",
+  solutionsLabel: "What are you looking for?",
+  optional: "(optional)",
 } as const;

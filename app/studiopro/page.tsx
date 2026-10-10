@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import { ContactCta } from "@/components/home/ContactCta";
 import { FeatureCard, FeatureSectionHeader } from "@/components/home/FeatureCard";
-import { SITE } from "@/content/site";
 import { STUDIO_PRO_COPY } from "@/content/studio-pro";
 
 export const metadata: Metadata = {
@@ -210,13 +209,16 @@ function OperationsGraphic() {
 // Was /tokens ("Everything a token needs before a market") until 2026-10-09.
 export default function StudioProPage() {
   const copy = STUDIO_PRO_COPY;
-  const serviceCards = [
-    { key: "legal", tint: "electric", graphic: <LegalGraphic /> },
-    { key: "development", tint: "neon", graphic: <DevelopmentGraphic /> },
-    { key: "discovery", tint: "signal", graphic: <DiscoveryGraphic /> },
-    { key: "content", tint: "electric", graphic: <ContentGraphic /> },
-    { key: "fundraising", tint: "neon", graphic: <FundraisingGraphic /> },
-    { key: "operations", tint: "signal", graphic: <OperationsGraphic /> },
+  const cards = [
+    { key: "testnet", tint: "electric", graphic: <TestnetGraphic />, copy: copy.cards.testnet },
+    { key: "workflow", tint: "neon", graphic: <ConnectorGraphic />, copy: copy.cards.workflow },
+    { key: "validation", tint: "signal", graphic: <ValidationGraphic />, copy: copy.cards.validation },
+    { key: "legal", tint: "electric", graphic: <LegalGraphic />, copy: copy.services.legal },
+    { key: "development", tint: "neon", graphic: <DevelopmentGraphic />, copy: copy.services.development },
+    { key: "discovery", tint: "signal", graphic: <DiscoveryGraphic />, copy: copy.services.discovery },
+    { key: "content", tint: "electric", graphic: <ContentGraphic />, copy: copy.services.content },
+    { key: "fundraising", tint: "neon", graphic: <FundraisingGraphic />, copy: copy.services.fundraising },
+    { key: "operations", tint: "signal", graphic: <OperationsGraphic />, copy: copy.services.operations },
   ] as const;
 
   return (
@@ -248,45 +250,18 @@ export default function StudioProPage() {
         <p className="text-sm text-ink-400">{copy.ctaNote}</p>
       </div>
 
-      <div className="mt-10 grid gap-5 md:mt-14 lg:grid-cols-3">
-        <FeatureCard
-          tint="electric"
-          graphic={<TestnetGraphic />}
-          title={copy.cards.testnet.title}
-          description={copy.cards.testnet.description}
-          href="/studio"
-          ctaLabel={copy.cards.testnet.cta}
-        />
-        <FeatureCard
-          tint="neon"
-          graphic={<ConnectorGraphic />}
-          title={copy.cards.workflow.title}
-          description={copy.cards.workflow.description}
-          href={SITE.docsUrl}
-          ctaLabel={copy.cards.workflow.cta}
-        />
-        <FeatureCard
-          tint="signal"
-          graphic={<ValidationGraphic />}
-          title={copy.cards.validation.title}
-          description={copy.cards.validation.description}
-          href="/studio"
-          ctaLabel={copy.cards.validation.cta}
-        />
-      </div>
-
-      {/* The six services. Same card anatomy, each one opens the contact form. */}
-      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {serviceCards.map((c) => (
+      {/* Nine cards, one grid, every footer the same callout into the contact form. */}
+      <div className="mt-10 grid gap-5 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
+        {cards.map((c) => (
           <FeatureCard
             key={c.key}
             tint={c.tint}
             graphic={c.graphic}
-            title={copy.services[c.key].title}
-            description={copy.services[c.key].description}
+            title={c.copy.title}
+            description={c.copy.description}
             action={
               <ContactCta
-                label={copy.serviceCta}
+                label={copy.cardCta}
                 variant="ghost"
                 size="sm"
                 className="-ml-3.5 text-electric-400 hover:text-electric-300"

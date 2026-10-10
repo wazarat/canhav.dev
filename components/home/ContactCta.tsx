@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { ContactModal } from "@/components/home/ContactModal";
 
 export function ContactCta({
-  label = "For Teams",
+  label = "Pro Services",
   variant = "primary",
   size = "md",
   className,

@@ -1,10 +1,8 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 
 import { BarChart } from "@/components/ui/BarChart";
-import { buttonClasses } from "@/components/ui/Button";
 import { ANALYTICS_CHAINS, ANALYTICS_CHAIN_KEYS, type AnalyticsChain } from "@/content/analytics";
 import type { AnalyticsData, ChartMetric } from "@/lib/dune";
 import { formatAsOf, formatDayShort, formatPct, formatUnit } from "@/lib/format";
@@ -122,18 +120,7 @@ export function AnalyticsView({ chains }: { chains: Record<AnalyticsChain, Analy
             </p>
             <p className="pt-1 font-mono text-[11px] text-ink-400">{caption}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <ChainToggle chain={chain} onChange={setChain} />
-            <a
-              href={copy.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className={buttonClasses({ variant: "primary", size: "sm" })}
-            >
-              {copy.sourceLabel}
-              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </a>
-          </div>
+          <ChainToggle chain={chain} onChange={setChain} />
         </div>
 
         {/* gap-px over a divider-colored backdrop draws clean cell borders at every breakpoint */}

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { SOLUTION_KEYS, solutionLabel } from "@/content/studio-pro";
 import { getDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 /**
- * Lead capture for the marketing forms (For Teams contact modal).
+ * Lead capture for the marketing forms (Pro Services contact modal).
  * Public route — the Clerk middleware matcher does not cover /api/leads.
  *
  * Every accepted lead is written to launchpad.leads (system of record) and
@@ -29,6 +30,8 @@ const LeadSchema = z
       .max(254)
       .pipe(z.email({ message: "Please enter a valid email address." })),
     leadType: z.enum(["individual", "team"]).optional(),
+    /** Keys from STUDIO_PRO_SOLUTIONS, the nine cards on /studiopro. */
+    solutions: z.array(z.enum(SOLUTION_KEYS)).max(9).default([]),
     comments: z.string().trim().max(2000).default(""),
     sourcePage: z.string().trim().max(64).default("unknown"),
     website: z.string().max(500).default(""), // honeypot — humans never see it
@@ -75,6 +78,32 @@ export async function POST(req: Request) {
 async function storeLead(lead: Lead, userAgent: string | null): Promise<boolean> {
   const db = getDb();
   if (!db) return false;
+  const solutions = lead.solutions.length > 0 ? lead.solutions : null;
+  try {
+    await db`
+      insert into launchpad.leads
+        (kind, full_name, email, lead_type, comments, source_page, user_agent, solutions)
+      values (
+        ${lead.kind},
+        ${lead.fullName ?? null},
+        ${lead.email},
+        ${lead.leadType ?? null},
+        ${lead.comments || null},
+        ${lead.sourcePage},
+        ${userAgent},
+        ${solutions}
+      )
+    `;
+    return true;
+  } catch (err) {
+    // 42703 is undefined_column: the solutions migration (scripts/db-setup.mjs)
+    // has not run on this database yet. Keep the lead, drop only that field.
+    if ((err as { code?: string })?.code !== "42703") {
+      console.error("[leads] db insert failed", err);
+      return false;
+    }
+    console.warn("[leads] solutions column missing, run scripts/db-setup.mjs; stored without it");
+  }
   try {
     await db`
       insert into launchpad.leads
@@ -112,6 +141,7 @@ async function sendLeadEmail(lead: Lead): Promise<boolean> {
     `Name: ${lead.fullName ?? "none"}`, // copy-ok
     `Email: ${lead.email}`, // copy-ok
     `Individual or team: ${lead.leadType ?? "none"}`, // copy-ok
+    `Looking for: ${lead.solutions.length > 0 ? lead.solutions.map(solutionLabel).join(", ") : "(none)"}`, // copy-ok
     `Source page: ${lead.sourcePage}`, // copy-ok
     `Received: ${new Date().toISOString()}`, // copy-ok
     "",

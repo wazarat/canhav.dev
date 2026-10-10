@@ -10,10 +10,15 @@ import { Button } from "@/components/ui/Button";
 import { inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
+import { CONTACT_COPY, STUDIO_PRO_SOLUTIONS, type SolutionKey } from "@/content/studio-pro";
 import { cn } from "@/lib/utils";
 
 type LeadType = "individual" | "team";
 type Status = "idle" | "submitting" | "success" | "error";
+
+/** Toggle pills, compact on a phone so nine of them fit in a few lines. */
+const pillClasses =
+  "rounded-full border px-3 py-1 text-xs font-medium leading-5 transition-colors sm:px-3.5";
 
 export function ContactModal({
   open,
@@ -28,6 +33,7 @@ export function ContactModal({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [leadType, setLeadType] = useState<LeadType>("team");
+  const [solutions, setSolutions] = useState<SolutionKey[]>([]);
   const [comments, setComments] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — humans never see it
   const [status, setStatus] = useState<Status>("idle");
@@ -40,6 +46,7 @@ export function ContactModal({
     setFullName("");
     setEmail("");
     setLeadType("team");
+    setSolutions([]);
     setComments("");
     setWebsite("");
     setStatus("idle");
@@ -49,6 +56,10 @@ export function ContactModal({
   useModalBehavior({ onClose, containerRef, active: open });
 
   if (!open) return null;
+
+  function toggleSolution(key: SolutionKey) {
+    setSolutions((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +75,7 @@ export function ContactModal({
           fullName,
           email,
           leadType,
+          solutions,
           comments,
           sourcePage,
           website,
@@ -73,7 +85,7 @@ export function ContactModal({
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? "Request failed.");
       }
-      track("lead_submitted", { kind: "contact", sourcePage });
+      track("lead_submitted", { kind: "contact", sourcePage, solutions: solutions.length });
       setStatus("success");
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
@@ -94,7 +106,7 @@ export function ContactModal({
       <div
         ref={containerRef}
         tabIndex={-1}
-        className="glass relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-ink-700/70 animate-fade-in-up"
+        className="glass relative z-10 max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-ink-700/70 animate-fade-in-up"
       >
         <button
           type="button"
@@ -125,7 +137,7 @@ export function ContactModal({
             ) : (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-electric-400">
-                  For Teams
+                  {CONTACT_COPY.kicker}
                 </p>
                 <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink-50">
                   Explore solutions with us
@@ -136,7 +148,7 @@ export function ContactModal({
                   approach together.
                 </p>
 
-                <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
+                <form onSubmit={handleSubmit} className="mt-4 space-y-3.5" noValidate>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block space-y-1.5">
                       <span className="text-xs font-medium text-ink-200">
@@ -178,7 +190,7 @@ export function ContactModal({
                           onClick={() => setLeadType(value)}
                           aria-pressed={leadType === value}
                           className={cn(
-                            "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                            pillClasses,
                             leadType === value
                               ? "border-electric-500/60 bg-electric-500/15 text-electric-300"
                               : "border-ink-700/70 bg-ink-900/40 text-ink-300 hover:text-ink-100",
@@ -190,12 +202,40 @@ export function ContactModal({
                     </div>
                   </div>
 
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-medium text-ink-200">
+                      {CONTACT_COPY.solutionsLabel}{" "}
+                      <span className="text-ink-500">{CONTACT_COPY.optional}</span>
+                    </span>
+                    <div className="flex flex-wrap gap-2" role="group" aria-label={CONTACT_COPY.solutionsLabel}>
+                      {STUDIO_PRO_SOLUTIONS.map((s) => {
+                        const on = solutions.includes(s.key);
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => toggleSolution(s.key)}
+                            aria-pressed={on}
+                            className={cn(
+                              pillClasses,
+                              on
+                                ? "border-electric-500/60 bg-electric-500/15 text-electric-300"
+                                : "border-ink-700/70 bg-ink-900/40 text-ink-300 hover:text-ink-100",
+                            )}
+                          >
+                            {s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <label className="block space-y-1.5">
                     <span className="text-xs font-medium text-ink-200">
-                      Comments <span className="text-ink-500">(optional)</span>
+                      Comments <span className="text-ink-500">{CONTACT_COPY.optional}</span>
                     </span>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={comments}
                       onChange={(e) => setComments(e.target.value)}
                       placeholder="How can we help?"

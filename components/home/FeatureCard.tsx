@@ -88,7 +88,7 @@ export function FeatureCard({
         </div>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-ink-950/90" />
       </div>
-      <div className="flex flex-1 flex-col space-y-2 p-5">
+      <div className="flex flex-1 flex-col gap-2 p-5">
         <h2 className="font-display text-lg font-semibold tracking-tight text-ink-50">
           {title}
         </h2>

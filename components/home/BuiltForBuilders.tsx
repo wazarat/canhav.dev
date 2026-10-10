@@ -28,7 +28,7 @@ export function BuiltForBuilders() {
 
         <div className="order-1 space-y-5 text-center md:order-2 md:text-left">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#cfe0ff]">
-            For Teams
+            Pro Services
           </p>
           <h2
             className="font-display text-3xl font-semibold leading-[1.08] tracking-tight text-white md:text-4xl"

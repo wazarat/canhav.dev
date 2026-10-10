@@ -14,6 +14,7 @@
  * - "snapshot":          no public live source; committed value below.
  */
 
+/** The Entropy Advisors dashboard the snapshot figures come from. No longer linked from the UI. */
 export const DUNE_DASHBOARD_URL =
   "https://dune.com/entropy_advisors/robinhood-chain-network-overview";
 
@@ -181,8 +182,6 @@ export interface AnalyticsChainConfig {
   footnote: string;
   /** DefiLlama's name for the chain. */
   llamaSlug: string;
-  sourceUrl: string;
-  sourceLabel: string;
   stats: StatQueryConfig[];
   charts: ChartQueryConfig[];
 }
@@ -196,8 +195,6 @@ export const ANALYTICS_CHAINS: Record<AnalyticsChain, AnalyticsChainConfig> = {
     footnote:
       "Data is supplied by Dune and DefiLlama from indexed onchain activity. The 24h view uses the latest completed UTC day. Asset market cap and tokenized value are periodic snapshots from the Entropy Advisors dashboard.",
     llamaSlug: "Robinhood Chain",
-    sourceUrl: DUNE_DASHBOARD_URL,
-    sourceLabel: "View on Dune",
     stats: STAT_QUERIES,
     charts: CHART_QUERIES,
   },
@@ -208,8 +205,6 @@ export const ANALYTICS_CHAINS: Record<AnalyticsChain, AnalyticsChainConfig> = {
     footnote:
       "Data is supplied by DefiLlama from indexed onchain activity on Arbitrum One. The 24h view and the volume and fee figures use the latest completed UTC day.",
     llamaSlug: "Arbitrum",
-    sourceUrl: "https://defillama.com/chain/arbitrum",
-    sourceLabel: "View on DefiLlama",
     stats: ARBITRUM_STAT_QUERIES,
     charts: ARBITRUM_CHART_QUERIES,
   },
