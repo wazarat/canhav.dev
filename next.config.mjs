@@ -21,7 +21,14 @@ const nextConfig = {
     return {
       beforeFiles: [
         {
-          source: "/:path*",
+          source: "/",
+          has: [{ type: "host", value: "meet.canhav.com" }],
+          destination: "/meet",
+        },
+        // Any other page path too, but never /_next, /api or a file (anything
+        // with a dot), or the stylesheet and scripts would come back as HTML.
+        {
+          source: "/:path((?!_next/|api/|.*\\..*).+)",
           has: [{ type: "host", value: "meet.canhav.com" }],
           destination: "/meet",
         },
