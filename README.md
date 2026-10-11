@@ -37,7 +37,7 @@ Live at [canhav.com](https://www.canhav.com), docs at
 | `indexer/` | Ponder indexer for launches, run once per chain (Fly configs included) |
 | `indexer-agents/` | Indexer for the unlinked `/agents` track |
 | `docs/` | Source of docs.canhav.com, including the litepaper |
-| `public/kits/` | Kit files for credit, liquidity, derivatives, staking and RWA builders, served raw |
+| `public/kits/` | Kit files for credit, liquidity, derivatives, staking, RWA and cover and governance builders, served raw |
 | `scripts/` | Database setup and checks |
 
 ## Develop
@@ -500,5 +500,20 @@ event window so judges can verify it.
   has a "What this product includes" list whose ticks add build steps and rank
   templates; Derivatives, Staking and RWA open with nine new shapes, their build
   steps, features, review passes and kit files under `public/kits/`.
+- Oct 11, 2026. Other opens (M68). Cover pool and Token governance shapes under
+  Underwriting and Governance with their build steps, features, review passes
+  and the kit under `public/kits/other/`. Every sector is open, so the "opens
+  soon" line under the sector cards is gone.
+- Oct 11, 2026. Launch venue on the token design (M69). The Market section asks
+  where the token first trades, the CanHav curve, Pons or Pools (pools.xyz), with
+  each venue's facts; Pons and Pools are Robinhood Chain mainnet only, so a design
+  linked to an Arbitrum project gets a note and the `launch_target_off_chain`
+  warning, never a block. The venue travels into the project's handoff, the
+  exports, the resource pack and the MCP design tools.
+- Oct 11, 2026. Mainnet companion and Pons pairing (M70). A project records its
+  mainnet contracts beside the testnet launch, names the companion contract from
+  the accepted templates with a Pons fit, and on Robinhood records the paired
+  Pons launch and its creator fee recipient; shown on the Reality step, the Token
+  launch panel, the public page, the exports and the MCP project blocks.
 
 This list grows as work lands on the branch.

@@ -1,5 +1,5 @@
 import { launchChain } from "@/content/launch";
-import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainInfo } from "@/lib/chains";
 
 /**
  * Blockscout URL builders, one explorer per chain (M54). Single home for the
@@ -17,4 +17,9 @@ export function explorerTxUrl(hash: string, chain: ProjectChain = DEFAULT_PROJEC
 
 export function explorerTokenUrl(address: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): string {
   return `${launchChain(chain).explorerUrl}/token/${address}`;
+}
+
+/** An address on the mainnet the project's chain stands in for (M70). */
+export function mainnetAddressUrl(address: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): string {
+  return `${chainInfo(chain).mainnetExplorerUrl}/address/${address}`;
 }

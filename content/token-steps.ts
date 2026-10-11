@@ -52,7 +52,7 @@ export const TOKEN_STEPS: readonly TokenStep[] = [
     id: "token.market",
     title: "Plan the market at launch",
     detail:
-      "Liquidity amount, where the ETH comes from, LP treatment and anti sniping. The curve fixes the window and the tax, so the plan matches what the platform does.",
+      "The venue the token first trades on, the liquidity amount, where the ETH comes from, LP treatment and anti sniping. The venue fixes its window and its fees, so the plan matches what it does.",
     step: "market",
     phase: "design",
   },

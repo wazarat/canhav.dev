@@ -15,6 +15,8 @@ import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { LAUNCH_TARGET_COPY, launchTargetHandoffLine, launchTargetLabel } from "@/content/launch-targets";
+import { type LaunchTarget, type LaunchTargetFit, launchTargetFit } from "@/lib/launch-targets";
 import type { ProjectDoc } from "@/lib/ideation";
 import { docSectors } from "@/lib/sectors";
 import {
@@ -132,7 +134,20 @@ export interface ResourcePackView {
   templates: TemplatesView;
   /** What the product includes, as the features the team ticked (M64). */
   features: FeaturesView;
+  /** The venue the linked token design ideates for (M69). Null without a design or a choice. */
+  launchTarget: LaunchTargetView | null;
   howToUse: string;
+}
+
+export interface LaunchTargetView {
+  target: LaunchTarget;
+  label: string;
+  /** `any` for the curve, `fits` or `off_chain` for a venue tied to a mainnet, read for the project's chain. */
+  fit: LaunchTargetFit;
+  /** The one line the handoff shows. */
+  note: string;
+  /** The project's templates that carry a Pons fit line, accepted first, then open, then rejected. */
+  ponsFitTemplates: Array<{ id: string; name: string; decision: TemplateState; ponsFit: string }>;
 }
 
 export interface TemplatePackView
@@ -215,14 +230,31 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
 }
 
 export const HOW_TO_USE =
-  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted. features lists what the product includes as the team ticked it; a ticked feature's steps are in the checklist and the templates it suggests carry it in suggestedBy, so prefer those on their steps.";
+  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted. features lists what the product includes as the team ticked it; a ticked feature's steps are in the checklist and the templates it suggests carry it in suggestedBy, so prefer those on their steps. launchTarget, when the linked token design has chosen a venue, names it with its fit on this chain and the templates whose Pons fit line says how they can sit behind a Pons launch; a venue marked off_chain runs on a mainnet this project's chain does not stand in for, so plan the testnet launch on the CanHav curve and say so.";
+
+const DECISION_RANK: Record<TemplateState, number> = { accepted: 0, open: 1, rejected: 2 };
+
+/** The pack's launch venue block (M69). Pons fit lines come from the catalog, accepted templates first. */
+function launchTargetView(target: LaunchTarget, chain: ProjectChain, items: readonly TemplatePackView[]): LaunchTargetView {
+  const fit = launchTargetFit(target, chain);
+  return {
+    target,
+    label: launchTargetLabel(target),
+    fit,
+    note: launchTargetHandoffLine(target, fit),
+    ponsFitTemplates: items
+      .filter((t): t is TemplatePackView & { ponsFit: string } => Boolean(t.ponsFit))
+      .sort((a, b) => DECISION_RANK[a.decision] - DECISION_RANK[b.decision])
+      .map((t) => ({ id: t.id, name: t.name, decision: t.decision, ponsFit: t.ponsFit })),
+  };
+}
 
 export const NO_SHAPE_HINT =
   "This project has no product shape yet. Pick what you are building in the studio Basics step and the resource pack will follow.";
 
 export function buildResourcePack(
   doc: ProjectDoc,
-  opts: PackFilter & { includeUnselected?: boolean } = {},
+  opts: PackFilter & { includeUnselected?: boolean; launchTarget?: LaunchTarget | null } = {},
 ): ResourcePackView | null {
   const kit = doc.kit;
   const shapes = kitShapes(kit);
@@ -343,6 +375,7 @@ export function buildResourcePack(
     review: buildReviewView(doc)!,
     templates: { counts: templateCounts(templateItems.map((t) => t.id), kit), items: templateItems },
     features: { ...featureProgress(features, kit), items: featureItems },
+    launchTarget: opts.launchTarget ? launchTargetView(opts.launchTarget, chain, templateItems) : null,
     howToUse: HOW_TO_USE,
   };
 }

@@ -40,6 +40,10 @@ This creates a draft project named after the token, on the token's chain. When i
 
 A project's MCP server reads one token: the token deployed from its linked design when there is one, otherwise the most recent launch linked to the project.
 
+## Mainnet and the Pons pairing
+
+A project can record its mainnet deployment beside the testnet launch, on the Reality step of the studio. The contracts live on the mainnet the project's chain stands in for, Robinhood Chain (4663) for a Robinhood testnet project and Arbitrum One (42161) for an Arbitrum Sepolia project, and the public page, the Token launch panel and the exports link each address to that mainnet's explorer. The companion contract is picked from the templates the team accepted on the Build step that carry a Pons fit line, and on a Robinhood project the Pons launch it is paired with is recorded with its token address and the creator fee recipient. Pons runs on Robinhood Chain mainnet only, so an Arbitrum project records contracts and a companion but no pairing. Agents read the record on `get_project_status` and `get_launch` and write it through `update_project`.
+
 ## Related
 
 - [Studio](../ideation/studio.md)

@@ -255,6 +255,26 @@ export const SHAPE_TOKEN_ADVICE: Record<ProductShape, ShapeTokenAdvice> = {
     example:
       "A regional stablecoin issues the backed token only and keeps the issuer as a company, not a DAO.",
   },
+  cover_pool: {
+    needsToken: "sometimes",
+    summary:
+      "Capital providers hold pool shares and premiums pay them, so a cover pool works without a token. A token fits as the first loss capital that backs claims or as the vote over which risks the pool writes.",
+    fits: ["economic_security", "governance"],
+    avoid: ["token_is_product", "fundraising", "bootstrap_supply"],
+    lock: "Lock the claim path, the shortfall rule and the premium setter behind a timelock before the token stands as first loss capital.",
+    example:
+      "A smart contract cover pool stakes its own token as the junior tranche and pays stakers from the premium.",
+  },
+  governance_stack: {
+    needsToken: "usually",
+    summary:
+      "The voting token is the design. What it governs, who may propose, the quorum, the timelock and which roles stay with a multisig are the product, so the token's distribution has to match the power it carries.",
+    fits: ["governance", "fee_capture"],
+    avoid: ["token_is_product", "fundraising"],
+    lock: "Lock the governor's parameters and the timelock delay behind the timelock itself, and name every role the multisig keeps outside the vote before the token trades.",
+    example:
+      "A governor and timelock receive a launched token's creator fees and holders vote on where they go.",
+  },
 };
 
 export const TOKEN_ADVICE_COPY = {

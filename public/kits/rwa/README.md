@@ -11,7 +11,12 @@ chain, and the catalog at `/studio/templates` lists them all.
 
 | File | Use it when |
 |------|-------------|
-| `SKILL.md` | You want your coding agent to know how this kit fits together and how to decide templates with you. |\n| `ARCHITECTURE.md` | You are writing the design document for a security token product, a private credit pool or a reserve-backed token. |\n| `TRANSFER_RULES.md` | You are writing who may hold, the identity check, freeze and forced transfer, and the exit rights a rule never overrides. |\n| `RESERVE_ATTESTATION.md` | You are deciding who attests the reserve, how often, and what a stale attestation stops. |\n| `CREDIT_WATERFALL.md` | You are setting tranches, first loss and the order repayments and losses flow. |\n| `PRELAUNCH_REVIEW.md` | You want the review passes a reviewer walks before anything holds value. |
+| `SKILL.md` | You want your coding agent to know how this kit fits together and how to decide templates with you. |
+| `ARCHITECTURE.md` | You are writing the design document for a security token product, a private credit pool or a reserve-backed token. |
+| `TRANSFER_RULES.md` | You are writing who may hold, the identity check, freeze and forced transfer, and the exit rights a rule never overrides. |
+| `RESERVE_ATTESTATION.md` | You are deciding who attests the reserve, how often, and what a stale attestation stops. |
+| `CREDIT_WATERFALL.md` | You are setting tranches, first loss and the order repayments and losses flow. |
+| `PRELAUNCH_REVIEW.md` | You want the review passes a reviewer walks before anything holds value. |
 
 ## How to use it with a coding agent
 

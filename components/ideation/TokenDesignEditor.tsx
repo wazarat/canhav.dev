@@ -20,6 +20,7 @@ import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { StatusChip } from "@/components/ui/StatusChip";
 import {
   DEPLOYABILITY_COPY,
@@ -47,7 +48,6 @@ import {
   LEGAL_DISCLAIMER,
   LEGAL_TOPICS,
   LP_TREATMENT_OPTIONS,
-  MARKET_FACTS,
   MARKET_TIMING_OPTIONS,
   RATIONALE_WHY_OPTIONS,
   RELEASE_TYPE_OPTIONS,
@@ -55,7 +55,10 @@ import {
   SUPPLY_POLICY_OPTIONS,
   UNDERSUBSCRIPTION_OPTIONS,
 } from "@/content/ideation";
+import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, LAUNCH_TARGET_OPTIONS, launchTargetLabel } from "@/content/launch-targets";
+import type { ProjectChain } from "@/lib/chains";
 import { explorerAddressUrl } from "@/lib/explorer";
+import { launchTargetChainBound } from "@/lib/launch-targets";
 import {
   type CohortVesting,
   TOKEN_DESIGN_LIMITS,
@@ -229,6 +232,7 @@ export function TokenDesignEditor({
   initialRev,
   linkedProjectId = null,
   linkedShapes = [],
+  linkedChain = null,
   publishedMilestoneCount = null,
   curve = null,
   linkPanel,
@@ -244,6 +248,8 @@ export function TokenDesignEditor({
   linkedProjectId?: string | null;
   /** The linked project's product shapes, for the shape advice and the fit warning (M47). */
   linkedShapes?: readonly ProductShape[];
+  /** The linked project's chain, for the launch venue note and warning (M69). Null when unlinked. */
+  linkedChain?: ProjectChain | null;
   /** How many milestones the published snapshot carries, null when unpublished (M48). */
   publishedMilestoneCount?: number | null;
   /** The deployed token's curve, for the computed build steps (M46). */
@@ -605,6 +611,29 @@ export function TokenDesignEditor({
 
           {step === 4 && (
             <>
+              <ChipRadioGroup
+                label={LAUNCH_TARGET_COPY.label}
+                hint={LAUNCH_TARGET_COPY.hint}
+                value={doc.market.launchTarget ?? ""}
+                onChange={(v) => patchSection("market", { launchTarget: v })}
+                options={LAUNCH_TARGET_OPTIONS}
+              />
+              {doc.market.launchTarget ? (
+                <p className="-mt-2 text-xs leading-relaxed text-ink-400">
+                  {LAUNCH_TARGET_INFO[doc.market.launchTarget].blurb}
+                </p>
+              ) : null}
+              {doc.market.launchTarget && launchTargetChainBound(doc.market.launchTarget) ? (
+                linkedChain === "arbitrum_sepolia" ? (
+                  <StatusChip tone="info" variant="block">
+                    {LAUNCH_TARGET_COPY.arbitrumNote(launchTargetLabel(doc.market.launchTarget))}
+                  </StatusChip>
+                ) : linkedProjectId === null ? (
+                  <StatusChip tone="info" variant="block">
+                    {LAUNCH_TARGET_COPY.unlinkedNote(launchTargetLabel(doc.market.launchTarget))}
+                  </StatusChip>
+                ) : null
+              ) : null}
               <FieldIntroCard intro="token.market.when" />
               <SelectField
                 label="Does a market exist at launch?"
@@ -686,8 +715,8 @@ export function TokenDesignEditor({
                 </>
               )}
               <StatusChip tone="info" variant="block">
-                <span className="block font-medium text-ink-100">Fixed by the platform</span>
-                {MARKET_FACTS.map((fact) => (
+                <span className="block font-medium text-ink-100">{LAUNCH_TARGET_COPY.factsTitle}</span>
+                {LAUNCH_TARGET_INFO[doc.market.launchTarget ?? "canhav_curve"].facts.map((fact) => (
                   <span key={fact} className="mt-1 block">
                     {fact}
                   </span>
@@ -908,7 +937,7 @@ export function TokenDesignEditor({
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <ComputedPanel doc={doc} shapes={linkedShapes} />
+          <ComputedPanel doc={doc} shapes={linkedShapes} chain={linkedChain} />
         </div>
       </div>
       {linkPanel}

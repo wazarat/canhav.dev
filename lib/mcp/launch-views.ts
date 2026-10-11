@@ -1,5 +1,7 @@
 import "server-only";
 
+import { mainnetView } from "@/lib/mainnet-view";
+
 import { launchChain } from "@/content/launch";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { getTokenDesignByAddress } from "@/lib/ideation-db";
@@ -208,6 +210,8 @@ export async function projectBlock(address: string, includePrivate = false) {
     subsectorLabels: p.subsectorLabels,
     shapes: p.shapes,
     shapeLabels: p.shapeLabels,
+    // The mainnet contracts and the Pons pairing the project records (M70), shown with the name.
+    mainnet: visible ? mainnetView({ chain: p.chain, mainnet: p.mainnet ?? undefined }) : null,
   };
 }
 

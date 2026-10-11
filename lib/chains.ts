@@ -20,6 +20,8 @@ export interface ProjectChainInfo {
   mainnetChainId: number;
   /** Name of that mainnet, for notes. */
   mainnetName: string;
+  /** Block explorer of that mainnet, for the mainnet contracts a project records (M70). */
+  mainnetExplorerUrl: string;
   name: string;
   /** Short name for chips and notes. */
   short: string;
@@ -33,6 +35,7 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     chainId: 46630,
     mainnetChainId: 4663,
     mainnetName: "Robinhood Chain",
+    mainnetExplorerUrl: "https://robinhoodchain.blockscout.com",
     name: "Robinhood Chain Testnet",
     short: "Robinhood testnet",
     family: "robinhood",
@@ -42,6 +45,7 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     chainId: 421614,
     mainnetChainId: 42161,
     mainnetName: "Arbitrum One",
+    mainnetExplorerUrl: "https://arbiscan.io",
     name: "Arbitrum Sepolia",
     short: "Arbitrum Sepolia",
     family: "arbitrum",

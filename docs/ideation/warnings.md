@@ -54,6 +54,14 @@ Related: [Computed outputs](computed-outputs.md) (4% float → 25× FDV:float).
 
 **Worked example:** An earn feature inside a wallet picks Bootstrapping a supply side. The vaults it routes to already have suppliers, so the emissions would pay for nothing. Fee capture on the cut the app keeps is the reason that fits.
 
+## The launch venue is not on this project's chain
+
+**Trigger:** The design is linked to a project, the Market section names Pons or Pools as the launch venue, and the project builds on Arbitrum Sepolia (which stands in for Arbitrum One). Pons and Pools run on Robinhood Chain mainnet only. Fires only through the linked project, in the studio computed panel, on `get_linked_token_design` and `check_design` on the project's MCP server, and on the public `check_design` tool once the linked project is published.
+
+**Meaning:** The testnet launch on the CanHav curve is unaffected. Taking the design to that venue afterwards would need a Robinhood Chain project, or a different venue. Advisory only; it never blocks publishing and never changes the launch.
+
+**Worked example:** A design picks Pons while its project builds on Arbitrum Sepolia. The team launches on the CanHav curve on Arbitrum Sepolia as planned, then either starts a Robinhood Chain project for the mainnet launch or switches the venue to the CanHav curve.
+
 ## Related
 
 - [Computed outputs](computed-outputs.md)

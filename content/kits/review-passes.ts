@@ -33,6 +33,7 @@ const HOOKS = ["hook_pool"] as const;
 const DERIVATIVES = ["perp_exchange", "option_vault", "delta_neutral_vault"] as const;
 const STAKING = ["liquid_staking_token", "restaking_service", "liquid_restaking_token"] as const;
 const RWA = ["tokenized_security", "private_credit_pool", "asset_backed_token"] as const;
+const OTHER = ["cover_pool", "governance_stack"] as const;
 
 /**
  * Pre-launch review passes. The vault-side and borrow-side passes follow the
@@ -397,6 +398,42 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     detail: "Freeze, recall, forced transfer and mint each have a named key with a delay, and the holder can read them before buying.",
     shapes: RWA,
     resources: ["canhav.rwa-prelaunch-review", "canhav.role-model"],
+  },
+  // -- Other (M68) ----------------------------------------------------------------
+  {
+    id: "review.claim-path",
+    title: "A claim travels from filing to payout as the written path says",
+    detail: "A filed claim, a disputed claim and a rejected claim each follow the claims path worksheet in the tests, and no payout happens without a decided claim.",
+    shapes: ["cover_pool"],
+    resources: ["canhav.other-prelaunch-review", "canhav.claims-path"],
+  },
+  {
+    id: "review.shortfall",
+    title: "The shortfall rule holds under a claim larger than the pool",
+    detail: "A claim beyond the pool's capital is absorbed junior before senior, paid pro rata or queued as the policy says, and the buyer saw the limit before paying.",
+    shapes: ["cover_pool"],
+    resources: ["canhav.other-prelaunch-review", "canhav.policy-terms"],
+  },
+  {
+    id: "review.proposal-lifecycle",
+    title: "A proposal passes, queues and executes only as the rules say",
+    detail: "Threshold, delay, period, quorum and the timelock behave as the governance parameters worksheet says, with a failed quorum and a cancelled proposal in the test trace.",
+    shapes: ["governance_stack"],
+    resources: ["canhav.other-prelaunch-review", "canhav.governance-parameters"],
+  },
+  {
+    id: "review.timelock-scope",
+    title: "Nothing moves the treasury except the timelock",
+    detail: "Every path that spends is behind the timelock or a scoped role the vote set, and the invariant test proves it.",
+    shapes: ["governance_stack"],
+    resources: ["canhav.other-prelaunch-review", "canhav.role-model"],
+  },
+  {
+    id: "review.kept-powers",
+    title: "Every power outside the vote or the claim path is named, keyed and disclosed",
+    detail: "The pause, the veto, the premium setter and each multisig role have a named key, a limit and a sunset, and a holder or a buyer can read them before committing.",
+    shapes: OTHER,
+    resources: ["canhav.other-prelaunch-review", "canhav.role-model"],
   },
 ];
 

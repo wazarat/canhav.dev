@@ -1,5 +1,7 @@
 import { LAUNCH_FORM } from "@/content/launch";
+import type { ProjectChain } from "@/lib/chains";
 import type { ProductShape } from "@/lib/kits";
+import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
 import { rationaleFitsShapes } from "@/lib/token-advice";
 import {
   type CohortVesting,
@@ -34,7 +36,8 @@ export type DesignWarning =
   | "unlock_cluster"
   | "sale_no_undersub_plan"
   | "rationale_unsure"
-  | "rationale_shape_mismatch";
+  | "rationale_shape_mismatch"
+  | "launch_target_off_chain";
 
 /**
  * What the caller knows beyond the document (M47). The shapes of the
@@ -43,6 +46,8 @@ export type DesignWarning =
  */
 export interface DesignContext {
   shapes?: readonly ProductShape[];
+  /** The chain of the project a design is linked to (M69), for the launch venue fit. */
+  chain?: ProjectChain;
 }
 
 export type UnlockCohort = VestedCohort | "public" | "liquidity";
@@ -199,6 +204,10 @@ export function deriveTokenomics(doc: TokenDesignDoc, ctx: DesignContext = {}): 
     warnings.push("rationale_unsure");
   if (rationaleFitsShapes(doc.rationale.why, ctx.shapes ?? []) === "avoid")
     warnings.push("rationale_shape_mismatch");
+  // The venue runs on a mainnet the linked project's chain does not stand in for (M69).
+  const target = launchTargetOf(doc);
+  if (ctx.chain && target && launchTargetFit(target, ctx.chain) === "off_chain")
+    warnings.push("launch_target_off_chain");
 
   return {
     floatAtLaunchPct,

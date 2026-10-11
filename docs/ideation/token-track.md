@@ -137,6 +137,7 @@ If the event is a sale (fixed-price, auction, or LBP):
 
 | Field | Notes |
 |-------|-------|
+| Launch venue | Optional since M69. CanHav curve, Pons or Pools (pools.xyz, the Uniswap launchpad). Where the token first trades after the testnet launch on the CanHav curve. Pons and Pools run on Robinhood Chain mainnet only, so their chips carry that note; on a design linked to an Arbitrum Sepolia project an info block and the launch venue warning appear, and on an unlinked design a note asks for the link. The chosen venue's facts replace the platform facts below, the Build section's market step reads "Ideating for Pons", and the linked project's handoff and Token launch panel carry one line about it. Never injected into an existing design, so a republish hashes the same. |
 | Market timing | At launch; later; never |
 
 If at launch:
@@ -148,7 +149,9 @@ If at launch:
 | LP treatment | Locked (with months); burned; unlocked |
 | Anti-sniping | Launch window; early-sell tax; trading delay; none |
 
-### Shown (not asked): platform-fixed facts
+### Shown (not asked): fixed by the venue
+
+For the CanHav curve (the default when no venue is chosen):
 
 - Venue and pairing are fixed: token ⇄ ETH on the launch AMM
 - Trading fee: 0.30% to LPs; opt-in protocol fee split 70/30 project/platform, enforced in bytecode
@@ -156,13 +159,15 @@ If at launch:
 
 See [Fees and economics](../token-launch/fees-and-economics.md).
 
+For Pons and Pools the block shows that venue's facts instead (fixed supply of 1 billion, the trading fee and the creator share, the launch window and threshold), checked against their documentation on 2026-10-11 and kept in `content/launch-targets.ts`.
+
 ### Computed
 
 - Liquidity allocation enters month-0 float when market is at launch
 
 ### Warnings
 
-Low float (same rule as distribution) when market is at launch.
+Low float (same rule as distribution) when market is at launch. Launch venue not on this project's chain when the venue is Pons or Pools and the linked project builds on Arbitrum Sepolia (see [Warnings](warnings.md)).
 
 ---
 

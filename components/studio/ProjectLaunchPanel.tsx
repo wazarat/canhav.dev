@@ -10,7 +10,9 @@ import { patchLaunchProject } from "@/components/studio/LaunchRowActions";
 import { Button } from "@/components/ui/Button";
 import { inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { MAINNET_COPY } from "@/content/ideation";
 import { LAUNCH_PROJECT_COPY, MCP_CONNECT } from "@/content/launch";
+import type { MainnetView } from "@/lib/mainnet-view";
 import { cn } from "@/lib/utils";
 
 export interface PanelLaunch {
@@ -29,11 +31,17 @@ export function ProjectLaunchPanel({
   project,
   linked,
   candidates,
+  venueLine = null,
+  mainnet = null,
 }: {
   project: { id: string; name: string; hasKit: boolean };
   linked: PanelLaunch[];
   /** The account's launches on this project's chain with no project yet. */
   candidates: PanelLaunch[];
+  /** The linked design's launch venue in one line (M69). */
+  venueLine?: string | null;
+  /** The mainnet contracts and the Pons pairing the project records (M70). */
+  mainnet?: MainnetView | null;
 }) {
   const router = useRouter();
   const [choice, setChoice] = useState("");
@@ -62,6 +70,7 @@ export function ProjectLaunchPanel({
     >
       <h3 className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.panelTitle}</h3>
       <p className="mt-1 text-xs text-ink-500">{LAUNCH_PROJECT_COPY.panelLead}</p>
+      {venueLine ? <p className="mt-2 text-xs text-ink-300">{venueLine}</p> : null}
 
       <div className="mt-4 space-y-3">
         {linked.length === 0 ? (
@@ -128,6 +137,43 @@ export function ProjectLaunchPanel({
         ) : null}
       </div>
       {error ? <p className="mt-2 text-xs text-rose-400">{error}</p> : null}
+
+      <div className="mt-5 border-t border-ink-800/70 pt-4">
+        <h4 className="text-xs font-medium text-ink-200">{MAINNET_COPY.panelTitle}</h4>
+        {mainnet ? (
+          <div className="mt-2 space-y-2 text-xs">
+            <StatusChip tone="neutral">{MAINNET_COPY.chainLine(mainnet.chainName, mainnet.chainId)}</StatusChip>
+            {mainnet.contracts.map((c) => (
+              <div key={c.address} className="flex flex-wrap items-center gap-2">
+                <span className="text-ink-300">{c.label || c.address.slice(0, 10)}</span>
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-electric-300 transition-colors hover:text-electric-200"
+                >
+                  {c.address.slice(0, 6)}…{c.address.slice(-4)}
+                </a>
+              </div>
+            ))}
+            {mainnet.companion ? <p className="text-ink-300">{MAINNET_COPY.companionLine(mainnet.companion.name)}</p> : null}
+            {mainnet.pons ? (
+              <p className="text-ink-300">
+                {MAINNET_COPY.ponsLine}{" "}
+                <a href={mainnet.pons.tokenUrl} target="_blank" rel="noreferrer" className="font-mono text-electric-300 hover:text-electric-200">
+                  {mainnet.pons.tokenAddress.slice(0, 6)}…{mainnet.pons.tokenAddress.slice(-4)}
+                </a>
+                . {MAINNET_COPY.feeLine}{" "}
+                <a href={mainnet.pons.feeUrl} target="_blank" rel="noreferrer" className="font-mono text-electric-300 hover:text-electric-200">
+                  {mainnet.pons.feeRecipient.slice(0, 6)}…{mainnet.pons.feeRecipient.slice(-4)}
+                </a>
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-1 text-xs text-ink-500">{MAINNET_COPY.panelNone}</p>
+        )}
+      </div>
 
       <LaunchAgentModal
         open={prompt !== null}

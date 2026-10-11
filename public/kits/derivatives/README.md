@@ -11,7 +11,12 @@ chain, and the catalog at `/studio/templates` lists them all.
 
 | File | Use it when |
 |------|-------------|
-| `SKILL.md` | You want your coding agent to know how this kit fits together and how to decide templates with you. |\n| `ARCHITECTURE.md` | You are writing the design document for a perpetuals venue, an option vault or a delta neutral vault. One section per shape, fill in the blanks. |\n| `PERP_PARAMETERS.md` | You are setting margin, the liquidation line, open interest caps and the funding cap for a venue. |\n| `OPTION_SCHEDULE.md` | You are writing the strike rule, the expiry cycle and the premium sale for a vault that writes options. |\n| `HEDGE_BAND.md` | You are setting the delta band, the rebalance rule and its cost for a hedged vault. |\n| `PRELAUNCH_REVIEW.md` | You want the review passes a reviewer walks before anything holds value. |
+| `SKILL.md` | You want your coding agent to know how this kit fits together and how to decide templates with you. |
+| `ARCHITECTURE.md` | You are writing the design document for a perpetuals venue, an option vault or a delta neutral vault. One section per shape, fill in the blanks. |
+| `PERP_PARAMETERS.md` | You are setting margin, the liquidation line, open interest caps and the funding cap for a venue. |
+| `OPTION_SCHEDULE.md` | You are writing the strike rule, the expiry cycle and the premium sale for a vault that writes options. |
+| `HEDGE_BAND.md` | You are setting the delta band, the rebalance rule and its cost for a hedged vault. |
+| `PRELAUNCH_REVIEW.md` | You want the review passes a reviewer walks before anything holds value. |
 
 ## How to use it with a coding agent
 

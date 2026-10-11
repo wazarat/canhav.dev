@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/Badge";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
+import { LAUNCH_TARGET_COPY, launchTargetLabel } from "@/content/launch-targets";
 import { TOKEN_STEPS, TOKEN_STEPS_COPY, TOKEN_STEP_LABELS, tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenDesignDoc } from "@/lib/ideation";
+import { launchTargetOf } from "@/lib/launch-targets";
 import {
   type TokenBuildRow,
   type TokenLaunchFacts,
@@ -138,9 +140,13 @@ export function TokenStepSection({
                   {row.step.title}
                 </span>
               );
+              const venue = row.step.id === "token.market" ? launchTargetOf(doc) : null;
               const detail = (
                 <span className="block space-y-1.5">
                   <span className="block">{row.step.detail}</span>
+                  {venue ? (
+                    <span className="block text-ink-300">{LAUNCH_TARGET_COPY.ideatingFor(launchTargetLabel(venue))}</span>
+                  ) : null}
                   {meta}
                 </span>
               );

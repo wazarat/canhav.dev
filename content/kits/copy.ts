@@ -2,6 +2,7 @@ import type { ChipOption } from "@/components/ui/ChipGroup";
 import { CREDIT_SHAPE_OPTIONS } from "@/content/kits/credit";
 import { DERIVATIVES_SHAPE_OPTIONS } from "@/content/kits/derivatives";
 import { LIQUIDITY_SHAPE_OPTIONS } from "@/content/kits/liquidity";
+import { OTHER_SHAPE_OPTIONS } from "@/content/kits/other";
 import { RWA_SHAPE_OPTIONS } from "@/content/kits/rwa";
 import { STAKING_SHAPE_OPTIONS } from "@/content/kits/staking";
 import { ALL_SUBSECTOR_OPTIONS } from "@/content/ideation";
@@ -47,6 +48,7 @@ export const SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = PRODUCT_SHAPE_VALUES.ma
     ...DERIVATIVES_SHAPE_OPTIONS,
     ...STAKING_SHAPE_OPTIONS,
     ...RWA_SHAPE_OPTIONS,
+    ...OTHER_SHAPE_OPTIONS,
   ].find((o) => o.value === value);
   if (!option) throw new Error(`Shape ${value} has no option copy.`);
   return option;

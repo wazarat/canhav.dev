@@ -40,9 +40,10 @@ import { LIQUIDITY_ALLOCATOR_CHECKLIST, PERMISSIONED_VAULT_CHECKLIST } from "./v
 import { DELTA_NEUTRAL_VAULT_CHECKLIST, OPTION_VAULT_CHECKLIST, PERP_EXCHANGE_CHECKLIST } from "./derivatives";
 import { LIQUID_RESTAKING_TOKEN_CHECKLIST, LIQUID_STAKING_TOKEN_CHECKLIST, RESTAKING_SERVICE_CHECKLIST } from "./staking";
 import { ASSET_BACKED_TOKEN_CHECKLIST, PRIVATE_CREDIT_POOL_CHECKLIST, TOKENIZED_SECURITY_CHECKLIST } from "./rwa";
+import { COVER_POOL_CHECKLIST, GOVERNANCE_STACK_CHECKLIST } from "./other";
 
 /**
- * Build checklists by shape, all twenty-two. assertChecklists runs at import and
+ * Build checklists by shape, all twenty-four. assertChecklists runs at import and
  * fails the build on a duplicate id or a reference to a resource or a
  * contract template that is not in its catalog.
  */
@@ -69,6 +70,8 @@ export const KIT_CHECKLISTS: Partial<Record<ProductShape, readonly ChecklistItem
   tokenized_security: TOKENIZED_SECURITY_CHECKLIST,
   private_credit_pool: PRIVATE_CREDIT_POOL_CHECKLIST,
   asset_backed_token: ASSET_BACKED_TOKEN_CHECKLIST,
+  cover_pool: COVER_POOL_CHECKLIST,
+  governance_stack: GOVERNANCE_STACK_CHECKLIST,
 };
 
 /** Every per-shape item for the shapes, lists one after another in table order. For ids and storage. */

@@ -1,4 +1,7 @@
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
+import { type LaunchTarget, launchTargetOf } from "@/lib/launch-targets";
+import { mainnetView } from "@/lib/mainnet-view";
 import {
   AUDIT_LABELS,
   CHAIN_DEPLOYMENT_COPY,
@@ -18,7 +21,6 @@ import {
   IDEATION_RESOURCES,
   ISSUANCE_PATH_OPTIONS,
   LP_TREATMENT_OPTIONS,
-  MARKET_FACTS,
   MARKET_TIMING_OPTIONS,
   AUDIENCE_OPTIONS,
   PERSONA_COPY,
@@ -38,6 +40,7 @@ import {
   personaRows,
   sectorLabels,
   subsectorLabels,
+  MAINNET_COPY,
 } from "@/content/ideation";
 import {
   ENVIRONMENT_COPY,
@@ -185,8 +188,13 @@ function resourceLine(r: PackResourceView): string {
 }
 
 /** "## Resource pack" and "## Where this runs today", or nothing without a shape. */
-function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] {
-  const pack = buildResourcePack(doc);
+function resourcePackSections(
+  doc: ProjectDoc,
+  heading: "##" | "###",
+  /** The linked design's venue (M69), when the caller has the design. */
+  launchTarget: LaunchTarget | null = null,
+): string[] {
+  const pack = buildResourcePack(doc, { launchTarget });
   if (!pack) return [];
   const lines: string[] = [
     "",
@@ -258,6 +266,15 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
       }
     }
   }
+  if (pack.launchTarget) {
+    const lt = pack.launchTarget;
+    lines.push("", `${heading} ${LAUNCH_TARGET_COPY.packTitle}`, "", lt.note);
+    if (lt.target !== "canhav_curve") {
+      lines.push("", `${heading}# ${LAUNCH_TARGET_COPY.ponsFitTitle}`, "");
+      if (!lt.ponsFitTemplates.length) lines.push(LAUNCH_TARGET_COPY.ponsFitNone);
+      for (const t of lt.ponsFitTemplates) lines.push(`- **${t.name}** (${TEMPLATE_COPY.state[t.decision]}). ${t.ponsFit}`);
+    }
+  }
   if (pack.review.passes.length > 0) {
     const p = pack.review.progress;
     lines.push(
@@ -293,6 +310,17 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
 }
 
 /** "## Your files", the team's own references (M53), or nothing. Draft exports only, a snapshot never carries them. */
+/** The mainnet deployment and the Pons pairing (M70), when recorded. */
+function mainnetSections(doc: ProjectDoc, heading: "##" | "###"): string[] {
+  const m = mainnetView(doc);
+  if (!m) return [];
+  const lines = ["", `${heading} ${MAINNET_COPY.exportTitle}`, "", MAINNET_COPY.chainLine(m.chainName, m.chainId), ""];
+  for (const c of m.contracts) lines.push(`- **${c.label || "Contract"}:** ${c.address} (${c.url})`);
+  if (m.companion) lines.push(`- **Companion contract template:** ${m.companion.name} (${m.companion.id})${m.companion.ponsFit ? `. ${m.companion.ponsFit}` : ""}`);
+  if (m.pons) lines.push(`- **Pons token:** ${m.pons.tokenAddress} (${m.pons.tokenUrl})`, `- **Creator fee recipient:** ${m.pons.feeRecipient} (${m.pons.feeUrl})`);
+  return lines;
+}
+
 function referenceSections(doc: ProjectDoc): string[] {
   const refs = (doc.references ?? []).filter((r) => r.title.trim() && r.location.trim());
   if (!refs.length) return [];
@@ -384,6 +412,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     for (const c of doc.testnetContracts ?? [])
       lines.push(`- **Testnet contract:** ${c} (${launchChain(projectChainOf(doc)).explorerUrl}/address/${c})`);
   }
+  lines.push(...mainnetSections(doc, "##"));
   lines.push("");
   return lines.join("\n");
 }
@@ -465,6 +494,8 @@ export function buildTokenDesignMarkdown(
     "",
     `- **Market at launch:** ${optionLabel(MARKET_TIMING_OPTIONS, doc.market.when)}`,
   );
+  const venue = launchTargetOf(doc);
+  if (venue) lines.push(`- **Launch venue:** ${launchTargetLabel(venue)}`);
   if (doc.market.when === "at_launch" && doc.market.atLaunch) {
     const m = doc.market.atLaunch;
     lines.push(
@@ -473,7 +504,7 @@ export function buildTokenDesignMarkdown(
       `- **Anti-sniping:** ${optionLabel(ANTI_SNIPING_OPTIONS, m.antiSniping)}`,
     );
   }
-  lines.push("", "Platform-fixed facts:", "", ...MARKET_FACTS.map((f) => `- ${f}`));
+  lines.push("", `${LAUNCH_TARGET_COPY.factsTitle}:`, "", ...LAUNCH_TARGET_INFO[venue ?? "canhav_curve"].facts.map((f) => `- ${f}`));
 
   lines.push(
     "",
@@ -701,7 +732,8 @@ export function buildAgentsMd(input: {
       "flows deserve scrutiny proportional to it.",
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
-    lines.push(...resourcePackSections(project, "##"));
+    lines.push(...resourcePackSections(project, "##", token ? launchTargetOf(token) : null));
+    lines.push(...mainnetSections(project, "##"));
     lines.push(...referenceSections(project));
   }
 

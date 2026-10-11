@@ -11,7 +11,11 @@ chain, and the catalog at `/studio/templates` lists them all.
 
 | File | Use it when |
 |------|-------------|
-| `SKILL.md` | You want your coding agent to know how this kit fits together and how to decide templates with you. |\n| `ARCHITECTURE.md` | You are writing the design document for a liquid staking token, a restaking service or a liquid restaking token. |\n| `EXIT_QUEUE.md` | You are designing how a holder gets out and what they see while waiting. |\n| `SLASHING_DISCLOSURE.md` | You are writing what is slashed, by whom, with what evidence and who absorbs it. |\n| `PRELAUNCH_REVIEW.md` | You want the review passes a reviewer walks before anything holds value. |
+| `SKILL.md` | You want your coding agent to know how this kit fits together and how to decide templates with you. |
+| `ARCHITECTURE.md` | You are writing the design document for a liquid staking token, a restaking service or a liquid restaking token. |
+| `EXIT_QUEUE.md` | You are designing how a holder gets out and what they see while waiting. |
+| `SLASHING_DISCLOSURE.md` | You are writing what is slashed, by whom, with what evidence and who absorbs it. |
+| `PRELAUNCH_REVIEW.md` | You want the review passes a reviewer walks before anything holds value. |
 
 ## How to use it with a coding agent
 

@@ -16,6 +16,7 @@ import {
   STATUS_DECL_LABELS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
+  MAINNET_COPY,
   optionLabel,
   sectorLabels,
   subsectorLabels,
@@ -23,6 +24,7 @@ import {
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { explorerAddressUrl } from "@/lib/explorer";
+import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectDoc, type StatusDecl, docAudience } from "@/lib/ideation";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
@@ -108,6 +110,7 @@ export default async function ProjectPublicPage({
     })),
   );
   const linkedPublished = linked && linked.status === "published" && linked.slug ? linked : null;
+  const mainnet = mainnetView(doc);
 
   const commitsLast30Days = github
     ? github.recentCommits.filter(
@@ -359,6 +362,44 @@ export default async function ProjectPublicPage({
                 </StatusChip>
               )}
             </div>
+          </Section>
+        )}
+
+        {mainnet && (
+          <Section title={MAINNET_COPY.publicTitle}>
+            <p className="text-sm text-ink-500">{MAINNET_COPY.publicLead(mainnet.chainName)}</p>
+            <ul className="space-y-2">
+              {mainnet.contracts.map((c) => (
+                <li key={c.address} className="flex flex-wrap items-center gap-2 text-sm">
+                  <StatusChip tone="neutral">{c.label || "Contract"}</StatusChip>
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all font-mono text-electric-300 transition-colors hover:text-electric-200"
+                  >
+                    {c.address}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {mainnet.companion ? (
+              <p className="text-sm text-ink-300">{MAINNET_COPY.companionLine(mainnet.companion.name)}</p>
+            ) : null}
+            {mainnet.pons ? (
+              <div className="flex flex-wrap gap-2">
+                <StatusChip tone="success">
+                  <a href={mainnet.pons.tokenUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-ink-50">
+                    {MAINNET_COPY.ponsLine} {mainnet.pons.tokenAddress.slice(0, 6)}…{mainnet.pons.tokenAddress.slice(-4)}
+                  </a>
+                </StatusChip>
+                <StatusChip tone="neutral">
+                  <a href={mainnet.pons.feeUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-ink-50">
+                    {MAINNET_COPY.feeLine} {mainnet.pons.feeRecipient.slice(0, 6)}…{mainnet.pons.feeRecipient.slice(-4)}
+                  </a>
+                </StatusChip>
+              </div>
+            ) : null}
           </Section>
         )}
 

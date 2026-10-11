@@ -32,6 +32,7 @@ import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
+import { MainnetEditor } from "@/components/ideation/MainnetEditor";
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import {
   AUDIENCE_OPTIONS,
@@ -83,6 +84,8 @@ import {
   docSectors,
   sectorOfSubsector, requiresSubsector } from "@/lib/sectors";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { type LaunchTarget, launchTargetFit } from "@/lib/launch-targets";
+import { launchTargetHandoffLine } from "@/content/launch-targets";
 import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { buildProgress, removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
@@ -173,6 +176,7 @@ export function ProjectEditor({
   initialSlug,
   initialRev,
   chainLocked = false,
+  linkedLaunchTarget = null,
   linkPanel,
   headerActions,
 }: {
@@ -184,6 +188,8 @@ export function ProjectEditor({
   initialRev?: number;
   /** True once a token has launched from the project, which fixes its chain (M52). */
   chainLocked?: boolean;
+  /** The launch venue the linked token design ideates for (M69), null when none. */
+  linkedLaunchTarget?: LaunchTarget | null;
   linkPanel?: React.ReactNode;
   /** Buttons across from the project name (the agent prompt and the token link, M56). */
   headerActions?: React.ReactNode;
@@ -289,6 +295,14 @@ export function ProjectEditor({
   );
   // Kit aware, so removed steps are gone and added ones are in (M50).
   const sections = useMemo(() => sectionsFor(kitShapes(kit), kit ?? {}), [kit]);
+  // Companion contract choices (M70): the accepted templates with a Pons fit on this project's shapes.
+  const companionOptions = useMemo(
+    () =>
+      templatesForShapes(TEMPLATE_CATALOG, kitShapes(kit), chainKey)
+        .filter((t) => t.ponsFit && kit?.templates?.[t.id] === "accepted")
+        .map((t) => ({ value: t.id, label: t.name })),
+    [kit, chainKey],
+  );
   const removedByShape = useMemo(() => removedGroupsFor(kit), [kit]);
   const current = editorSteps[Math.min(step, editorSteps.length - 1)];
   const docStep = current.kind === "doc" ? current.key : null;
@@ -730,6 +744,15 @@ export function ProjectEditor({
                 className="font-mono text-xs"
               />
             </Field>
+            <MainnetEditor
+              mainnet={doc.mainnet}
+              chain={chainKey}
+              companionOptions={companionOptions}
+              onChange={(next) => {
+                const { mainnet: _old, ...rest } = doc;
+                setDoc(next ? { ...rest, mainnet: next } : (rest as typeof doc));
+              }}
+            />
           </>
         )}
 
@@ -855,7 +878,17 @@ export function ProjectEditor({
                 Everything checks out. Publish from the button above.
               </StatusChip>
             )}
-            {showRail && kit?.shape ? <KitHandoff projectId={id} name={doc.name} /> : null}
+            {showRail && kit?.shape ? (
+              <KitHandoff
+                projectId={id}
+                name={doc.name}
+                venueLine={
+                  linkedLaunchTarget
+                    ? launchTargetHandoffLine(linkedLaunchTarget, launchTargetFit(linkedLaunchTarget, chainKey))
+                    : null
+                }
+              />
+            ) : null}
           </div>
         )}
       </div>

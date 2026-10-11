@@ -125,7 +125,6 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
     label: "Other",
     title: "Other sector application",
     sentence: "I am looking to build cover, underwriting or governance around a protocol.",
-    available: false,
   },
 ];
 
@@ -498,6 +497,43 @@ export const REFERENCES_COPY = {
     "Files the team keeps for this project. A local path is on the team's machine, so open it only when you are working there.",
 } as const;
 
+/** The mainnet deployment and the Pons pairing (M70). No colons, no em dashes. */
+export const MAINNET_COPY = {
+  label: "Mainnet and Pons pairing",
+  hint: "Once the product is live on mainnet, record its contracts beside the testnet launch, name the companion contract built from an accepted template with a Pons fit, and record the Pons launch it is paired with. Published with the project.",
+  chainLine: (name: string, chainId: number) => `${name}, chain id ${chainId}`,
+  chainHint: "The mainnet this project's chain stands in for. Every address below lives there.",
+  contractsLabel: "Mainnet contracts",
+  contractsHint: "A label and an address per contract. Verify the source on the explorer; the public page links every address there.",
+  labelPlaceholder: "Vault",
+  addressPlaceholder: "0x…",
+  labelField: "Contract label",
+  addressField: "Contract address",
+  add: "Add a contract",
+  remove: (label: string) => `Remove ${label || "this contract"}`,
+  removeTitle: "Remove this contract",
+  limit: (max: number) => `At most ${max} mainnet contracts.`,
+  companionLabel: "Companion contract",
+  companionHint: "The accepted template with a Pons fit the mainnet companion is built from. Accept templates on the Build step first.",
+  companionNone: "No accepted template on this project's steps carries a Pons fit. Accept one on the Build step and it appears here.",
+  companionClear: "No companion",
+  ponsLabel: "Pons launch",
+  ponsHint: "The token launched on Pons that the companion contract is paired with, and the address its creator fees are paid to.",
+  ponsTokenLabel: "Pons token address",
+  ponsFeeLabel: "Creator fee recipient",
+  ponsOffChain: (chainName: string) =>
+    `Pons runs on Robinhood Chain mainnet. This project builds on ${chainName}, so there is no Pons pairing to record.`,
+  /** Read-only surfaces. */
+  panelTitle: "Mainnet",
+  panelNone: "No mainnet contracts recorded yet. Add them on the Reality step once the product is live.",
+  publicTitle: "Mainnet",
+  publicLead: (name: string) => `Contracts the team recorded on ${name}. Addresses are the claim, the explorer is the evidence.`,
+  companionLine: (name: string) => `Companion contract built from ${name}`,
+  ponsLine: "Paired with a Pons launch",
+  feeLine: "Creator fees paid to",
+  exportTitle: "Mainnet and Pons pairing",
+} as const;
+
 /** The chain a project builds on (M52). Its token launch follows it. */
 export const CHAIN_COPY = {
   label: "Chain",
@@ -705,6 +741,13 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
       "The project linked to this design builds a shape where this reason for a token rarely holds up. The advice on the Rationale step lists the reasons that fit and what a token for that shape should lock. Pick one of those, or write down in the next field why this product is the exception.",
     example:
       "Worked example: an earn feature inside a wallet picks Bootstrapping a supply side. The vaults it routes to already have suppliers, so the emissions would pay for nothing. Fee capture on the cut the app keeps is the reason that fits.",
+  },
+  launch_target_off_chain: {
+    title: "The launch venue is not on this project's chain",
+    body:
+      "The venue this design ideates for runs on Robinhood Chain mainnet, and the project linked to this design builds on Arbitrum Sepolia, which stands in for Arbitrum One. The testnet launch on the CanHav curve is unaffected. Taking the design to that venue afterwards would need a Robinhood Chain project, or a different venue. Advisory only; it never blocks publishing.",
+    example:
+      "Worked example: a design picks Pons while its project builds on Arbitrum Sepolia. The team launches on the CanHav curve on Arbitrum Sepolia as planned, then either starts a Robinhood Chain project for the mainnet launch or switches the venue to the CanHav curve.",
   },
   rationale_unsure: {
     title: "Does this actually need a token?",

@@ -8,6 +8,9 @@ import { ProjectHeaderActions } from "@/components/studio/ProjectHeaderActions";
 import { type PanelLaunch, ProjectLaunchPanel } from "@/components/studio/ProjectLaunchPanel";
 import { getSessionUser } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
+import { launchTargetHandoffLine } from "@/content/launch-targets";
+import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
+import { mainnetView } from "@/lib/mainnet-view";
 import { hasCommitment } from "@/lib/journey";
 import { projectChainLocked } from "@/lib/launch-project";
 import { type MyLaunch, getMyLaunches } from "@/lib/my-launches";
@@ -47,6 +50,9 @@ export default async function ProjectEditorPage({
   });
   const recorded = (myLaunches ?? []).filter((l) => l.source !== "design");
   const hasKit = Boolean(row.draft_doc.kit?.shape);
+  // The venue the linked design ideates for (M69), one line on the handoff and the launch panel.
+  const launchTarget = linked ? launchTargetOf(linked.draft_doc) : null;
+  const venueLine = launchTarget ? launchTargetHandoffLine(launchTarget, launchTargetFit(launchTarget, chain)) : null;
 
   return (
     <ProjectEditor
@@ -56,6 +62,7 @@ export default async function ProjectEditorPage({
       initialSlug={row.slug}
       initialRev={row.agent_rev}
       chainLocked={chainLocked}
+      linkedLaunchTarget={launchTarget}
       headerActions={
         <ProjectHeaderActions
           projectId={row.id}
@@ -81,6 +88,8 @@ export default async function ProjectEditorPage({
             project={{ id: row.id, name: row.draft_doc.name, hasKit }}
             linked={recorded.filter((l) => l.project?.id === row.id).map(panelLaunch)}
             candidates={recorded.filter((l) => !l.project && l.chain === chain).map(panelLaunch)}
+            venueLine={venueLine}
+            mainnet={mainnetView(row.draft_doc)}
           />
           <McpConnectCard
             target={{

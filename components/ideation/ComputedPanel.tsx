@@ -6,6 +6,7 @@ import { UnlockCalendarChart } from "@/components/ideation/UnlockCalendarChart";
 import { WarningResourceCard } from "@/components/ideation/WarningResourceCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import type { TokenDesignDoc } from "@/lib/ideation";
+import type { ProjectChain } from "@/lib/chains";
 import type { ProductShape } from "@/lib/kits";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
@@ -26,12 +27,15 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 export function ComputedPanel({
   doc,
   shapes = [],
+  chain = null,
 }: {
   doc: TokenDesignDoc;
   /** The linked project's product shapes, for the rationale fit warning (M47). */
   shapes?: readonly ProductShape[];
+  /** The linked project's chain, for the launch venue warning (M69). */
+  chain?: ProjectChain | null;
 }) {
-  const d = useMemo(() => deriveTokenomics(doc, { shapes }), [doc, shapes]);
+  const d = useMemo(() => deriveTokenomics(doc, { shapes, chain: chain ?? undefined }), [doc, shapes, chain]);
   const fmtPct = (n: number) => `${n % 1 === 0 ? n : n.toFixed(1)}%`;
 
   return (

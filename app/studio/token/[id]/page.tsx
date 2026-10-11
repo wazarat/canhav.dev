@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getLinkedProject, getMyProjects, getSnapshot, getTokenDesign, designDeployChain } from "@/lib/ideation-db";
 import { designMilestones } from "@/lib/launch-commitment";
 import { getCurve } from "@/lib/indexer";
+import { projectChainOf } from "@/lib/chains";
 import { kitShapes } from "@/lib/kits";
 
 export const metadata: Metadata = {
@@ -48,6 +49,7 @@ export default async function TokenDesignEditorPage({
       deployedAddress={row.deployed_token_address}
       linkedProjectId={linked?.id ?? null}
       linkedShapes={linked ? kitShapes(linked.draft_doc.kit) : []}
+      linkedChain={linked ? projectChainOf(linked.draft_doc) : null}
       publishedMilestoneCount={publishedMilestoneCount}
       curve={curve ? { graduated: curve.graduated, windowEnd: curve.windowEnd } : null}
       linkPanel={

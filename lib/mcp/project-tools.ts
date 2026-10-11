@@ -59,7 +59,10 @@ import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
-import { chainInfo, projectChainOf } from "@/lib/chains";
+import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { launchTargetLabel } from "@/content/launch-targets";
+import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
+import { mainnetView } from "@/lib/mainnet-view";
 import { TEMPLATE_ID } from "@/lib/templates";
 import { FEATURE_ID, KIT_LIMITS, hasFeature } from "@/lib/kits";
 
@@ -145,6 +148,13 @@ function noTokenMessage(ctx: ProjectCtx): string {
 }
 
 /** What the platform knows about the linked design's launch, for the token build steps (M46). */
+/** The venue a design ideates for and its fit on the project's chain (M69), null until chosen. */
+function launchTargetView(doc: TokenDesignDoc, chain: ProjectChain) {
+  const target = launchTargetOf(doc);
+  if (!target) return null;
+  return { target, label: launchTargetLabel(target), fit: launchTargetFit(target, chain) };
+}
+
 async function tokenFacts(design: TokenDesignRow, curve?: IndexedCurve | null): Promise<TokenLaunchFacts> {
   const address = design.deployed_token_address ?? null;
   const read = curve === undefined ? (address ? await getCurve(address, designDeployChain(design)) : null) : curve;
@@ -247,7 +257,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           : null,
       ]);
       const derived = design
-        ? deriveTokenomics(design.draft_doc, { shapes: kitShapes(project.draft_doc.kit) })
+        ? deriveTokenomics(design.draft_doc, { shapes: kitShapes(project.draft_doc.kit), chain: projectChainOf(project.draft_doc) })
         : null;
       const launchHint = `Launch a token from canhav.com/launch?project=${project.id}.`;
       const nextAction = projectProblem
@@ -280,6 +290,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           // The testnet the project builds on and its token launches on (M52).
           chain: projectChainOf(project.draft_doc),
           chainId: chainInfo(projectChainOf(project.draft_doc)).chainId,
+          // The mainnet contracts and the Pons pairing the project records (M70), null until recorded.
+          mainnet: mainnetView(project.draft_doc),
         },
         kit: kit?.shape
           ? {
@@ -310,6 +322,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                   }
                 : null,
               warnings: derived?.warnings ?? [],
+              // The venue the design ideates for (M69), null until chosen.
+              launchTarget: launchTargetView(design.draft_doc, projectChainOf(project.draft_doc)),
               build: tokenBuildProgressOf(
                 design.draft_doc,
                 await tokenFacts(design, deployed && deployed === tokenAddress ? curve : undefined),
@@ -345,7 +359,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's token design",
       description:
-        "The token design linked to this project, with its derived tokenomics, its warnings (including whether the rationale fits this project's product shapes), what the CanHav contracts can deploy of it, an advice block per product shape on whether a token fits and what it should lock, and its deployed token address when it has one. Read the advice before changing the rationale with update_linked_token_design. Takes no arguments.",
+        "The token design linked to this project, with its launchTarget (the venue it ideates for, canhav_curve, pons or pools_xyz, with its fit on this project's chain), its derived tokenomics, its warnings (including whether the rationale fits this project's product shapes and whether the venue runs on this project's mainnet), what the CanHav contracts can deploy of it, an advice block per product shape on whether a token fits and what it should lock, and its deployed token address when it has one. Read the advice before changing the rationale with update_linked_token_design. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -354,6 +368,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project, design } = loaded.value;
       if (!design) return errorResult(NO_DESIGN);
       const shapes = kitShapes(project.draft_doc.kit);
+      const chain = projectChainOf(project.draft_doc);
       return jsonResult({
         id: design.id,
         slug: design.slug,
@@ -364,8 +379,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         updatedAt: design.updated_at,
         publicUrl: publicUrl("t", design),
         draft: design.draft_doc,
-        derived: deriveTokenomics(design.draft_doc, { shapes }),
-        warnings: designWarnings(design.draft_doc, { shapes }),
+        launchTarget: launchTargetView(design.draft_doc, chain),
+        derived: deriveTokenomics(design.draft_doc, { shapes, chain }),
+        warnings: designWarnings(design.draft_doc, { shapes, chain }),
         deployability: designDeployability(design.draft_doc),
         advice: shapeAdviceFor(shapes),
         build: tokenBuildProgressOf(design.draft_doc, await tokenFacts(design)),
@@ -471,7 +487,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Check this project's token design",
       description:
-        "Run CanHav's design warning rules and deployability classification against this project's token design draft, including whether the rationale fits this project's product shapes. Pass an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check an edit before saving it. Otherwise takes no arguments.",
+        "Run CanHav's design warning rules and deployability classification against this project's token design draft, including whether the rationale fits this project's product shapes and whether the launch venue runs on this project's chain. Pass an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check an edit before saving it. Otherwise takes no arguments.",
       inputSchema: z.object({ doc: z.record(z.string(), z.unknown()).optional() }),
     },
     async ({ doc }, ctx) => {
@@ -489,11 +505,12 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       }
       const firstProblem = validateTokenDesignDoc(candidate);
       const shapes = kitShapes(loaded.value.project.draft_doc.kit);
+      const chain = projectChainOf(loaded.value.project.draft_doc);
       return jsonResult({
         checked: doc ? "inline doc" : "this project's linked design draft",
         valid: firstProblem === null,
         firstProblem,
-        warnings: designWarnings(candidate, { shapes }),
+        warnings: designWarnings(candidate, { shapes, chain }),
         deployability: designDeployability(candidate),
       });
     },
@@ -509,7 +526,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, testnetContracts, verifyWallet). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine) and note, which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, testnetContracts, verifyWallet). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine) and note, which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -743,7 +760,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_linked_token_design",
     {
       title: "Change the linked token design's draft",
-      description: `Change fields of the token design linked to this project. Name and ticker, rationale, supply and allocations, vesting, distribution, market, governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. Read the advice block on get_linked_token_design before changing the rationale. ${WRITE_RULES} Run check_design afterwards for warnings.`,
+      description: `Change fields of the token design linked to this project. Name and ticker, rationale, supply and allocations, vesting, distribution, market (including launchTarget, the venue the token ideates for, canhav_curve, pons or pools_xyz; Pons and Pools run on Robinhood Chain mainnet only, which check_design reports as a warning on an Arbitrum project), governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. Read the advice block on get_linked_token_design before changing the rationale. ${WRITE_RULES} Run check_design afterwards for warnings.`,
       inputSchema: z.object({ changes: tokenDesignPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -812,7 +829,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's resource pack",
       description:
-        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family. The templates block carries the contract templates for the shapes with the team's decisions.",
+        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family. The templates block carries the contract templates for the shapes with the team's decisions, and launchTarget the venue the linked design ideates for with the templates that carry a Pons fit.",
       inputSchema: z.object({
         step: z.enum(KIT_STEPS as [KitStep, ...KitStep[]]).optional(),
         priority: z.enum(KIT_PRIORITY_ORDER as [KitPriority, ...KitPriority[]]).optional(),
@@ -823,7 +840,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     async (args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
-      const pack = buildResourcePack(loaded.value.project.draft_doc, args);
+      const { project, design } = loaded.value;
+      const pack = buildResourcePack(project.draft_doc, { ...args, launchTarget: design ? launchTargetOf(design.draft_doc) : null });
       if (!pack) return errorResult(NO_SHAPE_HINT);
       return jsonResult({ source: "draft", ...pack });
     },

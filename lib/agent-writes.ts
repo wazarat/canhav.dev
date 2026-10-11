@@ -4,8 +4,9 @@ import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { TEMPLATE_CATALOG, templateById } from "@/content/templates";
 import { featuresFor } from "@/content/kits/features";
+import { LAUNCH_TARGETS } from "@/lib/launch-targets";
 import { TEMPLATE_ID, templatesForShapes } from "@/lib/templates";
-import { projectChainOf } from "@/lib/chains";
+import { chainInfo, projectChainOf } from "@/lib/chains";
 import { checklistFor, groupsFor } from "@/content/kits/checklists";
 import { offeredShapes } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
@@ -21,6 +22,9 @@ import {
   TOKEN_DESIGN_LIMITS,
   type ProjectDoc,
   type TokenDesignDoc,
+  type MainnetRecord,
+  mainnetRecordEmpty,
+  validateMainnetRecord,
 } from "@/lib/ideation";
 import { JOURNEY_LIMITS } from "@/lib/journey";
 import {
@@ -206,6 +210,29 @@ export const projectPatchSchema = z
     githubRepo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
     testnetContracts: z.array(z.string().regex(/^0x[0-9a-f]{40}$/)).max(L.testnetContracts.max),
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
+    // The mainnet deployment and the Pons pairing (M70). Merged into the stored
+    // record; contracts replace the stored list; null clears the whole record.
+    // The chain id is always the mainnet the project's chain stands in for.
+    mainnet: z
+      .strictObject({
+        contracts: z
+          .array(
+            z.strictObject({
+              label: z.string().min(L.mainnetLabel.min).max(L.mainnetLabel.max),
+              address: z.string().regex(/^0x[0-9a-f]{40}$/),
+            }),
+          )
+          .max(L.mainnetContracts.max),
+        companionTemplate: z.string().regex(TEMPLATE_ID).nullable(),
+        pons: z
+          .strictObject({
+            tokenAddress: z.string().regex(/^0x[0-9a-f]{40}$/),
+            feeRecipient: z.string().regex(/^0x[0-9a-f]{40}$/),
+          })
+          .nullable(),
+      })
+      .partial()
+      .nullable(),
     // What the project is classed as (M51). Applied through lib/classify.ts,
     // so the fields that follow a pick move with it, the same as in the editor.
     // The team's own files, by reference (M53). The list replaces the stored list.
@@ -340,6 +367,7 @@ export const tokenDesignPatchSchema = z
     market: z
       .strictObject({
         when: z.enum(["at_launch", "later", "never"]),
+        launchTarget: z.enum(LAUNCH_TARGETS),
         atLaunch: z
           .strictObject({
             liquidityEth: z.number().min(0),
@@ -482,6 +510,19 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
   }
+  // Mainnet record (M70). Stamp the chain id, drop nulls, and leave the key out when nothing is recorded.
+  if ("mainnet" in patch) {
+    const { mainnet: raw, ...rest } = next as ProjectDoc & { mainnet?: unknown };
+    const merged = (patch.mainnet === null ? null : raw) as (Partial<MainnetRecord> & { companionTemplate?: string | null; pons?: MainnetRecord["pons"] | null }) | null;
+    if (merged) {
+      const record: MainnetRecord = { chainId: chainInfo(projectChainOf(rest)).mainnetChainId, contracts: merged.contracts ?? [] };
+      if (merged.companionTemplate) record.companionTemplate = merged.companionTemplate;
+      if (merged.pons) record.pons = merged.pons;
+      next = mainnetRecordEmpty(record) ? (rest as ProjectDoc) : { ...rest, mainnet: record };
+    } else {
+      next = rest as ProjectDoc;
+    }
+  }
   return next;
 }
 
@@ -492,6 +533,17 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
  */
 export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): string | null {
   let next = doc;
+  if (patch.mainnet) {
+    // The record as it would be stored, checked with the project's own rule (M70).
+    const after = applyProjectPatch(doc, { ...patch, sectors: undefined, subsectors: undefined, kit: undefined });
+    if (after.mainnet) {
+      const problem = validateMainnetRecord(after, after.mainnet);
+      if (problem) return problem;
+      const id = after.mainnet.companionTemplate;
+      if (id && !templateById(id)?.ponsFit)
+        return `${templateById(id)?.name ?? id} carries no Pons fit line, so it cannot be the companion contract. Read get_templates for the accepted templates with ponsFit.`;
+    }
+  }
   if (patch.sectors) {
     const closed = patch.sectors.filter((s) => SECTOR_OPTIONS.find((o) => o.value === s)?.available === false);
     if (closed.length) return `${closed.join(", ")} is not open on CanHav yet. Open sectors are ${SECTOR_OPTIONS.filter((o) => o.available !== false).map((o) => o.value).join(" and ")}.`;
@@ -713,6 +765,13 @@ const PATH_LABELS: Record<string, string> = {
   "kit.resources.tick": "Resources to tick",
   "kit.resources.untick": "Resources to untick",
   "kit.review": "Review verdicts",
+  "market.launchTarget": "Market, launch venue",
+  mainnet: "Mainnet record",
+  "mainnet.contracts": "Mainnet contracts",
+  "mainnet.companionTemplate": "Companion contract",
+  "mainnet.pons": "Pons pairing",
+  "mainnet.pons.tokenAddress": "Pons token address",
+  "mainnet.pons.feeRecipient": "Pons creator fee recipient",
 };
 
 /** architecture.externalDeps reads as "Architecture, external deps". */

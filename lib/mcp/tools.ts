@@ -22,7 +22,7 @@ import { GATE_COPY, SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { SECTOR_OPTIONS, SUBSECTOR_OPTIONS_BY_SECTOR } from "@/content/ideation";
 import { TEMPLATE_CATALOG, TEMPLATE_CATALOG_GENERATED } from "@/content/templates";
-import { type ProjectChain, PROJECT_CHAINS, PROJECT_CHAIN_INFO } from "@/lib/chains";
+import { type ProjectChain, PROJECT_CHAINS, PROJECT_CHAIN_INFO, projectChainOf } from "@/lib/chains";
 import {
   type KitFamily,
   type KitPriority,
@@ -215,6 +215,7 @@ export function registerAllTools(server: McpServer): void {
     async ({ slug, doc }) => {
       let design: TokenDesignDoc | null = null;
       let shapes: ProductShape[] = [];
+      let chain: ProjectChain | undefined;
       if (doc) {
         if (doc.kind !== "token_design" || doc.version !== 1)
           return errorResult('Inline doc must have kind "token_design" and version 1.');
@@ -228,7 +229,10 @@ export function registerAllTools(server: McpServer): void {
         design = snapshot.doc;
         // A published design linked to a project shows that project's shapes publicly (M47).
         const linked = await getLinkedProject(row.id);
-        if (linked?.status === "published") shapes = kitShapes(linked.draft_doc.kit);
+        if (linked?.status === "published") {
+          shapes = kitShapes(linked.draft_doc.kit);
+          chain = projectChainOf(linked.draft_doc);
+        }
       } else {
         return errorResult("Pass either a slug or an inline doc.");
       }
@@ -236,7 +240,7 @@ export function registerAllTools(server: McpServer): void {
       return jsonResult({
         valid: firstProblem === null,
         firstProblem,
-        warnings: designWarnings(design, { shapes }),
+        warnings: designWarnings(design, { shapes, chain }),
         deployability: designDeployability(design),
       });
     },

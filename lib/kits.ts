@@ -49,7 +49,9 @@ export type ProductShape =
   | "liquid_restaking_token"
   | "tokenized_security"
   | "private_credit_pool"
-  | "asset_backed_token";
+  | "asset_backed_token"
+  | "cover_pool"
+  | "governance_stack";
 
 /**
  * The one place subsector membership lives. Key order is picker order. A
@@ -82,6 +84,9 @@ export const SHAPE_SUBSECTORS: Record<ProductShape, readonly Subsector[]> = {
   tokenized_security: ["tokenized_securities"],
   private_credit_pool: ["private_credit"],
   asset_backed_token: ["asset_backed_tokens"],
+  // Other (M68).
+  cover_pool: ["underwriting"],
+  governance_stack: ["governance"],
 };
 
 export const PRODUCT_SHAPE_VALUES = Object.keys(SHAPE_SUBSECTORS) as readonly ProductShape[];
@@ -1046,7 +1051,7 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
   basic_amm_pool: ["uniswap"],
   concentrated_liquidity_pool: ["uniswap"],
   hook_pool: ["uniswap"],
-  // Template-driven shapes (M65 to M67) rely on no single family. Chain fit
+  // Template-driven shapes (M65 to M68) rely on no single family. Chain fit
   // comes from the contract templates on their steps, per template.
   perp_exchange: [],
   option_vault: [],
@@ -1057,6 +1062,8 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
   tokenized_security: [],
   private_credit_pool: [],
   asset_backed_token: [],
+  cover_pool: [],
+  governance_stack: [],
 };
 
 /** Environment rows for the given shapes, the chain's own row first, each family once, from whatever rows exist. */

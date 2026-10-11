@@ -5,6 +5,7 @@ import { type FeatureItem, type FeatureLists, type ProductShape, type ShapeInput
 import { CREDIT_FEATURES } from "./credit";
 import { DERIVATIVES_FEATURES } from "./derivatives";
 import { LIQUIDITY_FEATURES } from "./liquidity";
+import { OTHER_FEATURES } from "./other";
 import { RWA_FEATURES } from "./rwa";
 import { STAKING_FEATURES } from "./staking";
 
@@ -21,6 +22,7 @@ export const FEATURE_CATALOG: FeatureLists = {
   ...DERIVATIVES_FEATURES,
   ...STAKING_FEATURES,
   ...RWA_FEATURES,
+  ...OTHER_FEATURES,
 };
 
 /** The features of the shapes, table order. */

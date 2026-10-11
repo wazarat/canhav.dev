@@ -1,6 +1,7 @@
 import { keccak256, stringToBytes } from "viem";
 
-import { type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
+import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
+import { type LaunchTarget, isLaunchTarget } from "@/lib/launch-targets";
 import {
   kitsForSectors,
   normalizeProjectKit,
@@ -307,6 +308,32 @@ export interface ProjectDoc {
   testnetContracts?: string[];
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
+  /**
+   * The mainnet deployment beside the testnet launch and the Pons pairing
+   * (M70). Optional and never injected; a project without one hashes as
+   * before. Published with the record, unlike `references`.
+   */
+  mainnet?: MainnetRecord;
+}
+
+/** One deployed contract on the mainnet, labelled by the team. */
+export interface MainnetContract {
+  label: string;
+  /** Lowercase hex. */
+  address: string;
+}
+
+export interface MainnetRecord {
+  /** The mainnet chain id, always the one the project's chain stands in for (4663 or 42161). */
+  chainId: number;
+  contracts: MainnetContract[];
+  /** The accepted template with a Pons fit the companion contract is built from, a catalog id. */
+  companionTemplate?: string;
+  /** The Pons launch paired with the companion, Robinhood Chain mainnet only. */
+  pons?: {
+    tokenAddress: string;
+    feeRecipient: string;
+  };
 }
 
 export const PROJECT_LIMITS = {
@@ -330,6 +357,8 @@ export const PROJECT_LIMITS = {
   externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
   testnetContracts: { max: 10 },
+  mainnetContracts: { max: 20 },
+  mainnetLabel: { min: 1, max: 60 },
   references: { max: 40 },
   referenceTitle: { min: 2, max: 80 },
   referenceLocation: { min: 1, max: 300 },
@@ -489,6 +518,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
   // Chain (M52): kept when it is a known chain, dropped when it is garbage, never invented.
   if ("chain" in rest && !isProjectChain((rest as { chain?: unknown }).chain))
     delete (rest as { chain?: unknown }).chain;
+  // Mainnet record (M70): cleaned when the key exists, never invented.
+  if ("mainnet" in rest) {
+    const clean = normalizeMainnetRecord((rest as { mainnet?: unknown }).mainnet);
+    if (clean) (rest as { mainnet?: MainnetRecord }).mainnet = clean;
+    else delete (rest as { mainnet?: unknown }).mainnet;
+  }
 
   return {
     ...(rest as ProjectDoc),
@@ -612,6 +647,11 @@ export interface TokenDesignDoc {
   /** §5 Market — internally gated on `when`. */
   market: {
     when: MarketTiming | "";
+    /**
+     * The venue the token is ideated for (M69). Optional and never injected,
+     * so a design from before the field hashes the same on republish.
+     */
+    launchTarget?: LaunchTarget;
     atLaunch?: {
       liquidityEth: number;
       ethSource: string;
@@ -691,7 +731,13 @@ export function normalizeTokenChecklist(raw: unknown): Record<string, true> | un
 export function normalizeTokenDesignDoc(raw: TokenDesignDoc): TokenDesignDoc {
   const { checklist, ...rest } = raw as TokenDesignDoc & { checklist?: unknown };
   const clean = normalizeTokenChecklist(checklist);
-  return clean ? { ...(rest as TokenDesignDoc), checklist: clean } : (rest as TokenDesignDoc);
+  let doc = clean ? { ...(rest as TokenDesignDoc), checklist: clean } : (rest as TokenDesignDoc);
+  // An unknown launch venue is dropped, a missing one is never added (M69).
+  if (doc.market && "launchTarget" in doc.market && !isLaunchTarget(doc.market.launchTarget)) {
+    const { launchTarget: _drop, ...market } = doc.market;
+    doc = { ...doc, market };
+  }
+  return doc;
 }
 
 export type IdeationDoc = ProjectDoc | TokenDesignDoc;
@@ -867,6 +913,73 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   }
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
+  if (doc.mainnet) {
+    p = validateMainnetRecord(doc, doc.mainnet);
+    if (p) return p;
+  }
+  return null;
+}
+
+/** A stored mainnet record read back defensively (M70). Null when nothing usable is there. */
+export function normalizeMainnetRecord(raw: unknown): MainnetRecord | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const L = PROJECT_LIMITS;
+  const contracts: MainnetContract[] = [];
+  for (const v of Array.isArray(r.contracts) ? (r.contracts as unknown[]) : []) {
+    if (!v || typeof v !== "object" || contracts.length >= L.mainnetContracts.max) continue;
+    const c = v as Record<string, unknown>;
+    if (typeof c.address !== "string") continue;
+    contracts.push({
+      label: typeof c.label === "string" ? c.label.slice(0, L.mainnetLabel.max) : "",
+      address: c.address.trim().toLowerCase(),
+    });
+  }
+  const out: MainnetRecord = { chainId: typeof r.chainId === "number" ? r.chainId : 0, contracts };
+  if (typeof r.companionTemplate === "string" && r.companionTemplate) out.companionTemplate = r.companionTemplate;
+  if (r.pons && typeof r.pons === "object") {
+    const pn = r.pons as Record<string, unknown>;
+    if (typeof pn.tokenAddress === "string" || typeof pn.feeRecipient === "string")
+      out.pons = {
+        tokenAddress: typeof pn.tokenAddress === "string" ? pn.tokenAddress.trim().toLowerCase() : "",
+        feeRecipient: typeof pn.feeRecipient === "string" ? pn.feeRecipient.trim().toLowerCase() : "",
+      };
+  }
+  return mainnetRecordEmpty(out) ? null : out;
+}
+
+/** True when the record carries nothing worth storing, so the key is left out. */
+export function mainnetRecordEmpty(m: MainnetRecord | undefined | null): boolean {
+  return !m || (m.contracts.length === 0 && !m.companionTemplate && !m.pons);
+}
+
+/** The first problem with a mainnet record for this project, or null (M70). */
+export function validateMainnetRecord(doc: Pick<ProjectDoc, "chain" | "kit">, m: MainnetRecord): string | null {
+  const L = PROJECT_LIMITS;
+  const chain = projectChainOf(doc);
+  const info = PROJECT_CHAIN_INFO[chain];
+  if (m.chainId !== info.mainnetChainId)
+    return `Mainnet contracts must be on ${info.mainnetName} (chain id ${info.mainnetChainId}), the mainnet this project's chain stands in for.`;
+  if (m.contracts.length > L.mainnetContracts.max) return `At most ${L.mainnetContracts.max} mainnet contracts.`;
+  const seen = new Set<string>();
+  for (const c of m.contracts) {
+    if (c.label.trim().length < L.mainnetLabel.min) return "Every mainnet contract needs a label.";
+    if (c.label.length > L.mainnetLabel.max) return `A mainnet contract label is over ${L.mainnetLabel.max} characters.`;
+    if (!ADDRESS.test(c.address)) return "Mainnet contract addresses must be lowercase hex.";
+    if (seen.has(c.address)) return "A mainnet contract address is listed twice.";
+    seen.add(c.address);
+  }
+  if (m.companionTemplate !== undefined) {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(m.companionTemplate)) return "Unknown companion contract template.";
+    if (doc.kit?.templates?.[m.companionTemplate] !== "accepted")
+      return "The companion contract must be a template accepted on the Build step.";
+  }
+  if (m.pons) {
+    if (chain !== "robinhood_testnet")
+      return `Pons runs on Robinhood Chain mainnet. A project on ${info.name} has no Pons pairing to record.`;
+    if (!ADDRESS.test(m.pons.tokenAddress)) return "The Pons token address must be lowercase hex.";
+    if (!ADDRESS.test(m.pons.feeRecipient)) return "The Pons creator fee recipient must be lowercase hex.";
+  }
   return null;
 }
 
@@ -959,6 +1072,8 @@ export function validateTokenDesignDoc(doc: TokenDesignDoc): string | null {
   }
 
   // §5 Market — gated on its own first question
+  if (doc.market.launchTarget !== undefined && !isLaunchTarget(doc.market.launchTarget))
+    return "Unknown launch venue.";
   if (!doc.market.when) return "Answer whether a market exists at launch.";
   if (doc.market.when === "at_launch") {
     const m = doc.market.atLaunch;
@@ -1114,4 +1229,6 @@ export interface ProjectContext {
   publicUrl: string | null;
   /** The chain the project builds on, which its token launches on (M54). */
   chain: ProjectChain;
+  /** The mainnet deployment and the Pons pairing the project records (M70), null when none. */
+  mainnet?: MainnetRecord | null;
 }

@@ -13,7 +13,16 @@ import { MCP_CONNECT } from "@/content/launch";
  * prompt that makes an agent load the pack. Static apart from the project id
  * and name.
  */
-export function KitHandoff({ projectId, name }: { projectId: string; name: string }) {
+export function KitHandoff({
+  projectId,
+  name,
+  venueLine = null,
+}: {
+  projectId: string;
+  name: string;
+  /** The linked design's launch venue in one line (M69). Null when no design or no venue. */
+  venueLine?: string | null;
+}) {
   const base = `/api/export/project/${projectId}`;
   const cls =
     "inline-flex items-center gap-1.5 rounded-full border border-ink-700/70 px-3 py-1 text-xs font-medium text-ink-300 transition-colors hover:border-electric-500/50 hover:text-electric-200";
@@ -21,6 +30,7 @@ export function KitHandoff({ projectId, name }: { projectId: string; name: strin
     <section className="glass mt-6 rounded-2xl p-5" aria-label={HANDOFF_COPY.title}>
       <h3 className="font-display text-sm font-semibold text-ink-50">{HANDOFF_COPY.title}</h3>
       <p className="mt-1 text-xs leading-relaxed text-ink-400">{HANDOFF_COPY.intro}</p>
+      {venueLine ? <p className="mt-2 text-xs leading-relaxed text-ink-300">{venueLine}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <a href={`${base}?file=resources`} className={cls} download>
           <Download aria-hidden className="h-3 w-3" />
