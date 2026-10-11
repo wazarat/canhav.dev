@@ -14,6 +14,7 @@ export const BASIC_AMM_POOL_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Decimals, transfer behaviour and any fee on transfer, written down for each, before a pair is created around them.",
     step: "architecture",
     resources: ["tob.token-integration", "canhav.pool-parameters"],
+    templates: ["uniswap-v2", "balancer-v3-pools", "curve-stableswap-ng"],
   },
   {
     id: "basic_amm_pool.stack",
@@ -21,6 +22,7 @@ export const BASIC_AMM_POOL_CHECKLIST: readonly ChecklistItem[] = [
     detail: "In that order, from pinned commits, with the fee setter on a role-model key. The protocol has nothing on testnet, so this is yours.",
     step: "reality",
     resources: ["canhav.uniswap-deploy-runbook", "uniswap.v2-core", "uniswap.v2-periphery"],
+    templates: ["uniswap-v2"],
   },
   {
     id: "basic_amm_pool.manifest",
@@ -87,6 +89,7 @@ export const CONCENTRATED_LIQUIDITY_POOL_CHECKLIST: readonly ChecklistItem[] = [
     detail: "In that order, from pinned commits, with the protocol fee owner on a role-model key. The singleton is yours on testnet.",
     step: "reality",
     resources: ["canhav.uniswap-deploy-runbook", "uniswap.v4-core", "uniswap.v4-periphery"],
+    templates: ["uniswap-v3", "uniswap-v4-pools", "pancakeswap-infinity", "lfj-liquidity-book"],
   },
   {
     id: "concentrated_liquidity_pool.manifest",
@@ -115,6 +118,7 @@ export const CONCENTRATED_LIQUIDITY_POOL_CHECKLIST: readonly ChecklistItem[] = [
     detail: "The ranges the product suggests, and a position that has left its range shown as one token earning nothing, not as a loss hidden in a total.",
     step: "architecture",
     resources: ["uniswap.v4-concentrated-liquidity", "uniswap.v4-mint-position"],
+    templates: ["arrakis-v2", "gamma-hypervisor", "arcadia-lp-automation"],
   },
   {
     id: "concentrated_liquidity_pool.swaps",
@@ -160,6 +164,7 @@ export const HOOK_POOL_CHECKLIST: readonly ChecklistItem[] = [
     detail: "What it does in one sentence, which pools, and why a hook rather than a separate contract or an off-chain rule.",
     step: "architecture",
     resources: ["canhav.hook-design", "uniswap.v4-hooks-concept"],
+    templates: ["uniswap-v4-pools", "openzeppelin-uniswap-hooks", "uniswap-v4-hooks-public", "pancakeswap-infinity"],
   },
   {
     id: "hook_pool.permissions",
@@ -174,6 +179,7 @@ export const HOOK_POOL_CHECKLIST: readonly ChecklistItem[] = [
     detail: "The Foundry project with core, periphery and test routers already wired, and the base hook whose callbacks you override.",
     step: "architecture",
     resources: ["uniswap.v4-template", "uniswap.basehook-source", "uniswap.v4-your-first-hook"],
+    templates: ["uniswap-v4-hook-template", "openzeppelin-uniswap-hooks"],
   },
   {
     id: "hook_pool.fee-schedule",

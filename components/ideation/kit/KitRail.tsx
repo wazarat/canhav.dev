@@ -5,10 +5,15 @@ import { flagsOnChain } from "@/lib/kits";
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
+import Link from "next/link";
+
 import { KitResourceRow } from "@/components/ideation/kit/KitResourceRow";
+import { Badge } from "@/components/ui/Badge";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { PRIORITY_LABELS, RAIL_COPY, shapeLabels } from "@/content/kits/copy";
+import { templateById } from "@/content/templates";
+import { TEMPLATE_COPY, TEMPLATE_KIND_LABELS } from "@/content/templates/copy";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
   KIT_PRIORITY_ORDER,
@@ -97,6 +102,8 @@ export function KitRail({
       />
       <p className="mt-1 text-xs text-ink-400">{shapeLabels(kit).join(" · ")}</p>
 
+      <AcceptedTemplates kit={kit} />
+
       {step !== null && (
         <div className="mt-3 flex gap-1 rounded-full border border-ink-800/70 p-0.5 text-xs" role="tablist">
           {(["step", "all"] as const).map((s) => (
@@ -159,6 +166,55 @@ export function KitRail({
         {RAIL_COPY.footnote}
       </p>
     </section>
+  );
+}
+
+/** The templates the team accepted across its build steps (M63), with the way to the full catalog. */
+function AcceptedTemplates({ kit }: { kit: ProjectKit }) {
+  const accepted = Object.entries(kit.templates ?? {})
+    .filter(([, d]) => d === "accepted")
+    .map(([id]) => templateById(id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t));
+  const list = (
+    <ul className="mt-2 space-y-1">
+      {accepted.map((t) => (
+        <li key={t.id} className="flex flex-wrap items-center gap-1.5 text-xs">
+          <a href={t.repoUrl} target="_blank" rel="noreferrer" className="text-ink-100 transition-colors hover:text-electric-200">
+            {t.name}
+          </a>
+          <Badge className="px-1.5 py-0 text-[10px]">{TEMPLATE_KIND_LABELS[t.kind]}</Badge>
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <div className="mt-3 border-b border-ink-800/70 pb-3">
+      <Header
+        title={TEMPLATE_COPY.railTitle}
+        right={
+          accepted.length ? (
+            <StatusChip tone="success" className="px-2 py-0.5 text-[11px]">
+              {TEMPLATE_COPY.railCount(accepted.length)}
+            </StatusChip>
+          ) : undefined
+        }
+      />
+      {accepted.length === 0 ? (
+        <p className="mt-2 text-xs leading-relaxed text-ink-500">{TEMPLATE_COPY.railNone}</p>
+      ) : accepted.length > 5 ? (
+        <details>
+          <summary className="mt-2 cursor-pointer text-xs text-ink-400 transition-colors hover:text-ink-200">
+            {TEMPLATE_COPY.railCount(accepted.length)}
+          </summary>
+          {list}
+        </details>
+      ) : (
+        list
+      )}
+      <Link href="/studio/templates" className="mt-2 inline-block text-[11px] text-electric-300 transition-colors hover:text-electric-200">
+        {TEMPLATE_COPY.browse}
+      </Link>
+    </div>
   );
 }
 

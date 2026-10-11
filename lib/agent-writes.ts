@@ -2,6 +2,9 @@ import { z } from "zod";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
+import { TEMPLATE_CATALOG, templateById } from "@/content/templates";
+import { TEMPLATE_ID, templatesForShapes } from "@/lib/templates";
+import { projectChainOf } from "@/lib/chains";
 import { checklistFor, groupsFor } from "@/content/kits/checklists";
 import { offeredShapes } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
@@ -37,6 +40,7 @@ import {
   restoreSteps,
   reviewPassesFor,
   setReviewVerdict,
+  setTemplateDecision,
   toggleChecklistItem,
   toggleResource,
 } from "@/lib/kits";
@@ -238,6 +242,11 @@ export const projectPatchSchema = z
             }),
           )
           .max(KIT_LIMITS.review.max),
+        // Contract template decisions (M63), template id to decision. A record,
+        // so the owner's panel decides each id on its own. "open" clears one.
+        templates: z
+          .record(z.string().max(80).regex(TEMPLATE_ID), z.enum(["accepted", "rejected", "open"]))
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.templates.max, "Too many template decisions"),
       })
       .partial(),
   })
@@ -459,6 +468,8 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
     }
     for (const v of kitPatch.review ?? [])
       kit = { ...kit, ...setReviewVerdict(kit, v.pass, v.verdict === "open" ? null : v.verdict) };
+    for (const [id, d] of Object.entries(kitPatch.templates ?? {}))
+      kit = { ...kit, ...setTemplateDecision(kit, id, d === "open" ? null : d) };
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
   }
@@ -513,6 +524,16 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     const passes = new Set(reviewPassesFor(REVIEW_PASSES, shapes).map((p) => p.id));
     const unknown = k.review.filter((v) => !passes.has(v.pass));
     if (unknown.length) return `Unknown review pass ${unknown[0].pass}. Read get_prelaunch_review for the ids.`;
+  }
+  const decided = Object.keys(k.templates ?? {});
+  if (decided.length) {
+    if (shapes.length === 0)
+      return "This project has no product shape yet, so it has no contract templates. Send kit.shapes first.";
+    const reachable = new Set(
+      templatesForShapes(TEMPLATE_CATALOG, shapes, projectChainOf(next), { includeInactive: true }).map((t) => t.id),
+    );
+    const unknown = decided.filter((id) => !reachable.has(id));
+    if (unknown.length) return `Unknown template ${unknown.slice(0, 3).join(", ")}. Read get_templates for the ids this project's shapes offer.`;
   }
   return null;
 }
@@ -681,6 +702,11 @@ const PATH_LABELS: Record<string, string> = {
 /** architecture.externalDeps reads as "Architecture, external deps". */
 export function pathLabel(path: string): string {
   if (path in PATH_LABELS) return PATH_LABELS[path];
+  // One line per template decision (M63), named after the template.
+  if (path.startsWith("kit.templates.")) {
+    const id = path.slice("kit.templates.".length);
+    return `Template ${templateById(id)?.name ?? id}`;
+  }
   const words = path
     .split(".")
     .map((part) => part.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase())

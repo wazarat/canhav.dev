@@ -59,6 +59,7 @@ import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { chainInfo, projectChainOf } from "@/lib/chains";
+import { TEMPLATE_ID } from "@/lib/templates";
 import {
   KIT_FAMILY_ORDER,
   KIT_PRIORITY_ORDER,
@@ -535,7 +536,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), and sharedWith, the ids of the same step under the project's other shapes. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps. Takes no arguments.",
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, and templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates). Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -563,6 +564,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               done: kit.checklist?.[i.id] === true,
               custom: false,
               sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
+              templates: [...(i.templates ?? [])],
             })),
           // Steps the team added (M50), at the end of their shape.
           ...(kit.customSteps ?? []).map((c) => ({
@@ -574,6 +576,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             done: kit.checklist?.[c.id] === true,
             custom: true,
             sharedWith: [] as string[],
+            templates: [] as string[],
           })),
         ],
         removed: items.filter((i) => hidden.has(i.id)).map((i) => ({ id: i.id, title: i.title })),
@@ -611,6 +614,72 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         changeId: result.changeId,
         message: result.message,
       });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_templates",
+    {
+      title: "This project's contract templates",
+      description:
+        "The contract templates that fit this project's product shapes (M63), grouped by the build step that lists them, with the rest under unplaced. Each carries kind (integrate, fork, factory, library), license and licenseClass, audit status, repo and docs, onChain (the mainnet status for the project's chain with a note) and availability (ready, self_deploy, unknown, unavailable), complexity, a Pons fit line when it can sit behind a Pons launch, and decision, the team's accepted, rejected or open. Inactive protocols are left out. Takes no arguments. Record decisions with set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const pack = buildResourcePack(loaded.value.project.draft_doc);
+      if (!pack) return errorResult(NO_SHAPE_HINT);
+      const byId = new Map(pack.templates.items.map((t) => [t.id, t] as const));
+      const steps = pack.checklist.groups
+        .filter((g) => g.templates.length > 0)
+        .map((g) => ({
+          id: g.key,
+          title: g.title,
+          shape: g.shape,
+          shapes: g.shapes,
+          done: g.done,
+          templates: g.templates.map((id) => byId.get(id)).filter((t): t is NonNullable<typeof t> => Boolean(t)),
+        }));
+      const placed = new Set(steps.flatMap((st) => st.templates.map((t) => t.id)));
+      return jsonResult({
+        chain: pack.chain,
+        counts: pack.templates.counts,
+        steps,
+        unplaced: pack.templates.items.filter((t) => !placed.has(t.id)),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "set_template_decisions",
+    {
+      title: "Accept or reject contract templates",
+      description: `Record the team's decision on contract templates by id from get_templates. decisions maps a template id to accepted, rejected or open (open clears a decision). Decide only after the team has agreed in the conversation and say why in the note. One decision per template per project, shown on every build step that lists it. ${WRITE_RULES}`,
+      inputSchema: z.object({
+        decisions: z
+          .record(z.string().max(80).regex(TEMPLATE_ID), z.enum(["accepted", "rejected", "open"]))
+          .refine((o) => Object.keys(o).length > 0, "Send at least one decision"),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "project", kind: "fields", patch: { kit: { templates: args.decisions } } },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
     },
     scope,
   );
@@ -689,7 +758,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's resource pack",
       description:
-        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family.",
+        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family. The templates block carries the contract templates for the shapes with the team's decisions.",
       inputSchema: z.object({
         step: z.enum(KIT_STEPS as [KitStep, ...KitStep[]]).optional(),
         priority: z.enum(KIT_PRIORITY_ORDER as [KitPriority, ...KitPriority[]]).optional(),

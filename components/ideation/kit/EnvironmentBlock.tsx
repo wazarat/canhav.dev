@@ -3,8 +3,11 @@
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ENVIRONMENT_COPY, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
+import { templateById } from "@/content/templates";
+import { CHAIN_DEPLOYMENT_COPY, TEMPLATE_COPY } from "@/content/templates/copy";
 import { type ProjectChain, chainInfo } from "@/lib/chains";
 import { type FamilyEnvironment, type ProjectKit, environmentPlanFor, kitShapes } from "@/lib/kits";
+import { templateOnChain } from "@/lib/templates";
 
 /**
  * The Reality step's "Where this runs today" block. One StatusChip per
@@ -46,7 +49,38 @@ export function EnvironmentBlock({ kit, chain }: { kit: ProjectKit | undefined; 
         ))}
         {checkedOn ? <p className="mt-2 text-ink-500">{ENVIRONMENT_COPY.checked(checkedOn)}</p> : null}
       </div>
+      <AcceptedOnChain kit={kit} chain={chain} />
     </section>
+  );
+}
+
+/** Where each accepted contract template stands on the project's mainnet (M63). Nothing when none is accepted. */
+function AcceptedOnChain({ kit, chain }: { kit: ProjectKit | undefined; chain: ProjectChain }) {
+  const accepted = Object.entries(kit?.templates ?? {})
+    .filter(([, d]) => d === "accepted")
+    .map(([id]) => templateById(id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t));
+  if (!accepted.length) return null;
+  const name = chainInfo(chain).mainnetName;
+  return (
+    <div className="space-y-2 border-t border-ink-800/70 pt-3">
+      <div>
+        <h4 className="text-sm font-medium text-ink-100">{TEMPLATE_COPY.envTitle(name)}</h4>
+        <p className="mt-1 text-xs leading-relaxed text-ink-400">{TEMPLATE_COPY.envIntro}</p>
+      </div>
+      {accepted.map((t) => {
+        const on = templateOnChain(t, chain);
+        const copy = CHAIN_DEPLOYMENT_COPY[on.status];
+        return (
+          <StatusChip key={t.id} tone={copy.tone} variant="block">
+            <span className="block font-medium text-ink-100">
+              {t.name}, {copy.label(name).toLowerCase()}.
+            </span>
+            {on.note ? <span className="mt-1 block">{on.note}</span> : null}
+          </StatusChip>
+        );
+      })}
+    </div>
   );
 }
 

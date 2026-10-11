@@ -266,7 +266,20 @@ export interface ProjectKit {
   customSteps?: CustomStep[];
   /** Catalog build step ids the team removed from its sections (M50). A shared step stores every member id. */
   hiddenSteps?: string[];
+  /**
+   * Contract template decisions (M63), template id to accepted or rejected.
+   * One decision per template per project, shown on every step that lists
+   * it. Only decided ids are stored, never injected.
+   */
+  templates?: Record<string, TemplateDecision>;
 }
+
+export type TemplateDecision = "accepted" | "rejected";
+
+export const TEMPLATE_DECISIONS: readonly TemplateDecision[] = ["accepted", "rejected"];
+
+/** A decision or, when none is recorded, open. */
+export type TemplateState = TemplateDecision | "open";
 
 /** A build step the team added. Ticked through `checklist` like any other, by its id. */
 export interface CustomStep {
@@ -296,6 +309,8 @@ export const KIT_LIMITS = {
   customSteps: { max: 40, titleMin: 3, titleMax: 120, detailMax: 400 },
   /** Cap on removed catalog step ids, well above the number that exist. */
   hiddenSteps: { max: 400 },
+  /** Cap on stored contract template decisions, above the catalog size. */
+  templates: { max: 400 },
 } as const;
 
 export function emptyProjectKit(kits: readonly KitId[] = ["credit"]): ProjectKit {
@@ -385,6 +400,17 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
   }
   const hidden = idList(r.hiddenSteps).slice(0, KIT_LIMITS.hiddenSteps.max);
   if (hidden.length) kit.hiddenSteps = hidden;
+  if (r.templates && typeof r.templates === "object" && !Array.isArray(r.templates)) {
+    const decisions: Record<string, TemplateDecision> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.templates as Record<string, unknown>)) {
+      if (k && TEMPLATE_DECISIONS.includes(v as TemplateDecision) && n < KIT_LIMITS.templates.max) {
+        decisions[k] = v as TemplateDecision;
+        n++;
+      }
+    }
+    if (n > 0) kit.templates = decisions;
+  }
   return kit;
 }
 
@@ -428,6 +454,11 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     }
   }
   if ((kit.hiddenSteps?.length ?? 0) > KIT_LIMITS.hiddenSteps.max) return "Too many removed build steps.";
+  if (kit.templates) {
+    const entries = Object.entries(kit.templates);
+    if (entries.length > KIT_LIMITS.templates.max) return "Too many template decisions.";
+    if (entries.some(([, v]) => !TEMPLATE_DECISIONS.includes(v))) return "Unknown template decision.";
+  }
   return null;
 }
 
@@ -465,6 +496,39 @@ export function reviewProgress(
     else if (verdict === "fail") out.fail++;
     else if (verdict === "na") out.na++;
     else out.open++;
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Contract template decisions (M63). The catalog lives in content/templates;
+// here only the stored map and its arithmetic.
+
+export function templateState(kit: Pick<ProjectKit, "templates"> | undefined, id: string): TemplateState {
+  return kit?.templates?.[id] ?? "open";
+}
+
+/** Set or clear one decision. Never stores an empty map. */
+export function setTemplateDecision(
+  kit: Pick<ProjectKit, "templates">,
+  id: string,
+  decision: TemplateDecision | null,
+): Pick<ProjectKit, "templates"> {
+  const next: Record<string, TemplateDecision> = { ...(kit.templates ?? {}) };
+  if (decision) next[id] = decision;
+  else delete next[id];
+  return Object.keys(next).length ? { templates: next } : { templates: undefined };
+}
+
+/** Counts over a list of template ids, each once. */
+export function templateCounts(
+  ids: readonly string[],
+  kit: Pick<ProjectKit, "templates"> | undefined,
+): { accepted: number; rejected: number; open: number; total: number } {
+  const out = { accepted: 0, rejected: 0, open: 0, total: 0 };
+  for (const id of new Set(ids)) {
+    out.total++;
+    out[templateState(kit, id)]++;
   }
   return out;
 }

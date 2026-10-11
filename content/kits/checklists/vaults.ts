@@ -20,6 +20,7 @@ export const LIQUIDITY_ALLOCATOR_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Every cap has a written shock assumption and a depth observation at a size, on a date, on a venue you can use.",
     step: "architecture",
     resources: ["morpho.blue-concepts", "canhav.vault-specification", "llamarisk.debt-ceiling"],
+    templates: ["morpho-vault-v2", "euler-earn", "yearn-v3", "lazy-summer-protocol"],
   },
   {
     id: "liquidity_allocator.routing",
@@ -27,6 +28,7 @@ export const LIQUIDITY_ALLOCATOR_CHECKLIST: readonly ChecklistItem[] = [
     detail: "By hand, by a bot, through the public allocator, or all three, with the flow caps, the fee and the reallocation budget written down.",
     step: "architecture",
     resources: ["morpho.public-allocator", "morpho.public-allocator-tutorial", "morpho.vault-v2-adapters"],
+    templates: ["morpho-vault-v2", "lagoon-v0", "superform-v2"],
   },
   {
     id: "liquidity_allocator.buffer",
@@ -93,6 +95,7 @@ export const PERMISSIONED_VAULT_CHECKLIST: readonly ChecklistItem[] = [
     detail: "One research file for the asset, plus the protocol contracts the issuer has allowlisted so it can be supplied, borrowed, bundled and liquidated.",
     step: "architecture",
     resources: ["canhav.asset-research-template", "morpho.permissioned-assets", "robinhood.stock-tokens"],
+    templates: ["morpho-vault-v2", "lagoon-v0", "openzeppelin-erc4626", "solady-erc4626"],
   },
   {
     id: "permissioned_vault.allowlist",
@@ -100,6 +103,7 @@ export const PERMISSIONED_VAULT_CHECKLIST: readonly ChecklistItem[] = [
     detail: "The contract or service each gate asks, who adds and removes a party, the delay on removal and the audit trail.",
     step: "architecture",
     resources: ["morpho.vault-gates", "canhav.gates-and-eligibility"],
+    templates: ["lagoon-v0"],
   },
   {
     id: "permissioned_vault.exit-rights",

@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { TemplateCard } from "@/components/ideation/kit/TemplateCard";
+import { TemplateDecisionRow } from "@/components/ideation/kit/TemplateDecision";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { CHECKLIST_COPY, GATE_COPY, STEP_LABELS_KIT, shapeBlurb, shapeLabel } from "@/content/kits/copy";
+import { templateById } from "@/content/templates";
+import { TEMPLATE_COPY } from "@/content/templates/copy";
+import type { ProjectChain } from "@/lib/chains";
 import {
   KIT_LIMITS,
   type ProductSection,
@@ -20,10 +25,21 @@ import {
   groupState,
   removeStepGroup,
   restoreSteps,
+  setTemplateDecision,
+  templateCounts,
+  templateState,
   toggleStepGroup,
 } from "@/lib/kits";
+import type { ContractTemplate } from "@/lib/templates";
 
 const TITLE_BY_ID = new Map(KIT_CATALOG.map((r) => [r.id, r] as const));
+
+/** The active templates a step lists, catalog order. */
+function stepTemplates(group: StepGroup): ContractTemplate[] {
+  return group.templates
+    .map((id) => templateById(id))
+    .filter((t): t is ContractTemplate => Boolean(t) && t!.status === "active");
+}
 
 /**
  * One product section of the editor (M43): the ordered build steps for one
@@ -38,10 +54,13 @@ export function ProductStepSection({
   removed = [],
   missing = [],
   chainName = "",
+  chain,
   kit,
   onPatchKit,
 }: {
   section: ProductSection;
+  /** The project's chain, which decides the mainnet column each template shows (M63). */
+  chain: ProjectChain;
   /** Labels of the protocols this shape relies on that are not on the project's testnet (M52). */
   missing?: readonly string[];
   chainName?: string;
@@ -63,6 +82,8 @@ export function ProductStepSection({
   };
   const label = shapeLabel(section.shape) ?? section.shape;
   const progress = groupProgress(section.groups, kit);
+  const templateIds = section.groups.flatMap((g) => stepTemplates(g).map((t) => t.id));
+  const counts = templateCounts(templateIds, kit);
   const other = (g: StepGroup) => g.shapes.filter((s) => s !== section.shape).map((s) => shapeLabel(s) ?? s);
   const aboveHomes = [...new Set(section.sharedAbove.map((g) => shapeLabel(g.shapes[0]) ?? g.shapes[0]))];
 
@@ -71,11 +92,16 @@ export function ProductStepSection({
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-semibold text-ink-50">{label}</h2>
-          {section.groups.length ? (
-            <StatusChip tone={progress.done === progress.total ? "success" : "neutral"}>
-              {CHECKLIST_COPY.progress(progress.done, progress.total)}
-            </StatusChip>
-          ) : null}
+          <span className="flex flex-wrap items-center gap-1.5">
+            {section.groups.length ? (
+              <StatusChip tone={progress.done === progress.total ? "success" : "neutral"}>
+                {CHECKLIST_COPY.progress(progress.done, progress.total)}
+              </StatusChip>
+            ) : null}
+            {counts.total ? (
+              <StatusChip tone={counts.open === 0 ? "success" : "neutral"}>{TEMPLATE_COPY.summary(counts)}</StatusChip>
+            ) : null}
+          </span>
         </div>
         <p className="mt-1 text-sm leading-relaxed text-ink-400">{shapeBlurb(section.shape)}</p>
       </div>
@@ -104,6 +130,7 @@ export function ProductStepSection({
               .map((id) => TITLE_BY_ID.get(id))
               .filter((r): r is NonNullable<typeof r> => Boolean(r));
             const others = other(group);
+            const templates = stepTemplates(group);
             return (
               <li key={group.key} className="flex items-start gap-1">
                 <CheckItem
@@ -138,6 +165,35 @@ export function ProductStepSection({
                       </span>
                       {others.length ? (
                         <span className="block text-[11px] text-ink-500">{CHECKLIST_COPY.sharedNote(others)}</span>
+                      ) : null}
+                      {templates.length ? (
+                        <details
+                          open={templates.some((t) => templateState(kit, t.id) === "open")}
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <summary className="cursor-pointer text-[11px] text-electric-300 transition-colors hover:text-electric-200">
+                            {TEMPLATE_COPY.stepTitle}
+                            <span className="ml-1.5 text-ink-500">{templates.length}</span>
+                          </summary>
+                          <span className="mt-2 block text-[11px] leading-relaxed text-ink-500">{TEMPLATE_COPY.stepHint}</span>
+                          <span className="mt-2 block space-y-2">
+                            {templates.map((t) => (
+                              <TemplateCard
+                                key={t.id}
+                                template={t}
+                                chains={[chain]}
+                                className="p-3"
+                                footer={
+                                  <TemplateDecisionRow
+                                    state={templateState(kit, t.id)}
+                                    onDecide={(d) => onPatchKit(setTemplateDecision(kit, t.id, d))}
+                                  />
+                                }
+                              />
+                            ))}
+                          </span>
+                        </details>
                       ) : null}
                       {state === "partial" ? (
                         <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">

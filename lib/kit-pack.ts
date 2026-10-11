@@ -1,4 +1,14 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
+import { TEMPLATE_CATALOG } from "@/content/templates";
+import { TEMPLATE_COPY } from "@/content/templates/copy";
+import {
+  type ChainDeployment,
+  type ContractTemplate,
+  type TemplateAvailability,
+  templateAvailability,
+  templateOnChain,
+  templatesForShapes,
+} from "@/lib/templates";
 import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
@@ -20,6 +30,7 @@ import {
   type PackFilter,
   type ReviewPass,
   type ReviewVerdict,
+  type TemplateState,
   groupState,
   effectiveSelection,
   effectiveSubsectors,
@@ -31,6 +42,8 @@ import {
   packFor,
   reviewPassesFor,
   reviewProgress,
+  templateCounts,
+  templateState,
 } from "@/lib/kits";
 
 /**
@@ -109,7 +122,29 @@ export interface ResourcePackView {
   };
   /** Pre-launch review passes for the shape with recorded verdicts. */
   review: ReviewView;
+  /** Contract templates for the shapes with the team's decisions (M63). */
+  templates: TemplatesView;
   howToUse: string;
+}
+
+export interface TemplatePackView
+  extends Omit<ContractTemplate, "chains"> {
+  /** accepted, rejected or open. */
+  decision: TemplateState;
+  /** What the team can do with it on the project's chain. */
+  availability: TemplateAvailability;
+  /** The mainnet status read for the project's chain. */
+  onChain: { status: ChainDeployment; note?: string };
+  /** Build step group keys that list it, section order. Empty for a template no step names. */
+  steps: string[];
+  /** The mainnet status on both chains, kept for readers that compare. */
+  chains: ContractTemplate["chains"];
+}
+
+export interface TemplatesView {
+  counts: ReturnType<typeof templateCounts>;
+  /** Every active template placed under the shapes' subsectors, pack order, decided ones first within a step. */
+  items: TemplatePackView[];
 }
 
 export interface ReviewPassView extends Omit<ReviewPass, "resources"> {
@@ -152,7 +187,7 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
 }
 
 export const HOW_TO_USE =
-  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps.";
+  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted.";
 
 export const NO_SHAPE_HINT =
   "This project has no product shape yet. Pick what you are building in the studio Basics step and the resource pack will follow.";
@@ -209,6 +244,17 @@ export function buildResourcePack(
   const checkedOn = families.length
     ? families.map((f) => f.checkedOn).sort().at(-1) ?? null
     : null;
+  const stepsOf = new Map<string, string[]>();
+  for (const section of sections)
+    for (const g of section.groups)
+      for (const t of g.templates) stepsOf.set(t, [...(stepsOf.get(t) ?? []), g.key]);
+  const templateItems: TemplatePackView[] = templatesForShapes(TEMPLATE_CATALOG, shapes, chain).map((t) => ({
+    ...t,
+    decision: templateState(kit, t.id),
+    availability: templateAvailability(t, chain),
+    onChain: templateOnChain(t, chain),
+    steps: stepsOf.get(t.id) ?? [],
+  }));
   return {
     kit: kit.id,
     kits: kit.kits,
@@ -254,6 +300,7 @@ export function buildResourcePack(
       ),
     },
     review: buildReviewView(doc)!,
+    templates: { counts: templateCounts(templateItems.map((t) => t.id), kit), items: templateItems },
     howToUse: HOW_TO_USE,
   };
 }

@@ -13,6 +13,7 @@ export const CURATED_VAULT_CHECKLIST: readonly ChecklistItem[] = [
     detail: "One research file for the asset, checklist result recorded, before anything else is designed around it.",
     step: "architecture",
     resources: ["canhav.asset-research-template", "tob.token-integration"],
+    templates: ["morpho-vault-v2", "openzeppelin-erc4626", "yearn-v3"],
   },
   {
     id: "curated_vault.markets",
@@ -20,6 +21,7 @@ export const CURATED_VAULT_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Every cap has a written shock assumption and a liquidity observation with a date.",
     step: "architecture",
     resources: ["morpho.vault-v2-adapters", "canhav.risk-framework", "llamarisk.debt-ceiling"],
+    templates: ["morpho-blue", "morpho-vault-v2", "euler-vault-kit"],
   },
   {
     id: "curated_vault.roles",
@@ -86,6 +88,7 @@ export const EMBEDDED_EARN_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Which curators, which assets, and what would make you remove one.",
     step: "architecture",
     resources: ["morpho.api-vaults", "morpho.earn-get-started"],
+    templates: ["morpho-vault-v2", "euler-earn", "yearn-v3", "superform-v2"],
   },
   {
     id: "embedded_earn.custody",
@@ -152,6 +155,7 @@ export const COLLATERAL_LOANS_CHECKLIST: readonly ChecklistItem[] = [
     detail: "The token integration checklist runs before either is approved.",
     step: "architecture",
     resources: ["canhav.asset-research-template", "tob.token-integration"],
+    templates: ["morpho-blue", "ajna", "compound-iii-comet", "fraxlend", "silo-v2", "euler-vault-kit", "aave-v3-origin"],
   },
   {
     id: "collateral_loans.oracle",
@@ -159,6 +163,7 @@ export const COLLATERAL_LOANS_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Source feed, wrapper, heartbeat, what happens past the staleness threshold.",
     step: "architecture",
     resources: ["morpho.oracle-concept", "pyth.morpho-guide", "morpho.oracle-deploy", "robinhood.oracles-and-price-feeds"],
+    templates: ["chainlink-data-feeds"],
   },
   {
     id: "collateral_loans.threshold",
@@ -180,6 +185,7 @@ export const COLLATERAL_LOANS_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Collateral, loan asset, oracle, rate model and threshold are fixed at creation. Check them twice.",
     step: "reality",
     resources: ["morpho.create-market", "morpho.testnet-community-deployment", "canhav.testnet-manifest"],
+    templates: ["morpho-blue", "ajna", "euler-vault-kit"],
   },
   {
     id: "collateral_loans.liquidity",

@@ -91,4 +91,22 @@ export const TEMPLATE_COPY = {
   links: { repo: "Repository", docs: "Docs" },
   chipNote: (live: number, total: number, chain: string) =>
     live ? `${live} of ${total} templates run on ${chain}` : `No template in this list runs on ${chain} yet`,
+  /** Decisions on a project's build steps (M63). */
+  stepTitle: "Contract templates",
+  stepHint: "Candidates for this step. Accept what you will build on or integrate, reject what you will not, and the choice travels with the project into RESOURCES.md and the MCP tools.",
+  summary: (c: { accepted: number; rejected: number; open: number }) =>
+    `${c.accepted} accepted, ${c.rejected} rejected, ${c.open} undecided`,
+  accept: "Accept",
+  reject: "Reject",
+  undo: "Undo",
+  state: { accepted: "Accepted", rejected: "Rejected", open: "Undecided" } as const,
+  stateTone: { accepted: "success", rejected: "neutral", open: "info" } as const,
+  railTitle: "Accepted templates",
+  railCount: (n: number) => `${n} accepted`,
+  railNone: "No template accepted yet. Each build step lists its candidates.",
+  browse: "Browse the full catalog",
+  envTitle: (chain: string) => `Templates on ${chain}`,
+  envIntro: "Where each accepted template stands on the mainnet this project is heading for. Confirm every address on the explorer before building on it.",
+  exportIntro: (c: { accepted: number; rejected: number; open: number; total: number }) =>
+    `${c.total} candidates for the project's product shapes, ${c.accepted} accepted, ${c.rejected} rejected, ${c.open} undecided. Accepted means the team will build on or integrate it, rejected means do not propose it again, undecided means the team has not chosen yet.`,
 } as const;

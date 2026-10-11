@@ -725,6 +725,7 @@ export function ProjectEditor({
 
         {productShape && kit ? (
           <ProductStepSection
+            chain={chainKey}
             key={productShape}
             missing={missingFamilies(productShape, envRows).map((f) => FAMILY_LABELS[f])}
             chainName={chain.short}

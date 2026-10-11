@@ -1,5 +1,13 @@
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import {
+  AUDIT_LABELS,
+  CHAIN_DEPLOYMENT_COPY,
+  COMPLEXITY_LABELS,
+  LICENSE_CLASS_LABELS,
+  TEMPLATE_COPY,
+  TEMPLATE_KIND_LABELS,
+} from "@/content/templates/copy";
+import {
   ALLOCATION_FIELDS,
   ANTI_SNIPING_OPTIONS,
   COUNSEL_OPTIONS,
@@ -218,6 +226,31 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
       );
       if (above.length)
         lines.push("", CHECKLIST_COPY.sharedAboveLine([...new Set(above.map((g) => label(g.shape)))]));
+    }
+  }
+  if (pack.templates.items.length > 0) {
+    lines.push("", `${heading} Contract templates`, "", TEMPLATE_COPY.exportIntro(pack.templates.counts));
+    const chainName = chainInfo(pack.chain.key).mainnetName;
+    for (const state of ["accepted", "open", "rejected"] as const) {
+      const items = pack.templates.items.filter((t) => t.decision === state);
+      if (!items.length) continue;
+      lines.push("", `${heading}# ${TEMPLATE_COPY.state[state]}`, "");
+      for (const t of items) {
+        const bits = [
+          TEMPLATE_KIND_LABELS[t.kind],
+          LICENSE_CLASS_LABELS[t.licenseClass].toLowerCase(),
+          AUDIT_LABELS[t.audited].toLowerCase(),
+          COMPLEXITY_LABELS[t.complexity].toLowerCase(),
+        ];
+        const where = CHAIN_DEPLOYMENT_COPY[t.onChain.status].label(chainName);
+        const steps = t.steps.map((k) => pack.checklist.groups.find((g) => g.key === k)?.title).filter(Boolean);
+        lines.push(
+          `- **[${t.name}](${t.repoUrl})** (${t.provider}). ${bits.join(", ")}. ${where}. ${t.description}` +
+            (t.docsUrl ? ` [Docs](${t.docsUrl}).` : "") +
+            (t.ponsFit ? ` ${TEMPLATE_COPY.ponsFit}. ${t.ponsFit}` : "") +
+            (steps.length ? ` Steps. ${steps.join("; ")}.` : ""),
+        );
+      }
     }
   }
   if (pack.review.passes.length > 0) {

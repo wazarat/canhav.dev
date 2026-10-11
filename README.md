@@ -491,5 +491,10 @@ event window so judges can verify it.
   URL-only browser at `/studio/templates`, the public `get_template_catalog` MCP
   tool, and subsectors for every sector (Derivatives, Staking, RWA and Other still
   marked Coming soon until their content lands).
+- Oct 11, 2026. Template decisions (M63). Each build step lists its candidate
+  contract templates with Accept and Reject, the decisions travel into
+  RESOURCES.md, AGENTS.md and the project MCP server (`get_templates`,
+  `set_template_decisions`), and the rail and the Reality step show what was
+  accepted and where it runs on the project's mainnet.
 
 This list grows as work lands on the branch.

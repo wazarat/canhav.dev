@@ -13,6 +13,7 @@ export const LEVERAGED_FIXED_YIELD_CHECKLIST: readonly ChecklistItem[] = [
     detail: "The market worksheet and the collateral parameter template for the pair the loop runs through are filled and reviewed before any leverage is designed.",
     step: "architecture",
     resources: ["canhav.market-parameters", "canhav.pt-collateral-parameters", "canhav.strategy-leveraged-loop"],
+    templates: ["pendle-v2", "morpho-blue", "euler-vault-kit", "gearbox-v3", "notional-leveraged-vaults"],
   },
   {
     id: "leveraged_fixed_yield.cap",
@@ -34,6 +35,7 @@ export const LEVERAGED_FIXED_YIELD_CHECKLIST: readonly ChecklistItem[] = [
     detail: "One transaction or several, and the reverse path for a user and for a liquidator, each selling into the same pool.",
     step: "architecture",
     resources: ["pendle.router-integration", "pendle.hosted-sdk", "morpho.borrow-assets-flow"],
+    templates: ["defisaver-v3", "instadapp-dsa-connectors", "contango-v2", "fluid-vaults", "arcadia-lending"],
   },
   {
     id: "leveraged_fixed_yield.rates",
@@ -93,6 +95,7 @@ export const YIELD_TOKEN_EXPOSURE_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Read the markets, the implied rates and the remaining terms from the hosted API, and write down why this one.",
     step: "architecture",
     resources: ["pendle.skill-data", "pendle.api", "canhav.asset-registry"],
+    templates: ["pendle-v2", "spectra-v2"],
   },
   {
     id: "yield_token_exposure.decay",

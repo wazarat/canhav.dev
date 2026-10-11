@@ -20,6 +20,7 @@ export const FIXED_RATE_YIELD_CHECKLIST: readonly ChecklistItem[] = [
     detail: "A common wrapper over a vault share where one fits, a custom one only with the conformance suite green in CI.",
     step: "architecture",
     resources: ["canhav.sy-wrapper-checklist", "pendle.common-sy", "pendle.sy-interface", "pendle.sy-tests"],
+    templates: ["pendle-v2", "spectra-v2", "openzeppelin-erc4626"],
   },
   {
     id: "fixed_rate_yield.exchange-rate",
@@ -34,6 +35,7 @@ export const FIXED_RATE_YIELD_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Maturity, rate band, initial implied rate, fee and seed liquidity, each with the rate history that justifies it.",
     step: "architecture",
     resources: ["canhav.market-parameters", "pendle.common-market-deployments", "pendle.amm-concept"],
+    templates: ["pendle-v2", "spectra-v2", "morpho-midnight", "notional-v3", "term-finance", "bond-protocol", "yield-protocol-v2"],
   },
   {
     id: "fixed_rate_yield.liquidity",
@@ -93,6 +95,7 @@ export const EMBEDDED_FIXED_RATE_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Which wrappers, which maturities, and what would make you stop offering one. Read the markets from the hosted API, not from memory.",
     step: "architecture",
     resources: ["pendle.skill-data", "pendle.api", "canhav.asset-registry"],
+    templates: ["pendle-v2", "spectra-v2", "morpho-midnight"],
   },
   {
     id: "embedded_fixed_rate.custody",
@@ -173,6 +176,7 @@ export const PT_BACKED_BORROWING_CHECKLIST: readonly ChecklistItem[] = [
     detail: "A research file and a registry entry for the fixed half that walks back to the wrapper, the vault and the underlying, and one for the loan asset.",
     step: "architecture",
     resources: ["canhav.asset-research-template", "canhav.asset-registry", "tob.token-integration", "pendle.pt-contract"],
+    templates: ["pendle-v2", "morpho-blue"],
   },
   {
     id: "pt_backed_borrowing.feed",
@@ -180,6 +184,7 @@ export const PT_BACKED_BORROWING_CHECKLIST: readonly ChecklistItem[] = [
     detail: "Never the pool price. The discount rate sits above the usual implied rate, the timestamp wrapper is in the path, the underlying's feed is chained when the loan asset differs.",
     step: "architecture",
     resources: ["pendle.linear-discount-oracle", "pendle.linear-discount-params", "pendle.oracle-integration", "canhav.pt-collateral-parameters"],
+    templates: ["chainlink-data-feeds"],
   },
   {
     id: "pt_backed_borrowing.parameters",
@@ -201,6 +206,7 @@ export const PT_BACKED_BORROWING_CHECKLIST: readonly ChecklistItem[] = [
     detail: "The market address in the registry under the fixed half's collateralIn, with the feed, the rate model and the threshold it was created with.",
     step: "reality",
     resources: ["morpho.create-market", "morpho.oracle-deploy", "canhav.asset-registry"],
+    templates: ["morpho-blue", "euler-vault-kit"],
   },
   {
     id: "pt_backed_borrowing.maturity",
