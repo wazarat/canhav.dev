@@ -18,8 +18,7 @@ import {
   type Subsector,
   docSectors,
   sectorOfSubsector,
-  withSectors,
-} from "@/lib/sectors";
+  withSectors, requiresSubsector } from "@/lib/sectors";
 import { LAUNCH_FORM } from "@/content/launch";
 
 export {
@@ -749,12 +748,16 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (new Set(sectors).size !== sectors.length || sectors.length > L.sectors.max)
     return "Too many sectors.";
   if (doc.sector && doc.sector !== sectors[0]) return "Sectors are out of step.";
+  const subsectors = doc.subsectors ?? [];
   if (sectors.includes("other")) {
-    if (!doc.sectorOther?.trim()) return "Describe the sector.";
-    if (doc.sectorOther.length > L.sectorOther.max)
+    // Other may describe itself or pick a subsector (M62). A doc folded from a
+    // retired sector id carries the old label in sectorOther and stays valid.
+    const described = Boolean(doc.sectorOther?.trim());
+    if (!described && !subsectors.some((v) => SECTOR_SUBSECTORS.other.includes(v)))
+      return "Describe the sector or pick a subsector.";
+    if ((doc.sectorOther?.length ?? 0) > L.sectorOther.max)
       return `Sector description is over ${L.sectorOther.max} characters.`;
   }
-  const subsectors = doc.subsectors ?? [];
   if (subsectors.some((v) => !SUBSECTOR_VALUES.includes(v))) return "Unknown subsector.";
   for (const sub of subsectors)
     if (!sectors.includes(sectorOfSubsector(sub))) return "A subsector belongs to a sector that is not chosen.";
@@ -762,7 +765,7 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     const own = SECTOR_SUBSECTORS[sector];
     if (own.length === 0) continue;
     const n = subsectors.filter((v) => own.includes(v)).length;
-    if (n < L.subsectors.min) return "Pick at least one subsector.";
+    if (n < L.subsectors.min && requiresSubsector(sector)) return "Pick at least one subsector.";
     if (n > L.subsectors.max) return `At most ${L.subsectors.max} subsectors.`;
   }
   if (doc.chain !== undefined && !isProjectChain(doc.chain)) return "Unknown chain.";

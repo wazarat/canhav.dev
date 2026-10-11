@@ -51,8 +51,7 @@ import {
   sectorLabel,
   subsectorLabel,
   subsectorLabels,
-  subsectorOptionsFor,
-} from "@/content/ideation";
+  subsectorOptionsFor, closedSectorLabels } from "@/content/ideation";
 import { kitsForDoc } from "@/content/kits";
 import {
   GATE_COPY,
@@ -79,8 +78,7 @@ import {
   type Sector,
   type Subsector,
   docSectors,
-  sectorOfSubsector,
-} from "@/lib/sectors";
+  sectorOfSubsector, requiresSubsector } from "@/lib/sectors";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -124,10 +122,12 @@ function stepProblems(doc: ProjectDoc): Record<KitStep, string | null> {
   const basics =
     short(doc.name, L.name.min) ||
     sectors.length < L.sectors.min ||
-    (sectors.includes("other") && !doc.sectorOther?.trim()) ||
+    (sectors.includes("other") &&
+      !doc.sectorOther?.trim() &&
+      !subsectors.some((v) => SECTOR_SUBSECTORS.other.includes(v))) ||
     sectors.some(
       (sec) =>
-        SECTOR_SUBSECTORS[sec].length > 0 &&
+        requiresSubsector(sec) &&
         subsectors.filter((v) => SECTOR_SUBSECTORS[sec].includes(v)).length < L.subsectors.min,
     ) ||
     short(doc.whatItDoes, L.whatItDoes.min) ||
@@ -377,12 +377,15 @@ export function ProjectEditor({
               groups={[{ key: "sectors", heading: SECTOR_COPY.label, options: SECTOR_OPTIONS }]}
               max={PROJECT_LIMITS.sectors.max}
             >
-              <p className="text-xs text-ink-400">{SECTOR_COPY.moreSoon}</p>
+              {closedSectorLabels().length ? (
+                <p className="text-xs text-ink-400">{SECTOR_COPY.moreSoon(closedSectorLabels())}</p>
+              ) : null}
             </CardMultiSelectGroups>
             {sectors.includes("other") && (
               <TextField
-                label="Which sector?"
-                required
+                label={SECTOR_COPY.otherLabel}
+                required={!subsectors.some((v) => SECTOR_SUBSECTORS.other.includes(v))}
+                hint={SECTOR_COPY.otherHint}
                 value={doc.sectorOther ?? ""}
                 onChange={(v) => patch({ sectorOther: v })}
                 max={PROJECT_LIMITS.sectorOther.max}

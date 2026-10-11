@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "check:copy": "node scripts/check-copy.mjs",
+    "gen:templates": "node scripts/gen-templates.mjs",
+    "check:templates": "node scripts/gen-templates.mjs --check",
     "check:fly": "node scripts/fly-cost-check.mjs"
   },
   "dependencies": {

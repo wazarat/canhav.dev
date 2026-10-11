@@ -100,6 +100,8 @@ export interface ResourcePackView {
       shapes: ProductShape[];
       ids: string[];
       resources: string[];
+      /** Contract template ids that fit the step (M61). */
+      templates: string[];
       done: boolean;
       /** True for a step the team added (M50). */
       custom?: boolean;
@@ -245,6 +247,7 @@ export function buildResourcePack(
           shapes: [...g.shapes],
           ids: [...g.ids],
           resources: [...g.resources],
+          templates: [...g.templates],
           done: groupState(g, kit) === "done",
           ...(g.custom ? { custom: true } : {}),
         })),

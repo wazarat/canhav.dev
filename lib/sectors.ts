@@ -3,7 +3,8 @@
  * document) and lib/kits.ts (the research kit) so neither imports the other's
  * values. No Node imports, no `server-only`.
  *
- * A project has one or more sectors since M32 (2026-09-28). `sectors` is the
+ * A project has one or more sectors since M32 (2026-09-28) and every sector
+ * has subsectors since M62 (2026-10-11), sixteen in all. `sectors` is the
  * list and `sector` stays as its first entry so every older reader, snapshot
  * and MCP consumer keeps working, the same pattern as a kit's `shape` and
  * `shapes`. Each sector owns its subsectors; a shape may belong to subsectors
@@ -28,17 +29,45 @@ export const SECTOR_VALUES: readonly Sector[] = [
   "other",
 ];
 
-export type Subsector = "lending" | "leveraged_yield" | "fixed_income" | "vaults" | "pools";
+export type Subsector =
+  | "lending"
+  | "leveraged_yield"
+  | "fixed_income"
+  | "vaults"
+  | "pools"
+  | "perp_dex"
+  | "option_vaults"
+  | "delta_neutral"
+  | "liquid_staking"
+  | "restaking"
+  | "liquid_restaking"
+  | "tokenized_securities"
+  | "private_credit"
+  | "asset_backed_tokens"
+  | "underwriting"
+  | "governance";
 
 /** The one place subsector ownership lives. Key order is display order. */
 export const SECTOR_SUBSECTORS: Record<Sector, readonly Subsector[]> = {
   credit_lending: ["lending", "leveraged_yield", "fixed_income"],
-  staking: [],
+  staking: ["liquid_staking", "restaking", "liquid_restaking"],
   liquidity_infra: ["vaults", "pools"],
-  perps_derivatives: [],
-  rwa_infra: [],
-  other: [],
+  perps_derivatives: ["perp_dex", "option_vaults", "delta_neutral"],
+  rwa_infra: ["tokenized_securities", "private_credit", "asset_backed_tokens"],
+  other: ["underwriting", "governance"],
 };
+
+/**
+ * Sectors where a subsector is optional (M62). Other is a catch-all, so a
+ * project there may pick Underwriting or Governance or just describe itself
+ * in sectorOther, and a project folded from a retired sector id (which has
+ * the label in sectorOther and no subsector) stays valid.
+ */
+export const SUBSECTOR_OPTIONAL_SECTORS: readonly Sector[] = ["other"];
+
+export function requiresSubsector(sector: Sector): boolean {
+  return SECTOR_SUBSECTORS[sector].length > 0 && !SUBSECTOR_OPTIONAL_SECTORS.includes(sector);
+}
 
 export const SUBSECTOR_VALUES: readonly Subsector[] = SECTOR_VALUES.flatMap(
   (s) => SECTOR_SUBSECTORS[s],

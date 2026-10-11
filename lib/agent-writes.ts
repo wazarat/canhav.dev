@@ -567,7 +567,7 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
     for (const id of patch.remove) {
       const custom = (kit.customSteps ?? []).find((c) => c.id === id);
       const group: StepGroup | undefined = custom
-        ? { key: id, slug: "custom", title: custom.title, detail: custom.detail, step: "review", resources: [], ids: [id], shapes: [custom.shape], custom: true }
+        ? { key: id, slug: "custom", title: custom.title, detail: custom.detail, step: "review", resources: [], templates: [], ids: [id], shapes: [custom.shape], custom: true }
         : groups.find((g) => g.ids.includes(id));
       if (group) kit = { ...kit, ...removeStepGroup(kit, group) };
     }

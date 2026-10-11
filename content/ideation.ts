@@ -81,9 +81,10 @@ export interface GatedOption<V extends string> {
 
 /**
  * Six sectors, Credit first. Credit and Liquidity open today; the other four
- * are listed so builders see where the platform is going. A project picks one
- * or more. Retired ids from the earlier eleven-sector list are remapped in
- * lib/ideation.ts.
+ * open one milestone at a time (M62 onward) by flipping `available`, which
+ * is the one switch for the studio cards, the shapes offered and the agent
+ * write rules. A project picks one or more. Retired ids from the earlier
+ * eleven-sector list are remapped in lib/ideation.ts.
  */
 export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
   {
@@ -92,19 +93,57 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
     title: "Credit sector application",
     sentence: "I am looking to let users lend, borrow, or earn yield on their assets.",
   },
-  { value: "staking", label: "Staking", available: false },
+  {
+    value: "staking",
+    label: "Staking",
+    title: "Staking sector application",
+    sentence: "I am looking to let holders stake, restake or earn on what they already hold.",
+    available: false,
+  },
   {
     value: "liquidity_infra",
     label: "Liquidity",
     title: "Liquidity sector application",
     sentence: "I am looking to put assets to work through vaults and pools.",
   },
-  { value: "perps_derivatives", label: "Derivatives", available: false },
-  { value: "rwa_infra", label: "RWAs", available: false },
-  { value: "other", label: "Other", available: false },
+  {
+    value: "perps_derivatives",
+    label: "Derivatives",
+    title: "Derivatives sector application",
+    sentence: "I am looking to let users trade leverage, options or hedged exposure.",
+    available: false,
+  },
+  {
+    value: "rwa_infra",
+    label: "RWA",
+    title: "RWA sector application",
+    sentence: "I am looking to bring stocks, credit or reserve-backed assets on-chain as tokens.",
+    available: false,
+  },
+  {
+    value: "other",
+    label: "Other",
+    title: "Other sector application",
+    sentence: "I am looking to build cover, underwriting or governance around a protocol.",
+    available: false,
+  },
 ];
 
-/** Subsectors per sector, in SECTOR_SUBSECTORS order. Pick one to three per sector. All are open. */
+/** True when the sector can be picked today. */
+export function sectorOpen(sector: Sector): boolean {
+  return SECTOR_OPTIONS.find((o) => o.value === sector)?.available !== false;
+}
+
+/** The labels of the sectors that are not open yet, in option order. */
+export function closedSectorLabels(): string[] {
+  return SECTOR_OPTIONS.filter((o) => o.available === false).map((o) => o.label);
+}
+
+/**
+ * Subsectors per sector, in SECTOR_SUBSECTORS order. Pick one to three per
+ * sector (Other may pick none and describe itself instead). A subsector is
+ * open when its sector is, see ALL_SUBSECTOR_OPTIONS.
+ */
 export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOption<Subsector>>>> = {
   credit_lending: [
     {
@@ -123,6 +162,23 @@ export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOpti
       sentence: "I am looking to offer fixed-rate returns over a set term.",
     },
   ],
+  staking: [
+    {
+      value: "liquid_staking",
+      label: "Liquid staking",
+      sentence: "I am looking to let holders stake and keep a liquid token they can use elsewhere.",
+    },
+    {
+      value: "restaking",
+      label: "Restaking",
+      sentence: "I am looking to let already staked assets secure a second service for extra reward.",
+    },
+    {
+      value: "liquid_restaking",
+      label: "Liquid restaking",
+      sentence: "I am looking to issue one liquid token backed by positions restaked across services.",
+    },
+  ],
   liquidity_infra: [
     {
       value: "vaults",
@@ -135,11 +191,63 @@ export const SUBSECTOR_OPTIONS_BY_SECTOR: Partial<Record<Sector, Array<GatedOpti
       sentence: "I am looking to set up pools that traders swap against.",
     },
   ],
+  perps_derivatives: [
+    {
+      value: "perp_dex",
+      label: "Perp DEX",
+      sentence: "I am looking to let users trade perpetuals with leverage against a pool or a book.",
+    },
+    {
+      value: "option_vaults",
+      label: "Option vaults",
+      sentence: "I am looking to run a vault that writes or buys options for depositors on a schedule.",
+    },
+    {
+      value: "delta_neutral",
+      label: "Delta neutral",
+      sentence: "I am looking to earn funding or basis for depositors while the price risk is hedged away.",
+    },
+  ],
+  rwa_infra: [
+    {
+      value: "tokenized_securities",
+      label: "Tokenized securities",
+      sentence: "I am looking to issue or build on tokens that track stocks, funds or bonds.",
+    },
+    {
+      value: "private_credit",
+      label: "Private credit",
+      sentence: "I am looking to pool lender capital into loans to named borrowers off-chain.",
+    },
+    {
+      value: "asset_backed_tokens",
+      label: "Asset-backed tokens",
+      sentence: "I am looking to issue a token backed one to one by a reserve someone attests.",
+    },
+  ],
+  other: [
+    {
+      value: "underwriting",
+      label: "Underwriting",
+      sentence: "I am looking to pool capital that pays out when a defined event happens.",
+    },
+    {
+      value: "governance",
+      label: "Governance",
+      sentence: "I am looking to give holders a vote and a treasury the vote controls.",
+    },
+  ],
 };
 
-/** Every subsector option, sector by sector, for label lookups and picker order. */
-export const ALL_SUBSECTOR_OPTIONS: Array<GatedOption<Subsector>> = SECTOR_OPTIONS.flatMap(
-  (s) => SUBSECTOR_OPTIONS_BY_SECTOR[s.value] ?? [],
+/**
+ * Every subsector option, sector by sector, for label lookups and picker
+ * order. A subsector of a sector that is not open yet reads `available:
+ * false` here, so offeredShapes and the agent rules gate on the sector flag.
+ */
+export const ALL_SUBSECTOR_OPTIONS: Array<GatedOption<Subsector>> = SECTOR_OPTIONS.flatMap((s) =>
+  (SUBSECTOR_OPTIONS_BY_SECTOR[s.value] ?? []).map((o) =>
+    s.available === false ? { ...o, available: false } : o,
+  ),
 );
 
 /** The subsector chips a chosen sector shows, or none. */
@@ -150,10 +258,18 @@ export function subsectorOptionsFor(sector: Sector): Array<GatedOption<Subsector
 export const SECTOR_COPY = {
   label: "Sector",
   hint: "Pick every sentence that fits.",
-  /** Under the sector cards, in place of listing sectors that are not open yet. */
-  moreSoon: "We have more features coming soon.",
+  /** Under the sector cards, naming the sectors that are not open yet. Empty once every sector is open. */
+  moreSoon: (closed: readonly string[]) =>
+    closed.length === 0
+      ? ""
+      : closed.length === 1
+        ? `${closed[0]} opens soon.`
+        : `${closed.slice(0, -1).join(", ")} and ${closed[closed.length - 1]} open soon.`,
   subsectorLabel: "Subsector",
   subsectorHint: "Pick every sentence that fits, up to three per sector. Each opens its own research workflow.",
+  /** Under the Other card's text field. */
+  otherLabel: "Anything else about the sector?",
+  otherHint: "Optional once a subsector is picked. A few words on what the product is.",
   /** Under the subsector chips when the overlap rule ticked something. */
   overlapHint: (added: string, because: string) =>
     `${added} is ticked because it shares product shapes with ${because}.`,

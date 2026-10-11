@@ -1,4 +1,5 @@
 import { KIT_CATALOG_IDS } from "@/content/kits/catalog";
+import { TEMPLATE_CATALOG_IDS } from "@/content/templates";
 import {
   type ChecklistItem,
   type ProductShape,
@@ -39,8 +40,8 @@ import { LIQUIDITY_ALLOCATOR_CHECKLIST, PERMISSIONED_VAULT_CHECKLIST } from "./v
 
 /**
  * Build checklists by shape, all thirteen. assertChecklists runs at import and
- * fails the build on a duplicate id or a reference to a resource that is
- * not in the catalog.
+ * fails the build on a duplicate id or a reference to a resource or a
+ * contract template that is not in its catalog.
  */
 export const KIT_CHECKLISTS: Partial<Record<ProductShape, readonly ChecklistItem[]>> = {
   curated_vault: CURATED_VAULT_CHECKLIST,
@@ -101,5 +102,5 @@ export function buildProgress(
   return groupProgress(groupsFor(kitShapes(kit), kit ?? {}), kit);
 }
 
-assertChecklists(KIT_CHECKLISTS, KIT_CATALOG_IDS);
+assertChecklists(KIT_CHECKLISTS, KIT_CATALOG_IDS, TEMPLATE_CATALOG_IDS);
 assertSharedSteps(KIT_CHECKLISTS, SHARED_STEPS);

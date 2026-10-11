@@ -1,0 +1,3301 @@
+{
+ "generated": "2026-10-11",
+ "chains": {
+  "arbitrum": "Arbitrum One (42161)",
+  "robinhood": "Robinhood Chain (4663)"
+ },
+ "taxonomy": {
+  "Lending": [
+   "Lending",
+   "Leveraged yield",
+   "Fixed income"
+  ],
+  "Liquidity": [
+   "Pools",
+   "Vaults"
+  ],
+  "Derivatives": [
+   "Perp DEX",
+   "Option vaults",
+   "Delta neutral"
+  ],
+  "Staking": [
+   "Liquid staking",
+   "Restaking",
+   "Liquid restaking"
+  ],
+  "RWA": [
+   "Tokenized securities",
+   "Private credit",
+   "Asset-backed tokens"
+  ],
+  "Other": [
+   "Underwriting",
+   "Governance"
+  ]
+ },
+ "templates": [
+  {
+   "id": "aave-v3-origin",
+   "name": "Aave V3 Origin",
+   "provider": "Aave DAO / BGD Labs",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    }
+   ],
+   "description": "Reference codebase of Aave V3 pooled money markets with eMode, isolation mode, supply caps and the full configurator stack.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date earlier of 2027-03-06 or ENS record, restrictive anti fork use grant)",
+   "audited": "Yes, OpenZeppelin, Trail of Bits, ABDK, PeckShield, SigmaPrime, Certora",
+   "repo_url": "https://github.com/aave-dao/aave-v3-origin",
+   "docs_url": "https://aave.com/docs",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "No Robinhood entry in the official bgd-labs aave-address-book (AaveV3Arbitrum present)",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "License forbids competing forks; asset listing needs Aave governance so new tokens are unrealistic",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "ajna",
+   "name": "Ajna Protocol",
+   "provider": "Ajna Labs",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    }
+   ],
+   "description": "Oracle free lending where lenders pick price buckets and anyone can deploy a pool for any ERC-20 or NFT collateral through the pool factory.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 (change date 2026-04-01 has passed, change license to be a GPL-2.0 compatible license; interfaces MIT)",
+   "audited": "Yes, Sherlock, Certora, Prototech, Trail of Bits, Code4rena, Quantstamp",
+   "repo_url": "https://github.com/ajna-finance/ajna-core",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "No Robinhood deployment found; license grant lets third parties deploy unmodified code if bwAJNA is bridged first",
+   "pons_fit": "Strong fit since no oracle is needed, so a Pons token and USDG pool can launch right away and price risk is set by lenders.",
+   "complexity": "Medium",
+   "notes": "Third party chain deploy allowed only with unmodified code and bridged bwAJNA; verify current LICENSE before forking",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "chainlink-data-feeds",
+   "name": "Chainlink Data Feeds (incl. stock token feeds)",
+   "provider": "Chainlink Labs",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Aggregator contracts that publish signed price data on chain, plus an L2 sequencer uptime feed, used by lending markets for collateral valuation.",
+   "kind": "Integrate",
+   "license": "MIT for most contracts; CCIP and some workflow code BUSL-1.1",
+   "audited": "Yes, multiple external audits per Chainlink",
+   "repo_url": "https://github.com/smartcontractkit/chainlink-evm",
+   "docs_url": "https://docs.chain.link/data-feeds",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Chainlink changelog July 1 2026 says Data Feeds are live on Robinhood Chain Mainnet; Robinhood docs name Chainlink as the chain oracle",
+   "pons_fit": "Required before most oracle based lending can list a Pons token, though new tokens rarely get a feed early.",
+   "complexity": "Low",
+   "notes": "Feed coverage for new long tail tokens is unlikely; always check the sequencer uptime feed on L2",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "compound-iii-comet",
+   "name": "Compound III (Comet)",
+   "provider": "Compound Labs",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    }
+   ],
+   "description": "Single borrowable asset market where several collateral tokens back loans of one base asset such as USDC, with absorb style liquidations.",
+   "kind": "Fork and deploy",
+   "license": "BUSL-1.1 (change date 2025-12-31 passed, now GPL-2.0-or-later)",
+   "audited": "Yes, OpenZeppelin, ChainSecurity",
+   "repo_url": "https://github.com/compound-finance/comet",
+   "docs_url": "https://docs.compound.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "A forked Comet with USDG as base asset could add the Pons token as a capped collateral once a reliable price feed exists.",
+   "complexity": "High",
+   "notes": "Change date has passed so forking is allowed under GPL; deployment and configuration scripts are involved",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "euler-vault-kit",
+   "name": "Euler Vault Kit (EVK) and EVC",
+   "provider": "Euler Labs",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    },
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Modular credit vault system where builders spin up ERC-4626 lending vaults with custom oracles and IRMs, linked through the Ethereum Vault Connector for cross collateral and looping.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 (change date 2029-04-24, then GPL-2.0-or-later); EVC and periphery GPL-2.0",
+   "audited": "Yes, ChainSecurity, OpenZeppelin, Spearbit/Cantina, Certora and others",
+   "repo_url": "https://github.com/euler-xyz/euler-vault-kit",
+   "docs_url": "https://docs.euler.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Chain 4663 is absent from the official euler-interfaces EulerChains.json list (Arbitrum 42161 present)",
+   "pons_fit": "An escrow vault could hold the Pons token as collateral for a USDG borrow vault, but that needs Euler to deploy on Robinhood first.",
+   "complexity": "High",
+   "notes": "BUSL blocks commercial forks until 2029; use the deployed GenericFactory instead of copying code",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "fraxlend",
+   "name": "Fraxlend",
+   "provider": "Frax Finance",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    }
+   ],
+   "description": "Permissionless pairwise lending where each pair is an ERC-4626 lending vault with its own oracle, rate model and maturity settings.",
+   "kind": "Fork and deploy",
+   "license": "ISC (source SPDX), MIT in package.json",
+   "audited": "Yes, Trail of Bits and Frax internal reviews",
+   "repo_url": "https://github.com/FraxFinance/fraxlend",
+   "docs_url": "https://docs.frax.finance/fraxlend/fraxlend-overview",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Fork and deploy a Pons token and USDG pair with a TWAP or Chainlink oracle as a permissive license alternative to BUSL protocols.",
+   "complexity": "Medium",
+   "notes": "Permissive license makes forking easy; repo is older and less actively maintained, so re-audit any fork",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "morpho-blue",
+   "name": "Morpho Blue (Morpho Markets V1)",
+   "provider": "Morpho",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "Immutable lending primitive where anyone can open an isolated market with one collateral asset, one loan asset, an oracle, an LLTV and a whitelisted interest rate model.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0-or-later",
+   "audited": "Yes, OpenZeppelin, Spearbit, Cantina competition, Certora formal verification (reports in repo audits folder)",
+   "repo_url": "https://github.com/morpho-org/morpho-blue",
+   "docs_url": "https://docs.morpho.org",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Official morpho-org/sdks address registry lists Morpho Blue 0x9D53d5E3bd5E8d4Cbfa6DB1ca238AEA02E651010 for chain 4663; Robinhood Earn launched on Morpho at mainnet",
+   "pons_fit": "Open an isolated market that takes the Pons token as collateral to borrow USDG once a Chainlink or custom oracle exists for the token.",
+   "complexity": "Medium",
+   "notes": "Market creation is permissionless but needs a sound oracle for long tail tokens, and the IRM and LLTV must already be enabled by governance",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "morpho-vault-v2",
+   "name": "Morpho Vault V2",
+   "provider": "Morpho",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    },
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "ERC-4626 vault framework with curator, allocator and sentinel roles that routes deposits through adapters into Morpho markets and other yield sources under configurable caps.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0-or-later",
+   "audited": "Yes, multiple firms (reports in repo audits folder)",
+   "repo_url": "https://github.com/morpho-org/vault-v2",
+   "docs_url": "https://docs.morpho.org",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Morpho SDK registry lists vaultV2Factory 0x0FBad98595b0186dA120E41f77C102beb49f803c on chain 4663; MetaMorpho V1.1 factory is not listed there",
+   "pons_fit": "Make a companion vault the creator fee recipient so USDG or ETH fees are deposited and lent out, with share yield going to a community treasury.",
+   "complexity": "Medium",
+   "notes": "Curator role carries real risk management duty; on Robinhood use V2 factory since the MetaMorpho V1 factory is absent",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "silo-v2",
+   "name": "Silo V2 isolated markets",
+   "provider": "Silo Finance",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Lending"
+    }
+   ],
+   "description": "Two asset isolated lending markets created from a factory, each pairing a token with a counterpart so risk stays contained to that pair.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 (change date 2031-01-31, then GPL-2.0-or-later)",
+   "audited": "Yes, multiple firms per Silo docs and repo",
+   "repo_url": "https://github.com/silo-finance/silo-contracts-v2",
+   "docs_url": "https://docs.silo.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official silo-core deployments file lists arbitrum_one, mainnet, sonic and others but no Robinhood entry",
+   "pons_fit": "A Pons token and USDG pair market would suit the isolated model once Silo deploys on Robinhood Chain.",
+   "complexity": "Medium",
+   "notes": "Repo now labelled Silo V3 Core under BUSL until 2031 so commercial forking is not allowed",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "arcadia-lending",
+   "name": "Arcadia Accounts and Lending",
+   "provider": "Arcadia Finance (Pragma Labs)",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Margin accounts that hold concentrated liquidity positions and tokens as collateral and borrow from Arcadia lending pools for leveraged, auto rebalanced LP.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2026-07-08 passed, now AGPL-3.0-or-later)",
+   "audited": "Yes, see Arcadia docs",
+   "repo_url": "https://github.com/arcadia-finance/lending-v2",
+   "docs_url": "",
+   "arbitrum": "Not deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Official arcadia-finance mcp-server lists Robinhood (4663) as a supported chain; launch announced by @ArcadiaFi on Sept 7 2026",
+   "pons_fit": "Could hold leveraged LP positions in a Pons token pool if Arcadia whitelists the pair, which is unlikely early on.",
+   "complexity": "Medium",
+   "notes": "Live on Base, Unichain, Optimism and Robinhood; change date passed so AGPL applies to forks",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "contango-v2",
+   "name": "Contango V2",
+   "provider": "Contango",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Builds leveraged long, short and looping positions by routing flash loans and swaps into existing money markets such as Aave, Morpho and Euler.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2027-09-01, then GPL-2.0-or-later)",
+   "audited": "Yes, details in Contango docs",
+   "repo_url": "https://github.com/contango-xyz/core-v2",
+   "docs_url": "https://docs.contango.xyz",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Depends on underlying money markets listing the asset; BUSL blocks commercial forks until 2027",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "defisaver-v3",
+   "name": "DeFi Saver V3 recipes",
+   "provider": "DeFi Saver (DecenterApps)",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Action and recipe framework that chains protocol actions with flash loans for leverage, repay, boost and automated position management.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Yes, Dedaub and others",
+   "repo_url": "https://github.com/DecenterApps/defisaver-v3-contracts",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Permissive license and modular actions; automation relies on off chain bots and per protocol actions",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "fluid-vaults",
+   "name": "Fluid Vaults and Liquidity Layer",
+   "provider": "Instadapp Labs (Fluid)",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Shared liquidity layer feeding high LTV borrow vaults and smart debt and smart collateral DEX positions, designed for capital efficient looping.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2027-12-19, then GPL-2.0-or-later)",
+   "audited": "Yes, Statemind, MixBytes, Cantina",
+   "repo_url": "https://github.com/Instadapp/fluid-contracts-public",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official deployments.md lists mainnet, arbitrum, base, polygon, plasma, bnb; no Robinhood entries",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Vault creation is governance gated; BUSL blocks forks until late 2027",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "gearbox-v3",
+   "name": "Gearbox V3 Credit Accounts",
+   "provider": "Gearbox Foundation",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Composable leverage through isolated credit accounts that borrow from passive pools and use allow listed adapters to enter DeFi strategies.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2024-11-15 passed, now GPL-2.0-or-later)",
+   "audited": "Yes, ChainSecurity, Sigma Prime, Consensys Diligence and others",
+   "repo_url": "https://github.com/Gearbox-protocol/core-v3",
+   "docs_url": "https://docs.gearbox.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Gearbox Permissionless lets curators run their own markets via a market configurator; confirm onboarding terms",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "instadapp-dsa-connectors",
+   "name": "Instadapp DSA and Connectors",
+   "provider": "Instadapp",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "DeFi smart accounts that call protocol connectors in batched spells, a common base for one transaction leverage, deleverage and refinancing flows.",
+   "kind": "Integrate",
+   "license": "MIT (connectors)",
+   "audited": "Partial",
+   "repo_url": "https://github.com/Instadapp/dsa-connectors",
+   "docs_url": "https://docs.instadapp.io",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Connector coverage per chain varies; core account contracts are a separate repo",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "lazy-summer-protocol",
+   "name": "Lazy Summer Protocol (Fleet vaults)",
+   "provider": "Summer.fi (OasisDEX)",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "ERC-4626 fleet vaults that rebalance deposits across lending markets and yield sources using AI assisted keepers within governed risk limits.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2028-04-01)",
+   "audited": "Yes, Sherlock contest and others",
+   "repo_url": "https://github.com/OasisDEX/summer-earn-protocol",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Fleet creation is governance controlled and BUSL blocks forks until 2028",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "notional-leveraged-vaults",
+   "name": "Notional Leveraged Vaults",
+   "provider": "Notional Finance",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Leveraged yield"
+    }
+   ],
+   "description": "Reference strategy vault contracts that borrow fixed or variable rate debt from Notional to run leveraged LP and staking strategies.",
+   "kind": "Fork and deploy",
+   "license": "GPL-3.0-only",
+   "audited": "Yes, Sherlock contests",
+   "repo_url": "https://github.com/notional-finance/leveraged-vaults",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Tightly coupled to Notional V3 core, which is BUSL; check current Notional protocol status before building",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "bond-protocol",
+   "name": "Bond Protocol fixed term auctioneers",
+   "provider": "Bond Protocol",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    }
+   ],
+   "description": "Permissionless bond markets where issuers sell payout tokens at a discount for quote tokens through sequential Dutch auction pricing, with fixed term or fixed expiry vesting.",
+   "kind": "Create via factory",
+   "license": "AGPL-3.0-or-later",
+   "audited": "Yes, see repo audit reports",
+   "repo_url": "https://github.com/Bond-Protocol/bond-contracts",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "A companion could buy Pons tokens with USDG fees and sell them as discounted vested bonds for protocol owned liquidity.",
+   "complexity": "Medium",
+   "notes": "With no creator allocation, bond payout tokens must be bought on market first; AGPL applies to forks",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "morpho-midnight",
+   "name": "Morpho Midnight",
+   "provider": "Morpho",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    }
+   ],
+   "description": "Fixed rate, fixed maturity lending with permissionless immutable markets where makers post offers and positions behave like zero coupon bonds.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 (change date earlier of 2030-05-01 or ENS record); interfaces, libraries, periphery GPL-2.0-or-later",
+   "audited": "Yes, reports in repo audits folder, Certora formal verification",
+   "repo_url": "https://github.com/morpho-org/midnight",
+   "docs_url": "https://docs.morpho.org",
+   "arbitrum": "Not deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "One Morpho SDK registry lists a Midnight address on Robinhood and another does not, verify before use",
+   "pons_fit": "A fixed term market could let Pons token holders borrow USDG to a set maturity once a price ratifier oracle is configured.",
+   "complexity": "High",
+   "notes": "New protocol, so integrate rather than fork given BUSL until 2030; offer and ratifier model is novel",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "notional-v3",
+   "name": "Notional V3",
+   "provider": "Notional Finance",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    }
+   ],
+   "description": "Fixed and variable rate lending using fCash zero coupon instruments and per currency liquidity pools, with leveraged vault support.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2027-03-27)",
+   "audited": "Yes, see Notional docs",
+   "repo_url": "https://github.com/notional-finance/contracts-v3",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "BUSL until 2027 and new currencies need governance; verify protocol is still actively supported",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "openzeppelin-erc4626",
+   "name": "OpenZeppelin ERC4626",
+   "provider": "OpenZeppelin",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    },
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    },
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Audited tokenized vault base with virtual share inflation protection, used to build yield, savings and term deposit vaults.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "Yes, OpenZeppelin internal audits and external reviews",
+   "repo_url": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+   "docs_url": "https://docs.openzeppelin.com/contracts/5.x/erc4626",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library, deploy your own instance",
+   "pons_fit": "Base for a companion vault that receives creator fees and issues shares, which can plug into Pendle, Spectra or Morpho.",
+   "complexity": "Low",
+   "notes": "Library only; strategy logic and accounting are the builder's responsibility",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "pendle-v2",
+   "name": "Pendle V2 yield tokenization",
+   "provider": "Pendle",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "Wraps yield bearing assets into SY, splits them into principal and yield tokens with a maturity, and trades them in a time decaying AMM.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 LICENSE with change date 2023-07-01 passed (now GPL-2.0-or-later); source files GPL-3.0-or-later",
+   "audited": "Yes, six firms per repo README",
+   "repo_url": "https://github.com/pendle-finance/pendle-core-v2-public",
+   "docs_url": "https://docs.pendle.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Official repo has deployments/4663-core.json with marketFactoryV6 and router; Pendle announced Robinhood launch Sept 7 2026",
+   "pons_fit": "A companion ERC-4626 vault holding USDG creator fees could be wrapped as SY so holders trade fixed and variable yield on it.",
+   "complexity": "High",
+   "notes": "Needs a yield bearing underlying and a custom SY adapter; UI listing is curated by Pendle",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "spectra-v2",
+   "name": "Spectra principal and yield tokens",
+   "provider": "Spectra (Perspective)",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    }
+   ],
+   "description": "Permissionless factory that tokenizes any ERC-4626 vault into principal and yield tokens and seeds a Curve pool for fixed rate trading.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 (change date 2023-07-01 passed, now GPL-2.0-or-later)",
+   "audited": "Yes, see Spectra docs",
+   "repo_url": "https://github.com/perspectivefi/spectra-core",
+   "docs_url": "https://docs.spectra.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Any ERC-4626 companion vault funded by creator fees could get its own PT and YT market without needing permission.",
+   "complexity": "Medium",
+   "notes": "Relies on Curve pools on the target chain; check whether Curve exists on Robinhood",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "term-finance",
+   "name": "Term Finance Term Repos",
+   "provider": "Term Finance",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    }
+   ],
+   "description": "Fixed rate, fixed term collateralized borrowing settled through sealed bid auctions, modelled on tri party repo with repo tokens for lenders.",
+   "kind": "Integrate",
+   "license": "CC BY-NC-ND 4.0 (non commercial, no derivatives)",
+   "audited": "Yes, Sigma Prime, Dedaub, Runtime Verification, Certora formal verification",
+   "repo_url": "https://github.com/term-finance/term-finance-contracts",
+   "docs_url": "",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "License forbids commercial use and derivatives, so no forking; Arbitrum was only planned per 2024 STEP application",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "yield-protocol-v2",
+   "name": "Yield Protocol V2 and YieldSpace",
+   "provider": "Yield Inc.",
+   "placements": [
+    {
+     "sector": "Lending",
+     "subsector": "Fixed income"
+    }
+   ],
+   "description": "fyToken zero coupon borrowing with a cauldron collateral ledger and YieldSpace AMM for fixed rate pricing up to maturity.",
+   "kind": "Fork and deploy",
+   "license": "BUSL-1.1 (change date 2023-06-01 passed, now GPL-2.0-or-later)",
+   "audited": "Yes, Code4rena and others",
+   "repo_url": "https://github.com/yieldprotocol/vault-v2",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Protocol wound down in December 2023",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Team wound down in 2023 so code is unmaintained; useful as a GPL reference design only",
+   "license_class": "Copyleft",
+   "status": "Inactive"
+  },
+  {
+   "id": "balancer-v3-pools",
+   "name": "Balancer v3 vault and pool factories",
+   "provider": "Balancer",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Shared vault with permissionless weighted, stable, LBP, Gyro and reCLAMM pool factories plus a hooks framework for custom pool logic.",
+   "kind": "Create via factory",
+   "license": "GPL-3.0-or-later",
+   "audited": "Yes, Certora, Trail of Bits, Spearbit, Cantina",
+   "repo_url": "https://github.com/balancer/balancer-v3-monorepo",
+   "docs_url": "https://docs.balancer.fi",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "balancer-deployments address registry has an arbitrum file but no Robinhood Chain file",
+   "pons_fit": "An 80/20 token and USDG weighted pool could hold creator treasury liquidity, but only on Arbitrum today.",
+   "complexity": "Medium",
+   "notes": "Boosted pools wrap ERC4626 yield tokens. Liquidity bootstrapping pools overlap with the Pons bonding curve role.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "curve-stableswap-ng",
+   "name": "Curve Stableswap-NG factory",
+   "provider": "Curve Finance",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Vyper factory for permissionless stableswap pools of pegged assets, supporting rate oracle tokens, rebasing tokens and ERC4626 assets.",
+   "kind": "Create via factory",
+   "license": "Proprietary (Swiss Stake AG, all rights reserved, no reuse license)",
+   "audited": "Yes, MixBytes",
+   "repo_url": "https://github.com/curvefi/stableswap-ng",
+   "docs_url": "https://docs.curve.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood entry found in Curve repos or docs",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Source published for reference only so forking is not allowed. Twocrypto-NG has the same license. Suits USDG and stock pegs.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "lfj-liquidity-book",
+   "name": "LFJ Liquidity Book (Trader Joe v2)",
+   "provider": "LFJ (Trader Joe)",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Bin based AMM where each discrete price bin holds constant sum liquidity, giving zero slippage within a bin and fungible per bin shares.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/traderjoe-xyz/joe-v2",
+   "docs_url": "https://developers.lfj.gg",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Bin ladders could be forked on Robinhood for staged sell walls of the token, though effort is high.",
+   "complexity": "High",
+   "notes": "MIT makes it the most permissive CL style AMM to fork. Repo last updated 2024.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "openzeppelin-uniswap-hooks",
+   "name": "OpenZeppelin Uniswap Hooks",
+   "provider": "OpenZeppelin",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Audited Solidity base contracts for v4 hooks covering dynamic fees, hook fees, custom curves, async swaps, anti-sandwich, limit orders and rehypothecation.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "Yes, OpenZeppelin (v1.0 and v1.1 reports)",
+   "repo_url": "https://github.com/OpenZeppelin/uniswap-hooks",
+   "docs_url": "https://docs.openzeppelin.com/uniswap-hooks",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library compiled into your own hook, deploy it against the Robinhood PoolManager yourself",
+   "pons_fit": "A BaseHookFee hook on an extra token pool could skim swap fees to a companion contract that also receives Pons creator fees.",
+   "complexity": "Medium",
+   "notes": "Hook addresses must be mined for permission flags. Actively maintained, last commit October 2026.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "pancakeswap-infinity",
+   "name": "PancakeSwap Infinity (CL pools and hooks)",
+   "provider": "PancakeSwap",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Singleton vault with concentrated liquidity and bin pool managers that support hooks, closely mirroring the Uniswap v4 design.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0",
+   "audited": "Yes, Hexens, OtterSec, Zellic",
+   "repo_url": "https://github.com/pancakeswap/infinity-core",
+   "docs_url": "https://developer.pancakeswap.finance",
+   "arbitrum": "Not deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "PancakeSwap developer address page and repo config robinhood-mainnet.json list Vault 0x4F922d5B15e6691e0469663E4F5C4177f23c5FaF and CLPoolManager 0xeE04c68742e6Bf434bE8039580D2e89BBE55bc6f",
+   "pons_fit": "Create a second token pool on Robinhood with a custom hook, giving the launched token a venue outside Uniswap.",
+   "complexity": "Medium",
+   "notes": "Only CL pool manager on Robinhood, bin pools not deployed there. GPL licensed so forking is allowed.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "uniswap-v2",
+   "name": "Uniswap v2 constant product pools",
+   "provider": "Uniswap Labs",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Minimal x times y equals k pair factory with fungible ERC-20 LP tokens and a router, widely forked and battle tested.",
+   "kind": "Create via factory",
+   "license": "GPL-3.0",
+   "audited": "Yes, dapp.org (2020)",
+   "repo_url": "https://github.com/Uniswap/v2-core",
+   "docs_url": "https://docs.uniswap.org/contracts/v2/overview",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Uniswap blog of July 2 2026 states v2, v3, v4 and UniswapX are live on Robinhood Chain",
+   "pons_fit": "Full range token and WETH pair whose fungible LP tokens can be staked in a rewards contract funded by creator fees.",
+   "complexity": "Low",
+   "notes": "Solidity 0.5.16 code. Fungible LP tokens make it the easiest pool to pair with LP staking.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "uniswap-v3",
+   "name": "Uniswap v3 concentrated liquidity",
+   "provider": "Uniswap Labs",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Factory plus pool contracts for concentrated liquidity with fixed fee tiers, NFT positions via the periphery NonfungiblePositionManager.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0-or-later (core BUSL-1.1 converted 2023-04-01), periphery GPL-2.0",
+   "audited": "Yes, Trail of Bits, ABDK",
+   "repo_url": "https://github.com/Uniswap/v3-core",
+   "docs_url": "https://docs.uniswap.org/contracts/v3/overview",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Uniswap blog of July 2 2026 states v2, v3, v4 and UniswapX are live on Robinhood Chain, docs host a Robinhood v3 deployments page",
+   "pons_fit": "Add a concentrated token and USDG pool alongside the locked v4 pool to deepen liquidity for routers that still prefer v3.",
+   "complexity": "Medium",
+   "notes": "Confirm exact Robinhood v3 factory address from Uniswap docs before integrating.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "uniswap-v4-hook-template",
+   "name": "Uniswap v4 hook template",
+   "provider": "Uniswap Foundation",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Foundry starter repo with an example counter hook, deployment scripts and a preconfigured local PoolManager test setup for building custom v4 hooks.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/uniswapfoundation/v4-template",
+   "docs_url": "https://docs.uniswap.org/contracts/v4/guides/hooks/your-first-hook",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Template only, point scripts at the Robinhood v4 PoolManager to deploy",
+   "pons_fit": "Good scaffold for a hook that pairs the launched token with USDG in a secondary pool feeding fees to a companion contract.",
+   "complexity": "Low",
+   "notes": "Example code only, not production hardened. Pairs well with OpenZeppelin Uniswap Hooks.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "uniswap-v4-hooks-public",
+   "name": "Uniswap v4 official hooks (WETH, wstETH, StablePair)",
+   "provider": "Uniswap Labs",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Uniswap Labs maintained production hooks including a zero fee WETH wrap hook, wstETH wrap and routing hooks, and a dynamic fee stable pair hook.",
+   "kind": "Integrate",
+   "license": "MIT",
+   "audited": "Yes, OpenZeppelin",
+   "repo_url": "https://github.com/Uniswap/v4-hooks-public",
+   "docs_url": "https://docs.uniswap.org/contracts/v4/concepts/hooks",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official README deployment tables list Ethereum, Arbitrum and others but not Robinhood Chain",
+   "pons_fit": "WETHHook style routing lets ETH denominated creator fee flows enter v4 pools without separate wrapping logic.",
+   "complexity": "Low",
+   "notes": "WETHHook is on Arbitrum, wstETH hooks Ethereum only. MIT source can be redeployed on Robinhood.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "uniswap-v4-pools",
+   "name": "Uniswap v4 pools (core and periphery)",
+   "provider": "Uniswap Labs",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Pools"
+    }
+   ],
+   "description": "Singleton PoolManager where anyone initializes a pool with chosen fee, tick spacing and optional hook, with PositionManager handling LP positions.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 core (change date 2027-06-15 or earlier, then MIT), periphery MIT",
+   "audited": "Yes, OpenZeppelin, Trail of Bits, Spearbit, Certora, ABDK",
+   "repo_url": "https://github.com/Uniswap/v4-core",
+   "docs_url": "https://docs.uniswap.org/contracts/v4/overview",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Official Uniswap v4 deployments list chain 4663 with PoolManager 0x8366a39cc670b4001a1121b8f6a443a643e40951 and PositionManager 0x58daec3116aae6d93017baaea7749052e8a04fa7",
+   "pons_fit": "Pons graduates into a locked v4 pool here, so extra token pools, hooks and fee routing all live on the same PoolManager.",
+   "complexity": "Medium",
+   "notes": "Using the deployed PoolManager is fine, forking core is BUSL restricted until the change date unless a Uniswap license grant applies.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "arcadia-lp-automation",
+   "name": "Arcadia accounts and LP asset managers",
+   "provider": "Arcadia Finance (Pragma Labs)",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    }
+   ],
+   "description": "Margin accounts and lending pools with automated rebalancers, compounders and yield claimers for Uniswap v3, v4 and Slipstream positions.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (accounts and lending change date 2026-07-08 passed, now AGPL-3.0-or-later; asset-managers BUSL)",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/arcadia-finance/asset-managers",
+   "docs_url": "https://docs.arcadia.finance",
+   "arbitrum": "Unknown",
+   "robinhood": "Deployed",
+   "robinhood_note": "tradingstrategy.ai lists ArcadiaV2 lending vaults on Robinhood Chain, asset manager addresses not independently verified",
+   "pons_fit": "Automate rebalancing and fee compounding of extra Uniswap v4 token positions on Robinhood.",
+   "complexity": "High",
+   "notes": "asset-managers repo lacks a license file, SPDX says BUSL. Integrate rather than fork.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "arrakis-v2",
+   "name": "Arrakis V2 vaults",
+   "provider": "Arrakis Finance",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    }
+   ],
+   "description": "Factory deployed vaults holding multiple Uniswap v3 ranges with pluggable managers, used for protocol owned and market maker liquidity.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0-or-later (BUSL-1.1 converted 2025-01-01)",
+   "audited": "Yes, Sherlock, WatchPug, Statemind",
+   "repo_url": "https://github.com/ArrakisFinance/v2-core",
+   "docs_url": "https://docs.arrakis.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "Ecosystem articles mention Arrakis on Robinhood Chain but no official address found, newer Arrakis Modular code is not public",
+   "pons_fit": "Manage protocol owned token liquidity on a v3 pool with a vault whose manager collects fees for a companion contract.",
+   "complexity": "Medium",
+   "notes": "Arbitrum deployments in repo deployments/arbitrum. Arrakis Modular for v4 is closed source.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "euler-earn",
+   "name": "Euler Earn",
+   "provider": "Euler Labs",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    }
+   ],
+   "description": "Factory deployed ERC4626 aggregator that allocates deposits across Euler vaults and other ERC4626 strategies under curator controlled caps.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0",
+   "audited": "Yes, Certora, Sigma Prime, Pashov Audit Group",
+   "repo_url": "https://github.com/euler-xyz/euler-earn",
+   "docs_url": "https://docs.euler.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "euler-interfaces registry lists eulerEarnFactory 0xB9B5d62B9fE9E1B505466e75817aB178A1D2ec9d on Arbitrum and no chain 4663 folder",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Underlying Euler Vault Kit is BUSL-1.1 until 2029-04-24, Earn itself is GPL.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "gamma-hypervisor",
+   "name": "Gamma Hypervisor",
+   "provider": "Gamma Strategies",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    }
+   ],
+   "description": "Fungible ERC-20 vault wrapping Uniswap v3 style base and limit positions, rebalanced by an operator to keep liquidity active.",
+   "kind": "Fork and deploy",
+   "license": "GPL-2.0-or-later (BUSL-1.1 converted 2024-01-01)",
+   "audited": "Yes, ConsenSys Diligence, Bailsec, Arbitrary Execution",
+   "repo_url": "https://github.com/GammaStrategies/hypervisor",
+   "docs_url": "https://docs.gamma.xyz",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "A forked hypervisor could manage a v3 token and USDG position, issuing LP shares that holders can stake.",
+   "complexity": "Medium",
+   "notes": "Relies on an off chain rebalancing operator. v3 only, no v4 support in this repo.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "lagoon-v0",
+   "name": "Lagoon vaults",
+   "provider": "Lagoon Finance",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "ERC-7540 async vault deployed from a factory, where a Safe managed curator settles deposits and redemptions against a NAV oracle.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1 (change date 2029-01-01 or earlier, then GPL-2.0-or-later)",
+   "audited": "Yes, Nethermind, Trail of Bits",
+   "repo_url": "https://github.com/hopperlabsxyz/lagoon-v0",
+   "docs_url": "https://docs.lagoon.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Lagoon networks page lists Arbitrum factory 0x9de724b0efee0fba07fe21a16b9bf9bbb5204fb4 and no Robinhood factory",
+   "pons_fit": "A creator treasury Safe could run a Lagoon vault on Arbitrum, little fit on Robinhood for now.",
+   "complexity": "Medium",
+   "notes": "Using the official factory is fine, forking the code is BUSL restricted.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "solady-erc4626",
+   "name": "Solady ERC4626",
+   "provider": "Vectorized (Solady)",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    }
+   ],
+   "description": "Gas optimized ERC4626 implementation in assembly heavy Solidity, with configurable decimal offset and virtual share handling.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "Yes, Cantina, Spearbit, Ackee Blockchain",
+   "repo_url": "https://github.com/Vectorized/solady",
+   "docs_url": "https://github.com/Vectorized/solady",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library, deploy your own instance",
+   "pons_fit": "Cheaper base for a token staking vault where creator fee buybacks accrue to share holders.",
+   "complexity": "Low",
+   "notes": "Solmate ERC4626 is an older alternative but AGPL-3.0-only, so Solady or OpenZeppelin are preferred for closed forks.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "superform-v2",
+   "name": "Superform v2 core and SuperVaults",
+   "provider": "Superform",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    }
+   ],
+   "description": "ERC-7579 smart account executors and hooks that route deposits into ERC4626, ERC-7540 and other yield sources, with ledger based fee accounting.",
+   "kind": "Integrate",
+   "license": "Apache-2.0",
+   "audited": "Yes, Cantina, Orion, Node Security",
+   "repo_url": "https://github.com/superform-xyz/v2-core",
+   "docs_url": "https://docs.superform.xyz",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Repo script/output/prod/4663/RH-latest.json lists prod SuperExecutor 0x9cC8EDCC41154aaFC74D261aD3D87140D21F6281 and SuperLedger 0x04916bB42564CdED96E10F55C059d65E4FCb1Be6",
+   "pons_fit": "Route USDG creator fees on Robinhood into curated yield sources through Superform hooks in one transaction.",
+   "complexity": "High",
+   "notes": "Older superform-core v1 is BUSL, v2 is Apache-2.0. Verify Robinhood addresses on the explorer before use.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "yearn-v3",
+   "name": "Yearn V3 vaults and tokenized strategy",
+   "provider": "Yearn",
+   "placements": [
+    {
+     "sector": "Liquidity",
+     "subsector": "Vaults"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "Vyper multi strategy allocator vaults deployed from a factory, plus a Solidity tokenized strategy base that turns a single yield source into an ERC4626.",
+   "kind": "Create via factory",
+   "license": "AGPL-3.0",
+   "audited": "Yes, ChainSecurity, Statemind, yAcademy",
+   "repo_url": "https://github.com/yearn/yearn-vaults-v3",
+   "docs_url": "https://docs.yearn.fi/developers/v3/overview",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood address in Yearn docs, README says factory can be deployed permissionlessly to new chains via CREATE2",
+   "pons_fit": "Companion contract could deposit USDG creator fees into a Yearn style vault and stream shares to token stakers.",
+   "complexity": "Medium",
+   "notes": "Tokenized strategy lives in yearn/tokenized-strategy. AGPL obliges source disclosure for network use of modified code.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "chainlink-data-streams",
+   "name": "Chainlink Data Streams",
+   "provider": "Chainlink Labs",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Low-latency pull oracle where signed reports are fetched offchain and verified onchain through a verifier proxy, used by perps for execution prices.",
+   "kind": "Library",
+   "license": "MIT (SDK)",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/smartcontractkit/data-streams-sdk",
+   "docs_url": "https://docs.robinhood.com/chain/data-streams",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Robinhood docs list verifier proxy 0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7 on chain 4663",
+   "pons_fit": "Low, streams exist only for listed assets, not newly launched tokens.",
+   "complexity": "Medium",
+   "notes": "Requires a Chainlink subscription and API credentials. Core dependency for any perps or options build on Robinhood Chain.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "derive-v2",
+   "name": "Derive V2 (formerly Lyra)",
+   "provider": "Lyra Foundation",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Portfolio-margined options and perps engine with subaccount NFTs and risk managers, settled from an offchain matching layer.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 core, change date 2029-03-20 for code since Feb 2025 (older code GPL-3.0 since Nov 2025); matching repo AGPL-3.0",
+   "audited": "Yes, Sigma Prime",
+   "repo_url": "https://github.com/derivexyz/v2-core",
+   "docs_url": "https://docs.derive.xyz",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Runs on its own Derive Chain, bridging from Arbitrum. BUSL blocks commercial forks of recent code.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "gains-gtrade",
+   "name": "Gains Network gTrade",
+   "provider": "Gains Network",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Synthetic leveraged trading on crypto, FX and stocks with gToken vaults as counterparty, reachable through the official TypeScript SDK.",
+   "kind": "Integrate",
+   "license": "SDK is MIT; current core contracts not published in the org",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/GainsNetwork-org/sdk",
+   "docs_url": "https://docs.gains.trade",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Integrate only, no forkable contract repo found. Ostium shows the older v5 design is forkable.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "gmx-v1",
+   "name": "GMX V1 (GLP vault)",
+   "provider": "GMX",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Single multi-asset GLP pool acting as counterparty for leveraged spot-priced perpetual trades, with position router and keeper execution.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Yes, ABDK, Quantstamp, Guardian",
+   "repo_url": "https://github.com/gmx-io/gmx-contracts",
+   "docs_url": "https://docs.gmx.io",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Defunct. Exploited for about 42M USD in July 2025 and trading halted. Widely forked, but fork only with fixes and fresh audits.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "gmx-v2-synthetics",
+   "name": "GMX V2 Synthetics (GM pools and GLV)",
+   "provider": "GMX",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "Oracle-priced perpetuals and swaps backed by isolated GM liquidity pools, with GLV vaults that route LP capital across several GM markets.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1, change date the earlier of 31 Aug 2026 or an ENS-set date, converting to GPL-2.0-or-later; date has passed but confirm ENS record and per-version terms",
+   "audited": "Yes, ABDK, Certora, Dedaub, Guardian, Sherlock",
+   "repo_url": "https://github.com/gmx-io/gmx-synthetics",
+   "docs_url": "https://docs.gmx.io",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Sept 2026 reporting lists v2.2c only on Arbitrum, Avalanche and MegaETH",
+   "pons_fit": "Low, listing a new market needs a deep oracle feed and keeper set that a fresh Pons token will not have.",
+   "complexity": "High",
+   "notes": "v2.2b disabled Sept 14 2026, integrate against v2.2c addresses. Forking needs Chainlink Data Streams and keepers.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "lighter-contracts",
+   "name": "Lighter zk perps contracts",
+   "provider": "Elliot Technologies (Lighter)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    },
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "ZK rollup perps exchange whose onchain contracts hold USDG margin, verify batches and provide an escape hatch while matching runs offchain.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1, no additional use grant, change date 2029-01-01 to GPL-2.0-or-later; no commercial fork before then",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/elliottech/lighter-contracts",
+   "docs_url": "",
+   "arbitrum": "Unknown",
+   "robinhood": "Deployed",
+   "robinhood_note": "ZkLighter proxy 0x94bab9693ba2f6358507effcbd372b0660afff9d on Robinhood Chain; official perps partner in Robinhood Wallet since July 2026",
+   "pons_fit": "Low, but a Robinhood Chain vault holding Pons fees in USDG could short on Lighter as its hedge leg.",
+   "complexity": "High",
+   "notes": "BUSL blocks forking. Trades, funding and liquidations live offchain in the zk engine, only margin flows are onchain.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "orderly-evm",
+   "name": "Orderly Network EVM contracts",
+   "provider": "Orderly Network",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Omnichain vault and ledger contracts behind a shared perps orderbook that lets builders launch white-label perp DEX front ends.",
+   "kind": "Integrate",
+   "license": "Apache-2.0",
+   "audited": "Yes, Zellic",
+   "repo_url": "https://github.com/OrderlyNetwork/contract-evm",
+   "docs_url": "https://orderly.network/docs",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Orderly docs list Robinhood Chain mainnet vault 0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9; live since Aug 2026",
+   "pons_fit": "A launched project could run a branded Orderly perps front end and earn builder fees, though the Pons token itself is not a margin asset.",
+   "complexity": "Medium",
+   "notes": "Matching is offchain on Orderly infrastructure. Best no-code route to perps on Robinhood Chain today.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "ostium-v2",
+   "name": "Ostium V2",
+   "provider": "Ostium Labs",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "RWA-focused perpetuals for stocks, FX and commodities using a shared USDC vault as counterparty, adapted from the Gains v5 design.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Yes, Zellic",
+   "repo_url": "https://github.com/0xOstium/smart-contracts-public",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low, a fork could list Robinhood stock tokens with Chainlink feeds, but a Pons token is too thin to list as a market.",
+   "complexity": "High",
+   "notes": "Closest MIT template for stock perps. Needs private price relays and keepers. Check Gains v5 upstream licensing as the README advises.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "perennial-v2",
+   "name": "Perennial V2",
+   "provider": "Equilibria",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Intent and oracle-settled perpetual markets where makers and takers share one market per payoff, plus Apache-licensed maker vaults.",
+   "kind": "Integrate",
+   "license": "Mostly Apache-2.0, but Market.sol and MarketFactory.sol are BUSL-1.1 to block full redeployment",
+   "audited": "Yes, Sherlock, Zellic",
+   "repo_url": "https://github.com/equilibria-xyz/perennial-v2",
+   "docs_url": "https://docs.perennial.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, new markets need an oracle and maker liquidity that a fresh fixed-supply token lacks.",
+   "complexity": "High",
+   "notes": "BUSL core blocks a commercial full fork. Vault and oracle packages are reusable. Repo activity slowed since 2025.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "pyth-evm-sdk",
+   "name": "Pyth Price Feeds (EVM SDK)",
+   "provider": "Pyth Network",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Pull-based oracle interfaces where callers post signed price updates onchain before reading crypto, equity and FX prices.",
+   "kind": "Library",
+   "license": "Apache-2.0",
+   "audited": "Yes, Zellic",
+   "repo_url": "https://github.com/pyth-network/pyth-sdk-solidity",
+   "docs_url": "https://docs.pyth.network",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "Pyth contract address tables do not list chain 4663; only an unsourced social post claims a launch",
+   "pons_fit": "Low",
+   "complexity": "Low",
+   "notes": "Pyth Core requires API keys after the July 31 2026 upgrade. Robinhood docs name only Chainlink as the chain oracle.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "synthetix-v3-perps",
+   "name": "Synthetix V3 Perps Market",
+   "provider": "Synthetix",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Modular router-proxy system where pooled LP collateral backs cross-margin perpetual markets with async Pyth-settled orders.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Yes, iosiro, OpenZeppelin, Macro",
+   "repo_url": "https://github.com/Synthetixio/synthetix-v3",
+   "docs_url": "https://docs.synthetix.io",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, the perps market needs pooled stablecoin collateral and oracle feeds a new token cannot supply.",
+   "complexity": "High",
+   "notes": "Arbitrum V3 perps sunset in 2025 under SIP-416. Permissive license makes it the cleanest full-stack perps fork.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "vertex-contracts",
+   "name": "Vertex Protocol contracts",
+   "provider": "Vertex",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Perp DEX"
+    }
+   ],
+   "description": "Hybrid orderbook exchange with an offchain sequencer and onchain clearinghouse covering spot, perps and money markets under unified margin.",
+   "kind": "Fork and deploy",
+   "license": "GPL-2.0-or-later (per file SPDX)",
+   "audited": "Yes, Three Sigma",
+   "repo_url": "https://github.com/vertex-protocol/vertex-contracts",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Wound down. Vertex sunset VRTX and its EVM deployments in July 2025 and moved to Ink. Fork requires running your own sequencer.",
+   "license_class": "Copyleft",
+   "status": "Inactive"
+  },
+  {
+   "id": "hegic-herge",
+   "name": "Hegic (Herge and HardCore)",
+   "provider": "Hegic",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Peer-to-pool options where an operational treasury and stake-and-cover pool underwrite calls, puts and multi-leg strategies.",
+   "kind": "Fork and deploy",
+   "license": "GPL-3.0",
+   "audited": "Yes, PeckShield",
+   "repo_url": "https://github.com/hegic/contracts",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, underwriting assumes deep ETH or BTC markets.",
+   "complexity": "Medium",
+   "notes": "Repo last updated Dec 2022. Pricing relies on admin-set parameters. Copyleft license.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "opyn-gamma-protocol",
+   "name": "Opyn Gamma Protocol (oTokens)",
+   "provider": "Opyn",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Fully collateralized European options as ERC-20 oTokens with a controller, margin pool, whitelist and oracle pricers for expiry settlement.",
+   "kind": "Fork and deploy",
+   "license": "Unlicense (public domain)",
+   "audited": "Yes, OpenZeppelin",
+   "repo_url": "https://github.com/opynfinance/GammaProtocol",
+   "docs_url": "https://opyn.gitbook.io/opyn",
+   "arbitrum": "Unknown",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, fully collateralized calls could be written on a Pons token, but expiry pricing needs a trustworthy oracle.",
+   "complexity": "Medium",
+   "notes": "Unmaintained since 2022 but public domain. Settlement layer under Ribbon and early Rysk. Needs custom pricers per asset.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "panoptic-hypovault",
+   "name": "Panoptic HypoVault",
+   "provider": "Panoptic (Axicon Labs)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Async-deposit managed vault, adapted from Veda's design, where Merkle-restricted managers run Panoptic option strategies and an accountant prices NAV.",
+   "kind": "Fork and deploy",
+   "license": "MIT (per file SPDX, no LICENSE file)",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/panoptic-labs/hypovault",
+   "docs_url": "https://panoptic.xyz/docs",
+   "arbitrum": "Not deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Panoptic docs list HypoVault factory 0xd5049B2647de57141dE7F65E5124707B99A452A3 and a USDG PLP vault on Robinhood Chain",
+   "pons_fit": "A companion contract could deposit USDG creator fees into a PLP HypoVault to earn options premium for the community treasury.",
+   "complexity": "Medium",
+   "notes": "Only AI-generated review notes in repo, no third-party audit found. Manager role is trusted within Merkle limits.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "panoptic-v2",
+   "name": "Panoptic V2",
+   "provider": "Panoptic (Axicon Labs)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Perpetual, oracle-free options built on Uniswap V3 and V4 LP positions, with permissionless pool factories and collateral trackers.",
+   "kind": "Create via factory",
+   "license": "BUSL-1.1, change date 2028-03-01 to GPL-2.0-or-later; no commercial fork before then",
+   "audited": "Yes, Code4rena, plus NM-coded report (likely Nethermind)",
+   "repo_url": "https://github.com/panoptic-labs/panoptic-v2-core",
+   "docs_url": "https://panoptic.xyz/docs",
+   "arbitrum": "Not deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Panoptic docs list PanopticFactoryV4 0x0000000000000c51d0f8cf4bd9adE7191372a625 and an xStocks risk engine on Robinhood Chain",
+   "pons_fit": "If a Pons token has a Uniswap V3 or V4 pool on Robinhood Chain, anyone can create a Panoptic market on it without an oracle.",
+   "complexity": "Medium",
+   "notes": "Best options fit for long-tail tokens. Pools must meet listing criteria to show in the official UI.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "premia-v3",
+   "name": "Premia V3",
+   "provider": "Premia (Convexity Holdings)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Concentrated-liquidity options pools per strike and expiry, plus an orderbook and underwriting vaults for automated option selling.",
+   "kind": "Integrate",
+   "license": "Dual, LGPL-3.0 for non-commercial use only, commercial use needs a royalty-bearing proprietary license",
+   "audited": "Yes, Arbitrary Execution",
+   "repo_url": "https://github.com/Premian-Labs/v3-contracts",
+   "docs_url": "https://docs.premia.blue",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, pool creation needs an oracle adapter for the underlying.",
+   "complexity": "High",
+   "notes": "Not freely forkable for commercial use. Repo quiet since mid 2024, confirm the protocol is still maintained.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "ribbon-v2-theta-vaults",
+   "name": "Ribbon Finance V2 Theta Vaults",
+   "provider": "Ribbon Finance (Aevo)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Weekly covered call and cash-secured put vaults that mint Opyn Gamma oTokens and auction them to collect premium.",
+   "kind": "Fork and deploy",
+   "license": "MIT (per file SPDX, no LICENSE file)",
+   "audited": "Yes, OpenZeppelin, ChainSafe",
+   "repo_url": "https://github.com/ribbon-finance/ribbon-v2",
+   "docs_url": "",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, needs an options settlement layer and liquid oracle for the underlying, so a fresh token rarely qualifies.",
+   "complexity": "High",
+   "notes": "Legacy vaults exploited for about 2.7M USD in Dec 2025 after an oracle upgrade. Ethereum and Avalanche only. Treat as reference.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "stryke-clamm",
+   "name": "Stryke CLAMM (Dopex V2)",
+   "provider": "Stryke (formerly Dopex)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Option vaults"
+    }
+   ],
+   "description": "Options written against concentrated Uniswap V3 style liquidity, where LP ranges are borrowed to create calls and puts.",
+   "kind": "Integrate",
+   "license": "No LICENSE file, sources marked UNLICENSED, so treat as proprietary",
+   "audited": "Yes, yAudit",
+   "repo_url": "https://github.com/stryke-xyz/clamm",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "LPs in a Pons token AMM pool could in principle back options, but no Robinhood deployment exists.",
+   "complexity": "High",
+   "notes": "No reuse rights granted. Repo last updated Apr 2025, activity appears low.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "enzyme",
+   "name": "Enzyme Protocol",
+   "provider": "Enzyme",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "On-chain fund framework with policies, fee managers and protocol adapters, letting managers run hedged multi-venue portfolios as tokenized vaults.",
+   "kind": "Create via factory",
+   "license": "GPL-3.0",
+   "audited": "Yes, ChainSecurity, OpenZeppelin",
+   "repo_url": "https://github.com/enzymefinance/protocol",
+   "docs_url": "https://docs.enzyme.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "A community could set an Enzyme vault as the fee recipient and run a hedged treasury, if adapters exist for the needed venues.",
+   "complexity": "Medium",
+   "notes": "Adapter coverage varies by chain. Manager discretion bounded by configurable policies.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "erc7540-reference",
+   "name": "ERC-7540 Async Vault Reference",
+   "provider": "ERC-4626 Alliance",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "Minimal reference contracts for asynchronous deposit and redeem vaults, a base for wrapping offchain hedged or settled strategies.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/ERC4626-Alliance/ERC-7540-Reference",
+   "docs_url": "https://eips.ethereum.org/EIPS/eip-7540",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "A permissive base for a companion vault that receives creator fees and settles hedged returns asynchronously.",
+   "complexity": "Low",
+   "notes": "README states the code is unaudited. Reference only, last updated Aug 2024.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "ethena-usde",
+   "name": "Ethena USDe and sUSDe contracts",
+   "provider": "Ethena Labs",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "Synthetic dollar minted against staked ETH hedged with short perps, with an ERC-4626 staking vault that streams basis yield.",
+   "kind": "Integrate",
+   "license": "GPL-3.0",
+   "audited": "Yes, Zellic, Spearbit, Quantstamp, Pashov, Code4rena, Chaos Labs",
+   "repo_url": "https://github.com/ethena-labs/bbp-public-assets",
+   "docs_url": "https://docs.ethena.fi",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "FalconX reported about 103M USD of USDe on Robinhood Chain in July 2026 as Robinhood Earn collateral; minting stays on Ethereum",
+   "pons_fit": "Creator fees in USDG could be swapped to USDe or sUSDe by a companion contract to hold delta-neutral yield.",
+   "complexity": "Medium",
+   "notes": "Public repo is archived. Hedging and custody are offchain and centralized. Minting is permissioned.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "opyn-squeeth",
+   "name": "Opyn Squeeth and Crab Strategy",
+   "provider": "Opyn",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "ETH squared power perpetual with a Crab vault that shorts it against ETH collateral to harvest funding while staying delta neutral.",
+   "kind": "Fork and deploy",
+   "license": "BUSL-1.1 core, change date 2023-01-10 passed, now GPL-2.0-or-later; interfaces MIT",
+   "audited": "Yes, Trail of Bits, OpenZeppelin",
+   "repo_url": "https://github.com/opynfinance/squeeth-monorepo",
+   "docs_url": "",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Defunct. Squeeth shut down Nov 4 2024 and all positions settled. Ethereum only, relies on Uniswap V3 TWAP depth.",
+   "license_class": "Copyleft",
+   "status": "Inactive"
+  },
+  {
+   "id": "rage-dn-gmx-vaults",
+   "name": "Rage Trade Delta Neutral GMX Vaults",
+   "provider": "Rage Trade",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "Junior and senior vault pair that holds GLP and borrows ETH and BTC on Aave to hedge the pool's directional exposure.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/RageTrade/delta-neutral-gmx-vaults",
+   "docs_url": "https://docs.rage.trade",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Defunct in practice since GMX V1 and GLP shut down in 2025. Useful as a reference for hedged LP vault design.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "sommelier-cellars",
+   "name": "Sommelier Cellar Contracts",
+   "provider": "Sommelier (PeggyJV)",
+   "placements": [
+    {
+     "sector": "Derivatives",
+     "subsector": "Delta neutral"
+    }
+   ],
+   "description": "Adaptor-based ERC-4626 cellars whose rebalancing calls are relayed from Sommelier's validator-governed strategist network.",
+   "kind": "Fork and deploy",
+   "license": "Apache-2.0",
+   "audited": "Yes, Macro, FYEO",
+   "repo_url": "https://github.com/PeggyJV/cellar-contracts",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low, a fork could hold creator fees in a hedged cellar, but the strategist relay is tied to the Sommelier chain.",
+   "complexity": "High",
+   "notes": "Permissive and actively committed, but full design depends on Sommelier Cosmos chain. Adaptors are reusable on their own.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "frax-frxeth-sfrxeth",
+   "name": "Frax frxETH and sfrxETH",
+   "provider": "Frax Finance",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Two token ETH staking design where frxETH is minted for deposits and sfrxETH is an xERC4626 vault streaming validator rewards over cycles.",
+   "kind": "Fork and deploy",
+   "license": "AGPL-3.0-only (core contracts)",
+   "audited": "Yes, Code4rena (2022 contest)",
+   "repo_url": "https://github.com/FraxFinance/frxETH-public",
+   "docs_url": "https://docs.frax.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "sfrxETH style xERC4626 could stream creator fee rewards to staked launch tokens linearly per cycle.",
+   "complexity": "Medium",
+   "notes": "Public repo last updated 2023. AGPL applies to forks of minter and sfrxETH.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "lido-l2-token-bridge",
+   "name": "Lido L2 wstETH token gateway",
+   "provider": "Lido",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Custom Arbitrum and Optimism token gateway contracts that bridge wstETH to L2 with Lido governance controlled pausing and upgrades.",
+   "kind": "Fork and deploy",
+   "license": "GPL-3.0",
+   "audited": "Yes, Oxorio, Consensys Diligence",
+   "repo_url": "https://github.com/lidofinance/lido-l2",
+   "docs_url": "https://docs.lido.fi",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "Robinhood is an Arbitrum Orbit chain so the Arbitrum gateway pattern applies, but no Lido deployment found",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Shows how an LST reaches an Orbit L2. lido-l2-with-steth adds rebasing stETH on L2.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "lido-steth-wsteth",
+   "name": "Lido stETH and wstETH",
+   "provider": "Lido",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Ethereum liquid staking protocol issuing rebasing stETH and non rebasing wstETH, with staking router modules including the Community Staking Module.",
+   "kind": "Integrate",
+   "license": "GPL-3.0",
+   "audited": "Yes, Certora, Consensys Diligence, Composable Security, Ackee (CSM)",
+   "repo_url": "https://github.com/lidofinance/core",
+   "docs_url": "https://docs.lido.fi",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "Validator staking is L1 only, no bridged wstETH found in Robinhood docs token list",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "On Arbitrum only bridged wstETH exists. CSM repo lidofinance/community-staking-module is also GPL-3.0.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "synthetix-multirewards",
+   "name": "MultiRewards (Synthetix StakingRewards fork)",
+   "provider": "Curve Finance",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Flattened variant of the classic Synthetix StakingRewards contract that pays several reward tokens over fixed periods to stakers of one token.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/curvefi/multi-rewards",
+   "docs_url": "",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Template, deploy your own instance",
+   "pons_fit": "Stake the launched token or its v2 LP token and stream both ETH and USDG creator fees as parallel rewards.",
+   "complexity": "Low",
+   "notes": "Derived from audited Synthetix code but this fork is unaudited. Original also in Uniswap liquidity-staker repo.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "peg-staking-vault",
+   "name": "PegStakingVault",
+   "provider": "Peg",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Ownerless non upgradeable custody vault where holders stake a fixed ERC-20 and withdraw principal anytime, with rewards tracked by an external module.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/use-peg/peg-contracts",
+   "docs_url": "https://github.com/use-peg/peg-contracts",
+   "arbitrum": "Not deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "README links Robinhood blockscout address 0x431d61b1a57F8d4fd1C0406dc424d5beEEc07A8F with deployment receipt",
+   "pons_fit": "Deploy one per Pons token on Robinhood and fund the reward module from creator fees routed by a companion contract.",
+   "complexity": "Low",
+   "notes": "Chain ID locked in constructor. Only a 30 test suite, no independent audit. Repo also has PegPool and a Pons fee router.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "rocket-pool-reth",
+   "name": "Rocket Pool rETH",
+   "provider": "Rocket Pool",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Decentralized Ethereum staking protocol where node operators run minipools and depositors receive the value accruing rETH token.",
+   "kind": "Integrate",
+   "license": "GPL-3.0",
+   "audited": "Yes, Sigma Prime, Consensys Diligence, Trail of Bits",
+   "repo_url": "https://github.com/rocket-pool/rocketpool",
+   "docs_url": "https://docs.rocketpool.net",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "Staking is L1 only, no bridged rETH found on Robinhood",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Arbitrum has bridged rETH only.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "stakewise-v3-vaults",
+   "name": "StakeWise V3 vaults",
+   "provider": "StakeWise",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Factory created ETH staking vaults run by individual operators, each able to mint the shared osETH liquid staking token.",
+   "kind": "Create via factory",
+   "license": "MIT (BUSL-1.1 change date 2026-01-01 passed)",
+   "audited": "Yes, Halborn, Sigma Prime, Consensys Diligence, ABDK, Statemind",
+   "repo_url": "https://github.com/stakewise/v3-core",
+   "docs_url": "https://docs.stakewise.io",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Repo deployments cover Ethereum, Gnosis and testnets only",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Now MIT so the vault design is freely forkable. Requires validator operations.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "tally-staker",
+   "name": "Tally Staker",
+   "provider": "Tally / ScopeLift",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    },
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Staking contract that streams reward tokens to stakers of a governance token, with optional delegation surrogates so staked tokens keep voting power.",
+   "kind": "Fork and deploy",
+   "license": "AGPL-3.0-only",
+   "audited": "Yes, see repo",
+   "repo_url": "https://github.com/withtally/staker",
+   "docs_url": "https://docs.tally.xyz",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Template, deploy your own instance",
+   "pons_fit": "Strong fit since creator fees in ETH or USDG can be notified as rewards to holders who stake the fixed supply Pons token.",
+   "complexity": "Medium",
+   "notes": "Surrogate voting extension needs an ERC20Votes token; base staking works with plain ERC-20; AGPL applies",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "unistaker",
+   "name": "UniStaker",
+   "provider": "Uniswap Foundation",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid staking"
+    }
+   ],
+   "description": "Staking contract where UNI stakers earn protocol fees, with delegation surrogates and a fee auction that converts pool fees into a reward token.",
+   "kind": "Fork and deploy",
+   "license": "AGPL-3.0",
+   "audited": "Yes, Trail of Bits, Code4rena, Cantina",
+   "repo_url": "https://github.com/uniswapfoundation/UniStaker",
+   "docs_url": "",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Template for Ethereum governance, not deployed on Robinhood",
+   "pons_fit": "Its fee to reward pattern maps directly onto staking the launched token for ETH creator fees.",
+   "complexity": "Medium",
+   "notes": "Repo frozen since 2024, prefer Tally Staker for new builds.",
+   "license_class": "Copyleft",
+   "status": "Inactive"
+  },
+  {
+   "id": "eigenlayer-core",
+   "name": "EigenLayer core contracts",
+   "provider": "Eigen Labs",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    }
+   ],
+   "description": "Restaking core with strategy manager, delegation, allocation and slashing, letting stakers secure AVSs through operators.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2027-02-06 for post Feb 2024 commits, then MIT)",
+   "audited": "Yes, Sigma Prime, Consensys Diligence, Cantina, Certora",
+   "repo_url": "https://github.com/Layr-Labs/eigenlayer-contracts",
+   "docs_url": "https://docs.eigenlayer.xyz",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found, core runs on Ethereum",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Additional use grant allows production use only when building on EigenLayer, not competing forks.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "eigenlayer-hello-world-avs",
+   "name": "EigenLayer Hello World AVS",
+   "provider": "Eigen Labs",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    }
+   ],
+   "description": "Minimal example AVS with service manager contracts, operator registration and an off chain operator loop for signing tasks.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/Layr-Labs/hello-world-avs",
+   "docs_url": "https://docs.eigenlayer.xyz",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Example only",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Learning template, depends on BUSL middleware. Repo last updated April 2025.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "eigenlayer-hourglass-avs-template",
+   "name": "EigenLayer Hourglass AVS template",
+   "provider": "Eigen Labs",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    }
+   ],
+   "description": "DevKit generated AVS scaffold with task mailbox contracts and Go performer code for building verifiable off chain services.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/Layr-Labs/hourglass-avs-template",
+   "docs_url": "https://docs.eigenlayer.xyz",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Template only",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Newer than Hello World and paired with the devkit CLI. Hourglass core was audited by Certora.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "mellow-lrt-vaults",
+   "name": "Mellow LRT vaults",
+   "provider": "Mellow Finance",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    },
+    {
+     "sector": "Staking",
+     "subsector": "Liquid restaking"
+    }
+   ],
+   "description": "Curator managed restaking vaults that accept wstETH and similar assets and allocate them to Symbiotic or EigenLayer, issuing LRT shares.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2028-05-30, then GPL-2.0-or-later)",
+   "audited": "Yes, ChainSecurity, BlockSec, Nethermind",
+   "repo_url": "https://github.com/mellow-finance/mellow-lrt",
+   "docs_url": "https://docs.mellow.finance",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Production use only under listed use grants. Repo last updated June 2025.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "puffer-pufeth",
+   "name": "Puffer pufETH",
+   "provider": "Puffer Finance",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    },
+    {
+     "sector": "Staking",
+     "subsector": "Liquid restaking"
+    }
+   ],
+   "description": "Native liquid restaking protocol whose ERC4626 pufETH vault restakes validators on EigenLayer, with L2 reward manager contracts.",
+   "kind": "Integrate",
+   "license": "GPL-3.0",
+   "audited": "Yes, BlockSec, Cantina, 0xLuckyLuke",
+   "repo_url": "https://github.com/PufferFinance/puffer-contracts",
+   "docs_url": "https://docs.puffer.fi",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Arbitrum presence is bridged pufETH via Chainlink CCIP per repo broadcast files.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "renzo-ezeth",
+   "name": "Renzo ezETH",
+   "provider": "Renzo Protocol",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    },
+    {
+     "sector": "Staking",
+     "subsector": "Liquid restaking"
+    }
+   ],
+   "description": "Liquid restaking token backed by EigenLayer restaked ETH and LSTs, with xezETH bridge and L2 deposit contracts.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2026-12-01, then MIT)",
+   "audited": "Yes, Halborn, Sigma Prime, Nethermind, Code4rena",
+   "repo_url": "https://github.com/Renzo-Protocol/contracts-public",
+   "docs_url": "https://docs.renzoprotocol.com",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Becomes MIT in December 2026. Arbitrum presence is bridged xezETH with L2 deposits.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "symbiotic-core",
+   "name": "Symbiotic core",
+   "provider": "Symbiotic",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    }
+   ],
+   "description": "Permissionless shared security with factory created collateral vaults, delegators, slashers and network and operator registries.",
+   "kind": "Create via factory",
+   "license": "GPL-2.0-or-later (BUSL-1.1 change date 2026-07-19 passed)",
+   "audited": "Yes, ChainSecurity, Certora, Cantina, Bailsec, OpenZeppelin",
+   "repo_url": "https://github.com/symbioticfi/core",
+   "docs_url": "https://docs.symbiotic.fi",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found, vault factory runs on Ethereum",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Any ERC-20 can be vault collateral, so a launched token could secure a network on L1.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "symbiotic-relay-sdk",
+   "name": "Symbiotic relay and middleware SDK",
+   "provider": "Symbiotic",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    }
+   ],
+   "description": "Solidity SDK for networks to build middleware, key registries and cross chain settlement contracts that verify stake backed signatures.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "Yes, Cyfrin, Sherlock, Sigma Prime, Statemind, Bailsec",
+   "repo_url": "https://github.com/symbioticfi/middleware-sdk",
+   "docs_url": "https://docs.symbiotic.fi",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library, settlement contracts can be deployed to any EVM chain",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Settlement side can live on an L2 like Robinhood while stake stays on Ethereum.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "symbiotic-rewards",
+   "name": "Symbiotic staker and operator rewards",
+   "provider": "Symbiotic",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Restaking"
+    }
+   ],
+   "description": "Factory deployed reward contracts that distribute network payments to vault stakers and operators pro rata by active stake.",
+   "kind": "Create via factory",
+   "license": "MIT",
+   "audited": "Yes, ChainSecurity, OtterSec, Statemind",
+   "repo_url": "https://github.com/symbioticfi/rewards",
+   "docs_url": "https://docs.symbiotic.fi",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Requires a Symbiotic vault, which lives on L1.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "etherfi-weeth",
+   "name": "ether.fi eETH and weETH",
+   "provider": "ether.fi",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid restaking"
+    }
+   ],
+   "description": "Liquid restaking protocol whose liquidity pool mints rebasing eETH and wrapped weETH backed by validators restaked on EigenLayer.",
+   "kind": "Integrate",
+   "license": "MIT (SPDX headers, no LICENSE file)",
+   "audited": "Yes, Zellic, Nethermind, Certora, Halborn, Omniscia",
+   "repo_url": "https://github.com/etherfi-protocol/smart-contracts",
+   "docs_url": "https://etherfi.gitbook.io/etherfi",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No bridged weETH found in Robinhood docs",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "weETH on Arbitrum is a bridged OFT, not native restaking.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "kelp-rseth",
+   "name": "Kelp DAO rsETH",
+   "provider": "Kelp DAO",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid restaking"
+    }
+   ],
+   "description": "Liquid restaking token minted against ETH and LSTs restaked through EigenLayer, with an L2 token wrapper and bridge contracts.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2028-12-31, then GPL-3.0)",
+   "audited": "Partial, Code4rena contest 2023, reports not in repo",
+   "repo_url": "https://github.com/Kelp-DAO/LRT-rsETH",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "No additional use grant. L2 wrapper is UNLICENSED. Arbitrum rsETH is bridged.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "swell-sweth-rsweth",
+   "name": "Swell swETH and rswETH",
+   "provider": "Swell Network",
+   "placements": [
+    {
+     "sector": "Staking",
+     "subsector": "Liquid restaking"
+    }
+   ],
+   "description": "Liquid staking and restaking tokens for Ethereum, with an included L2 deposit staking contract and zap for bridged assets.",
+   "kind": "Integrate",
+   "license": "Proprietary (UNLICENSED SPDX headers)",
+   "audited": "Yes, Sigma Prime, Cyfrin, Nethermind, ChainSecurity",
+   "repo_url": "https://github.com/SwellNetwork/v3-core-public",
+   "docs_url": "",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "No Robinhood deployment found",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "No reuse license, integrate only. Public repo is a partial snapshot.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "backed-token",
+   "name": "Backed bToken contracts",
+   "provider": "Backed Finance",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Upgradeable ERC-20 with permit, signed delegate transfers, sanctions list and factories, used for tracker certificates on stocks and ETFs.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/backed-fi/backed-token-contract",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Low",
+   "notes": "Clean MIT code to fork, but issuing requires a regulated issuer and prospectus. Products exclude US persons.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "dinari-dshares",
+   "name": "Dinari dShares (SBT contracts)",
+   "provider": "Dinari",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Stock-backed ERC-20 dShares with order processors, transfer restrictor, wrapped dividend reinvesting tokens and a dShare factory.",
+   "kind": "Integrate",
+   "license": "GPL-3.0, some files UNLICENSED",
+   "audited": "Partial, Hacken",
+   "repo_url": "https://github.com/dinaricrypto/sbt-contracts",
+   "docs_url": "https://docs.dinari.com",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Arbitrum addresses published in dinaricrypto sbt-deployments. Buying requires KYC with Dinari. Issuance is not open to third parties.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "erc1400-universal-token",
+   "name": "ERC-1400 Universal Token",
+   "provider": "ConsenSys Codefi",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Reference ERC-1400 security token with partitions, certificate-validated transfers, controller operations, delivery-versus-payment swaps and a fund issuer helper.",
+   "kind": "Fork and deploy",
+   "license": "Apache-2.0",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/ConsenSys/UniversalToken",
+   "docs_url": "https://github.com/ConsenSys/UniversalToken",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Older Solidity and largely unmaintained. ERC-1400 never became final. Prefer ERC-3643 or ERC-7943 for new builds.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "erc3643-t-rex",
+   "name": "ERC-3643 T-REX permissioned token suite",
+   "provider": "Tokeny / ERC3643 Association",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    },
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Permissioned security token standard with ONCHAINID identity registry, modular compliance rules, freezing and forced transfers, deployable through an official factory.",
+   "kind": "Create via factory",
+   "license": "GPL-3.0",
+   "audited": "Yes, Hacken",
+   "repo_url": "https://github.com/TokenySolutions/T-REX",
+   "docs_url": "https://docs.erc3643.org",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official factories list Arbitrum but not Robinhood Chain; self-deploy from source is possible",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Official factory is restricted to whitelisted association members. Requires KYC claim issuers and securities counsel. GPL-3.0 copyleft applies to forks.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "ondo-rwa-contracts",
+   "name": "Ondo RWA contracts (OUSG, USDY, Global Markets)",
+   "provider": "Ondo Finance",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Source for Ondo treasury tokens, the USDY yield note, and the Global Markets tokenized equity stack with compliance, issuance hours and sanctions checks.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1, no change date specified, vendored code MIT",
+   "audited": "Yes, Code4rena, Trail of Bits",
+   "repo_url": "https://github.com/ondoprotocol/rwa-contracts",
+   "docs_url": "https://docs.ondo.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Arbitrum evidence is USDY. Global Markets live on Ethereum, Solana and BNB Chain. KYC allowlists apply. BUSL blocks production forks.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "peg-contracts",
+   "name": "Peg contracts (PegAsset, PegPool, PegPad router)",
+   "provider": "Peg",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Fixed-unit wrapper for stock tokens, a constant-product pool, ETH or USDG entry helper, a Pons creator-fee router and a staking vault.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/use-peg/peg-contracts",
+   "docs_url": "https://usepeg.trade",
+   "arbitrum": "Unknown",
+   "robinhood": "Deployed",
+   "robinhood_note": "README attests PegStakingVault at 0x431d61b1a57F8d4fd1C0406dc424d5beEEc07A8F on chain 4663; other files are source snapshots",
+   "pons_fit": "Direct fit, as PegPadFeeRouterV2 is bound to a Pons curve and splits creator fees between creator, stock-token liquidity and buyback.",
+   "complexity": "Medium",
+   "notes": "Not independently audited. Peg app now lists Robinhood Chain as legacy and PegPad as Solana. Wrapper excludes rebasing and fee-on-transfer assets.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "robinhood-stock-tokens",
+   "name": "Robinhood Stock Tokens",
+   "provider": "Robinhood",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "ERC-20 tokens with 18 decimals, each tracking one US stock or ETF, using an ERC-8056 multiplier for splits and dividends instead of rebasing balances.",
+   "kind": "Integrate",
+   "license": "Proprietary, no public source repo found",
+   "audited": "Unknown",
+   "repo_url": "https://docs.robinhood.com/chain/stock-tokens/",
+   "docs_url": "https://docs.robinhood.com/chain/building-with-stock-tokens/",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Official Robinhood Chain docs list Stock Tokens with per-asset Chainlink feeds and a token registry at docs.robinhood.com/chain/contracts",
+   "pons_fit": "Strong fit, since a Pons launch paired with NVDA or TSLA collects creator fees in the stock token, which a companion contract can hold, swap or redistribute.",
+   "complexity": "Low",
+   "notes": "No public repo. Not offered to US, Canada, UK or Swiss persons. Mint and burn limited to KYB authorized participants. Verify addresses against official registry.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "securitize-dstoken",
+   "name": "Securitize DS Protocol DSToken v4",
+   "provider": "Securitize",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Reference implementation of an ERC-20 compatible security token with investor registry, compliance services, locks, rebasing and NAV modules used for tokenized funds.",
+   "kind": "Fork and deploy",
+   "license": "Apache-2.0",
+   "audited": "Yes, Halborn, Cyfrin",
+   "repo_url": "https://github.com/securitize-io/dstoken",
+   "docs_url": "https://securitize.io/whitepapers",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Arbitrum evidence is BUIDL share class issued by Securitize. Real issuance needs a registered transfer agent and broker dealer.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "superstate-ustb",
+   "name": "Superstate USTB and USCC fund tokens",
+   "provider": "Superstate",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Tokenized securities"
+    }
+   ],
+   "description": "Allowlisted ERC-20 share tokens for registered treasury and crypto carry funds, with onchain subscription, redemption and an allowlist contract.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1, converts to GPL-2.0-or-later",
+   "audited": "Yes, ChainSecurity, 0xMacro",
+   "repo_url": "https://github.com/superstateinc/ustb",
+   "docs_url": "https://docs.superstate.com/introduction-to-superstate/smart-contracts",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official docs list Ethereum, Plume and Solana only",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Only KYC verified investors and approved DeFi contracts can hold. Useful as a compliant allowlist design reference.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "centrifuge-protocol-v3",
+   "name": "Centrifuge Protocol v3",
+   "provider": "Centrifuge",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "Multichain RWA pool protocol with ERC-7540 async vaults, share tokens with transfer hooks, valuations, NAV accounting and cross-chain messaging adapters.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1, converts to GPL-3.0-or-later, parts GPL-2.0 and MIT",
+   "audited": "Yes, Cantina, Spearbit, Sherlock, yAudit, SRLabs, Code4rena",
+   "repo_url": "https://github.com/centrifuge/protocol",
+   "docs_url": "https://docs.centrifuge.io/developer/protocol/deployments",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official deployments page lists Arbitrum and ten other chains but not Robinhood Chain",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Pool issuers need legal SPV structure and investor KYC. BUSL limits forking for production. Tinlake is legacy.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "goldfinch",
+   "name": "Goldfinch protocol",
+   "provider": "Goldfinch / Warbler Labs",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "Credit protocol monorepo with tranched borrower pools, senior pool, UID identity NFTs and the later Goldfinch Prime fund-of-funds contracts.",
+   "kind": "Fork and deploy",
+   "license": "MIT",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/goldfinch-eng/mono",
+   "docs_url": "https://docs.goldfinch.finance",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Repo deployments cover Ethereum and Base only",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Protocol entered maintenance mode by GIP-87 in June 2026 after large borrower losses. Treat as a cautionary reference only.",
+   "license_class": "Permissive",
+   "status": "Inactive"
+  },
+  {
+   "id": "huma-v2",
+   "name": "Huma Finance v2 credit pools",
+   "provider": "Huma Finance",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    }
+   ],
+   "description": "PayFi credit pool framework with senior and junior tranches, credit lines and receivable-backed credit lines for payment and invoice financing.",
+   "kind": "Fork and deploy",
+   "license": "AGPL-3.0-or-later",
+   "audited": "Yes, Spearbit",
+   "repo_url": "https://github.com/00labs/huma-contracts-v2",
+   "docs_url": "https://docs.huma.finance",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Huma 2.0 focus moved to Solana. AGPL requires sharing modified source. Needs offchain underwriting and borrower KYC.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "maple-v2",
+   "name": "Maple core v2 and syrupUSDG",
+   "provider": "Maple Finance",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    },
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Institutional lending pools where delegates underwrite borrowers, manage loans and absorb first loss cover before lenders.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date to be determined)",
+   "audited": "Yes, reports in repo audits folder",
+   "repo_url": "https://github.com/maple-labs/maple-core-v2",
+   "docs_url": "https://docs.maple.finance",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Maple announced syrupUSDG live on Robinhood Chain July 1, 2026, used as collateral in the Robinhood Earn vault",
+   "pons_fit": "USDG creator fees collected by a companion contract could be parked in syrupUSDG for yield where eligibility allows.",
+   "complexity": "High",
+   "notes": "Permissioned KYC pools and an open ended BUSL make this a design reference, not a fork target",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "wildcat-v2",
+   "name": "Wildcat V2 credit markets",
+   "provider": "Wildcat Finance",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Private credit"
+    },
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Undercollateralized credit markets where approved borrowers set terms and lenders underwrite borrower credit risk directly, with reserve ratios and withdrawal cycles.",
+   "kind": "Integrate",
+   "license": "Apache-2.0 with Commons Clause (no selling the software)",
+   "audited": "Yes, Code4rena and others",
+   "repo_url": "https://github.com/wildcat-finance/v2-protocol",
+   "docs_url": "",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Borrower onboarding is gated; Commons Clause restricts commercial resale of forks",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "chainlink-ace",
+   "name": "Chainlink ACE policy and identity contracts",
+   "provider": "Chainlink Labs",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Policy management engine and cross-chain identity registry with example ERC-20 and ERC-3643 tokens that enforce compliance rules at transfer time.",
+   "kind": "Library",
+   "license": "BUSL-1.1, change date October 6, 2029, then MIT, with use grants",
+   "audited": "Partial",
+   "repo_url": "https://github.com/smartcontractkit/chainlink-ace",
+   "docs_url": "https://docs.chain.link/ace",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Production use only within the listed use grants. README calls code audited without naming auditors. Credentials need a KYC provider.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "chainlink-ccip",
+   "name": "Chainlink CCIP cross-chain token pools",
+   "provider": "Chainlink Labs",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Cross-chain token standard with burn-mint and lock-release token pools so an issuer can move its RWA token between chains under rate limits.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1, change date April 1, 2030, then MIT",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/smartcontractkit/chainlink-ccip",
+   "docs_url": "https://docs.chain.link/ccip",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Chainlink changelog says CCIP live on Robinhood Chain mainnet July 1, 2026, with an Arbitrum One lane",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Pool contracts are BUSL, deploy as integration not fork. Bridging restricted securities still needs compliance checks per chain.",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "chainlink-proof-of-reserve",
+   "name": "Chainlink Proof of Reserve",
+   "provider": "Chainlink Labs",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Reserve attestation feeds read through AggregatorV3Interface, used to gate minting so supply never exceeds verified offchain or crosschain reserves.",
+   "kind": "Integrate",
+   "license": "MIT (consumer interfaces)",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/smartcontractkit/chainlink-evm",
+   "docs_url": "https://docs.chain.link/data-feeds/proof-of-reserve",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "Robinhood oracle docs mention price and uptime feeds only",
+   "pons_fit": "Low",
+   "complexity": "Low",
+   "notes": "Feeds are sponsored per asset, so a new issuer must arrange one with Chainlink. Attests reserves, not legal claims.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "midas-mtokens",
+   "name": "Midas mToken vaults",
+   "provider": "Midas",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Issuance stack for asset-backed certificate tokens with deposit and redemption vaults, custom price feeds, access control and LayerZero OFT bridging.",
+   "kind": "Integrate",
+   "license": "Mixed, GPL-3.0 LICENSE file, AGPL-3.0 package.json, MIT file headers",
+   "audited": "Yes, Sherlock",
+   "repo_url": "https://github.com/midas-apps/contracts",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Repo config lists mGLO token 0xFEd493F38c1aAcb4EA4e6A11F8b9287849EE0096 and vaults on robinhood (4663) with USDG payments",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Mint and redeem need Midas KYC greenlisting. Arbitrum evidence is mTBILL. Licensing is inconsistent across files, confirm before forking.",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "oz-contracts-permissioned-erc20",
+   "name": "OpenZeppelin Contracts (AccessManager, ERC20Pausable, ERC4626)",
+   "provider": "OpenZeppelin",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Audited building blocks for a simple issuer-controlled asset token with role management, pausing, permits, upgradeability and tokenized vault shares.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "Yes, OpenZeppelin",
+   "repo_url": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+   "docs_url": "https://docs.openzeppelin.com/contracts",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library with no canonical deployment; compiles for any EVM chain",
+   "pons_fit": "Low",
+   "complexity": "Low",
+   "notes": "Best starting point for a revenue share or commodity receipt token. Legal wrapper and custody are outside the code.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "oz-community-erc7943",
+   "name": "OpenZeppelin ERC-7943 uRWA extensions",
+   "provider": "OpenZeppelin Community",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "ERC-20 extensions for allowlists, blocklists, freezing and restricted transfers plus the ERC-7943 interface for freeze, forced transfer and eligibility checks.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "No",
+   "repo_url": "https://github.com/OpenZeppelin/openzeppelin-community-contracts",
+   "docs_url": "https://eips.ethereum.org/EIPS/eip-7943",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library with no canonical deployment; compiles for any EVM chain",
+   "pons_fit": "Low",
+   "complexity": "Low",
+   "notes": "Repo states code is unaudited and unversioned. ERC-7943 is Final. Lightweight alternative to ERC-3643 for asset tokens.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "paxos-token-contracts",
+   "name": "Paxos token contracts (PAXG, USDG)",
+   "provider": "Paxos",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "Shared upgradeable PaxosTokenV2 implementation for gold-backed PAXG and USD stablecoins including USDG, with supply control, asset protection and permits.",
+   "kind": "Integrate",
+   "license": "MIT",
+   "audited": "Yes, Halborn, Zellic, Trail of Bits",
+   "repo_url": "https://github.com/paxosglobal/paxos-token-contracts",
+   "docs_url": "https://docs.paxos.com/stablecoin",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "USDG at 0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168 per Robinhood docs; PAXG on Robinhood not confirmed",
+   "pons_fit": "USDG is a Pons pairing asset, so creator fees can arrive in USDG and be held, distributed or deployed by a companion contract.",
+   "complexity": "Low",
+   "notes": "Issuer can freeze and seize. PAXG Arbitrum and Robinhood status unverified; evidence is for USDG, natively issued on Arbitrum October 2026.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "plume-arc",
+   "name": "Plume Arc token framework",
+   "provider": "Plume Network",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    }
+   ],
+   "description": "UUPS-upgradeable RWA ERC-20 with a factory, purchase module and pluggable restriction modules for whitelists, sanctions and yield blacklists.",
+   "kind": "Create via factory",
+   "license": "MIT",
+   "audited": "Partial",
+   "repo_url": "https://github.com/plumenetwork/contracts",
+   "docs_url": "",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Audits in repo cover other Plume modules, not clearly Arc. Built for Plume chain; self-deploy elsewhere and add legal wrapper.",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "safe-smart-account",
+   "name": "Safe Smart Account",
+   "provider": "Safe",
+   "placements": [
+    {
+     "sector": "RWA",
+     "subsector": "Asset-backed tokens"
+    },
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Multisignature smart account with owners, threshold, modules and guards, deployed as cheap proxies from a canonical factory.",
+   "kind": "Create via factory",
+   "license": "LGPL-3.0-only",
+   "audited": "Yes, Ackee Blockchain, G0 Group, Certora",
+   "repo_url": "https://github.com/safe-global/safe-smart-account",
+   "docs_url": "https://docs.safe.global",
+   "arbitrum": "Deployed",
+   "robinhood": "Deployed",
+   "robinhood_note": "Official safe-deployments lists chain 4663 as canonical for v1.4.1 Safe and SafeProxyFactory and v1.3.0 L2",
+   "pons_fit": "Simplest companion, a Safe set as creator fee recipient holds ETH or USDG under multisig control.",
+   "complexity": "Low",
+   "notes": "Safe web app support for Robinhood unconfirmed, though contracts are canonical",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "ensuro",
+   "name": "Ensuro risk pools",
+   "provider": "Ensuro",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Capital pools that fund parametric and real world insurance policies issued by risk modules, with senior and junior eToken tranches.",
+   "kind": "Fork and deploy",
+   "license": "Apache-2.0",
+   "audited": "Yes, see Ensuro audit applicability matrix",
+   "repo_url": "https://github.com/ensuro/ensuro",
+   "docs_url": "https://docs.ensuro.co",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Official docs list Ethereum (v3) and Polygon (v2, deprecated) only",
+   "pons_fit": "A forked junior tranche could be funded with USDG creator fees to underwrite a project specific risk pool.",
+   "complexity": "High",
+   "notes": "Upgradeable contracts behind access managed proxies; policy pricing needs off chain actuarial input",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "etherisc-gif-v3",
+   "name": "Etherisc Generic Insurance Framework v3",
+   "provider": "Etherisc",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Framework for launching insurance products with instances, products, pools, oracles and distribution components that handle policies, premiums and claims.",
+   "kind": "Fork and deploy",
+   "license": "Apache-2.0",
+   "audited": "Unknown",
+   "repo_url": "https://github.com/etherisc/gif-next",
+   "docs_url": "",
+   "arbitrum": "Unknown",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "A product pool could take USDG creator fees as risk capital for a custom parametric cover tied to the launched project.",
+   "complexity": "High",
+   "notes": "v3 was announced as beta; confirm audit status and release maturity before production use",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "kleros-v2",
+   "name": "Kleros 2.0 court",
+   "provider": "Kleros",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Decentralized arbitration where staked jurors rule on disputes, usable as the claims assessor for cover or underwriting contracts via the arbitrable standard.",
+   "kind": "Integrate",
+   "license": "MIT",
+   "audited": "Yes, Certora",
+   "repo_url": "https://github.com/kleros/kleros-v2",
+   "docs_url": "https://docs.kleros.io",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Core runs on Arbitrum One; Robinhood contracts would need a cross chain gateway",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "neptune-mutual",
+   "name": "Neptune Mutual cover pools",
+   "provider": "Neptune Mutual",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Parametric cover marketplace where each cover pool pays out after an incident is reported and resolved by staked community voting.",
+   "kind": "Integrate",
+   "license": "BUSL-1.1 (change date 2027-01-01, then GPL-2.0-or-later)",
+   "audited": "Yes, see Neptune Mutual docs",
+   "repo_url": "https://github.com/neptune-mutual/protocol",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "BUSL until 2027; protocol activity appears low, so verify it is still operating",
+   "license_class": "Restricted",
+   "status": "Active"
+  },
+  {
+   "id": "nexus-mutual",
+   "name": "Nexus Mutual cover",
+   "provider": "Nexus Mutual",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Discretionary mutual where stakers underwrite cover products through staking pools and members assess and pay claims.",
+   "kind": "Integrate",
+   "license": "GPL-3.0",
+   "audited": "Yes, iosiro, Chaos Labs, G0 Group, Solidified",
+   "repo_url": "https://github.com/NexusMutual/smart-contracts",
+   "docs_url": "https://docs.nexusmutual.io",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Contracts live on Ethereum mainnet only per official docs",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Covers protocols on many chains but transacts only on Ethereum; membership and KYC rules apply",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "sherlock-v2",
+   "name": "Sherlock V2 core",
+   "provider": "Sherlock",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Staking pool that backs exploit coverage for audited protocols, with premiums paid in USDC and claims escalated to the UMA court.",
+   "kind": "Fork and deploy",
+   "license": "GPL-2.0-or-later (SPDX headers, no LICENSE file)",
+   "audited": "Partial",
+   "repo_url": "https://github.com/sherlock-protocol/sherlock-v2-core",
+   "docs_url": "https://docs.sherlock.xyz",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "",
+   "pons_fit": "Low",
+   "complexity": "High",
+   "notes": "Legacy coverage product, check status before relying on it; fork as a reference for staked coverage pools",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "uma-optimistic-oracle-v3",
+   "name": "UMA Optimistic Oracle V3",
+   "provider": "UMA / Risk Labs",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Underwriting"
+    }
+   ],
+   "description": "Assertion oracle where a bonded claim is accepted unless disputed within a liveness window, often used to settle insurance claims and parametric triggers.",
+   "kind": "Integrate",
+   "license": "AGPL-3.0",
+   "audited": "Yes, OpenZeppelin",
+   "repo_url": "https://github.com/UMAprotocol/protocol",
+   "docs_url": "https://docs.uma.xyz",
+   "arbitrum": "Deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "UMA repo has networks/42161.json with OptimisticOracleV3 but no 4663 network file",
+   "pons_fit": "Low",
+   "complexity": "Medium",
+   "notes": "Bonds and liveness must be tuned; disputes resolve via UMA DVM on Ethereum",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "aragon-osx",
+   "name": "Aragon OSx with token voting plugin",
+   "provider": "Aragon",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "DAO framework where a factory deploys a DAO contract and installs permissioned plugins such as token voting, multisig and admin from a plugin repo.",
+   "kind": "Create via factory",
+   "license": "AGPL-3.0",
+   "audited": "Yes, Halborn, Code4rena",
+   "repo_url": "https://github.com/aragon/osx",
+   "docs_url": "https://docs.aragon.org",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "The DAO contract can be the creator fee recipient and the token voting plugin can wrap the existing Pons token for votes.",
+   "complexity": "Medium",
+   "notes": "AGPL applies to modified forks; Robinhood needs an OSx framework deployment first",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "compound-governor",
+   "name": "Compound Governor",
+   "provider": "Compound Labs",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Current Compound DAO governor built on OpenZeppelin upgradeable governance, succeeding GovernorBravo, with timelock execution and proposal guardian controls.",
+   "kind": "Fork and deploy",
+   "license": "BSD-3-Clause",
+   "audited": "Yes, see Compound governance repo",
+   "repo_url": "https://github.com/compound-finance/compound-governance",
+   "docs_url": "https://docs.compound.finance",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Template to deploy your own",
+   "pons_fit": "Fork a governor whose timelock receives creator fees, voting with a wrapped checkpoint version of the Pons token.",
+   "complexity": "Medium",
+   "notes": "Same wrapper caveat as OZ Governor; Bravo style tooling is widely supported by Tally",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "hats-protocol",
+   "name": "Hats Protocol",
+   "provider": "Haberdasher Labs",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Role registry where hats are revocable ERC-1155 roles in a tree, with eligibility and toggle modules that can gate authority on token holdings.",
+   "kind": "Integrate",
+   "license": "AGPL-3.0",
+   "audited": "Yes, Trust Security and one other firm",
+   "repo_url": "https://github.com/Hats-Protocol/hats-protocol",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "A balance based eligibility module could give Pons token holders roles such as signer or grant reviewer on the fee Safe.",
+   "complexity": "Medium",
+   "notes": "Singleton contract at a deterministic address; Robinhood deployment not confirmed",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "openzeppelin-governor-suite",
+   "name": "OpenZeppelin Governor, TimelockController and ERC20Votes",
+   "provider": "OpenZeppelin",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Modular onchain governance with proposals, quorum, counting modules and timelocked execution, plus checkpointed vote tokens and ERC20Wrapper.",
+   "kind": "Library",
+   "license": "MIT",
+   "audited": "Yes, OpenZeppelin audits and Certora formal verification",
+   "repo_url": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+   "docs_url": "https://docs.openzeppelin.com/contracts/5.x/governance",
+   "arbitrum": "Not deployed",
+   "robinhood": "Not deployed",
+   "robinhood_note": "Library, deploy your own instance",
+   "pons_fit": "Set the timelock as creator fee recipient and let holders wrap the fixed supply token into an ERC20Votes wrapper to govern spending.",
+   "complexity": "Medium",
+   "notes": "Plain Pons ERC-20 lacks vote checkpoints, so a wrapper token is needed; Tally indexes these governors",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "snapshot-x",
+   "name": "Snapshot X (sx-evm)",
+   "provider": "Snapshot Labs",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Onchain voting spaces deployed from a proxy factory with pluggable voting, authentication, proposal validation and execution strategies such as Safe and timelock.",
+   "kind": "Create via factory",
+   "license": "MIT",
+   "audited": "Yes, see Snapshot docs",
+   "repo_url": "https://github.com/snapshot-labs/sx-evm",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "A space with Safe execution strategy can direct the fee receiving Safe, using a votes wrapper or whitelist strategy for the token.",
+   "complexity": "Medium",
+   "notes": "Plain ERC-20 balances are not safe for onchain voting; use a checkpointed wrapper",
+   "license_class": "Permissive",
+   "status": "Active"
+  },
+  {
+   "id": "zodiac-reality-module",
+   "name": "Zodiac Reality Module (SafeSnap)",
+   "provider": "Gnosis Guild",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Safe module that executes transactions approved by an offchain Snapshot vote once a Reality.eth oracle answer is finalized, giving trust minimized execution.",
+   "kind": "Create via factory",
+   "license": "LGPL-3.0",
+   "audited": "Yes, G0 Group",
+   "repo_url": "https://github.com/gnosisguild/zodiac-module-reality",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Holders vote on Snapshot with plain token balances and approved spends execute from the fee receiving Safe.",
+   "complexity": "Medium",
+   "notes": "Needs Reality.eth and a module proxy factory on Robinhood; arbitrator and bond settings matter",
+   "license_class": "Copyleft",
+   "status": "Active"
+  },
+  {
+   "id": "zodiac-roles-modifier",
+   "name": "Zodiac Roles Modifier",
+   "provider": "Gnosis Guild",
+   "placements": [
+    {
+     "sector": "Other",
+     "subsector": "Governance"
+    }
+   ],
+   "description": "Safe modifier that grants scoped permissions to addresses, limiting which contracts, functions and parameters each role may call.",
+   "kind": "Create via factory",
+   "license": "LGPL-3.0",
+   "audited": "Yes, G0 Group, Omniscia",
+   "repo_url": "https://github.com/gnosisguild/zodiac-modifier-roles",
+   "docs_url": "",
+   "arbitrum": "Deployed",
+   "robinhood": "Unknown",
+   "robinhood_note": "",
+   "pons_fit": "Lets a fee receiving Safe delegate narrow spending rights, such as buybacks only, to an operator or bot.",
+   "complexity": "Medium",
+   "notes": "Permission configs are complex; misconfigured scopes can expose treasury funds",
+   "license_class": "Copyleft",
+   "status": "Active"
+  }
+ ]
+}

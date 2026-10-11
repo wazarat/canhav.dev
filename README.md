@@ -486,5 +486,10 @@ event window so judges can verify it.
 - Oct 3, 2026. Shorter launch summary. The card beside the launch form shows
   each parameter in a few words, says whether a project is linked, and keeps
   the detail in three notes. Explore cards drop two chips.
+- Oct 11, 2026. Contract template catalog and six-sector taxonomy (M61, M62). 126
+  open-source templates and live protocols as static content with a generator, a
+  URL-only browser at `/studio/templates`, the public `get_template_catalog` MCP
+  tool, and subsectors for every sector (Derivatives, Staking, RWA and Other still
+  marked Coming soon until their content lands).
 
 This list grows as work lands on the branch.

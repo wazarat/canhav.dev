@@ -207,14 +207,22 @@ export type StartingPoint = "scratch" | "existing_product";
 
 export const STARTING_POINT_VALUES: readonly StartingPoint[] = ["scratch", "existing_product"];
 
-export type KitId = "credit" | "liquidity";
+export type KitId = "credit" | "liquidity" | "derivatives" | "staking" | "rwa" | "other";
 
-export const KIT_ID_VALUES: readonly KitId[] = ["credit", "liquidity"];
+export const KIT_ID_VALUES: readonly KitId[] = ["credit", "liquidity", "derivatives", "staking", "rwa", "other"];
 
-/** The kit a sector opens once one of its subsectors is chosen. */
-export const SECTOR_KITS: Partial<Record<Sector, KitId>> = {
+/**
+ * The kit a sector opens once one of its subsectors is chosen. One kit per
+ * sector since M62; the four newer kits get their shapes, steps and files in
+ * their own milestones (Derivatives, Staking, RWA, Other).
+ */
+export const SECTOR_KITS: Record<Sector, KitId> = {
   credit_lending: "credit",
+  staking: "staking",
   liquidity_infra: "liquidity",
+  perps_derivatives: "derivatives",
+  rwa_infra: "rwa",
+  other: "other",
 };
 
 /**
@@ -279,15 +287,15 @@ export const KIT_LIMITS = {
   /** Every shape at most once. */
   shapes: { max: PRODUCT_SHAPE_VALUES.length },
   /** Cap on each id list, well above any catalog size. */
-  ids: { max: 200 },
+  ids: { max: 400 },
   /** Cap on stored checklist entries. */
-  checklist: { max: 200 },
+  checklist: { max: 400 },
   /** Cap on stored review verdicts. */
   review: { max: 200 },
   /** Build steps a team may add across its shapes, and their text. */
   customSteps: { max: 40, titleMin: 3, titleMax: 120, detailMax: 400 },
-  /** Cap on removed catalog step ids, above the 134 that exist. */
-  hiddenSteps: { max: 200 },
+  /** Cap on removed catalog step ids, well above the number that exist. */
+  hiddenSteps: { max: 400 },
 } as const;
 
 export function emptyProjectKit(kits: readonly KitId[] = ["credit"]): ProjectKit {
@@ -505,6 +513,8 @@ export interface ChecklistItem {
   step: KitStep;
   /** Catalog resource ids that help with this item. */
   resources: readonly string[];
+  /** Contract template ids that fit this item (M61). The team accepts or rejects each on the kit. */
+  templates?: readonly string[];
 }
 
 export function checklistProgress(
@@ -530,6 +540,7 @@ export function toggleChecklistItem(
 export function assertChecklists(
   lists: Partial<Record<ProductShape, readonly ChecklistItem[]>>,
   knownResourceIds: ReadonlySet<string>,
+  knownTemplateIds: ReadonlySet<string> = new Set(),
 ): void {
   const seen = new Set<string>();
   const problems: string[] = [];
@@ -541,6 +552,8 @@ export function assertChecklists(
       if (!KIT_STEPS.includes(item.step)) problems.push(`${item.id} unknown step ${item.step}`);
       for (const r of item.resources)
         if (!knownResourceIds.has(r)) problems.push(`${item.id} references unknown resource ${r}`);
+      for (const t of item.templates ?? [])
+        if (!knownTemplateIds.has(t)) problems.push(`${item.id} references unknown template ${t}`);
     }
   }
   if (problems.length) throw new Error(`Kit checklists are invalid. ${problems.join("; ")}`);
@@ -569,6 +582,8 @@ export interface StepGroup {
   step: KitStep;
   /** Union over the members, first seen order, each once. */
   resources: readonly string[];
+  /** Contract template ids over the members, first seen order, each once (M61). */
+  templates: readonly string[];
   /** Every member id among the chosen shapes, table order. */
   ids: readonly string[];
   /** Chosen shapes carrying it, table order. shapes[0] is where it is listed. */
@@ -615,6 +630,9 @@ export function productSectionsFor(
       const resources: string[] = [];
       for (const id of ids)
         for (const r of byId.get(id)?.resources ?? []) if (!resources.includes(r)) resources.push(r);
+      const templates: string[] = [];
+      for (const id of ids)
+        for (const t of byId.get(id)?.templates ?? []) if (!templates.includes(t)) templates.push(t);
       const group: StepGroup = {
         key: item.id,
         slug,
@@ -622,6 +640,7 @@ export function productSectionsFor(
         detail: entry?.detail ?? item.detail,
         step: item.step,
         resources,
+        templates,
         ids,
         shapes: members,
       };
@@ -689,6 +708,7 @@ function customGroup(c: CustomStep): StepGroup {
     // Added steps carry no editor step. The section shows a "Your step" badge instead.
     step: "review",
     resources: [],
+    templates: [],
     ids: [c.id],
     shapes: [c.shape],
     custom: true,

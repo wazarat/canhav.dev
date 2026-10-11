@@ -59,7 +59,15 @@ import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { chainInfo, projectChainOf } from "@/lib/chains";
-import { kitShapes } from "@/lib/kits";
+import {
+  KIT_FAMILY_ORDER,
+  KIT_PRIORITY_ORDER,
+  KIT_STEPS,
+  type KitFamily,
+  type KitPriority,
+  type KitStep,
+  kitShapes,
+} from "@/lib/kits";
 import { shapeAdviceFor } from "@/lib/token-advice";
 import { deriveTokenomics } from "@/lib/tokenDesign";
 
@@ -683,9 +691,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       description:
         "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family.",
       inputSchema: z.object({
-        step: z.enum(["basics", "architecture", "security", "reality", "review"]).optional(),
-        priority: z.enum(["core", "recommended", "deep_dive"]).optional(),
-        family: z.enum(["shared", "robinhood", "arbitrum", "morpho", "pendle", "uniswap", "boros"]).optional(),
+        step: z.enum(KIT_STEPS as [KitStep, ...KitStep[]]).optional(),
+        priority: z.enum(KIT_PRIORITY_ORDER as [KitPriority, ...KitPriority[]]).optional(),
+        family: z.enum(KIT_FAMILY_ORDER as [KitFamily, ...KitFamily[]]).optional(),
         includeUnselected: z.boolean().optional(),
       }),
     },

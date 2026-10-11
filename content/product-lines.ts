@@ -70,7 +70,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     graphic: "metrics",
   },
   {
-    title: "RWAs",
+    title: "RWA",
     monoLabel: "rwa · tvl",
     description:
       "Tokenized treasuries and off-chain assets. Backing, attestation cadence, issuer and custody.",
