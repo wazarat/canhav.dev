@@ -3,6 +3,7 @@ import { z } from "zod";
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { TEMPLATE_CATALOG, templateById } from "@/content/templates";
+import { featuresFor } from "@/content/kits/features";
 import { TEMPLATE_ID, templatesForShapes } from "@/lib/templates";
 import { projectChainOf } from "@/lib/chains";
 import { checklistFor, groupsFor } from "@/content/kits/checklists";
@@ -41,6 +42,8 @@ import {
   reviewPassesFor,
   setReviewVerdict,
   setTemplateDecision,
+  toggleFeature,
+  FEATURE_ID,
   toggleChecklistItem,
   toggleResource,
 } from "@/lib/kits";
@@ -247,6 +250,10 @@ export const projectPatchSchema = z
         templates: z
           .record(z.string().max(80).regex(TEMPLATE_ID), z.enum(["accepted", "rejected", "open"]))
           .refine((o) => Object.keys(o).length <= KIT_LIMITS.templates.max, "Too many template decisions"),
+        // Features (M64), feature id to ticked. A record, one panel line per id.
+        features: z
+          .record(z.string().max(120).regex(FEATURE_ID), z.boolean())
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.features.max, "Too many features"),
       })
       .partial(),
   })
@@ -470,6 +477,8 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
       kit = { ...kit, ...setReviewVerdict(kit, v.pass, v.verdict === "open" ? null : v.verdict) };
     for (const [id, d] of Object.entries(kitPatch.templates ?? {}))
       kit = { ...kit, ...setTemplateDecision(kit, id, d === "open" ? null : d) };
+    for (const [id, on] of Object.entries(kitPatch.features ?? {}))
+      kit = { ...kit, ...toggleFeature(kit, id, on) };
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
   }
@@ -535,6 +544,13 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     const unknown = decided.filter((id) => !reachable.has(id));
     if (unknown.length) return `Unknown template ${unknown.slice(0, 3).join(", ")}. Read get_templates for the ids this project's shapes offer.`;
   }
+  const ticked = Object.keys(k.features ?? {});
+  if (ticked.length) {
+    if (shapes.length === 0) return "This project has no product shape yet, so it has no features. Send kit.shapes first.";
+    const known = new Set(featuresFor(shapes).map((f) => f.id));
+    const unknown = ticked.filter((id) => !known.has(id));
+    if (unknown.length) return `Unknown feature ${unknown.slice(0, 3).join(", ")}. Read get_build_steps for the feature ids of this project's shapes.`;
+  }
   return null;
 }
 
@@ -584,7 +600,7 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
     kit = { ...kit, ...addCustomStep(kit, a.shape as ProductShape, a.title, a.detail ?? "") };
   if (patch.remove?.length) {
     // A catalog id takes its whole shared group with it, the same as the studio's remove.
-    const groups = groupsFor(kitShapes(kit), {});
+    const groups = groupsFor(kitShapes(kit), kit);
     for (const id of patch.remove) {
       const custom = (kit.customSteps ?? []).find((c) => c.id === id);
       const group: StepGroup | undefined = custom
@@ -594,7 +610,7 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
     }
   }
   if (patch.restore?.length) {
-    const groups = groupsFor(kitShapes(kit), {});
+    const groups = groupsFor(kitShapes(kit), kit);
     const ids = patch.restore.flatMap((id) => groups.find((g) => g.ids.includes(id))?.ids ?? [id]);
     kit = { ...kit, ...restoreSteps(kit, ids) };
   }
@@ -706,6 +722,11 @@ export function pathLabel(path: string): string {
   if (path.startsWith("kit.templates.")) {
     const id = path.slice("kit.templates.".length);
     return `Template ${templateById(id)?.name ?? id}`;
+  }
+  if (path.startsWith("kit.features.")) {
+    const id = path.slice("kit.features.".length);
+    const shape = id.slice(0, id.indexOf(".")) as ProductShape;
+    return `Feature ${featuresFor([shape]).find((f) => f.id === id)?.title ?? id}`;
   }
   const words = path
     .split(".")

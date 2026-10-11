@@ -67,6 +67,15 @@ export const BASIC_AMM_POOL_CHECKLIST: readonly ChecklistItem[] = [
     resources: ["canhav.pool-invariants", "foundry.invariant-testing"],
   },
   {
+    id: "basic_amm_pool.wrap",
+    title: "Route native currency through the wrapped token on both sides",
+    detail: "Deposits wrap and withdrawals unwrap inside the router, the wrapped address is in the manifest, and no user ever holds the wrapper by accident.",
+    step: "architecture",
+    resources: ["uniswap.v2-periphery", "uniswap.v2-router-source"],
+    templates: ["uniswap-v2"],
+    feature: "basic_amm_pool.f.native-pair",
+  },
+  {
     id: "basic_amm_pool.review",
     title: "Run the review passes and record the evidence",
     detail: "Every pass on the Security step has a verdict and a pointer to where the evidence lives.",

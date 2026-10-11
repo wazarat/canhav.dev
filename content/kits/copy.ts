@@ -1,6 +1,9 @@
 import type { ChipOption } from "@/components/ui/ChipGroup";
 import { CREDIT_SHAPE_OPTIONS } from "@/content/kits/credit";
+import { DERIVATIVES_SHAPE_OPTIONS } from "@/content/kits/derivatives";
 import { LIQUIDITY_SHAPE_OPTIONS } from "@/content/kits/liquidity";
+import { RWA_SHAPE_OPTIONS } from "@/content/kits/rwa";
+import { STAKING_SHAPE_OPTIONS } from "@/content/kits/staking";
 import { ALL_SUBSECTOR_OPTIONS } from "@/content/ideation";
 import type { Subsector } from "@/lib/sectors";
 import {
@@ -38,7 +41,13 @@ export interface ShapeOption extends ChipOption<ProductShape> {
 
 /** Every shape option, in SHAPE_SUBSECTORS (picker) order. */
 export const SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = PRODUCT_SHAPE_VALUES.map((value) => {
-  const option = [...CREDIT_SHAPE_OPTIONS, ...LIQUIDITY_SHAPE_OPTIONS].find((o) => o.value === value);
+  const option = [
+    ...CREDIT_SHAPE_OPTIONS,
+    ...LIQUIDITY_SHAPE_OPTIONS,
+    ...DERIVATIVES_SHAPE_OPTIONS,
+    ...STAKING_SHAPE_OPTIONS,
+    ...RWA_SHAPE_OPTIONS,
+  ].find((o) => o.value === value);
   if (!option) throw new Error(`Shape ${value} has no option copy.`);
   return option;
 });
@@ -151,6 +160,21 @@ export const CHECKLIST_COPY = {
   removedHint: "Removed steps leave the count. Restore one to bring it back with its tick.",
   removedShared: (labels: readonly string[]) => `Removed for ${joinAnd(labels)} too.`,
   restore: "Restore",
+  /** Features (M64). */
+  featuresTitle: "What this product includes",
+  featuresHint: "Tick what applies. A ticked feature adds its own steps below and moves the templates it suits to the top. Nothing is removed.",
+  featuresProgress: (on: number, total: number) => `${on} of ${total} ticked`,
+  featureAdds: (steps: number, templates: number) =>
+    [
+      steps ? `Adds ${steps} ${steps === 1 ? "step" : "steps"}` : "",
+      templates ? `suggests ${templates} ${templates === 1 ? "template" : "templates"}` : "",
+    ]
+      .filter(Boolean)
+      .join(", ")
+      .replace(/^suggests/, "Suggests"),
+  featureBadge: (title: string) => `From ${title}`,
+  featureSuggests: (titles: readonly string[]) => `Suggested by ${joinAnd(titles)}`,
+  featuresExport: (on: number, total: number) => `${on} of ${total} features ticked by the team. A ticked feature's steps are in the build steps above.`,
 } as const;
 
 export const REVIEW_VERDICT_OPTIONS: ReadonlyArray<ChipOption<ReviewVerdict>> = [

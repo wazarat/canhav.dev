@@ -17,6 +17,9 @@ import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
 import { ProductStepSection } from "@/components/ideation/kit/ProductStepSection";
 import { EnvironmentBlock } from "@/components/ideation/kit/EnvironmentBlock";
+import { TEMPLATE_CATALOG } from "@/content/templates";
+import { TEMPLATE_COPY } from "@/content/templates/copy";
+import { templateChainCounts, templatesForShapes } from "@/lib/templates";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import {
@@ -102,6 +105,7 @@ import {
   overlappingSubsectors,
   packCounts,
   packFor,
+  SHAPE_FAMILIES,
 } from "@/lib/kits";
 
 /**
@@ -263,10 +267,16 @@ export function ProjectEditor({
     heading: g.heading,
     options: g.options.map((o): ChipOption<ProductShape> => {
       const missing = missingFamilies(o.value, envRows);
-      return missing.length > 0 ? { ...o, note: gateNote(missing) } : o;
+      if (missing.length > 0) return { ...o, note: gateNote(missing) };
+      // A template-driven shape (M65 onward) relies on no family, so its note counts the templates live on the mainnet.
+      if (SHAPE_FAMILIES[o.value].length === 0) {
+        const { live, total } = templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [o.value], chainKey), chainKey);
+        return total ? { ...o, note: TEMPLATE_COPY.chipNote(live, total, chain.mainnetName) } : o;
+      }
+      return o;
     }),
   }));
-  const shapeGated = shapeGroups.some((g) => g.options.some((o) => o.note));
+  const shapeGated = shapeGroups.some((g) => g.options.some((o) => missingFamilies(o.value, envRows).length > 0));
   const audience = docAudience(doc);
   const shapesKey = kitShapes(kit).join(",");
   const editorSteps = useMemo<EditorStep[]>(

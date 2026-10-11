@@ -53,13 +53,17 @@ import {
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
 import { submitAgentChange } from "@/lib/agent-writes-server";
-import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
+import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
+import { featuresFor } from "@/content/kits/features";
 import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { TEMPLATE_ID } from "@/lib/templates";
+import { FEATURE_ID, KIT_LIMITS, hasFeature } from "@/lib/kits";
+
+const KIT_LIMITS_FEATURES = KIT_LIMITS.features.max;
 import {
   KIT_FAMILY_ORDER,
   KIT_PRIORITY_ORDER,
@@ -536,7 +540,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, and templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates). Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps. Takes no arguments.",
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps. Takes no arguments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -550,11 +554,22 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       for (const section of sectionsFor(kitShapes(kit), kit))
         for (const g of section.groups) for (const id of g.ids) groupOf.set(id, g.ids);
       const hidden = new Set(kit.hiddenSteps ?? []);
+      const gatedOff = (i: { feature?: string }) => Boolean(i.feature) && !hasFeature(kit, i.feature!);
+      const features = featuresFor(kitShapes(kit));
       return jsonResult({
         progress: buildProgress(kit),
+        features: features.map((f) => ({
+          id: f.id,
+          shape: f.id.slice(0, f.id.indexOf(".")),
+          title: f.title,
+          detail: f.detail,
+          on: hasFeature(kit, f.id),
+          steps: items.filter((i) => i.feature === f.id).map((i) => i.id),
+          templates: [...(f.templates ?? [])],
+        })),
         steps: [
           ...items
-            .filter((i) => !hidden.has(i.id))
+            .filter((i) => !hidden.has(i.id) && !gatedOff(i))
             .map((i) => ({
               id: i.id,
               shape: i.id.slice(0, i.id.indexOf(".")),
@@ -565,6 +580,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               custom: false,
               sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
               templates: [...(i.templates ?? [])],
+              ...(i.feature ? { feature: i.feature } : {}),
             })),
           // Steps the team added (M50), at the end of their shape.
           ...(kit.customSteps ?? []).map((c) => ({
@@ -580,7 +596,45 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           })),
         ],
         removed: items.filter((i) => hidden.has(i.id)).map((i) => ({ id: i.id, title: i.title })),
+        // Steps a feature gates that the team has not ticked (M64). Tick the feature with set_features to list them.
+        gated: gatedStepsFor(kitShapes(kit)).filter((g) => !hasFeature(kit, g.feature)),
       });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "set_features",
+    {
+      title: "Tick or untick features",
+      description: `Change what this project's product includes (M64). tick and untick take feature ids from get_build_steps (the features block). A ticked feature lists the build steps it gates and ranks the templates it suggests first on get_templates; unticking hides those steps again without losing their ticks. ${WRITE_RULES}`,
+      inputSchema: z.object({
+        tick: z.array(z.string().max(120).regex(FEATURE_ID)).max(KIT_LIMITS_FEATURES).default([]),
+        untick: z.array(z.string().max(120).regex(FEATURE_ID)).max(KIT_LIMITS_FEATURES).default([]),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      if (args.tick.length + args.untick.length === 0) return errorResult("Name at least one feature.");
+      const both = args.tick.filter((id) => args.untick.includes(id));
+      if (both.length) return errorResult(`${both[0]} is in both tick and untick.`);
+      const { project, design } = loaded.value;
+      const features = Object.fromEntries([
+        ...args.tick.map((id) => [id, true] as const),
+        ...args.untick.map((id) => [id, false] as const),
+      ]);
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "project", kind: "fields", patch: { kit: { features } } },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
     },
     scope,
   );

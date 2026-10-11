@@ -29,6 +29,10 @@ const PT_COLLATERAL_SIDE = ["pt_backed_borrowing", "leveraged_fixed_yield"] as c
 const LIQUIDITY_VAULTS = ["liquidity_allocator", "permissioned_vault"] as const;
 const POOLS = ["basic_amm_pool", "concentrated_liquidity_pool", "hook_pool"] as const;
 const HOOKS = ["hook_pool"] as const;
+/** Template-driven shapes (M65 to M67). Their passes name the sector kit files. */
+const DERIVATIVES = ["perp_exchange", "option_vault", "delta_neutral_vault"] as const;
+const STAKING = ["liquid_staking_token", "restaking_service", "liquid_restaking_token"] as const;
+const RWA = ["tokenized_security", "private_credit_pool", "asset_backed_token"] as const;
 
 /**
  * Pre-launch review passes. The vault-side and borrow-side passes follow the
@@ -306,6 +310,93 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
     detail: "The gap between holding and providing, the fee the pool charges and, for a range, what happens when the price leaves it, on the screen where liquidity is added. Evidence is that screen.",
     shapes: POOLS,
     resources: ["uniswap.v2-understanding-returns", "canhav.pool-parameters"],
+  },
+  // -- Derivatives (M65) ----------------------------------------------------------
+  {
+    id: "review.price-path",
+    title: "Every price is traced from the feed to the number that moves money",
+    detail: "The mark, the settlement price and the NAV each have a source, a staleness bound and a sequencer check on an L2, and a stale report reverts rather than trades.",
+    shapes: DERIVATIVES,
+    resources: ["canhav.derivatives-prelaunch-review", "chainlink.data-feeds", "pyth.best-practices"],
+  },
+  {
+    id: "review.liquidation-gap",
+    title: "The venue survives a price gap past the liquidation line",
+    detail: "A test where the price jumps past the line in one block leaves the venue or the vault solvent, and the reviewer has seen the trace.",
+    shapes: ["perp_exchange", "delta_neutral_vault"],
+    resources: ["canhav.derivatives-prelaunch-review", "canhav.perp-parameters", "foundry.invariant-testing"],
+  },
+  {
+    id: "review.funding-display",
+    title: "Funding and premium are shown before the user commits",
+    detail: "The next funding payment, the current premium or the net rate after hedging is on the screen where the user sends the transaction, not in a footer.",
+    shapes: DERIVATIVES,
+    resources: ["canhav.derivatives-prelaunch-review", "canhav.rate-transparency"],
+  },
+  {
+    id: "review.expiry-settlement",
+    title: "Expiry settles from a bounded feed and a missing price has a path",
+    detail: "The settlement source at expiry is named and bounded, and the vault has a written path for the round where the price is missing.",
+    shapes: ["option_vault"],
+    resources: ["canhav.derivatives-prelaunch-review", "canhav.option-schedule"],
+  },
+  {
+    id: "review.hedge-band",
+    title: "The hedge stays inside the band and the venue's failure has an unwind",
+    detail: "Net delta is inside the band after every rebalance in the tests, and the venue halting or delisting has a written unwind that pays depositors.",
+    shapes: ["delta_neutral_vault"],
+    resources: ["canhav.derivatives-prelaunch-review", "canhav.hedge-band"],
+  },
+  // -- Staking (M66) --------------------------------------------------------------
+  {
+    id: "review.exchange-rate",
+    title: "The exchange rate has one source and only a slash can lower it",
+    detail: "The rate the token reports comes from one named contract, the tests show it never falls except on a slash, and the update cadence is disclosed.",
+    shapes: ["liquid_staking_token", "liquid_restaking_token"],
+    resources: ["canhav.staking-prelaunch-review", "foundry.invariant-testing"],
+  },
+  {
+    id: "review.exit-queue",
+    title: "A holder can see when they get out",
+    detail: "The unstake or withdrawal queue shows a place and a date, is served in order in the tests, and never outruns the service or validator exit behind it.",
+    shapes: ["liquid_staking_token", "liquid_restaking_token"],
+    resources: ["canhav.staking-prelaunch-review", "canhav.exit-queue"],
+  },
+  {
+    id: "review.slashing-disclosure",
+    title: "What is slashed and who absorbs it is written where the user commits",
+    detail: "The faults, the evidence a slash needs and who takes the loss are on the deposit or operator screen, and the slash path exists in the contracts.",
+    shapes: STAKING,
+    resources: ["canhav.staking-prelaunch-review", "canhav.slashing-disclosure"],
+  },
+  // -- RWA (M67) ------------------------------------------------------------------
+  {
+    id: "review.transfer-rules",
+    title: "Transfer rules match the written policy and exit rights survive them",
+    detail: "The allowlist, freeze and forced transfer behave as the transfer rules worksheet says, and a holder's exit right is not overridden by any of them.",
+    shapes: ["tokenized_security", "asset_backed_token"],
+    resources: ["canhav.rwa-prelaunch-review", "canhav.transfer-rules"],
+  },
+  {
+    id: "review.reserve-attestation",
+    title: "Supply never exceeds the attested reserve",
+    detail: "Minting reads the attestation, a stale attestation stops it in the tests, and the latest attestation is published where holders can read it.",
+    shapes: ["asset_backed_token"],
+    resources: ["canhav.rwa-prelaunch-review", "canhav.reserve-attestation"],
+  },
+  {
+    id: "review.waterfall",
+    title: "The waterfall pays and absorbs losses in the written order",
+    detail: "Senior before junior, first loss first, and a default with a partial recovery flows back through the tranches as the worksheet says, with the test trace kept.",
+    shapes: ["private_credit_pool"],
+    resources: ["canhav.rwa-prelaunch-review", "canhav.credit-waterfall"],
+  },
+  {
+    id: "review.issuer-powers",
+    title: "Issuer powers are named, keyed and disclosed",
+    detail: "Freeze, recall, forced transfer and mint each have a named key with a delay, and the holder can read them before buying.",
+    shapes: RWA,
+    resources: ["canhav.rwa-prelaunch-review", "canhav.role-model"],
   },
 ];
 

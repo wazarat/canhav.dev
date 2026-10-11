@@ -1,4 +1,5 @@
 import { KIT_CATALOG } from "@/content/kits/catalog";
+import { featuresFor } from "@/content/kits/features";
 import { TEMPLATE_CATALOG } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import {
@@ -42,6 +43,9 @@ import {
   packFor,
   reviewPassesFor,
   reviewProgress,
+  featureProgress,
+  featuresSuggesting,
+  hasFeature,
   templateCounts,
   templateState,
 } from "@/lib/kits";
@@ -115,6 +119,8 @@ export interface ResourcePackView {
       resources: string[];
       /** Contract template ids that fit the step (M61). */
       templates: string[];
+      /** The feature that gates the step (M64), when one does. */
+      feature?: string;
       done: boolean;
       /** True for a step the team added (M50). */
       custom?: boolean;
@@ -124,6 +130,8 @@ export interface ResourcePackView {
   review: ReviewView;
   /** Contract templates for the shapes with the team's decisions (M63). */
   templates: TemplatesView;
+  /** What the product includes, as the features the team ticked (M64). */
+  features: FeaturesView;
   howToUse: string;
 }
 
@@ -137,6 +145,8 @@ export interface TemplatePackView
   onChain: { status: ChainDeployment; note?: string };
   /** Build step group keys that list it, section order. Empty for a template no step names. */
   steps: string[];
+  /** Ticked feature ids that suggest it (M64). Such a template sorts first on its steps. */
+  suggestedBy: string[];
   /** The mainnet status on both chains, kept for readers that compare. */
   chains: ContractTemplate["chains"];
 }
@@ -145,6 +155,24 @@ export interface TemplatesView {
   counts: ReturnType<typeof templateCounts>;
   /** Every active template placed under the shapes' subsectors, pack order, decided ones first within a step. */
   items: TemplatePackView[];
+}
+
+export interface FeaturePackView {
+  id: string;
+  shape: ProductShape;
+  title: string;
+  detail: string;
+  on: boolean;
+  /** Catalog step ids the feature gates. */
+  steps: string[];
+  /** Template ids it suggests. */
+  templates: string[];
+}
+
+export interface FeaturesView {
+  on: number;
+  total: number;
+  items: FeaturePackView[];
 }
 
 export interface ReviewPassView extends Omit<ReviewPass, "resources"> {
@@ -187,7 +215,7 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
 }
 
 export const HOW_TO_USE =
-  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted.";
+  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted. features lists what the product includes as the team ticked it; a ticked feature's steps are in the checklist and the templates it suggests carry it in suggestedBy, so prefer those on their steps.";
 
 export const NO_SHAPE_HINT =
   "This project has no product shape yet. Pick what you are building in the studio Basics step and the resource pack will follow.";
@@ -226,7 +254,7 @@ export function buildResourcePack(
   // Removed steps are left out and added steps appended (M50).
   const hiddenSteps = new Set(kit.hiddenSteps ?? []);
   const checklistItems: Array<ChecklistItem & { custom?: boolean }> = [
-    ...checklistFor(shapes).filter((i) => !hiddenSteps.has(i.id)),
+    ...checklistFor(shapes).filter((i) => !hiddenSteps.has(i.id) && (!i.feature || hasFeature(kit, i.feature))),
     ...(kit.customSteps ?? []).map((c) => ({
       id: c.id,
       title: c.title,
@@ -248,12 +276,24 @@ export function buildResourcePack(
   for (const section of sections)
     for (const g of section.groups)
       for (const t of g.templates) stepsOf.set(t, [...(stepsOf.get(t) ?? []), g.key]);
+  const features = featuresFor(shapes);
   const templateItems: TemplatePackView[] = templatesForShapes(TEMPLATE_CATALOG, shapes, chain).map((t) => ({
     ...t,
     decision: templateState(kit, t.id),
     availability: templateAvailability(t, chain),
     onChain: templateOnChain(t, chain),
     steps: stepsOf.get(t.id) ?? [],
+    suggestedBy: featuresSuggesting(features, kit, t.id).map((f) => f.id),
+  }));
+  const allItems = checklistFor(shapes);
+  const featureItems: FeaturePackView[] = features.map((f) => ({
+    id: f.id,
+    shape: f.id.slice(0, f.id.indexOf(".")) as ProductShape,
+    title: f.title,
+    detail: f.detail,
+    on: hasFeature(kit, f.id),
+    steps: allItems.filter((i) => i.feature === f.id).map((i) => i.id),
+    templates: [...(f.templates ?? [])],
   }));
   return {
     kit: kit.id,
@@ -294,6 +334,7 @@ export function buildResourcePack(
           ids: [...g.ids],
           resources: [...g.resources],
           templates: [...g.templates],
+          ...(g.feature ? { feature: g.feature } : {}),
           done: groupState(g, kit) === "done",
           ...(g.custom ? { custom: true } : {}),
         })),
@@ -301,6 +342,7 @@ export function buildResourcePack(
     },
     review: buildReviewView(doc)!,
     templates: { counts: templateCounts(templateItems.map((t) => t.id), kit), items: templateItems },
+    features: { ...featureProgress(features, kit), items: featureItems },
     howToUse: HOW_TO_USE,
   };
 }

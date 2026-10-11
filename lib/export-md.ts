@@ -228,6 +228,11 @@ function resourcePackSections(doc: ProjectDoc, heading: "##" | "###"): string[] 
         lines.push("", CHECKLIST_COPY.sharedAboveLine([...new Set(above.map((g) => label(g.shape)))]));
     }
   }
+  if (pack.features.total > 0) {
+    lines.push("", `${heading} Features`, "", CHECKLIST_COPY.featuresExport(pack.features.on, pack.features.total), "");
+    for (const f of pack.features.items)
+      lines.push(`- [${f.on ? "x" : " "}] **${f.title}** (${shapeLabel(f.shape) ?? f.shape}). ${f.detail}`);
+  }
   if (pack.templates.items.length > 0) {
     lines.push("", `${heading} Contract templates`, "", TEMPLATE_COPY.exportIntro(pack.templates.counts));
     const chainName = chainInfo(pack.chain.key).mainnetName;

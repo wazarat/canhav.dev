@@ -29,6 +29,7 @@ npm-debug.log*
 # local dev changelog — maintained by Claude Code across sessions, never committed
 CHANGELOG.local.md
 MILESTONES.local.md
+HANDOFF.local.md
 
 # Render API credential — local only, never committed
 .env.render

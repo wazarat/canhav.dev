@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { FeaturesBlock } from "@/components/ideation/kit/FeaturesBlock";
 import { TemplateCard } from "@/components/ideation/kit/TemplateCard";
 import { TemplateDecisionRow } from "@/components/ideation/kit/TemplateDecision";
 import { KIT_CATALOG } from "@/content/kits/catalog";
+import { featuresFor } from "@/content/kits/features";
 import { CHECKLIST_COPY, GATE_COPY, STEP_LABELS_KIT, shapeBlurb, shapeLabel } from "@/content/kits/copy";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
@@ -21,6 +23,7 @@ import {
   type ProjectKit,
   type StepGroup,
   addCustomStep,
+  featuresSuggesting,
   groupProgress,
   groupState,
   removeStepGroup,
@@ -84,6 +87,13 @@ export function ProductStepSection({
   const progress = groupProgress(section.groups, kit);
   const templateIds = section.groups.flatMap((g) => stepTemplates(g).map((t) => t.id));
   const counts = templateCounts(templateIds, kit);
+  const features = featuresFor([section.shape]);
+  const featureTitle = (id: string) => features.find((f) => f.id === id)?.title ?? id;
+  /** Templates a ticked feature suggests first, then catalog order (M64). */
+  const ranked = (group: StepGroup) =>
+    stepTemplates(group)
+      .map((t) => ({ t, by: featuresSuggesting(features, kit, t.id).map((f) => f.title) }))
+      .sort((a, b) => Number(b.by.length > 0) - Number(a.by.length > 0));
   const other = (g: StepGroup) => g.shapes.filter((s) => s !== section.shape).map((s) => shapeLabel(s) ?? s);
   const aboveHomes = [...new Set(section.sharedAbove.map((g) => shapeLabel(g.shapes[0]) ?? g.shapes[0]))];
 
@@ -117,6 +127,8 @@ export function ProductStepSection({
         </StatusChip>
       ) : null}
 
+      <FeaturesBlock shape={section.shape} features={features} kit={kit} onPatchKit={onPatchKit} />
+
       {section.groups.length === 0 && section.sharedAbove.length === 0 ? (
         <StatusChip tone="neutral" variant="block">
           {CHECKLIST_COPY.none}
@@ -130,7 +142,7 @@ export function ProductStepSection({
               .map((id) => TITLE_BY_ID.get(id))
               .filter((r): r is NonNullable<typeof r> => Boolean(r));
             const others = other(group);
-            const templates = stepTemplates(group);
+            const templates = ranked(group);
             return (
               <li key={group.key} className="flex items-start gap-1">
                 <CheckItem
@@ -150,6 +162,11 @@ export function ProductStepSection({
                         <Badge className="px-2 py-0 text-[10px]">
                           {group.custom ? CHECKLIST_COPY.customBadge : STEP_LABELS_KIT[group.step]}
                         </Badge>
+                        {group.feature ? (
+                          <Badge tone="electric" className="px-2 py-0 text-[10px]">
+                            {CHECKLIST_COPY.featureBadge(featureTitle(group.feature))}
+                          </Badge>
+                        ) : null}
                         {links.map((r) => (
                           <a
                             key={r.id}
@@ -168,7 +185,7 @@ export function ProductStepSection({
                       ) : null}
                       {templates.length ? (
                         <details
-                          open={templates.some((t) => templateState(kit, t.id) === "open")}
+                          open={templates.some(({ t }) => templateState(kit, t.id) === "open")}
                           className="block"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -178,7 +195,7 @@ export function ProductStepSection({
                           </summary>
                           <span className="mt-2 block text-[11px] leading-relaxed text-ink-500">{TEMPLATE_COPY.stepHint}</span>
                           <span className="mt-2 block space-y-2">
-                            {templates.map((t) => (
+                            {templates.map(({ t, by }) => (
                               <TemplateCard
                                 key={t.id}
                                 template={t}
@@ -187,6 +204,7 @@ export function ProductStepSection({
                                 footer={
                                   <TemplateDecisionRow
                                     state={templateState(kit, t.id)}
+                                    suggestedBy={by.length ? CHECKLIST_COPY.featureSuggests(by) : undefined}
                                     onDecide={(d) => onPatchKit(setTemplateDecision(kit, t.id, d))}
                                   />
                                 }

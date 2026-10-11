@@ -37,7 +37,7 @@ Live at [canhav.com](https://www.canhav.com), docs at
 | `indexer/` | Ponder indexer for launches, run once per chain (Fly configs included) |
 | `indexer-agents/` | Indexer for the unlinked `/agents` track |
 | `docs/` | Source of docs.canhav.com, including the litepaper |
-| `public/kits/` | Kit files for credit and liquidity builders, served raw |
+| `public/kits/` | Kit files for credit, liquidity, derivatives, staking and RWA builders, served raw |
 | `scripts/` | Database setup and checks |
 
 ## Develop
@@ -496,5 +496,9 @@ event window so judges can verify it.
   RESOURCES.md, AGENTS.md and the project MCP server (`get_templates`,
   `set_template_decisions`), and the rail and the Reality step show what was
   accepted and where it runs on the project's mainnet.
+- Oct 11, 2026. Features and three more sectors (M64 to M67). Each product shape
+  has a "What this product includes" list whose ticks add build steps and rank
+  templates; Derivatives, Staking and RWA open with nine new shapes, their build
+  steps, features, review passes and kit files under `public/kits/`.
 
 This list grows as work lands on the branch.

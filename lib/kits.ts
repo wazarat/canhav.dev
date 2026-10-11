@@ -40,7 +40,16 @@ export type ProductShape =
   | "permissioned_vault"
   | "basic_amm_pool"
   | "concentrated_liquidity_pool"
-  | "hook_pool";
+  | "hook_pool"
+  | "perp_exchange"
+  | "option_vault"
+  | "delta_neutral_vault"
+  | "liquid_staking_token"
+  | "restaking_service"
+  | "liquid_restaking_token"
+  | "tokenized_security"
+  | "private_credit_pool"
+  | "asset_backed_token";
 
 /**
  * The one place subsector membership lives. Key order is picker order. A
@@ -63,6 +72,16 @@ export const SHAPE_SUBSECTORS: Record<ProductShape, readonly Subsector[]> = {
   basic_amm_pool: ["pools"],
   concentrated_liquidity_pool: ["pools"],
   hook_pool: ["pools"],
+  // One shape per subsector for the sectors opened in M65 to M67. Appended, never reordered.
+  perp_exchange: ["perp_dex"],
+  option_vault: ["option_vaults"],
+  delta_neutral_vault: ["delta_neutral"],
+  liquid_staking_token: ["liquid_staking"],
+  restaking_service: ["restaking"],
+  liquid_restaking_token: ["liquid_restaking"],
+  tokenized_security: ["tokenized_securities"],
+  private_credit_pool: ["private_credit"],
+  asset_backed_token: ["asset_backed_tokens"],
 };
 
 export const PRODUCT_SHAPE_VALUES = Object.keys(SHAPE_SUBSECTORS) as readonly ProductShape[];
@@ -272,6 +291,12 @@ export interface ProjectKit {
    * it. Only decided ids are stored, never injected.
    */
   templates?: Record<string, TemplateDecision>;
+  /**
+   * Feature ids ticked (M64), "<shape>.f.<slug>" from the feature catalog.
+   * A ticked feature shows the build steps it gates and ranks the templates
+   * it suggests first. Only ticked ids are stored, never injected.
+   */
+  features?: string[];
 }
 
 export type TemplateDecision = "accepted" | "rejected";
@@ -311,6 +336,8 @@ export const KIT_LIMITS = {
   hiddenSteps: { max: 400 },
   /** Cap on stored contract template decisions, above the catalog size. */
   templates: { max: 400 },
+  /** Cap on ticked feature ids, above the catalog size. */
+  features: { max: 400 },
 } as const;
 
 export function emptyProjectKit(kits: readonly KitId[] = ["credit"]): ProjectKit {
@@ -411,6 +438,8 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     }
     if (n > 0) kit.templates = decisions;
   }
+  const features = idList(r.features).slice(0, KIT_LIMITS.features.max);
+  if (features.length) kit.features = features;
   return kit;
 }
 
@@ -459,6 +488,7 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     if (entries.length > KIT_LIMITS.templates.max) return "Too many template decisions.";
     if (entries.some(([, v]) => !TEMPLATE_DECISIONS.includes(v))) return "Unknown template decision.";
   }
+  if ((kit.features?.length ?? 0) > KIT_LIMITS.features.max) return "Too many features.";
   return null;
 }
 
@@ -579,6 +609,94 @@ export interface ChecklistItem {
   resources: readonly string[];
   /** Contract template ids that fit this item (M61). The team accepts or rejects each on the kit. */
   templates?: readonly string[];
+  /** A feature id (M64). The step is listed only while the team has that feature ticked. */
+  feature?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Features (M64). What a product includes, as choices the team ticks. A
+// ticked feature adds the build steps that carry its id and ranks the
+// templates it suggests first on every step of the shape. Nothing is ever
+// removed by a feature. Content lives in content/kits/features.
+
+export interface FeatureItem {
+  /** "<shape>.f.<slug>", immutable once shipped. */
+  id: string;
+  title: string;
+  /** One or two sentences on what choosing it means and what it adds. */
+  detail: string;
+  /** Contract template ids this feature suggests. */
+  templates?: readonly string[];
+}
+
+export type FeatureLists = Partial<Record<ProductShape, readonly FeatureItem[]>>;
+
+export const FEATURE_ID = /^[a-z0-9_]+\.f\.[a-z0-9-]+$/;
+
+export function hasFeature(kit: Pick<ProjectKit, "features"> | undefined, id: string): boolean {
+  return kit?.features?.includes(id) ?? false;
+}
+
+/** Tick or untick one feature. Never stores an empty list. */
+export function toggleFeature(
+  kit: Pick<ProjectKit, "features">,
+  id: string,
+  on: boolean,
+): Pick<ProjectKit, "features"> {
+  const next = (kit.features ?? []).filter((f) => f !== id);
+  if (on) next.push(id);
+  return next.length ? { features: next } : { features: undefined };
+}
+
+export function featureProgress(
+  items: readonly FeatureItem[],
+  kit: Pick<ProjectKit, "features"> | undefined,
+): { on: number; total: number } {
+  return { on: items.filter((f) => hasFeature(kit, f.id)).length, total: items.length };
+}
+
+/** Feature ids among `on` that suggest the template, catalog order. */
+export function featuresSuggesting(
+  features: readonly FeatureItem[],
+  kit: Pick<ProjectKit, "features"> | undefined,
+  templateId: string,
+): FeatureItem[] {
+  return features.filter((f) => hasFeature(kit, f.id) && f.templates?.includes(templateId));
+}
+
+/** The catalog step ids a feature gates, from the checklists. */
+export function featureStepIds(lists: ChecklistLists, featureId: string): string[] {
+  return Object.values(lists)
+    .flatMap((items) => items ?? [])
+    .filter((i) => i.feature === featureId)
+    .map((i) => i.id);
+}
+
+export function assertFeatures(
+  lists: FeatureLists,
+  checklists: ChecklistLists,
+  knownTemplateIds: ReadonlySet<string>,
+): void {
+  const seen = new Set<string>();
+  const problems: string[] = [];
+  for (const [shape, items] of Object.entries(lists)) {
+    for (const f of items ?? []) {
+      if (seen.has(f.id)) problems.push(`duplicate feature id ${f.id}`);
+      seen.add(f.id);
+      if (!FEATURE_ID.test(f.id)) problems.push(`bad feature id ${f.id}`);
+      if (!f.id.startsWith(`${shape}.f.`)) problems.push(`${f.id} is not under ${shape}`);
+      if (!f.title.trim()) problems.push(`${f.id} has no title`);
+      for (const t of f.templates ?? [])
+        if (!knownTemplateIds.has(t)) problems.push(`${f.id} suggests unknown template ${t}`);
+    }
+  }
+  for (const [shape, items] of Object.entries(checklists))
+    for (const item of items ?? [])
+      if (item.feature) {
+        if (!seen.has(item.feature)) problems.push(`${item.id} is gated by unknown feature ${item.feature}`);
+        else if (!item.feature.startsWith(`${shape}.f.`)) problems.push(`${item.id} is gated by a feature of another shape`);
+      }
+  if (problems.length) throw new Error(`Kit features are invalid. ${problems.join("; ")}`);
 }
 
 export function checklistProgress(
@@ -648,6 +766,8 @@ export interface StepGroup {
   resources: readonly string[];
   /** Contract template ids over the members, first seen order, each once (M61). */
   templates: readonly string[];
+  /** The feature that gates the leading item (M64). Absent for an always-on step. */
+  feature?: string;
   /** Every member id among the chosen shapes, table order. */
   ids: readonly string[];
   /** Chosen shapes carrying it, table order. shapes[0] is where it is listed. */
@@ -705,6 +825,7 @@ export function productSectionsFor(
         step: item.step,
         resources,
         templates,
+        ...(item.feature ? { feature: item.feature } : {}),
         ids,
         shapes: members,
       };
@@ -777,6 +898,19 @@ function customGroup(c: CustomStep): StepGroup {
     shapes: [c.shape],
     custom: true,
   };
+}
+
+/** The catalog sections without the steps whose feature the kit has not ticked (M64). */
+export function withFeatureSteps(
+  sections: readonly ProductSection[],
+  kit: Pick<ProjectKit, "features"> | undefined,
+): ProductSection[] {
+  const keep = (g: StepGroup) => !g.feature || hasFeature(kit, g.feature);
+  return sections.map((section) => ({
+    shape: section.shape,
+    groups: section.groups.filter(keep),
+    sharedAbove: section.sharedAbove.filter(keep),
+  }));
 }
 
 /** The catalog sections with the kit's removals taken out and its added steps appended to their shape. */
@@ -912,6 +1046,17 @@ export const SHAPE_FAMILIES: Record<ProductShape, readonly Exclude<KitFamily, "s
   basic_amm_pool: ["uniswap"],
   concentrated_liquidity_pool: ["uniswap"],
   hook_pool: ["uniswap"],
+  // Template-driven shapes (M65 to M67) rely on no single family. Chain fit
+  // comes from the contract templates on their steps, per template.
+  perp_exchange: [],
+  option_vault: [],
+  delta_neutral_vault: [],
+  liquid_staking_token: [],
+  restaking_service: [],
+  liquid_restaking_token: [],
+  tokenized_security: [],
+  private_credit_pool: [],
+  asset_backed_token: [],
 };
 
 /** Environment rows for the given shapes, the chain's own row first, each family once, from whatever rows exist. */

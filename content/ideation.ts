@@ -98,7 +98,7 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
     label: "Staking",
     title: "Staking sector application",
     sentence: "I am looking to let holders stake, restake or earn on what they already hold.",
-    available: false,
+    
   },
   {
     value: "liquidity_infra",
@@ -111,14 +111,14 @@ export const SECTOR_OPTIONS: Array<GatedOption<Sector>> = [
     label: "Derivatives",
     title: "Derivatives sector application",
     sentence: "I am looking to let users trade leverage, options or hedged exposure.",
-    available: false,
+    
   },
   {
     value: "rwa_infra",
     label: "RWA",
     title: "RWA sector application",
     sentence: "I am looking to bring stocks, credit or reserve-backed assets on-chain as tokens.",
-    available: false,
+    
   },
   {
     value: "other",

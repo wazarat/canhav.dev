@@ -73,6 +73,15 @@ export const CURATED_VAULT_CHECKLIST: readonly ChecklistItem[] = [
     resources: ["canhav.invariants", "foundry.invariant-testing", "crytic.medusa-agents"],
   },
   {
+    id: "curated_vault.gate",
+    title: "Write the deposit gate and the exit rights it never overrides",
+    detail: "Who may deposit and hold shares, who maintains the list, and the withdrawal a gated holder keeps no matter what, before the first deposit.",
+    step: "security",
+    resources: ["canhav.gates-and-eligibility", "morpho.vault-gates"],
+    templates: ["morpho-vault-v2", "lagoon-v0"],
+    feature: "curated_vault.f.permissioned-deposits",
+  },
+  {
     id: "curated_vault.review",
     title: "Walk the configuration checklist and the review passes",
     detail: "Evidence per pass, recorded before the first real deposit.",

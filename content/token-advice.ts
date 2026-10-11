@@ -165,6 +165,96 @@ export const SHAPE_TOKEN_ADVICE: Record<ProductShape, ShapeTokenAdvice> = {
     example:
       "A pool sends 10 percent of every swap fee to stakers of the launch token through its hook, with the split set by a vote.",
   },
+  perp_exchange: {
+    needsToken: "sometimes",
+    summary:
+      "A venue earns fees from day one, so a token is a fee share or a governance claim, not a reason to trade there. Add one once there is real fee flow to share or listings and parameters to govern.",
+    fits: ["fee_capture", "governance"],
+    avoid: ["bootstrap_supply", "fundraising"],
+    lock: "Lock the fee recipient, the listing role and the parameter keys behind a timelock before the token claims any of the fee.",
+    example:
+      "A stock token perps venue routes a fifth of its fees to stakers after three months of live volume and lets them vote on new markets.",
+  },
+  option_vault: {
+    needsToken: "rarely",
+    summary:
+      "Depositors already hold vault shares and the premium is the yield, so the product works without a token. A token only fits once several vaults share a curator worth governing.",
+    fits: ["governance"],
+    avoid: ["token_is_product", "bootstrap_supply", "fundraising"],
+    lock: "Lock the roll keeper, the strike rule and the fee behind a timelock before any token touches the vault.",
+    example:
+      "A family of covered call vaults adds a governance token two years in so holders set the strike rule and the fee.",
+  },
+  delta_neutral_vault: {
+    needsToken: "rarely",
+    summary:
+      "The hedged position is the product and its share is the token depositors need. A separate token would only share the strategist's fee.",
+    fits: ["fee_capture"],
+    avoid: ["token_is_product", "bootstrap_supply", "economic_security"],
+    lock: "Lock the venue keys, the band and the strategist's limits behind a timelock before any fee is shared.",
+    example:
+      "A basis vault keeps its share token as the only token and routes a performance fee to a treasury the team controls.",
+  },
+  liquid_staking_token: {
+    needsToken: "usually",
+    summary:
+      "The liquid staking token is the product. A second governance token only makes sense once there are validators, modules or fees to govern.",
+    fits: ["token_is_product", "governance", "fee_capture"],
+    avoid: ["fundraising"],
+    lock: "The receipt token's exchange rate source and the unstake queue are the contract; lock the validator set and the fee behind a timelock.",
+    example:
+      "A staked version of a launched token streams protocol fees to stakers and is itself the only new token.",
+  },
+  restaking_service: {
+    needsToken: "sometimes",
+    summary:
+      "A service pays operators and stakers in whatever it earns. A token fits as the reward or the bond asset once the service has fees, and as governance over slashing conditions.",
+    fits: ["economic_security", "governance", "fee_capture"],
+    avoid: ["fundraising", "bootstrap_supply"],
+    lock: "Lock the slashing conditions, the operator set and the reward split behind a timelock before the token is a bond.",
+    example:
+      "An oracle service pays operators in its own token from fees and lets holders vote on the slashing rule after a year of uptime.",
+  },
+  liquid_restaking_token: {
+    needsToken: "usually",
+    summary:
+      "The liquid restaking token is the product. Governance over which services it restakes into is the one reason for a second token, and only once there is more than one service.",
+    fits: ["token_is_product", "governance"],
+    avoid: ["fundraising", "bootstrap_supply"],
+    lock: "Lock the service set, the share of each and the exit queue behind a timelock before the token is listed anywhere.",
+    example:
+      "A restaking vault issues one receipt token and adds nothing else until it restakes into a second service.",
+  },
+  tokenized_security: {
+    needsToken: "rarely",
+    summary:
+      "The stock or fund token is someone else's and counsel decides most of it. Your token would be a fee or governance claim on the wrapper, which is rarely worth the regulatory question.",
+    fits: ["fee_capture"],
+    avoid: ["token_is_product", "bootstrap_supply", "fundraising", "economic_security"],
+    lock: "Lock the eligibility list maintainer and the freeze role behind a timelock, and keep any fee claim off the security token itself.",
+    example:
+      "A stock token savings app charges a wrapper fee to a treasury and launches no token of its own.",
+  },
+  private_credit_pool: {
+    needsToken: "sometimes",
+    summary:
+      "Lenders hold pool shares and the borrower pays the rate, so the pool works without a token. A token fits as the first loss capital or as governance over which underwriters the pool trusts.",
+    fits: ["economic_security", "governance"],
+    avoid: ["token_is_product", "fundraising"],
+    lock: "Lock the underwriter set, the waterfall and the reporting cadence behind a timelock before the token is first loss capital.",
+    example:
+      "An invoice financing pool stakes its own token as the junior tranche and pays stakers from the spread.",
+  },
+  asset_backed_token: {
+    needsToken: "usually",
+    summary:
+      "The backed token is the product and it must not be the governance token. Anything that shares the issuer's fee or governs the reserve policy is a separate decision.",
+    fits: ["token_is_product"],
+    avoid: ["governance", "economic_security", "fundraising"],
+    lock: "The mint gate on the attested reserve, the freeze role and the custodian are the contract; lock them behind a timelock and keep governance off the backed token.",
+    example:
+      "A regional stablecoin issues the backed token only and keeps the issuer as a company, not a DAO.",
+  },
 };
 
 export const TOKEN_ADVICE_COPY = {

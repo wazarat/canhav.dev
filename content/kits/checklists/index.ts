@@ -13,8 +13,8 @@ import {
   kitShapes,
   productSectionsFor,
   removedGroups,
-  stepGroupsFor,
   toShapeList,
+  withFeatureSteps,
   withKitSteps,
 } from "@/lib/kits";
 
@@ -37,9 +37,12 @@ import {
   HOOK_POOL_CHECKLIST,
 } from "./pools";
 import { LIQUIDITY_ALLOCATOR_CHECKLIST, PERMISSIONED_VAULT_CHECKLIST } from "./vaults";
+import { DELTA_NEUTRAL_VAULT_CHECKLIST, OPTION_VAULT_CHECKLIST, PERP_EXCHANGE_CHECKLIST } from "./derivatives";
+import { LIQUID_RESTAKING_TOKEN_CHECKLIST, LIQUID_STAKING_TOKEN_CHECKLIST, RESTAKING_SERVICE_CHECKLIST } from "./staking";
+import { ASSET_BACKED_TOKEN_CHECKLIST, PRIVATE_CREDIT_POOL_CHECKLIST, TOKENIZED_SECURITY_CHECKLIST } from "./rwa";
 
 /**
- * Build checklists by shape, all thirteen. assertChecklists runs at import and
+ * Build checklists by shape, all twenty-two. assertChecklists runs at import and
  * fails the build on a duplicate id or a reference to a resource or a
  * contract template that is not in its catalog.
  */
@@ -57,6 +60,15 @@ export const KIT_CHECKLISTS: Partial<Record<ProductShape, readonly ChecklistItem
   basic_amm_pool: BASIC_AMM_POOL_CHECKLIST,
   concentrated_liquidity_pool: CONCENTRATED_LIQUIDITY_POOL_CHECKLIST,
   hook_pool: HOOK_POOL_CHECKLIST,
+  perp_exchange: PERP_EXCHANGE_CHECKLIST,
+  option_vault: OPTION_VAULT_CHECKLIST,
+  delta_neutral_vault: DELTA_NEUTRAL_VAULT_CHECKLIST,
+  liquid_staking_token: LIQUID_STAKING_TOKEN_CHECKLIST,
+  restaking_service: RESTAKING_SERVICE_CHECKLIST,
+  liquid_restaking_token: LIQUID_RESTAKING_TOKEN_CHECKLIST,
+  tokenized_security: TOKENIZED_SECURITY_CHECKLIST,
+  private_credit_pool: PRIVATE_CREDIT_POOL_CHECKLIST,
+  asset_backed_token: ASSET_BACKED_TOKEN_CHECKLIST,
 };
 
 /** Every per-shape item for the shapes, lists one after another in table order. For ids and storage. */
@@ -64,28 +76,37 @@ export function checklistFor(shapes: ShapeInput): readonly ChecklistItem[] {
   return toShapeList(shapes).flatMap((s) => KIT_CHECKLISTS[s] ?? []);
 }
 
-type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps">;
+type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps" | "features">;
 
 /**
  * One section per chosen shape with shared steps shown once (M43). What the
- * editor renders. With a kit, the steps it removed are left out and the
- * steps it added sit at the end of their shape's section (M50).
+ * editor renders. With a kit, the steps gated by a feature it has not
+ * ticked are left out (M64), the steps it removed are left out and the
+ * steps it added sit at the end of their shape's section (M50). Without a
+ * kit, every always-on step and no gated step.
  */
 export function sectionsFor(shapes: ShapeInput, kit?: KitSteps): ProductSection[] {
-  const base = productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+  const base = withFeatureSteps(productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes), kit);
   return kit ? withKitSteps(base, kit) : base;
 }
 
 /** Every group across the chosen shapes, section order. Kit aware like sectionsFor. */
 export function groupsFor(shapes: ShapeInput, kit?: KitSteps): StepGroup[] {
-  return kit ? sectionsFor(shapes, kit).flatMap((s) => s.groups) : stepGroupsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes);
+  return kit ? sectionsFor(shapes, kit).flatMap((s) => s.groups) : sectionsFor(shapes).flatMap((s) => s.groups);
 }
 
 /** The catalog steps a kit removed, by the shape whose section listed them (M50). */
 export function removedGroupsFor(
   kit: (Pick<ProjectKit, "shape" | "shapes"> & KitSteps) | undefined,
 ): Map<ProductShape, StepGroup[]> {
-  return removedGroups(productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, kitShapes(kit)), kit);
+  return removedGroups(withFeatureSteps(productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, kitShapes(kit)), kit), kit);
+}
+
+/** Every catalog step across the chosen shapes that is gated by a feature, with its id (M64). */
+export function gatedStepsFor(shapes: ShapeInput): Array<{ id: string; title: string; feature: string }> {
+  return checklistFor(shapes)
+    .filter((i): i is ChecklistItem & { feature: string } => Boolean(i.feature))
+    .map((i) => ({ id: i.id, title: i.title, feature: i.feature }));
 }
 
 /**
