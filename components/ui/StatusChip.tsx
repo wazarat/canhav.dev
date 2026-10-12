@@ -14,10 +14,11 @@ const dotClasses: Record<StatusTone, string> = {
 };
 
 /**
- * Unified status surface: translucent glass chip with a thin ink border,
- * neutral text, and a small colored status dot. Use `pill` for one-line
- * states (network, phase, tranche) and `block` for multiline messages
- * (tx results, callouts). Never hand-roll amber/emerald/rose boxes.
+ * Unified status surface: a flat chip on a subtle ink fill with a hairline
+ * border, neutral text, and a small colored status dot (flat since M74).
+ * Use `pill` for one-line states (network, phase, tranche) and `block` for
+ * multiline messages (tx results, callouts), which reads as a quiet inline
+ * banner. Never hand-roll amber/emerald/rose boxes.
  */
 export function StatusChip({
   tone = "neutral",
@@ -32,11 +33,11 @@ export function StatusChip({
   onClick?: () => void;
 } & React.HTMLAttributes<HTMLElement>) {
   const classes = cn(
-    "glass border border-ink-700/60 text-ink-200",
+    "border border-ink-700/60 bg-ink-800/50 text-ink-200",
     variant === "pill"
-      ? "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs"
-      : "flex items-start gap-2 rounded-lg px-3 py-2 text-left text-xs leading-relaxed",
-    onClick && "transition-colors hover:bg-ink-700/40",
+      ? "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-xs"
+      : "flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-xs leading-relaxed",
+    onClick && "transition-colors hover:bg-ink-800/90",
     className,
   );
   const dot = (

@@ -5,24 +5,26 @@ import { cn } from "@/lib/utils";
 type Variant = "primary" | "secondary" | "ghost" | "outline";
 type Size = "sm" | "md" | "lg";
 
+/**
+ * Flat buttons (M74): one electric fill for the primary action, bordered
+ * surfaces for the rest, rounded-lg like the inputs. No gradients, no glow.
+ */
 const variantClasses: Record<Variant, string> = {
-  primary:
-    "bg-gradient-to-b from-electric-500 to-electric-700 text-white hover:from-electric-400 hover:to-electric-600 btn-glow",
-  secondary: "glass text-ink-50 hover:bg-ink-800/70",
-  ghost: "text-ink-100 hover:bg-ink-800/60",
-  outline:
-    "border border-ink-700 text-ink-50 hover:border-electric-500/60 hover:text-ink-50",
+  primary: "bg-electric-500 text-white hover:bg-electric-400",
+  secondary: "border border-ink-700/60 bg-ink-900 text-ink-50 hover:bg-ink-800/60",
+  ghost: "text-ink-200 hover:bg-ink-800/60 hover:text-ink-50",
+  outline: "border border-ink-700/60 text-ink-50 hover:border-ink-500 hover:bg-ink-800/40",
 };
 
 const sizeClasses: Record<Size, string> = {
   sm: "h-9 px-3.5 text-sm",
-  md: "h-11 px-5 text-sm",
+  md: "h-10 px-4 text-sm",
   lg: "h-12 px-6 text-base",
 };
 
 const baseClasses =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all duration-200 " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 " +
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium transition-colors duration-150 " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 " +
   "disabled:pointer-events-none disabled:opacity-60";
 
 export function buttonClasses({

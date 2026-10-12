@@ -15,7 +15,7 @@ export function ProjectCard({ project, isOwner }: { project: ProjectContext; isO
   const showName = published || isOwner;
   const labels = [...project.sectorLabels, ...project.subsectorLabels, ...project.shapeLabels];
   return (
-    <div className="card-surface mt-8 rounded-2xl border border-ink-700/70 p-6">
+    <div className="card-surface mt-8 rounded-xl border border-ink-700/70 p-6">
       <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-ink-50">
         <Layers className="h-4 w-4 text-electric-300" /> Project
       </h2>

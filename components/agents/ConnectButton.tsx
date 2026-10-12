@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useConnect, useDisconnect } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
+import { Menu, MenuItem } from "@/components/ui/Menu";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { AGENT_CHAIN, AGENTS_UNSUPPORTED_WALLETS } from "@/content/agents";
 
@@ -21,9 +22,6 @@ export function ConnectButton() {
   const { disconnect } = useDisconnect();
   const { isConnected, address, onCorrectChain, ensureChain, switchError } = useAgentChain();
 
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
   // EIP-6963-discovered wallets carry their rdns as id (e.g. "io.metamask");
   // the config's generic fallback connector keeps id "injected". Discovery is
   // client-only, so gate the no-wallet hint behind an effect to avoid a
@@ -37,85 +35,51 @@ export function ConnectButton() {
     typeof window !== "undefined" &&
     typeof (window as { ethereum?: unknown }).ethereum === "undefined";
 
-  // Close the dropdown on outside click or Escape.
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
   if (!isConnected) {
     const fallback = connectors.find((c) => c.id === "injected");
 
     return (
       <div className="flex flex-col items-end gap-1.5">
-        <div ref={menuRef} className="relative">
-          <Button
-            size="sm"
-            disabled={isPending || noWalletDetected}
-            onClick={() => {
-              if (discovered.length > 0) {
-                setOpen((v) => !v);
-              } else if (fallback) {
-                connect({ connector: fallback });
-              }
-            }}
-          >
-            {isPending ? "Connecting…" : "Connect wallet"}
-            {discovered.length > 0 && !isPending ? (
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-            ) : null}
-          </Button>
-
-          {open ? (
-            <div className="glass-strong absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-xl border border-ink-700/70 py-1 shadow-xl">
-              {discovered.map((connector) => {
-                const unsupported = AGENTS_UNSUPPORTED_WALLETS[connector.id];
-                return (
-                  <button
-                    key={connector.uid}
-                    type="button"
-                    disabled={!!unsupported}
-                    onClick={() => {
-                      setOpen(false);
-                      connect({ connector });
-                    }}
-                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ink-100 transition-colors hover:bg-ink-800/70 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                  >
-                    {connector.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={connector.icon}
-                        alt=""
-                        className={`h-5 w-5 rounded ${unsupported ? "opacity-40" : ""}`}
-                      />
-                    ) : (
-                      <span className="h-5 w-5 rounded bg-ink-700" />
-                    )}
-                    <span className="min-w-0">
-                      <span className={`block ${unsupported ? "text-ink-500" : ""}`}>
-                        {connector.name}
-                      </span>
-                      {unsupported ? (
-                        <span className="block text-xs text-ink-600">{unsupported}</span>
-                      ) : null}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
+        <Menu
+          trigger={({ open, toggle }) => (
+            <Button
+              size="sm"
+              disabled={isPending || noWalletDetected}
+              aria-expanded={discovered.length > 0 ? open : undefined}
+              onClick={() => {
+                if (discovered.length > 0) toggle();
+                else if (fallback) connect({ connector: fallback });
+              }}
+            >
+              {isPending ? "Connecting…" : "Connect wallet"}
+              {discovered.length > 0 && !isPending ? (
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+              ) : null}
+            </Button>
+          )}
+        >
+          {discovered.map((connector) => {
+            const unsupported = AGENTS_UNSUPPORTED_WALLETS[connector.id];
+            return (
+              <MenuItem
+                key={connector.uid}
+                disabled={!!unsupported}
+                onSelect={() => connect({ connector })}
+              >
+                {connector.icon ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={connector.icon} alt="" className={`h-5 w-5 rounded ${unsupported ? "opacity-40" : ""}`} />
+                ) : (
+                  <span className="h-5 w-5 rounded bg-ink-700" />
+                )}
+                <span className="min-w-0">
+                  <span className={`block ${unsupported ? "text-ink-500" : ""}`}>{connector.name}</span>
+                  {unsupported ? <span className="block text-xs text-ink-500">{unsupported}</span> : null}
+                </span>
+              </MenuItem>
+            );
+          })}
+        </Menu>
 
         {isPending ? (
           <p className="text-xs text-ink-500">
@@ -135,26 +99,21 @@ export function ConnectButton() {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
+    <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap items-center gap-2">
+        {onCorrectChain ? <StatusChip tone="success">{AGENT_CHAIN.name}</StatusChip> : null}
+        <span className="rounded-lg border border-ink-700/60 bg-ink-900 px-3 py-1.5 font-mono text-xs text-ink-200">
+          {address ? shortAddress(address) : ""}
+        </span>
+        <Button size="sm" variant="ghost" onClick={() => disconnect()}>
+          Disconnect
+        </Button>
+      </div>
       {!onCorrectChain ? (
-        <StatusChip tone="warning" onClick={() => void ensureChain()}>
+        <StatusChip tone="warning" variant="block" onClick={() => void ensureChain()} className="max-w-xs">
           Wrong network. Switch to {AGENT_CHAIN.name}
         </StatusChip>
-      ) : (
-        <StatusChip tone="success">{AGENT_CHAIN.name}</StatusChip>
-      )}
-      <span className="rounded-full border border-ink-700/70 bg-ink-900/60 px-3 py-1 font-mono text-xs text-ink-200">
-        {address ? shortAddress(address) : ""}
-      </span>
-      <button
-        type="button"
-        onClick={() => disconnect()}
-        className="text-xs text-ink-500 transition-colors hover:text-ink-200"
-      >
-        Disconnect
-      </button>
-      </div>
+      ) : null}
       {switchError ? (
         <p className="max-w-sm text-right text-xs text-rose-400">{switchError}</p>
       ) : null}

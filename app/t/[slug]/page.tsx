@@ -66,7 +66,7 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn("glass rounded-2xl border border-ink-800/70 p-5", className)}>
+    <section className={cn("glass rounded-xl border border-ink-800/70 p-5", className)}>
       <h2 className="text-sm font-medium text-ink-100">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
@@ -84,7 +84,7 @@ function Row({ term, detail }: { term: string; detail: React.ReactNode }) {
 
 function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="glass rounded-2xl border border-ink-800/70 p-5">
+    <div className="glass rounded-xl border border-ink-800/70 p-5">
       <p className="text-[11px] uppercase tracking-wide text-ink-500">{label}</p>
       <p className="mt-1 font-display text-xl font-semibold text-ink-50">{value}</p>
       {hint && <p className="mt-0.5 text-[11px] text-ink-500">{hint}</p>}

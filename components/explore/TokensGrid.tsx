@@ -65,7 +65,7 @@ export async function TokensGrid() {
           <Link
             key={t.address}
             href={`/launch/t/${t.address}`}
-            className="card-surface card-lift block rounded-2xl border border-ink-700/70 p-5"
+            className="card-surface card-lift block rounded-xl border border-ink-700/70 p-5"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink-700/60 bg-ink-900/80">

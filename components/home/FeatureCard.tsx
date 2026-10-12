@@ -71,8 +71,8 @@ export function FeatureCard({
   return (
     <div
       className={cn(
-        "group glass flex flex-col overflow-hidden rounded-2xl border border-ink-700/60 transition-all duration-300",
-        "hover:-translate-y-1 hover:border-electric-500/50 hover:shadow-[0_30px_70px_-34px_rgba(61,123,255,0.55)]",
+        "group glass flex flex-col overflow-hidden rounded-xl border border-ink-700/60 transition-all duration-300",
+        "hover:border-electric-500/60",
         className,
       )}
     >

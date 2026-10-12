@@ -36,7 +36,7 @@ export function SoonBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-200",
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-transparent px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-200",
         styles.ring,
         className,
       )}

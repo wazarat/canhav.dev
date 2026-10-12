@@ -26,10 +26,14 @@
     --ink-200: 168 174 191;
     --ink-100: 212 216 228;
     --ink-50: 238 240 247;
+    --electric-200: 189 210 255;
+    --electric-300: 143 179 255;
     --electric-400: 92 146 255;
     --electric-500: 61 123 255;
     --electric-600: 37 99 235;
     --electric-700: 29 78 216;
+    --neon-200: 221 214 254;
+    --neon-300: 196 181 253;
     --neon-400: 167 139 250;
     --neon-500: 139 92 246;
     --neon-600: 124 58 237;
@@ -52,10 +56,14 @@
     --ink-200: 42 49 32;
     --ink-100: 26 34 16;
     --ink-50: 12 21 0;
+    --electric-200: 29 78 216;
+    --electric-300: 37 99 235;
     --electric-400: 61 123 255;
     --electric-500: 37 99 235;
     --electric-600: 29 78 216;
     --electric-700: 30 64 175;
+    --neon-200: 91 33 182;
+    --neon-300: 109 40 217;
     --neon-400: 124 58 237;
     --neon-500: 109 40 217;
     --neon-600: 91 33 182;
@@ -116,26 +124,15 @@
     );
   }
 
-  /* Translucent panel: ink-800 over ink-900 with an ink-300 hairline. */
-  .glass {
-    background: linear-gradient(180deg, rgb(var(--ink-800) / 0.65) 0%, rgb(var(--ink-900) / 0.55) 100%);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid rgb(var(--ink-300) / 0.12);
-  }
-
+  /*
+   * Flat surface (M74). The name stays for the many call sites, the blur
+   * and gradient are gone: a card is the ink-900 surface with a hairline.
+   * Prefer the Card component for new code.
+   */
+  .glass,
   .glass-strong {
-    background: linear-gradient(180deg, rgb(var(--ink-800) / 0.85) 0%, rgb(var(--ink-900) / 0.75) 100%);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgb(var(--ink-300) / 0.16);
-  }
-
-  /* White cards on the light canvas; the gradient reads as grey otherwise. */
-  html.light .glass,
-  html.light .glass-strong {
-    background: rgb(var(--ink-900) / 0.9);
-    border-color: rgb(var(--ink-50) / 0.14);
+    background: rgb(var(--ink-900));
+    border: 1px solid rgb(var(--ink-700) / 0.6);
   }
 
   .grid-bg {
@@ -163,9 +160,7 @@
 
   html.light .glow-ring,
   html.light .btn-glow {
-    box-shadow:
-      0 0 0 1px rgb(var(--ink-50) / 0.1),
-      0 8px 24px -12px rgb(var(--electric-500) / 0.35);
+    box-shadow: 0 0 0 1px rgb(var(--ink-50) / 0.1);
   }
 
   /* Uppercase section label, the landing page's signature kicker. */
@@ -174,12 +169,8 @@
     letter-spacing: 0.14em;
   }
 
-  /* Landing show-card surface: vertical dark gradient panel. */
+  /* Card surface (M74): flat ink-900, same as .glass. */
   .card-surface {
-    background: linear-gradient(180deg, rgba(20, 24, 36, 0.9) 0%, rgba(10, 12, 19, 0.94) 100%);
-  }
-
-  html.light .card-surface {
     background: rgb(var(--ink-900));
   }
 
@@ -191,8 +182,8 @@
       box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .card-lift:hover {
-    transform: translateY(-3px);
-    border-color: rgb(var(--electric-500) / 0.42);
-    box-shadow: 0 30px 70px -34px rgb(var(--electric-500) / 0.55);
+    transform: translateY(-2px);
+    border-color: rgb(var(--electric-500) / 0.5);
+    box-shadow: 0 16px 40px -24px rgb(var(--electric-500) / 0.35);
   }
 }

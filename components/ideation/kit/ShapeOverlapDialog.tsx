@@ -51,7 +51,7 @@ function Dialog({ doc, onClose }: { doc: ProjectDoc; onClose: () => void }) {
       <div
         ref={containerRef}
         tabIndex={-1}
-        className="glass relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-ink-700/70 animate-fade-in-up"
+        className="glass relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-ink-700/70 animate-fade-in-up"
       >
         <button
           type="button"

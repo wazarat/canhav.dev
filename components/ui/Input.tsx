@@ -2,10 +2,14 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Shared text-input styling used by every form on the site. */
+/**
+ * Shared text-input styling used by every form on the site (flat since M74):
+ * a hairline border, a surface one step below the card in dark and white in
+ * light, rounded-lg like the buttons.
+ */
 export const inputClasses =
-  "w-full rounded-xl border border-ink-700/60 bg-ink-950/70 px-3.5 py-2.5 text-sm text-ink-50 " +
-  "placeholder:text-ink-500 focus:border-electric-500/60 focus:outline-none focus:ring-1 focus:ring-electric-500/30";
+  "w-full rounded-lg border border-ink-700/60 bg-ink-950/50 px-3.5 py-2.5 text-sm text-ink-50 light:bg-ink-900 " +
+  "placeholder:text-ink-500 focus:border-electric-500 focus:outline-none focus:ring-1 focus:ring-electric-500/40";
 
 export const Input = React.forwardRef<
   HTMLInputElement,

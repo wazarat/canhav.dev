@@ -28,7 +28,7 @@ export async function ProjectsGrid() {
         <Link
           key={p.id}
           href={`/p/${p.slug}`}
-          className="card-surface card-lift block rounded-2xl border border-ink-700/70 p-5"
+          className="card-surface card-lift block rounded-xl border border-ink-700/70 p-5"
         >
           <p className="truncate font-display text-base font-semibold text-ink-50">
             {p.draft_doc.name}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { Segmented } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { TOKEN_PAGE_COPY } from "@/content/launch";
 import { formatPct } from "@/lib/format";
@@ -64,26 +65,17 @@ export function PriceChart({
   }, [points, range, now, current]);
 
   const tabs = (
-    <div role="tablist" aria-label={C.rangeLabel} className="flex rounded-full border border-ink-700/70 p-0.5">
-      {RANGES.map((r) => (
-        <button
-          key={r.key}
-          type="button"
-          role="tab"
-          aria-selected={range === r.key}
-          onClick={() => {
-            setRange(r.key);
-            setHover(null);
-          }}
-          className={cn(
-            "rounded-full px-2.5 py-1 text-xs transition-colors",
-            range === r.key ? "bg-electric-500/20 text-electric-200" : "text-ink-400 hover:text-ink-200",
-          )}
-        >
-          {r.key}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      size="sm"
+      role="tablist"
+      ariaLabel={C.rangeLabel}
+      value={range}
+      onChange={(r) => {
+        setRange(r);
+        setHover(null);
+      }}
+      options={RANGES.map((r) => ({ value: r.key, label: r.key }))}
+    />
   );
 
   if (points.length === 0)

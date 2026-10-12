@@ -31,7 +31,7 @@ export async function RegistryStatusCard() {
   const nameOk = name === "AgentIdentity";
 
   return (
-    <div className="glass rounded-2xl border border-ink-700/70 p-5">
+    <div className="glass rounded-xl border border-ink-700/70 p-5">
       <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
         Identity Registry
       </p>

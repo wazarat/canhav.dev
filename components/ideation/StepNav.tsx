@@ -44,14 +44,14 @@ export function StepNav({
             type="button"
             onClick={() => onSelect(i)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
               product
                 ? i === current
-                  ? "border border-neon-500/50 bg-neon-500/20 text-neon-200"
-                  : "border border-neon-500/30 text-ink-400 hover:text-ink-200"
+                  ? "border-neon-500 bg-neon-500/10 text-neon-300"
+                  : "border-neon-500/30 text-ink-400 hover:text-ink-200"
                 : i === current
-                  ? "border border-electric-500/50 bg-electric-500/20 text-electric-200"
-                  : "border border-ink-700/70 text-ink-400 hover:text-ink-200",
+                  ? "border-electric-500 bg-electric-500/10 text-electric-300"
+                  : "border-ink-700/60 text-ink-400 hover:text-ink-200",
             )}
           >
             <span

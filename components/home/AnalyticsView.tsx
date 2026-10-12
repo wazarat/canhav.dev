@@ -46,7 +46,7 @@ function ChartCard({ metric }: { metric: ChartMetric }) {
   const hasData = metric.allTime.length > 0;
 
   return (
-    <div className="glass card-lift rounded-2xl border border-ink-700/60 p-6">
+    <div className="glass card-lift rounded-xl border border-ink-700/60 p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="font-display text-lg font-semibold tracking-tight text-ink-50">
@@ -108,7 +108,7 @@ export function AnalyticsView({ chains }: { chains: Record<AnalyticsChain, Analy
   return (
     <section className="space-y-6">
       {/* Summary card: header, stat strip, provenance footnote */}
-      <div className="glass rounded-2xl border border-ink-700/60 p-6 md:p-8">
+      <div className="glass rounded-xl border border-ink-700/60 p-6 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-xl space-y-2">
             <p className="kicker">Protocol analytics</p>

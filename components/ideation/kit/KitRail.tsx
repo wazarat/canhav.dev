@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { KitResourceRow } from "@/components/ideation/kit/KitResourceRow";
 import { Badge } from "@/components/ui/Badge";
+import { Segmented } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { PRIORITY_LABELS, RAIL_COPY, shapeLabels } from "@/content/kits/copy";
@@ -77,7 +78,7 @@ export function KitRail({
 
   if (!kit?.shape) {
     return (
-      <section aria-label={RAIL_COPY.title} className="glass rounded-2xl p-4">
+      <section aria-label={RAIL_COPY.title} className="glass rounded-xl p-4">
         <Header title={RAIL_COPY.title} />
         <StatusChip tone="neutral" variant="block" className="mt-3">
           {RAIL_COPY.noShape}
@@ -91,7 +92,7 @@ export function KitRail({
   };
 
   return (
-    <section aria-label={RAIL_COPY.title} className="glass rounded-2xl p-4">
+    <section aria-label={RAIL_COPY.title} className="glass rounded-xl p-4">
       <Header
         title={RAIL_COPY.title}
         right={
@@ -105,23 +106,18 @@ export function KitRail({
       <AcceptedTemplates kit={kit} />
 
       {step !== null && (
-        <div className="mt-3 flex gap-1 rounded-full border border-ink-800/70 p-0.5 text-xs" role="tablist">
-          {(["step", "all"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              role="tab"
-              aria-selected={scope === s}
-              onClick={() => setScope(s)}
-              className={cn(
-                "flex-1 rounded-full px-3 py-1 font-medium transition-colors",
-                scope === s ? "bg-ink-800 text-ink-50" : "text-ink-400 hover:text-ink-200",
-              )}
-            >
-              {s === "step" ? RAIL_COPY.thisStep : RAIL_COPY.allSteps}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          className="mt-3"
+          size="sm"
+          role="tablist"
+          fill
+          value={scope}
+          onChange={setScope}
+          options={[
+            { value: "step", label: RAIL_COPY.thisStep },
+            { value: "all", label: RAIL_COPY.allSteps },
+          ]}
+        />
       )}
 
       {visible.length > 0 && (

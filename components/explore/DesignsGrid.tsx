@@ -19,7 +19,7 @@ export async function DesignsGrid() {
           <Link
             key={t.id}
             href={`/t/${t.slug}`}
-            className="card-surface card-lift block rounded-2xl border border-ink-700/70 p-5"
+            className="card-surface card-lift block rounded-xl border border-ink-700/70 p-5"
           >
             <div className="flex items-center justify-between gap-2">
               <p className="truncate font-display text-base font-semibold text-ink-50">

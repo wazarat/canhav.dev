@@ -44,7 +44,7 @@ export function LaunchAgentModal({
       <div
         ref={containerRef}
         tabIndex={-1}
-        className="glass relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-ink-700/70 p-6 md:p-7"
+        className="glass relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-ink-700/70 p-6 md:p-7"
       >
         <button
           type="button"

@@ -43,7 +43,7 @@ export function TemplateCard({
   return (
     <article
       className={cn(
-        "card-surface space-y-3 rounded-2xl border border-ink-700/70 p-4",
+        "card-surface space-y-3 rounded-xl border border-ink-700/70 p-4",
         inactive && "opacity-80",
         className,
       )}

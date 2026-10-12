@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Info } from "lucide-react";
 
 import { AgentChangesPanel } from "@/components/ideation/AgentChangesPanel";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useDraftSave } from "@/components/ideation/useDraftSave";
 
 import { EditorShell } from "@/components/ideation/EditorShell";
-import { SelectField } from "@/components/ideation/SelectField";
+import { SelectField } from "@/components/ui/Select";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
 import { TextField } from "@/components/ideation/TextField";
 import { useAutosave } from "@/components/ideation/useAutosave";
@@ -25,12 +24,11 @@ import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { templateChainCounts, templatesForShapes } from "@/lib/templates";
 import { ReviewPasses } from "@/components/ideation/kit/ReviewPasses";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
-import {
-  CardMultiSelectGroups,
-  ChipMultiSelectGroups,
-  type ChipOption,
-  ChipRadioGroup,
-} from "@/components/ui/ChipGroup";
+import { ChipMultiSelectGroups, type ChipOption, ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { ChoiceCardGroups } from "@/components/ui/ChoiceCard";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { InfoTip } from "@/components/ui/InfoTip";
+import { SegmentedField } from "@/components/ui/Segmented";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
@@ -387,17 +385,21 @@ export function ProjectEditor({
       <div className={showRail ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]" : undefined}>
       <div>
       {rail ? (
-        <details className="glass mb-6 rounded-2xl lg:hidden">
-          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-ink-100">
-            {RAIL_COPY.title}
-            {railCounts ? (
-              <span className="ml-2 text-xs text-ink-400">
-                {RAIL_COPY.selectedOf(railCounts.selected, railCounts.total)}
-              </span>
-            ) : null}
-          </summary>
-          <div className="px-2 pb-2">{rail}</div>
-        </details>
+        <Collapsible
+          className="mb-6 lg:hidden"
+          summary={
+            <>
+              {RAIL_COPY.title}
+              {railCounts ? (
+                <span className="ml-2 text-xs text-ink-400">
+                  {RAIL_COPY.selectedOf(railCounts.selected, railCounts.total)}
+                </span>
+              ) : null}
+            </>
+          }
+        >
+          {rail}
+        </Collapsible>
       ) : null}
       {stale ? <StaleDraftNotice /> : null}
       <div className="max-w-2xl space-y-6">
@@ -412,19 +414,18 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.name.max}
               placeholder="What is this called?"
             />
-            <ChipRadioGroup
+            <SegmentedField
               label={CHAIN_COPY.label}
               hint={chainLocked ? CHAIN_COPY.locked : CHAIN_COPY.hint}
               value={chainKey}
               onChange={(v) => {
-                // A radio can be unticked to "", and the chain always has a value.
-                if (v && !chainLocked) patch({ chain: v as ProjectChain });
+                if (!chainLocked) patch({ chain: v as ProjectChain });
               }}
               options={CHAIN_COPY.options.map((o) =>
                 chainLocked && o.value !== chainKey ? { ...o, disabled: true } : o,
               )}
             />
-            <CardMultiSelectGroups
+            <ChoiceCardGroups
               label={SECTOR_COPY.label}
               required
               hint={SECTOR_COPY.hint}
@@ -436,7 +437,7 @@ export function ProjectEditor({
               {closedSectorLabels().length ? (
                 <p className="text-xs text-ink-400">{SECTOR_COPY.moreSoon(closedSectorLabels())}</p>
               ) : null}
-            </CardMultiSelectGroups>
+            </ChoiceCardGroups>
             {sectors.includes("other") && (
               <TextField
                 label={SECTOR_COPY.otherLabel}
@@ -448,7 +449,7 @@ export function ProjectEditor({
               />
             )}
             {subsectorGroups.length > 0 && (
-              <CardMultiSelectGroups
+              <ChoiceCardGroups
                 label={SECTOR_COPY.subsectorLabel}
                 required
                 hint={SECTOR_COPY.subsectorHint}
@@ -463,7 +464,7 @@ export function ProjectEditor({
                 {subsectorGated ? (
                   <p className="text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
                 ) : null}
-              </CardMultiSelectGroups>
+              </ChoiceCardGroups>
             )}
             {showRail && (
               <>
@@ -478,25 +479,13 @@ export function ProjectEditor({
                           <p className="text-xs leading-relaxed text-ink-100">{b.line}</p>
                           {b.gateNote ? <p className="mt-1 text-xs text-ink-400">{b.gateNote}</p> : null}
                           {b.noTemplate ? (
-                            <span className="group relative mt-2 inline-flex">
-                              <StatusChip tone="info">
-                                {TEMPLATE_COPY.noneOnChainNote(chain.mainnetName)}
-                                <button
-                                  type="button"
-                                  aria-label={TEMPLATE_COPY.noneOnChainAria}
-                                  className="ml-1.5 inline-flex rounded-full text-ink-400 transition-colors hover:text-ink-100 focus:outline-none"
-                                >
-                                  <Info aria-hidden className="h-3.5 w-3.5" />
-                                </button>
-                              </StatusChip>
-                              <span
-                                role="tooltip"
-                                className="glass pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-80 space-y-2 rounded-xl border border-ink-700/60 p-3 text-xs leading-relaxed text-ink-200 group-hover:block group-focus-within:block"
-                              >
+                            <StatusChip tone="info" className="mt-2">
+                              {TEMPLATE_COPY.noneOnChainNote(chain.mainnetName)}
+                              <InfoTip label={TEMPLATE_COPY.noneOnChainAria} className="ml-0.5">
                                 <span className="block">{TEMPLATE_COPY.noneOnChainDetail(chain.mainnetName)}</span>
-                                <span className="block text-ink-100">{b.plan}</span>
-                              </span>
-                            </span>
+                                <span className="mt-2 block text-ink-100">{b.plan}</span>
+                              </InfoTip>
+                            </StatusChip>
                           ) : null}
                         </li>
                       ))}

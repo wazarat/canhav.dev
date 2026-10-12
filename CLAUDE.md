@@ -13,12 +13,35 @@ for the rare exception. Tailwind config edits need a dev server restart.
 
 ## UI conventions
 
+### Flat controls (M74)
+
+Surfaces are flat: a hairline border on the ink-900 surface, no blur, no
+glow, no gradients. Radii settle at `rounded-md` for chips and badges,
+`rounded-lg` for buttons, inputs and rows, `rounded-xl` for cards. Pills
+(`rounded-full`) are only for dots, progress bars and the nav Soon badge.
+Build on the primitives in `components/ui` instead of inline surface
+classes:
+
+- `Card` and `CardSection` (`Card.tsx`) for any panel; sections divide one
+  card the thirdweb way. `.glass` still exists for old call sites and
+  renders the same flat surface; do not use it in new code.
+- `Select` and `SelectField` (`Select.tsx`) for every native select, with
+  `optionClasses` on the options.
+- `Segmented` and `SegmentedField` (`Segmented.tsx`) for two to four
+  exclusive options: chain, project mode, steppers, view toggles and
+  tablists (`role="tablist"`). Options with `href` render as links.
+- `ChoiceCardGroups` (`ChoiceCard.tsx`) for full width lettered choice rows
+  (sectors, subsectors). `ChipMultiSelect` and `ChipRadioGroup` stay for
+  short multi picks (shapes, verdicts, modes).
+- `Menu` and `MenuItem` (`Menu.tsx`) for dropdowns, `InfoTip` for helper
+  copy behind an info icon, `Collapsible` for "Learn more" rows.
+
 ### Status surfaces — always `StatusChip`
 
 Every status pill, badge, or message box (network state, sale phase, tranche
 state, tx success/error, callouts) uses `components/ui/StatusChip.tsx`: a
-translucent `.glass` chip with a thin ink border and neutral `ink-200` text —
-the **only** color is the small status dot.
+flat chip on a subtle ink fill with a hairline border and neutral `ink-200`
+text, the **only** color is the small status dot.
 
 - `variant="pill"` for one-line states, `variant="block"` for multiline
   messages. Pass `onClick` to get a `<button>` with hover state.

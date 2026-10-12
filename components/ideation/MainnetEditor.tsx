@@ -48,7 +48,7 @@ export function MainnetEditor({
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-ink-800/70 p-4">
+    <div className="space-y-4 rounded-xl border border-ink-800/70 p-4">
       <div>
         <span className="text-xs font-medium text-ink-200">{MAINNET_COPY.label}</span>
         <p className="mt-1 text-xs leading-relaxed text-ink-400">{MAINNET_COPY.hint}</p>

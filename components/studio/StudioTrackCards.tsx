@@ -194,7 +194,7 @@ export function StudioTrackCards() {
           onClick={() => void createDraft("token")}
           disabled={working !== null}
           aria-busy={working === "token"}
-          className="group glass w-full overflow-hidden rounded-2xl border border-ink-700/60 text-left transition-all duration-300 hover:-translate-y-1 hover:border-electric-500/50 hover:shadow-[0_30px_70px_-34px_rgba(61,123,255,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/70 disabled:cursor-wait disabled:opacity-80"
+          className="group glass w-full overflow-hidden rounded-xl border border-ink-700/60 text-left transition-colors duration-150 hover:border-electric-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/70 disabled:cursor-wait disabled:opacity-80"
         >
           <CardShell
             tint="electric"
@@ -217,7 +217,7 @@ export function StudioTrackCards() {
           onClick={() => void createDraft("project")}
           disabled={working !== null}
           aria-busy={working === "project"}
-          className="group glass w-full overflow-hidden rounded-2xl border border-ink-700/60 text-left transition-all duration-300 hover:-translate-y-1 hover:border-neon-500/50 hover:shadow-[0_30px_70px_-34px_rgba(139,92,246,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-500/70 disabled:cursor-wait disabled:opacity-80"
+          className="group glass w-full overflow-hidden rounded-xl border border-ink-700/60 text-left transition-colors duration-150 hover:border-neon-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-500/70 disabled:cursor-wait disabled:opacity-80"
         >
           <CardShell
             tint="neon"
@@ -235,7 +235,7 @@ export function StudioTrackCards() {
           />
         </button>
 
-        <div className="glass overflow-hidden rounded-2xl border border-ink-800/70">
+        <div className="glass overflow-hidden rounded-xl border border-ink-800/70">
           <CardShell
             muted
             tint="signal"

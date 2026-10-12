@@ -40,7 +40,7 @@ export function ComputedPanel({
 
   return (
     <div className="space-y-5">
-      <div className="glass rounded-2xl border border-ink-800/70 p-5">
+      <div className="glass rounded-xl border border-ink-800/70 p-5">
         <h3 className="text-sm font-medium text-ink-200">Computed, not asked</h3>
         <div className="mt-4 grid grid-cols-3 gap-3">
           <Stat label="Float at launch" value={fmtPct(d.floatAtLaunchPct)} />

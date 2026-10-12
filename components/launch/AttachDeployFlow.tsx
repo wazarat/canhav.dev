@@ -76,7 +76,7 @@ export function AttachDeployFlow({ designId }: { designId: string }) {
   }
 
   return (
-    <div className="glass max-w-xl space-y-5 rounded-2xl border border-ink-700/70 p-6">
+    <div className="glass max-w-xl space-y-5 rounded-xl border border-ink-700/70 p-6">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-ink-300">
           Connect the wallet that deployed the token, paste the contract

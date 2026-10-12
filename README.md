@@ -520,5 +520,10 @@ event window so judges can verify it.
   white page, white cards, near black text). Every colour is a CSS variable, so
   dark looks exactly as before; the choice is remembered per browser and the
   first visit follows the system setting.
+- Oct 12, 2026. Flat controls (M74). Cards, buttons, inputs and status chips
+  are flat with hairline borders; the chain and project choices, the launch
+  stepper and the explore toggle are segmented controls; sectors and
+  subsectors are lettered choice rows; selects carry a chevron; the wallet
+  menu and the wrong network notice sit under the connect button.
 
 This list grows as work lands on the branch.

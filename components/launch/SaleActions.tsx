@@ -262,7 +262,7 @@ export function SaleActions({
   if (!hasAnything) return null;
 
   return (
-    <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
+    <div className="card-surface mt-4 rounded-xl border border-ink-700/70 p-5">
       {liveSale ? (
         <div className="flex flex-wrap items-end gap-3">
           <Field label={`Buy ${symbol}`} error={undefined} hint="Whole tokens; payment is exact">

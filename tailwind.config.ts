@@ -49,6 +49,8 @@ const config: Config = {
         },
         electric: {
           DEFAULT: v("electric-500"),
+          200: v("electric-200"),
+          300: v("electric-300"),
           400: v("electric-400"),
           500: v("electric-500"),
           600: v("electric-600"),
@@ -56,6 +58,8 @@ const config: Config = {
         },
         neon: {
           DEFAULT: v("neon-500"),
+          200: v("neon-200"),
+          300: v("neon-300"),
           400: v("neon-400"),
           500: v("neon-500"),
           600: v("neon-600"),

@@ -168,7 +168,7 @@ export function EscrowActions({
   }
 
   return (
-    <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
+    <div className="card-surface mt-4 rounded-xl border border-ink-700/70 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-300">
           {isCreator

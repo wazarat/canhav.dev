@@ -11,7 +11,7 @@ const TINT_CLASSES: Record<Tint, string> = {
 
 function ProductCard({ item }: { item: ProductLine }) {
   return (
-    <div className="group glass block overflow-hidden rounded-2xl border border-ink-700/60 transition-all duration-300 hover:-translate-y-1 hover:border-electric-500/50 hover:shadow-[0_30px_70px_-34px_rgba(61,123,255,0.55)]">
+    <div className="group glass block overflow-hidden rounded-xl border border-ink-700/60 transition-colors duration-150 hover:border-electric-500/60">
       {/* Visual header: tinted backdrop + floating mini terminal window */}
       <div
         aria-hidden="true"

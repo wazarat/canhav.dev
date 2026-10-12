@@ -233,7 +233,7 @@ export function AgentChangesPanel({
   return (
     <section
       id={AGENT_COPY.anchor}
-      className="glass mt-10 scroll-mt-24 max-w-2xl rounded-2xl border border-ink-800/70 p-5"
+      className="glass mt-10 scroll-mt-24 max-w-2xl rounded-xl border border-ink-800/70 p-5"
       aria-label={AGENT_COPY.title}
     >
       <h3 className="text-sm font-medium text-ink-100">{AGENT_COPY.title}</h3>

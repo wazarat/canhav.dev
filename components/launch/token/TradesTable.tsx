@@ -44,7 +44,7 @@ export function TradesTable({
   const shown = rows.slice(page * PAGE, page * PAGE + PAGE);
 
   return (
-    <div className="card-surface mt-6 rounded-2xl border border-ink-700/70 p-6">
+    <div className="card-surface mt-6 rounded-xl border border-ink-700/70 p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold tracking-tight text-ink-50">{C.title}</h2>
         <span className="tabular rounded-full border border-ink-700/70 px-2.5 py-0.5 text-xs text-ink-400">

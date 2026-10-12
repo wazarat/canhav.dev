@@ -111,7 +111,7 @@ export function MilestoneUpdateComposer({
   }
 
   return (
-    <div className="card-surface mt-4 rounded-2xl border border-ink-700/70 p-5">
+    <div className="card-surface mt-4 rounded-xl border border-ink-700/70 p-5">
       <p className="text-sm text-ink-300">
         Post a progress update. It is stored content-addressed, with the hash anchored on-chain.
       </p>

@@ -337,7 +337,7 @@ export default async function TokenPage({
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
       <div className="flex min-w-0 items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-ink-700/60 bg-ink-900/80">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink-700/60 bg-ink-900/80">
           {token.imageURI ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={token.imageURI} alt="" className="h-full w-full object-cover" />
@@ -399,7 +399,7 @@ export default async function TokenPage({
       />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="card-surface rounded-2xl border border-ink-700/70 p-6 lg:self-start">
+        <div className="card-surface rounded-xl border border-ink-700/70 p-6 lg:self-start">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold tracking-tight text-ink-50">
               {TOKEN_PAGE_COPY.trade.title}
@@ -451,7 +451,7 @@ export default async function TokenPage({
           ) : null}
         </div>
 
-        <div className="card-surface min-w-0 rounded-2xl border border-ink-700/70 p-6">
+        <div className="card-surface min-w-0 rounded-xl border border-ink-700/70 p-6">
           <MarketStats
             price={price === null ? "n/a" : `${formatEthAmount(price)} ETH`}
             marketCap={price === null ? "n/a" : `${formatEthAmount(price * supply)} ETH`}
@@ -487,7 +487,7 @@ export default async function TokenPage({
         now={now}
       />
 
-      <div className="card-surface mt-6 rounded-2xl border border-ink-700/70 p-6">
+      <div className="card-surface mt-6 rounded-xl border border-ink-700/70 p-6">
         <h2 className="mb-2 font-display text-lg font-semibold tracking-tight text-ink-50">
           {TOKEN_PAGE_COPY.record}
         </h2>

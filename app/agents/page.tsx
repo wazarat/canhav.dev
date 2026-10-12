@@ -35,7 +35,7 @@ export default async function AgentsPage() {
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
           {AGENTS_COPY.title}
         </h1>
-        <StatusChip variant="block" tone="error" className="mt-8 max-w-2xl rounded-2xl p-6 text-sm">
+        <StatusChip variant="block" tone="error" className="mt-8 max-w-2xl rounded-xl p-6 text-sm">
           <span className="block font-medium text-ink-100">Configuration error</span>
           <span className="mt-2 block leading-relaxed text-ink-300">{AGENT_CHAIN_ISSUE}</span>
         </StatusChip>
@@ -75,7 +75,7 @@ export default async function AgentsPage() {
           </p>
           <div className="mt-4">
             {agents === null ? (
-              <div className="glass rounded-2xl border border-ink-700/70 p-8 text-center">
+              <div className="glass rounded-xl border border-ink-700/70 p-8 text-center">
                 <p className="text-sm text-ink-300">
                   Indexer offline. Start it with{" "}
                   <code className="rounded bg-ink-900/80 px-1.5 py-0.5 font-mono text-xs text-ink-200">
@@ -84,7 +84,7 @@ export default async function AgentsPage() {
                 </p>
               </div>
             ) : agents.length === 0 ? (
-              <div className="glass rounded-2xl border border-ink-700/70 p-8 text-center">
+              <div className="glass rounded-xl border border-ink-700/70 p-8 text-center">
                 <p className="text-sm text-ink-300">No agents registered yet.</p>
               </div>
             ) : (
@@ -92,7 +92,7 @@ export default async function AgentsPage() {
                 {agents.map((a) => (
                   <li
                     key={a.agentId}
-                    className="card-surface rounded-2xl border border-ink-700/70 p-4"
+                    className="card-surface rounded-xl border border-ink-700/70 p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <a

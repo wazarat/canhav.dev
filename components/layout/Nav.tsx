@@ -8,7 +8,7 @@ import { NAV_LINKS } from "@/content/site";
 
 export function Nav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-800/60 bg-ink-950/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-ink-700/40 bg-ink-950/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between gap-3 sm:gap-4">
         <Logo compact />
         <div className="flex items-center gap-3 sm:gap-6">

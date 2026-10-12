@@ -44,7 +44,7 @@ function ResourceDialog({
       <div
         ref={containerRef}
         tabIndex={-1}
-        className="glass relative z-10 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-ink-700/70 animate-fade-in-up"
+        className="glass relative z-10 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-xl border border-ink-700/70 animate-fade-in-up"
       >
         <button
           type="button"
@@ -104,7 +104,7 @@ function ResourceTrigger({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-ink-700/60 bg-ink-900/60 px-2.5 py-1 text-[11px] font-medium text-ink-300 transition-colors hover:border-electric-500/40 hover:text-ink-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-ink-700/60 bg-ink-900 px-2.5 py-1 text-[11px] font-medium text-ink-300 transition-colors hover:border-electric-500/40 hover:text-ink-50"
       >
         <BookOpen aria-hidden className="h-3 w-3 text-electric-400" />
         {label}

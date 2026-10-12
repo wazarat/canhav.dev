@@ -124,7 +124,7 @@ export function LinkPanel({
   const editorBase = selfType === "project" ? "/studio/token" : "/studio/project";
 
   return (
-    <div className="glass mt-10 max-w-2xl rounded-2xl border border-ink-800/70 p-5">
+    <div className="glass mt-10 max-w-2xl rounded-xl border border-ink-800/70 p-5">
       <h3 className="text-sm font-medium text-ink-100">
         Linked {otherLabel}
       </h3>

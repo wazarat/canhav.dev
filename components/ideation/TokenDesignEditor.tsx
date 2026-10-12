@@ -7,7 +7,7 @@ import { ComputedPanel } from "@/components/ideation/ComputedPanel";
 import { EditorShell } from "@/components/ideation/EditorShell";
 import { NameTickerCheck } from "@/components/ideation/NameTickerCheck";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
-import { SelectField } from "@/components/ideation/SelectField";
+import { SelectField } from "@/components/ui/Select";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
 import { TextField } from "@/components/ideation/TextField";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";

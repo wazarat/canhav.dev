@@ -27,7 +27,7 @@ export function KitHandoff({
   const cls =
     "inline-flex items-center gap-1.5 rounded-full border border-ink-700/70 px-3 py-1 text-xs font-medium text-ink-300 transition-colors hover:border-electric-500/50 hover:text-electric-200";
   return (
-    <section className="glass mt-6 rounded-2xl p-5" aria-label={HANDOFF_COPY.title}>
+    <section className="glass mt-6 rounded-xl p-5" aria-label={HANDOFF_COPY.title}>
       <h3 className="font-display text-sm font-semibold text-ink-50">{HANDOFF_COPY.title}</h3>
       <p className="mt-1 text-xs leading-relaxed text-ink-400">{HANDOFF_COPY.intro}</p>
       {venueLine ? <p className="mt-2 text-xs leading-relaxed text-ink-300">{venueLine}</p> : null}

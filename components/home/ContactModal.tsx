@@ -103,7 +103,7 @@ export function ContactModal({
       <div
         ref={containerRef}
         tabIndex={-1}
-        className="glass relative z-10 max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-ink-700/70 animate-fade-in-up"
+        className="glass relative z-10 max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-ink-700/70 animate-fade-in-up"
       >
         <button
           type="button"

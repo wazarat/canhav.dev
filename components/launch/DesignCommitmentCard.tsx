@@ -31,7 +31,7 @@ export function DesignCommitmentCard({
         slug={commitment.slug}
         summary={commitment.doc.rationale.beyondDatabaseRow}
       />
-      <div className="card-surface rounded-2xl border border-ink-700/70 p-6">
+      <div className="card-surface rounded-xl border border-ink-700/70 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-xl font-semibold tracking-tight text-ink-50">Milestones</h2>
           {commitment.verified ? (

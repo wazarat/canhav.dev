@@ -20,7 +20,7 @@ export function LinkedEntityCard({
   return (
     <Link
       href={href}
-      className="card-surface card-lift block rounded-2xl border border-ink-700/70 p-5"
+      className="card-surface card-lift block rounded-xl border border-ink-700/70 p-5"
     >
       <p className="text-[11px] uppercase tracking-wide text-ink-500">
         {type === "project" ? "Linked project" : "Linked token design"}

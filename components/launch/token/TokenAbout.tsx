@@ -42,7 +42,7 @@ export function TokenAbout({
 }) {
   const C = TOKEN_PAGE_COPY.about;
   return (
-    <div className="card-surface glow-ring mt-8 rounded-2xl border border-ink-700/70 p-6">
+    <div className="card-surface glow-ring mt-8 rounded-xl border border-ink-700/70 p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h2 className="font-display text-lg font-semibold tracking-tight text-ink-50">{C.title}</h2>
         <StatusChip tone="neutral">{networkName}</StatusChip>

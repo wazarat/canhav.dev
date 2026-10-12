@@ -7,7 +7,10 @@ import { decodeEventLog, formatEther, parseEther } from "viem";
 import { useAccount, useBalance, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
+import { Segmented, SegmentedField } from "@/components/ui/Segmented";
+import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import type { ProjectContext } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
@@ -44,7 +47,6 @@ import {
   validateXHandle,
 } from "@/content/launch";
 
-import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 
 import { AccountLink, type LinkedProject } from "./AccountLink";
@@ -490,7 +492,7 @@ export function LaunchForm({
 
   if (status.kind === "success") {
     return (
-      <div className="glass mx-auto max-w-xl rounded-2xl border border-ink-700/70 p-8 text-center">
+      <div className="glass mx-auto max-w-xl rounded-xl border border-ink-700/70 p-8 text-center">
         <StatusChip tone="success" variant="pill">
           Deployed on {net.name}
         </StatusChip>
@@ -586,38 +588,28 @@ export function LaunchForm({
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="glass rounded-2xl border border-ink-700/70 p-6 md:p-7">
+      <Card className="p-6 md:p-7">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {([1, 2] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                disabled={s === 2 && (!step1Valid || !!journeyProblem)}
-                onClick={() => setStep(s)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-                  step === s
-                    ? "bg-electric-500/20 text-electric-200 border border-electric-500/50"
-                    : "border border-ink-700/70 text-ink-400 hover:text-ink-200",
-                )}
-              >
-                {s}. {s === 1 ? "Token" : "Launch"}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            size="sm"
+            ariaLabel="Step"
+            value={String(step)}
+            onChange={(v) => setStep(Number(v) as 1 | 2)}
+            options={[
+              { value: "1", label: "1. Token" },
+              { value: "2", label: "2. Launch", disabled: !step1Valid || !!journeyProblem },
+            ]}
+          />
           <ConnectButton chain={chain} />
         </div>
 
         {fixedChain ? null : (
           <div className="mb-5">
-            <ChipRadioGroup
+            <SegmentedField
               label={LAUNCH_CHAIN_COPY.label}
               hint={LAUNCH_CHAIN_COPY.hint}
               value={chain}
-              onChange={(v) => {
-                if (v) setPickedChain(v);
-              }}
+              onChange={(v) => setPickedChain(v)}
               options={LAUNCH_CHAIN_COPY.options}
             />
           </div>
@@ -798,7 +790,7 @@ export function LaunchForm({
             ) : null}
 
             {offerProject ? (
-              <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
+              <div className="rounded-lg border border-ink-700/60 bg-ink-950/40 p-4 light:bg-ink-800/30">
                 {projects === null ? (
                   <>
                     <p className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.label}</p>
@@ -815,34 +807,32 @@ export function LaunchForm({
                   </>
                 ) : (
                   <>
-                    <ChipRadioGroup
+                    <SegmentedField
                       label={LAUNCH_PROJECT_COPY.label}
                       hint={LAUNCH_PROJECT_COPY.hint}
                       value={projectMode}
-                      onChange={(v) => setProjectMode(v || "none")}
+                      onChange={(v) => setProjectMode(v)}
                       options={LAUNCH_PROJECT_COPY.options}
                     />
                     {projectMode === "existing" ? (
                       chainProjects.length > 0 ? (
-                        <select
-                          value={pickedProject?.id ?? ""}
-                          onChange={(e) => setPickedProjectId(e.target.value)}
-                          aria-label={LAUNCH_PROJECT_COPY.label}
-                          className={cn(
-                            inputClasses,
-                            "mt-3 max-w-xs appearance-none",
-                            !pickedProject && "text-ink-500",
-                          )}
-                        >
-                          <option value="" disabled>
-                            {LAUNCH_PROJECT_COPY.choose}
-                          </option>
-                          {chainProjects.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-ink-950 text-ink-50">
-                              {p.name || "Untitled"}
+                        <div className="mt-3 max-w-xs">
+                          <Select
+                            value={pickedProject?.id ?? ""}
+                            muted={!pickedProject}
+                            onChange={(e) => setPickedProjectId(e.target.value)}
+                            aria-label={LAUNCH_PROJECT_COPY.label}
+                          >
+                            <option value="" disabled>
+                              {LAUNCH_PROJECT_COPY.choose}
                             </option>
-                          ))}
-                        </select>
+                            {chainProjects.map((p) => (
+                              <option key={p.id} value={p.id} className={optionClasses}>
+                                {p.name || "Untitled"}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
                       ) : (
                         <div className="mt-3">
                           <StatusChip tone="neutral" variant="block">
@@ -1053,7 +1043,7 @@ export function LaunchForm({
             ) : null}
           </div>
         )}
-      </div>
+      </Card>
 
       <div className="lg:sticky lg:top-24 lg:self-start">
         <TokenPreviewCard

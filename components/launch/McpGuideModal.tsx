@@ -113,7 +113,7 @@ export function McpGuideModal({
       <div
         ref={containerRef}
         tabIndex={-1}
-        className="glass relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-ink-700/70 p-6 md:p-7"
+        className="glass relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-ink-700/70 p-6 md:p-7"
       >
         <button
           type="button"
@@ -161,7 +161,7 @@ export function McpGuideModal({
           />
         </div>
 
-        <details className="glass mt-6 rounded-2xl">
+        <details className="glass mt-6 rounded-xl">
           <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-ink-100">
             {MCP_GUIDE.stepsToggle}
           </summary>

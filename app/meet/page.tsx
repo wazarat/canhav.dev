@@ -19,7 +19,7 @@ export default function MeetPage() {
       <iframe
         src={CONTACT_COPY.bookingEmbedUrl}
         title={CONTACT_COPY.bookingCta}
-        className="h-[calc(100svh-7rem)] min-h-[640px] w-full rounded-2xl border border-ink-700/60 bg-white"
+        className="h-[calc(100svh-7rem)] min-h-[640px] w-full rounded-xl border border-ink-700/60 bg-white"
         allow="payment"
       />
     </div>

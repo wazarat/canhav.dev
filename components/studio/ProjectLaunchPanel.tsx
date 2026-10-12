@@ -8,7 +8,7 @@ import { Cable } from "lucide-react";
 import { LaunchAgentModal } from "@/components/launch/LaunchAgentModal";
 import { patchLaunchProject } from "@/components/studio/LaunchRowActions";
 import { Button } from "@/components/ui/Button";
-import { inputClasses } from "@/components/ui/Input";
+import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { MAINNET_COPY } from "@/content/ideation";
 import { LAUNCH_PROJECT_COPY, MCP_CONNECT } from "@/content/launch";
@@ -66,7 +66,7 @@ export function ProjectLaunchPanel({
   return (
     <div
       id={LAUNCH_PROJECT_COPY.panelAnchor}
-      className="glass mt-6 max-w-2xl scroll-mt-28 rounded-2xl border border-ink-800/70 p-5"
+      className="glass mt-6 max-w-2xl scroll-mt-28 rounded-xl border border-ink-800/70 p-5"
     >
       <h3 className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.panelTitle}</h3>
       <p className="mt-1 text-xs text-ink-500">{LAUNCH_PROJECT_COPY.panelLead}</p>
@@ -100,22 +100,23 @@ export function ProjectLaunchPanel({
 
         {candidates.length > 0 ? (
           <div className="flex flex-wrap items-center gap-3">
-            <select
+            <Select
               value={choice}
+              muted={!choice}
               onChange={(e) => setChoice(e.target.value)}
               aria-label={LAUNCH_PROJECT_COPY.panelLink}
-              className={cn(inputClasses, "max-w-xs appearance-none", !choice && "text-ink-500")}
+              className="max-w-xs"
             >
               <option value="" disabled>
                 {LAUNCH_PROJECT_COPY.panelChoose}
               </option>
               {candidates.map((c) => (
-                <option key={c.address} value={c.address} className="bg-ink-950 text-ink-50">
+                <option key={c.address} value={c.address} className={optionClasses}>
                   {c.name}
                   {c.symbol ? ` $${c.symbol}` : ""}
                 </option>
               ))}
-            </select>
+            </Select>
             <Button
               size="sm"
               variant="outline"

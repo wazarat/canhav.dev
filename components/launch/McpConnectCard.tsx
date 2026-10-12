@@ -73,7 +73,7 @@ export function LaunchPrompt({ target }: { target: Extract<McpTarget, { kind: "l
         text={MCP_CONNECT.launchPastePrompt(target)}
         hint={target.project ? MCP_CONNECT.pasteLaunchProjectHint : MCP_CONNECT.pasteLaunchHint}
       />
-      <details className="glass rounded-2xl">
+      <details className="glass rounded-xl">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-ink-100">
           {MCP_CONNECT.byHandToggle}
         </summary>
@@ -106,7 +106,7 @@ export function McpConnectCard({
   const [guideOpen, setGuideOpen] = useState(false);
 
   return (
-    <div className={cn("glass rounded-2xl border border-ink-700/70 p-5 md:p-6", className)}>
+    <div className={cn("glass rounded-xl border border-ink-700/70 p-5 md:p-6", className)}>
       <div className="flex items-center gap-2">
         <Cable className="h-4 w-4 text-neon-300" aria-hidden />
         <h3 className="font-display text-base font-semibold tracking-tight text-ink-50">

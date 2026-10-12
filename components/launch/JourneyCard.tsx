@@ -20,7 +20,7 @@ export function JourneyCard({
   updates?: Record<number, VerifiedUpdate[]>;
 }) {
   return (
-    <div className="card-surface mt-8 rounded-2xl border border-ink-700/70 p-6">
+    <div className="card-surface mt-8 rounded-xl border border-ink-700/70 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-xl font-semibold tracking-tight text-ink-50">
           Journey

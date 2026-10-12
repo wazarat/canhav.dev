@@ -6,7 +6,7 @@ import { Cable } from "lucide-react";
 
 import { LaunchAgentModal } from "@/components/launch/LaunchAgentModal";
 import { Button } from "@/components/ui/Button";
-import { inputClasses } from "@/components/ui/Input";
+import { Select, optionClasses } from "@/components/ui/Select";
 import { LAUNCH_PROJECT_COPY, MCP_CONNECT } from "@/content/launch";
 import { cn } from "@/lib/utils";
 
@@ -99,21 +99,22 @@ export function LaunchRowActions({
           <div className="flex flex-wrap items-center gap-3">
             {others.length > 0 ? (
               <>
-                <select
+                <Select
                   value={choice}
+                  muted={!choice}
                   onChange={(e) => setChoice(e.target.value)}
                   aria-label={LAUNCH_PROJECT_COPY.linkTitle}
-                  className={cn(inputClasses, "max-w-xs appearance-none", !choice && "text-ink-500")}
+                  className="max-w-xs"
                 >
                   <option value="" disabled>
                     {LAUNCH_PROJECT_COPY.choose}
                   </option>
                   {others.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-ink-950 text-ink-50">
+                    <option key={c.id} value={c.id} className={optionClasses}>
                       {c.name || "Untitled"}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <Button
                   size="sm"
                   variant="outline"

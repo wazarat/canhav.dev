@@ -4,13 +4,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Input, inputClasses } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select, optionClasses } from "@/components/ui/Select";
 import { SECTOR_OPTIONS, SUBSECTOR_OPTIONS_BY_SECTOR } from "@/content/ideation";
 import { LICENSE_CLASS_LABELS, TEMPLATE_COPY as T, TEMPLATE_KIND_LABELS } from "@/content/templates/copy";
 import { PROJECT_CHAINS, PROJECT_CHAIN_INFO } from "@/lib/chains";
 import { SECTOR_VALUES } from "@/lib/sectors";
 import { LICENSE_CLASSES, TEMPLATE_KINDS } from "@/lib/templates";
-import { cn } from "@/lib/utils";
 
 /**
  * The filter rail of /studio/templates (M61). Every filter is a search
@@ -64,7 +64,6 @@ export function TemplateFilters({ query }: { query: TemplateQuery }) {
     : SECTOR_VALUES.flatMap((s) => SUBSECTOR_OPTIONS_BY_SECTOR[s] ?? []);
   const active =
     query.q || query.sector || query.subsector || query.chain || query.license || query.kind || query.pons || query.inactive;
-  const select = cn(inputClasses, "appearance-none");
 
   return (
     <aside className="space-y-4" aria-label={T.filters.title}>
@@ -74,58 +73,58 @@ export function TemplateFilters({ query }: { query: TemplateQuery }) {
       </label>
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-ink-200">{T.filters.sector}</span>
-        <select className={select} value={query.sector} onChange={(e) => write({ sector: e.target.value })}>
+        <Select value={query.sector} onChange={(e) => write({ sector: e.target.value })}>
           <option value="">Every sector</option>
           {SECTOR_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value} className="bg-ink-950 text-ink-50">
+            <option key={o.value} value={o.value} className={optionClasses}>
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-ink-200">{T.filters.subsector}</span>
-        <select className={select} value={query.subsector} onChange={(e) => write({ subsector: e.target.value })}>
+        <Select value={query.subsector} onChange={(e) => write({ subsector: e.target.value })}>
           <option value="">Every subsector</option>
           {subsectors.map((o) => (
-            <option key={o.value} value={o.value} className="bg-ink-950 text-ink-50">
+            <option key={o.value} value={o.value} className={optionClasses}>
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-ink-200">{T.filters.chain}</span>
-        <select className={select} value={query.chain} onChange={(e) => write({ chain: e.target.value })}>
+        <Select value={query.chain} onChange={(e) => write({ chain: e.target.value })}>
           <option value="">{T.filters.anyChain}</option>
           {PROJECT_CHAINS.map((c) => (
-            <option key={c} value={c} className="bg-ink-950 text-ink-50">
+            <option key={c} value={c} className={optionClasses}>
               {T.filters.liveOn(PROJECT_CHAIN_INFO[c].mainnetName)}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-ink-200">{T.filters.license}</span>
-        <select className={select} value={query.license} onChange={(e) => write({ license: e.target.value })}>
+        <Select value={query.license} onChange={(e) => write({ license: e.target.value })}>
           <option value="">{T.filters.anyLicense}</option>
           {LICENSE_CLASSES.map((l) => (
-            <option key={l} value={l} className="bg-ink-950 text-ink-50">
+            <option key={l} value={l} className={optionClasses}>
               {LICENSE_CLASS_LABELS[l]}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-ink-200">{T.filters.kind}</span>
-        <select className={select} value={query.kind} onChange={(e) => write({ kind: e.target.value })}>
+        <Select value={query.kind} onChange={(e) => write({ kind: e.target.value })}>
           <option value="">{T.filters.anyKind}</option>
           {TEMPLATE_KINDS.map((k) => (
-            <option key={k} value={k} className="bg-ink-950 text-ink-50">
+            <option key={k} value={k} className={optionClasses}>
               {TEMPLATE_KIND_LABELS[k]}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-200">
         <input

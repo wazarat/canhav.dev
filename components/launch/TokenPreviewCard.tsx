@@ -81,8 +81,8 @@ export function TokenPreviewCard({
   const hasDevBuy = devBuyWei > 0n;
 
   return (
-    <div className="card-surface glow-ring rounded-2xl border border-ink-700/70 p-6">
-      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-ink-700/60 bg-ink-900/80">
+    <div className="card-surface glow-ring rounded-xl border border-ink-700/70 p-6">
+      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-ink-700/60 bg-ink-900/80">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt="Token" className="h-full w-full object-cover" />

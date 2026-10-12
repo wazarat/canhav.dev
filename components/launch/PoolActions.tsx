@@ -345,7 +345,7 @@ export function PoolActions({
       : 0n;
 
   return (
-    <div className={panel ? "mt-4" : "card-surface mt-4 rounded-2xl border border-ink-700/70 p-5"}>
+    <div className={panel ? "mt-4" : "card-surface mt-4 rounded-xl border border-ink-700/70 p-5"}>
       {!pool && isCreator && !lockedLiquidity ? (
         <div className="space-y-3">
           <p className="text-sm text-ink-300">
