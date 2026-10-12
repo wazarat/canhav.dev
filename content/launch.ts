@@ -574,11 +574,11 @@ export const LAUNCH_PROJECT_COPY = {
 export const MCP_GUIDE = {
   open: "Open the full guide",
   title: "Connect your agent to this project",
-  lead: "One prompt does the whole thing. Paste it into Claude Code or the Claude desktop app and the agent connects, signs in, reads this project and tells you what is left. Writing is a separate setting, chosen here.",
+  lead: "One prompt does the whole thing. Paste it into Claude Code, Cursor or any AI IDE that speaks MCP and the agent connects, signs in, reads this project and tells you what is left. Writing is a separate setting, chosen here.",
   close: "Close",
-  paste: "Paste this into Claude",
+  paste: "Paste this into Claude, Cursor or any AI IDE that speaks MCP",
   pasteHint:
-    "One prompt that connects, signs in, reads the project and reports what is left. Works in Claude Code and in the Claude desktop app.",
+    "One prompt that connects, signs in, reads the project and reports what is left. The server is plain MCP over HTTP with sign-in, so Claude Code, the Claude desktop app, Cursor and other MCP clients all take it.",
   pasteModeHint: "The last step of the prompt follows the setting above.",
   stepsToggle: "Read the steps yourself",
   sections: {
@@ -586,7 +586,7 @@ export const MCP_GUIDE = {
       title: "Before you start",
       items: [
         "A CanHav account, the one that owns this project.",
-        "Claude Code installed on your computer. The command below installs it on macOS and Linux.",
+        "Claude Code, Cursor or another AI IDE that speaks MCP. The command below installs Claude Code on macOS and Linux; the other IDEs take the server URL in their MCP settings.",
         "A terminal open in the folder where you are building this project, so the agent can read your code too.",
       ],
     },
@@ -707,9 +707,9 @@ export const MCP_GUIDE = {
             : `6. Do not change the project in this run. The full guide on the project page has the version of this prompt that lets you write.`;
     return [
       `I want you to connect to ${title} over MCP and help me finish it.`,
-      `1. Add the project's MCP server. In Claude Code run\n${MCP_CONNECT.projectAddCommand(projectId, name)}\nIn the Claude desktop app add a custom connector at ${MCP_CONNECT.projectServerUrl(projectId)} instead.`,
-      `2. When the server needs a sign-in, ask me to type /mcp, pick ${alias} and choose Authenticate. I sign in with the CanHav account that owns the project. Wait for me to say it is done.`,
-      `3. Run claude mcp list and check that ${alias} is connected.`,
+      `1. Add the project's MCP server. In Claude Code run\n${MCP_CONNECT.projectAddCommand(projectId, name)}\nIn the Claude desktop app, Cursor or another AI IDE that speaks MCP add an HTTP MCP server named ${alias} at ${MCP_CONNECT.projectServerUrl(projectId)} instead.`,
+      `2. When the server needs a sign-in, ask me to approve it. In Claude Code that means typing /mcp, picking ${alias} and choosing Authenticate; another IDE opens the sign-in on its own. I sign in with the CanHav account that owns the project. Wait for me to say it is done.`,
+      `3. Check that ${alias} is connected, with claude mcp list in Claude Code or the MCP panel of the IDE.`,
       `4. Call get_project_status and read the whole answer. ${read} If the answer carries a deployedToken or a launchedToken, also call get_launch and get_curve_status and say where the token stands.`,
       `5. Tell me in plain words what is left before this project can publish and launch, and which studio step each item lives in.`,
       last,
