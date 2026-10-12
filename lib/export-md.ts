@@ -240,7 +240,9 @@ function resourcePackSections(
   if (pack.ideas.items.length > 0) {
     lines.push("", `${heading} ${KIT_COPY.examplesTitle}`, "", KIT_COPY.ideasExport(pack.ideas.count), "");
     for (const i of pack.ideas.items)
-      lines.push(`- [${i.on ? "x" : " "}] ${i.text} (${shapeLabel(i.shape) ?? i.shape}${i.own ? `, ${KIT_COPY.ideaOwn.toLowerCase()}` : ""})`);
+      lines.push(
+        `- [${i.on ? "x" : " "}] ${i.text} (${shapeLabel(i.shape) ?? i.shape}${i.own ? `, ${(i.from ? KIT_COPY.ideaEdited : KIT_COPY.ideaOwn).toLowerCase()}` : ""})`,
+      );
   }
   if (pack.templateGaps.length > 0) {
     lines.push("", `${heading} ${TEMPLATE_COPY.gapsTitle}`, "");

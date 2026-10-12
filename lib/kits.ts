@@ -329,6 +329,8 @@ export interface KitIdea {
   shape: ProductShape;
   /** One line. A catalog example is stored by its exact text. */
   text: string;
+  /** The catalog example this line was edited from. That example is shown no more while this line exists. */
+  from?: string;
 }
 
 export type TemplateDecision = "accepted" | "rejected";
@@ -474,7 +476,8 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
       const key = `${c.shape}\n${text}`;
       if (seen.has(key) || ideas.length >= L.max) continue;
       seen.add(key);
-      ideas.push({ shape: c.shape as ProductShape, text });
+      const from = typeof c.from === "string" && c.from.trim() ? c.from.trim().slice(0, L.textMax) : undefined;
+      ideas.push(from ? { shape: c.shape as ProductShape, text, from } : { shape: c.shape as ProductShape, text });
     }
     if (ideas.length) kit.ideas = ideas;
   }
@@ -715,16 +718,43 @@ export function toggleIdea(
   return { ideas: next.length ? next : undefined };
 }
 
-/** The lines of a shape with the catalog examples first, each flagged own or catalog. */
+/**
+ * Replace one line with another (M68 follow-up). Editing a catalog example
+ * stores the new text as the team's own line with `from` set, so the example
+ * steps aside while the edit exists and comes back when the line is removed.
+ * Editing an own line keeps its `from`.
+ */
+export function editIdea(
+  kit: Pick<ProjectKit, "ideas">,
+  shape: ProductShape,
+  prevText: string,
+  nextText: string,
+  isCatalog: boolean,
+): Pick<ProjectKit, "ideas"> {
+  const clean = nextText.trim().slice(0, KIT_LIMITS.ideas.textMax);
+  if (!clean || clean === prevText) return { ideas: kit.ideas };
+  const prev = (kit.ideas ?? []).find((i) => i.shape === shape && i.text === prevText);
+  const from = isCatalog ? prevText : prev?.from;
+  const rest = (kit.ideas ?? []).filter((i) => !(i.shape === shape && (i.text === prevText || i.text === clean)));
+  const line: KitIdea = from ? { shape, text: clean, from } : { shape, text: clean };
+  return { ideas: [...rest, line].slice(0, KIT_LIMITS.ideas.max) };
+}
+
+/**
+ * The lines of a shape with the catalog examples first, each flagged own or
+ * catalog. A catalog example an own line was edited from is left out.
+ */
 export function ideaRows(
   kit: Pick<ProjectKit, "ideas"> | undefined,
   shape: ProductShape,
   examples: readonly string[],
-): Array<{ text: string; on: boolean; own: boolean }> {
-  const own = ideasFor(kit, shape).filter((i) => !examples.includes(i.text));
+): Array<{ text: string; on: boolean; own: boolean; from?: string }> {
+  const mine = ideasFor(kit, shape);
+  const replaced = new Set(mine.map((i) => i.from).filter((x): x is string => Boolean(x)));
+  const own = mine.filter((i) => !examples.includes(i.text));
   return [
-    ...examples.map((text) => ({ text, on: hasIdea(kit, shape, text), own: false })),
-    ...own.map((i) => ({ text: i.text, on: true, own: true })),
+    ...examples.filter((t) => !replaced.has(t)).map((text) => ({ text, on: hasIdea(kit, shape, text), own: false })),
+    ...own.map((i) => (i.from ? { text: i.text, on: true, own: true, from: i.from } : { text: i.text, on: true, own: true })),
   ];
 }
 

@@ -137,7 +137,7 @@ export interface ResourcePackView {
   /** What the product includes, as the features the team ticked (M64). */
   features: FeaturesView;
   /** What the team could build with each shape, the catalog lines it ticked and its own (M68 follow-up). */
-  ideas: { count: number; items: Array<{ shape: ProductShape; text: string; on: boolean; own: boolean }> };
+  ideas: { count: number; items: Array<{ shape: ProductShape; text: string; on: boolean; own: boolean; from?: string }> };
   /**
    * Shapes with no contract template live on this chain's mainnet (M68
    * follow-up), with how many run on the other mainnet and the way forward.

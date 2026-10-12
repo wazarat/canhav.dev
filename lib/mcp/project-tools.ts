@@ -75,6 +75,8 @@ import {
   type KitPriority,
   type KitStep,
   kitShapes,
+  PRODUCT_SHAPE_VALUES,
+  type ProductShape,
 } from "@/lib/kits";
 import { shapeAdviceFor } from "@/lib/token-advice";
 import { deriveTokenomics } from "@/lib/tokenDesign";
@@ -648,6 +650,42 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         design,
         project.owner_id,
         { target: "project", kind: "fields", patch: { kit: { features } } },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "set_ideas",
+    {
+      title: "Edit what the team could build",
+      description: `Replace the "What you could build" lines of this project (M68 follow-up), one per product shape. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. Send the whole list you want stored. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
+      inputSchema: z.object({
+        ideas: z
+          .array(
+            z.object({
+              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
+              from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
+            }),
+          )
+          .max(KIT_LIMITS.ideas.max),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        { target: "project", kind: "fields", patch: { kit: { ideas: args.ideas } } },
         args.note,
       );
       if (!result.ok) return errorResult(result.message);

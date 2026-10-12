@@ -278,6 +278,8 @@ export const projectPatchSchema = z
             z.strictObject({
               shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
+              // The catalog example the line was edited from, which then steps aside.
+              from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
           )
           .max(KIT_LIMITS.ideas.max),
@@ -520,7 +522,7 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
       const own = new Set(kitShapes(kit));
       const seen = new Set<string>();
       const ideas = kitPatch.ideas
-        .map((i) => ({ shape: i.shape, text: i.text.trim() }))
+        .map((i) => (i.from ? { shape: i.shape, text: i.text.trim(), from: i.from.trim() } : { shape: i.shape, text: i.text.trim() }))
         .filter((i) => own.has(i.shape) && i.text && !seen.has(`${i.shape}\n${i.text}`) && seen.add(`${i.shape}\n${i.text}`));
       kit = { ...kit, ideas: ideas.length ? ideas : undefined };
     }
