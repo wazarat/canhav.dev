@@ -89,13 +89,13 @@ function AgentsGraphic() {
         <line x1="52" y1="54" x2="100" y2="32" />
         <line x1="148" y1="54" x2="100" y2="32" />
       </g>
-      <g fill="#0A0C14" stroke="#22D3EE" strokeOpacity="0.5">
+      <g className="fill-ink-900" stroke="#22D3EE" strokeOpacity="0.5">
         <circle cx="30" cy="14" r="6" />
         <circle cx="170" cy="14" r="6" />
         <circle cx="52" cy="54" r="6" />
         <circle cx="148" cy="54" r="6" />
       </g>
-      <circle cx="100" cy="32" r="8" fill="#0A0C14" stroke="#22D3EE" strokeOpacity="0.9" />
+      <circle cx="100" cy="32" r="8" className="fill-ink-900" stroke="#22D3EE" strokeOpacity="0.9" />
       <circle cx="100" cy="32" r="2.5" fill="#22D3EE" fillOpacity="0.9" />
     </svg>
   );

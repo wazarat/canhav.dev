@@ -11,7 +11,7 @@ const variantClasses: Record<Variant, string> = {
   secondary: "glass text-ink-50 hover:bg-ink-800/70",
   ghost: "text-ink-100 hover:bg-ink-800/60",
   outline:
-    "border border-ink-700 text-ink-50 hover:border-electric-500/60 hover:text-white",
+    "border border-ink-700 text-ink-50 hover:border-electric-500/60 hover:text-ink-50",
 };
 
 const sizeClasses: Record<Size, string> = {

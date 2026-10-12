@@ -6,6 +6,8 @@ import { AppClerkProvider } from "@/components/layout/AppClerkProvider";
 import { Background } from "@/components/layout/Background";
 import { Footer } from "@/components/layout/Footer";
 import { Nav } from "@/components/layout/Nav";
+import { ThemeScript } from "@/components/layout/ThemeScript";
+import { THEME_COLOR } from "@/lib/theme-constants";
 import { SITE } from "@/content/site";
 
 import "./globals.css";
@@ -66,15 +68,25 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#05060A",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_COLOR.light }, // copy-ok, a media query
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLOR.dark }, // copy-ok, a media query
+  ],
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable} dark`}>
+    // Dark is the server class; ThemeScript swaps it before paint, hence the
+    // hydration warning suppression on this one element (M73).
+    <html
+      lang="en"
+      className={`${sans.variable} ${display.variable} ${mono.variable} dark`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen antialiased">
+        <ThemeScript />
         <AppClerkProvider>
           <Background />
           <div className="relative flex min-h-screen flex-col">

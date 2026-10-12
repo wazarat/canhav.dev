@@ -10,15 +10,15 @@ import { cn } from "@/lib/utils";
  */
 const ACCENT_STYLES = {
   electric: {
-    ring: "[background:linear-gradient(180deg,rgba(13,16,26,0.92),rgba(13,16,26,0.92))_padding-box,linear-gradient(120deg,rgba(92,146,255,0.7),rgba(167,139,250,0.55))_border-box]",
+    ring: "[background:linear-gradient(180deg,rgb(var(--ink-900)/0.92),rgb(var(--ink-900)/0.92))_padding-box,linear-gradient(120deg,rgba(92,146,255,0.7),rgba(167,139,250,0.55))_border-box]",
     icon: "text-electric-400",
   },
   neon: {
-    ring: "[background:linear-gradient(180deg,rgba(13,16,26,0.92),rgba(13,16,26,0.92))_padding-box,linear-gradient(120deg,rgba(167,139,250,0.7),rgba(92,146,255,0.45))_border-box]",
+    ring: "[background:linear-gradient(180deg,rgb(var(--ink-900)/0.92),rgb(var(--ink-900)/0.92))_padding-box,linear-gradient(120deg,rgba(167,139,250,0.7),rgba(92,146,255,0.45))_border-box]",
     icon: "text-neon-400",
   },
   signal: {
-    ring: "[background:linear-gradient(180deg,rgba(13,16,26,0.92),rgba(13,16,26,0.92))_padding-box,linear-gradient(120deg,rgba(34,211,238,0.65),rgba(92,146,255,0.45))_border-box]",
+    ring: "[background:linear-gradient(180deg,rgb(var(--ink-900)/0.92),rgb(var(--ink-900)/0.92))_padding-box,linear-gradient(120deg,rgba(34,211,238,0.65),rgba(92,146,255,0.45))_border-box]",
     icon: "text-signal-400",
   },
 } as const;

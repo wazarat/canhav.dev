@@ -1,5 +1,15 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 import animate from "tailwindcss-animate";
+
+/**
+ * Every colour is a CSS variable triplet (see app/globals.css) so the same
+ * utility class resolves to the dark value under html.dark and the light
+ * value under html.light, with opacity modifiers intact (M73). The ink
+ * scale inverts in light: ink-950 is always the page, ink-50 always the
+ * strongest text.
+ */
+const v = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
 
 const config: Config = {
   darkMode: "class",
@@ -24,51 +34,46 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          950: "#05060A",
-          900: "#0A0C14",
-          850: "#10131D",
-          800: "#161A26",
-          700: "#1F2433",
-          600: "#2C3242",
-          500: "#3A4255",
-          400: "#5B6377",
-          300: "#7C8499",
-          200: "#A8AEBF",
-          100: "#D4D8E4",
-          50: "#EEF0F7",
+          950: v("ink-950"),
+          900: v("ink-900"),
+          850: v("ink-850"),
+          800: v("ink-800"),
+          700: v("ink-700"),
+          600: v("ink-600"),
+          500: v("ink-500"),
+          400: v("ink-400"),
+          300: v("ink-300"),
+          200: v("ink-200"),
+          100: v("ink-100"),
+          50: v("ink-50"),
         },
         electric: {
-          DEFAULT: "#3D7BFF",
-          400: "#5C92FF",
-          500: "#3D7BFF",
-          600: "#2563EB",
-          700: "#1D4ED8",
+          DEFAULT: v("electric-500"),
+          400: v("electric-400"),
+          500: v("electric-500"),
+          600: v("electric-600"),
+          700: v("electric-700"),
         },
         neon: {
-          DEFAULT: "#8B5CF6",
-          400: "#A78BFA",
-          500: "#8B5CF6",
-          600: "#7C3AED",
+          DEFAULT: v("neon-500"),
+          400: v("neon-400"),
+          500: v("neon-500"),
+          600: v("neon-600"),
         },
         signal: {
-          DEFAULT: "#22D3EE",
-          400: "#22D3EE",
-          500: "#06B6D4",
+          DEFAULT: v("signal-400"),
+          400: v("signal-400"),
+          500: v("signal-500"),
+        },
+        // Field errors and inline error text (33 uses) read on both canvases.
+        rose: {
+          400: v("rose-400"),
         },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
-      },
-      backgroundImage: {
-        "grid-fade":
-          "linear-gradient(to bottom, transparent 0%, #05060A 85%), linear-gradient(rgba(124,132,153,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(124,132,153,0.08) 1px, transparent 1px)",
-        "radial-glow":
-          "radial-gradient(900px circle at 50% -10%, rgba(61,123,255,0.25), transparent 60%), radial-gradient(700px circle at 90% 20%, rgba(139,92,246,0.18), transparent 55%), radial-gradient(700px circle at 10% 35%, rgba(34,211,238,0.12), transparent 55%)",
-      },
-      backgroundSize: {
-        grid: "100% 100%, 56px 56px, 56px 56px",
       },
       animation: {
         "fade-in-up": "fade-in-up 0.6s ease-out forwards",
@@ -102,7 +107,11 @@ const config: Config = {
       },
     },
   },
-  plugins: [animate],
+  plugins: [
+    animate,
+    // `light:` for the few places the inverted scale is not enough.
+    plugin(({ addVariant }) => addVariant("light", "html.light &")),
+  ],
 };
 
 export default config;

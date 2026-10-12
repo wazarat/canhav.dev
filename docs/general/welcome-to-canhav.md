@@ -42,6 +42,8 @@ All product surfaces described here are **testnet only**. Nothing here is financ
 
 ## Site appearance
 
+The app itself is dark by default and has a light theme on an off white canvas. The sun or moon button in the navigation switches between them; the choice is remembered in your browser, and a first visit follows your system setting.
+
 The docs site should use a **light** theme with a white background. That is a GitBook Customization setting, not a content-file change. You (or anyone with GitBook access) must apply it: dashboard → Customization → theme **Clean** → default mode **Light** → Publish. Full steps: [SETUP.md](../SETUP.md).
 
 ## Who this is for

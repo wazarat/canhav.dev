@@ -32,14 +32,14 @@ export default function LandingPage() {
           aria-hidden="true"
           className="pointer-events-none absolute bottom-0 left-0 right-0 z-[1] h-44"
           style={{
-            background: "linear-gradient(180deg, rgba(5,6,10,0) 0%, #05060A 100%)",
+            background: "linear-gradient(180deg, rgb(var(--ink-950) / 0) 0%, rgb(var(--ink-950)) 100%)",
           }}
         />
 
         <div className="container relative z-[2] flex min-h-[calc(100svh-4rem)] items-center py-16">
           <div className="max-w-2xl space-y-7 animate-fade-in-up">
             <h1
-              className="font-display text-[clamp(1.75rem,9.5vw,2.25rem)] font-semibold leading-[1.05] tracking-tight text-ink-50 md:text-6xl"
+              className="font-display text-[clamp(1.75rem,9.5vw,2.25rem)] font-semibold leading-[1.05] tracking-tight text-white md:text-6xl"
               style={{ textShadow: "0 2px 20px rgba(4,10,20,0.35)" }}
             >
               {/* Two fixed lines at every width. */}
@@ -55,7 +55,7 @@ export default function LandingPage() {
               <span className="block">Launch with Proof.</span>
             </h1>
             <p
-              className="max-w-xl text-pretty text-lg leading-relaxed text-ink-50/90 md:text-xl"
+              className="max-w-xl text-pretty text-lg leading-relaxed text-white/90 md:text-xl"
               style={{ textShadow: "0 1px 12px rgba(4,10,20,0.4)" }}
             >
               Move beyond one-click token launches. Research your concept, develop your DeFi

@@ -515,5 +515,10 @@ event window so judges can verify it.
   the accepted templates with a Pons fit, and on Robinhood records the paired
   Pons launch and its creator fee recipient; shown on the Reality step, the Token
   launch panel, the public page, the exports and the MCP project blocks.
+- Oct 12, 2026. Light mode (M73). A sun or moon toggle in the nav switches
+  between the dark theme and a light theme on the ponsfamily.com canvas (off
+  white page, white cards, near black text). Every colour is a CSS variable, so
+  dark looks exactly as before; the choice is remembered per browser and the
+  first visit follows the system setting.
 
 This list grows as work lands on the branch.

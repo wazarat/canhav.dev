@@ -185,14 +185,14 @@ export function PriceChart({
               stroke="rgba(124,132,153,0.18)"
               strokeDasharray="4 6"
             />
-            <text x={W - PAD.right + 8} y={y(v) + 4} fontSize="11" fill="#7C8499">
+            <text x={W - PAD.right + 8} y={y(v) + 4} fontSize="11" className="fill-ink-300">
               {formatEthAmount(v)}
             </text>
           </g>
         ))}
         <path d={area} fill="url(#price-area)" />
-        <path d={line} fill="none" stroke="#5B93FF" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        <circle cx={x(series[shown].t)} cy={y(caps[shown])} r="4" fill="#22D3EE" />
+        <path d={line} fill="none" className="stroke-electric-400" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={x(series[shown].t)} cy={y(caps[shown])} r="4" className="fill-signal-400" />
         {hover !== null ? (
           <line
             x1={x(series[shown].t)}
@@ -209,7 +209,7 @@ export function PriceChart({
                 x={x(t)}
                 y={H - 8}
                 fontSize="11"
-                fill="#7C8499"
+                className="fill-ink-300"
                 textAnchor={i === 0 ? "start" : i === ticks.length - 1 ? "end" : "middle"}
               >
                 {clock(t)}

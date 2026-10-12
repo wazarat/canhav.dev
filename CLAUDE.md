@@ -1,8 +1,15 @@
 # canhav.dev — internal conventions
 
-Next.js app router + Tailwind 3.4, dark theme only. Palette is the custom `ink`
-scale plus `electric` (blue), `neon` (violet), `signal` (cyan) accents from
-`tailwind.config.ts`. `cn()` (clsx + tailwind-merge) lives in `lib/utils.ts`.
+Next.js app router + Tailwind 3.4. Dark is the default theme and a light theme
+(the ponsfamily.com canvas, M73) switches from the nav toggle. Palette is the
+custom `ink` scale plus `electric` (blue), `neon` (violet), `signal` (cyan)
+accents from `tailwind.config.ts`; every colour is a CSS variable triplet in
+`app/globals.css` (`:root` dark, `html.light` light), so the same utility class
+works in both modes and the ink scale inverts (ink-950 is always the page,
+ink-50 the strongest text). Never hard code a hex or rgba in tsx for a surface
+or text colour; SVG fills use `fill-ink-*` classes. A `light:` variant exists
+for the rare exception. Tailwind config edits need a dev server restart.
+`cn()` (clsx + tailwind-merge) lives in `lib/utils.ts`.
 
 ## UI conventions
 

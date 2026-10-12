@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { NavAuthButton } from "@/components/layout/NavAuthButton";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 import { SoonBadge } from "@/components/ui/SoonBadge";
 import { NAV_LINKS } from "@/content/site";
@@ -23,6 +24,7 @@ export function Nav() {
               </Link>
             ))}
           </nav>
+          <ThemeToggle />
           <NavAuthButton />
         </div>
       </div>

@@ -45,11 +45,11 @@ function ConnectorGraphic() {
         <line x1="52" y1="32" x2="148" y2="32" />
         <line x1="52" y1="32" x2="148" y2="50" />
       </g>
-      <rect x="16" y="20" width="36" height="24" rx="6" fill="#0A0C14" stroke="#8B5CF6" strokeOpacity="0.55" />
+      <rect x="16" y="20" width="36" height="24" rx="6" className="fill-ink-900" stroke="#8B5CF6" strokeOpacity="0.55" />
       <text x="34" y="36" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="#B79BFF">
         ch.
       </text>
-      <g fill="#0A0C14" stroke="#8B5CF6" strokeOpacity="0.5">
+      <g className="fill-ink-900" stroke="#8B5CF6" strokeOpacity="0.5">
         <circle cx="152" cy="14" r="6" />
         <circle cx="152" cy="32" r="6" />
         <circle cx="152" cy="50" r="6" />
@@ -76,7 +76,7 @@ function ValidationGraphic() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <g fill="#0A0C14" stroke="#22D3EE" strokeOpacity="0.6">
+      <g className="fill-ink-900" stroke="#22D3EE" strokeOpacity="0.6">
         <circle cx="48" cy="44" r="4" />
         <circle cx="124" cy="30" r="4" />
         <circle cx="190" cy="12" r="4" />
@@ -94,7 +94,7 @@ function LegalGraphic() {
       {rows.map((label, i) => (
         <div key={label} className="flex items-center gap-2.5 font-mono text-[10px] text-ink-300">
           <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" aria-hidden>
-            <circle cx="8" cy="8" r="7" fill="#0A0C14" stroke="#3D7BFF" strokeOpacity={i < 2 ? 0.8 : 0.35} />
+            <circle cx="8" cy="8" r="7" className="fill-ink-900" stroke="#3D7BFF" strokeOpacity={i < 2 ? 0.8 : 0.35} />
             {i < 2 && (
               <path d="M4.5 8.2 7 10.5 11.5 5.8" fill="none" stroke="#7CB0FF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             )}
@@ -112,7 +112,7 @@ function DevelopmentGraphic() {
     <svg viewBox="0 0 200 64" className="h-16 w-full" aria-hidden>
       <line x1="14" y1="44" x2="186" y2="44" stroke="#8B5CF6" strokeOpacity="0.45" strokeWidth="2" />
       <path d="M58 44 C 76 44, 76 18, 96 18 L 130 18 C 150 18, 150 44, 166 44" fill="none" stroke="#B79BFF" strokeOpacity="0.7" strokeWidth="2" />
-      <g fill="#0A0C14" stroke="#8B5CF6" strokeOpacity="0.8">
+      <g className="fill-ink-900" stroke="#8B5CF6" strokeOpacity="0.8">
         <circle cx="30" cy="44" r="4.5" />
         <circle cx="58" cy="44" r="4.5" />
         <circle cx="100" cy="18" r="4.5" />
@@ -138,7 +138,7 @@ function DiscoveryGraphic() {
         return (
           <g key={i}>
             {on && <circle cx={cx} cy={cy} r="7" fill="none" stroke="#22D3EE" strokeOpacity="0.5" />}
-            <circle cx={cx} cy={cy} r="3.2" fill={on ? "#22D3EE" : "#1E2433"} fillOpacity={on ? 0.9 : 1} />
+            <circle cx={cx} cy={cy} r="3.2" className={on ? "fill-signal-400" : "fill-ink-700"} fillOpacity={on ? 0.9 : 1} />
           </g>
         );
       })}
@@ -178,7 +178,7 @@ function FundraisingGraphic() {
         return (
           <g key={b.label}>
             <rect x={x} y={50 - b.h} width="34" height={b.h} rx="3" fill="#8B5CF6" fillOpacity={0.25 + i * 0.2} stroke="#B79BFF" strokeOpacity="0.5" />
-            <text x={x + 17} y="60" textAnchor="middle" fontSize="7.5" fontFamily="monospace" fill="#7C8499">
+            <text x={x + 17} y="60" textAnchor="middle" fontSize="7.5" fontFamily="monospace" className="fill-ink-300">
               {b.label}
             </text>
           </g>
@@ -196,7 +196,7 @@ function OperationsGraphic() {
       <line x1="20" y1="32" x2="180" y2="32" stroke="#7C8499" strokeOpacity="0.3" strokeWidth="2" />
       <line x1="20" y1="32" x2="100" y2="32" stroke="#22D3EE" strokeOpacity="0.8" strokeWidth="2" />
       {ticks.map((x, i) => (
-        <circle key={x} cx={x} cy="32" r={i === 2 ? 6 : 4} fill="#0A0C14" stroke="#22D3EE" strokeOpacity={i <= 2 ? 0.9 : 0.35} strokeWidth={i === 2 ? 2 : 1.5} />
+        <circle key={x} cx={x} cy="32" r={i === 2 ? 6 : 4} className="fill-ink-900" stroke="#22D3EE" strokeOpacity={i <= 2 ? 0.9 : 0.35} strokeWidth={i === 2 ? 2 : 1.5} />
       ))}
       <circle cx="100" cy="32" r="2.2" fill="#22D3EE" />
       <path d="M100 24 V 10 H 116 L 112 15 L 116 20 H 100" fill="#22D3EE" fillOpacity="0.85" />
