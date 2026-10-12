@@ -34,6 +34,7 @@ This creates a draft project named after the token, on the token's chain. When i
 - **The chain locks.** Once a project has a linked launch, or a deployed linked token design, its chain cannot be changed. Unlinking the only launch releases it.
 - **Your own only.** Both the launch and the project must belong to the signed-in account.
 - **Launches from a token design.** A token deployed from a published token design reaches its project through the design. Link the design and the project in the studio instead.
+- **Launched records stay.** A project or token design with a launched token reads **Launched** in the studio, moves out of the drafts lists to the Launches summary and `/studio/launches`, and cannot be deleted while the launch points at it.
 - **Agents cannot link.** Linking and unlinking a launch is done by the owner. No MCP tool does it.
 
 ## Which token a project reads

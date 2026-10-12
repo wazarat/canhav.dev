@@ -286,6 +286,7 @@ export async function deleteTokenDesignDraft(id: string, ownerId: string): Promi
   const rows = await sql`
     delete from launchpad.token_designs
     where id = ${id} and owner_id = ${ownerId} and status = 'draft'
+      and deployed_token_address is null
     returning id
   `;
   if (rows.length === 0) return false;

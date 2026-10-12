@@ -24,13 +24,20 @@ export function DeleteDraftButton({
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"idle" | "confirm" | "busy" | "failed">("idle");
+  const [reason, setReason] = useState<string | null>(null);
   const copy = STUDIO_COPY.delete;
 
   async function remove() {
     setPhase("busy");
+    setReason(null);
     try {
       const res = await fetch(`/api/ideation/${entity}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("delete failed");
+      if (!res.ok) {
+        // A launched record answers 409 with the reason (M75).
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (res.status === 409 && body?.error) setReason(body.error);
+        throw new Error("delete failed");
+      }
       router.refresh();
     } catch {
       setPhase("failed");
@@ -55,7 +62,7 @@ export function DeleteDraftButton({
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 text-xs" role="group" aria-label={copy.action}>
       {phase === "failed" ? (
-        <span className="text-rose-400">{copy.failed}</span>
+        <span className="text-rose-400">{reason ?? copy.failed}</span>
       ) : (
         <span className="text-ink-300">{copy.confirm(name || "Untitled")}</span>
       )}

@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { type SessionUser, getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
+import { STUDIO_COPY } from "@/content/ideation";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   emptyProjectDoc,
@@ -127,10 +128,16 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       return NextResponse.json({ ok: true });
     },
 
-    /** DELETE /api/ideation/<entity>/[id] — drafts only. */
+    /** DELETE /api/ideation/<entity>/[id] — drafts only, never a launched record (M75). */
     async remove(id: string) {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
+      const launched =
+        kind === "project"
+          ? await projectChainLocked(id)
+          : Boolean((await getTokenDesign(id, gate.id))?.deployed_token_address);
+      if (launched)
+        return NextResponse.json({ error: STUDIO_COPY.delete.launched }, { status: 409 });
       const ok =
         kind === "project"
           ? await deleteProjectDraft(id, gate.id)

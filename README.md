@@ -525,5 +525,11 @@ event window so judges can verify it.
   stepper and the explore toggle are segmented controls; sectors and
   subsectors are lettered choice rows; selects carry a chevron; the wallet
   menu and the wrong network notice sit under the connect button.
+- Oct 12, 2026. Studio home and the launches page (M75). The studio home
+  starts with the track cards, keeps launches in a collapsed summary of the
+  newest three with a View all launches button that opens `/studio/launches`
+  in a new tab (every launch, then the projects in progress, with a chain
+  filter), and launched projects and designs leave the drafts lists, read
+  Launched and cannot be deleted.
 
 This list grows as work lands on the branch.

@@ -8,10 +8,16 @@ The studio (`/studio`) is where a signed-in account sees everything it owns: its
 
 | Section | What it lists |
 |---------|---------------|
-| Launches | The tokens recorded to your account, on either chain, plus tokens deployed from your token designs. Each row opens the token page. |
 | Start something new | Cards that create a blank project or a blank token design. |
-| Token designs | Your token design drafts and published designs. |
-| Projects | Your project drafts and published projects, each with its linked token design and launched token when it has them. |
+| Launches | A collapsed summary with the count and the newest token. Open it for the three newest launches, each row opening the token page. With more than three launches a **View all launches** button opens the full list in a new tab. |
+| Token designs | Your token design drafts and published designs that have not launched. |
+| Projects | Your project drafts and published projects that have not launched, each with its linked token design. |
+
+A record whose token has launched leaves the two lists above and shows under Launches, with a **Launched** chip wherever it appears. Launched records cannot be deleted; the API answers with the reason.
+
+### The launches page
+
+`/studio/launches` lists every launch of the account, then every project still in progress, with a chain filter (all chains, Robinhood testnet, Arbitrum Sepolia) kept in the URL. It is reached from the studio home and is not linked from the navigation.
 
 ### A launch row
 

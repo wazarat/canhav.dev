@@ -800,11 +800,37 @@ export const STUDIO_COPY = {
     no: "Keep",
     busy: "Deleting",
     failed: "Could not delete this draft. Reload and try again.",
+    /** The API refuses a record whose token has launched (M75). */
+    launched: "This record has a launched token, so it stays. Unlink the launch first if it should go.",
   },
   /** Launched-token lines on the studio Projects row and the launch list (M19d). */
   launch: {
     launched: "Token launched",
     fromProject: "From",
+  },
+  /** The studio home summary and the launches page (M75). */
+  launches: {
+    title: "Launches",
+    /** The collapsed summary line. */
+    summary: (count: number, newest: string | null) =>
+      count === 1
+        ? `1 launch${newest ? `, ${newest}` : ""}`
+        : `${count} launches${newest ? `, newest ${newest}` : ""}`,
+    viewAll: "View all launches",
+    viewAllHint: "Opens in a new tab",
+    launchOne: "Launch a token",
+    none: "No launches yet. Launch a token while signed in and it appears here and in get_my_launches.",
+    pageTitle: "Your launches",
+    pageSubtitle:
+      "Every token launched from this account, then the projects still in progress. " +
+      "Launched records leave the studio home lists and live here.",
+    inProgress: "Projects in progress",
+    inProgressEmpty: "Every project has launched, or there are none yet.",
+    chainFilter: "Chain",
+    allChains: "All chains",
+    launchedChip: "Launched",
+    draftsNote: (projects: number, designs: number) =>
+      `${projects} launched project${projects === 1 ? "" : "s"} and ${designs} launched design${designs === 1 ? "" : "s"} are listed under Launches.`,
   },
   /** The services offer for small teams, under the account row (2026-10-09). */
   pro: {
