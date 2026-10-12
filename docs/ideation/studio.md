@@ -31,6 +31,9 @@ A launch appears here when it was made while you were signed in. A launch that r
 
 ## The project editor
 
+Every step keeps at most one short line under a field. Longer helper copy sits behind the info icon beside the label; blurbs, the review and reality intros and the venue facts open from a collapsed row. Nothing moved out of the MCP pack or the exports, so an agent reads exactly what it read before.
+
+
 A project opens at `/studio/project/<id>`. Its steps are Basics, Architecture, Security, Reality, one step per product shape, and Review. The fields are described in [Product track](product-track.md).
 
 Across from the project's name:

@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoTip } from "@/components/ui/InfoTip";
 import { Badge } from "@/components/ui/Badge";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
@@ -80,17 +81,21 @@ export function TokenStepSection({
     <div className="space-y-5">
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold text-ink-50">{TOKEN_STEPS_COPY.title}</h2>
+          <h2 className="inline-flex items-center gap-1.5 font-display text-lg font-semibold text-ink-50">
+            {TOKEN_STEPS_COPY.title}
+            <InfoTip>{TOKEN_STEPS_COPY.intro}</InfoTip>
+          </h2>
           <StatusChip tone={progress.done === progress.total ? "success" : "neutral"}>
             {CHECKLIST_COPY.progress(progress.done, progress.total)}
           </StatusChip>
         </div>
       </div>
 
-      <StatusChip tone="info" variant="block">
-        <span className="block">{TOKEN_STEPS_COPY.intro}</span>
-        {!facts.linked ? <span className="mt-1 block text-ink-400">{TOKEN_STEPS_COPY.noProject}</span> : null}
-      </StatusChip>
+      {!facts.linked ? (
+        <StatusChip tone="neutral" variant="block">
+          {TOKEN_STEPS_COPY.noProject}
+        </StatusChip>
+      ) : null}
 
       {(["design", "launch"] as const).map((key) => (
         <div key={key}>

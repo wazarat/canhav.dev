@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 
+import { InfoTip } from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,6 +39,7 @@ export function ChoiceCardGroups<V extends string>({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   groups,
@@ -48,6 +50,7 @@ export function ChoiceCardGroups<V extends string>({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: readonly V[];
   onChange: (value: V[]) => void;
   groups: ReadonlyArray<ChoiceGroup<V>>;
@@ -62,8 +65,11 @@ export function ChoiceCardGroups<V extends string>({
   // Not a <label>: a label around several buttons forwards clicks to the first.
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-medium text-ink-200">
-        {label} {required ? <span className="text-rose-400">*</span> : null}
+      <p className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+        <span>
+          {label} {required ? <span className="text-rose-400">*</span> : null}
+        </span>
+        {info ? <InfoTip>{info}</InfoTip> : null}
       </p>
       <div className="space-y-3" role="group" aria-label={label}>
         {groups.map((group) => {

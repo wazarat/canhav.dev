@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Download, Rocket } from "lucide-react";
 
 import { CopyLine } from "@/components/ui/CopyLine";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { HANDOFF_COPY } from "@/content/kits/copy";
 import { MCP_CONNECT } from "@/content/launch";
 
@@ -25,11 +26,16 @@ export function KitHandoff({
 }) {
   const base = `/api/export/project/${projectId}`;
   const cls =
-    "inline-flex items-center gap-1.5 rounded-full border border-ink-700/70 px-3 py-1 text-xs font-medium text-ink-300 transition-colors hover:border-electric-500/50 hover:text-electric-200";
+    "inline-flex items-center gap-1.5 rounded-md border border-ink-700/60 px-3 py-1.5 text-xs font-medium text-ink-300 transition-colors hover:border-electric-500/50 hover:text-electric-300";
   return (
     <section className="glass mt-6 rounded-xl p-5" aria-label={HANDOFF_COPY.title}>
-      <h3 className="font-display text-sm font-semibold text-ink-50">{HANDOFF_COPY.title}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-ink-400">{HANDOFF_COPY.intro}</p>
+      <h3 className="inline-flex items-center gap-1 font-display text-sm font-semibold text-ink-50">
+        {HANDOFF_COPY.title}
+        <InfoTip>
+          <span className="block">{HANDOFF_COPY.intro}</span>
+          <span className="mt-2 block text-ink-400">{HANDOFF_COPY.footnote}</span>
+        </InfoTip>
+      </h3>
       {venueLine ? <p className="mt-2 text-xs leading-relaxed text-ink-300">{venueLine}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <a href={`${base}?file=resources`} className={cls} download>
@@ -53,7 +59,6 @@ export function KitHandoff({
           mono={false}
         />
       </div>
-      <p className="mt-3 text-[11px] leading-relaxed text-ink-500">{HANDOFF_COPY.footnote}</p>
     </section>
   );
 }

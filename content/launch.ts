@@ -508,6 +508,30 @@ export const TOKEN_PAGE_COPY = {
 } as const;
 
 /** The optional Project block on the launch form and the link controls in the studio (M56). */
+/** The status rail beside the launch form and the quieter step copy (M76). */
+export const LAUNCH_STATUS_COPY = {
+  title: "Launch status",
+  chain: "Chain",
+  wallet: "Wallet",
+  walletNone: "Not connected",
+  walletWrong: "Wrong network",
+  walletOk: "Connected",
+  token: "Token",
+  tokenOpen: "Finish the Token step",
+  tokenReady: "Ready to launch",
+  commitmentOpen: "Finish the commitment",
+  notLive: "Not live on this chain yet",
+  sections: { token: "Token", links: "Links", buy: "First buy", commitment: "Commitment", project: "Project" },
+  commitmentWhat: "What a commitment is",
+  commitmentBody:
+    "Why this token exists, the supply rationale and dated milestones. The hash goes on chain with the token and can never be changed. Optional now, and needed later for milestone escrow and sale proceeds schedules.",
+  designLine: "This launch commits your published token design on chain.",
+  designMore:
+    "The launcher records the design's snapshot hash, so the document behind this token can never be quietly rewritten.",
+  supplyNote:
+    "Only the supply is enforced by the contract. Allocations, vesting, distribution and everything else in the design are published commitments, snapshotted and tamper evident, not code.",
+} as const;
+
 export const LAUNCH_PROJECT_COPY = {
   label: "Project",
   hint: "Optional. A project is what you are building around the token. Link one now or later from the studio.",

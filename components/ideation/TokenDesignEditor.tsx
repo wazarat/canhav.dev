@@ -21,13 +21,15 @@ import { usePublish } from "@/components/ideation/usePublish";
 import { Field, Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import {
   DEPLOYABILITY_COPY,
   DEPLOYABILITY_TIER_LABELS,
   type ResourceIntroKey,
 } from "@/content/ideation-resources";
-import { POST_LAUNCH_MILESTONE_COPY } from "@/content/ideation";
+import { POST_LAUNCH_MILESTONE_COPY, PUBLISH_COPY } from "@/content/ideation";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { TOKEN_STEPS_COPY, tokenBuildProgressOf } from "@/content/token-steps";
 import type { IndexedCurve } from "@/lib/indexer";
@@ -613,16 +615,18 @@ export function TokenDesignEditor({
             <>
               <ChipRadioGroup
                 label={LAUNCH_TARGET_COPY.label}
-                hint={LAUNCH_TARGET_COPY.hint}
+                info={
+                  <>
+                    <span className="block">{LAUNCH_TARGET_COPY.hint}</span>
+                    {doc.market.launchTarget ? (
+                      <span className="mt-2 block text-ink-400">{LAUNCH_TARGET_INFO[doc.market.launchTarget].blurb}</span>
+                    ) : null}
+                  </>
+                }
                 value={doc.market.launchTarget ?? ""}
                 onChange={(v) => patchSection("market", { launchTarget: v })}
                 options={LAUNCH_TARGET_OPTIONS}
               />
-              {doc.market.launchTarget ? (
-                <p className="-mt-2 text-xs leading-relaxed text-ink-400">
-                  {LAUNCH_TARGET_INFO[doc.market.launchTarget].blurb}
-                </p>
-              ) : null}
               {doc.market.launchTarget && launchTargetChainBound(doc.market.launchTarget) ? (
                 linkedChain === "arbitrum_sepolia" ? (
                   <StatusChip tone="info" variant="block">
@@ -714,14 +718,13 @@ export function TokenDesignEditor({
                   />
                 </>
               )}
-              <StatusChip tone="info" variant="block">
-                <span className="block font-medium text-ink-100">{LAUNCH_TARGET_COPY.factsTitle}</span>
-                {LAUNCH_TARGET_INFO[doc.market.launchTarget ?? "canhav_curve"].facts.map((fact) => (
-                  <span key={fact} className="mt-1 block">
-                    {fact}
-                  </span>
-                ))}
-              </StatusChip>
+              <Collapsible summary={LAUNCH_TARGET_COPY.factsTitle}>
+                <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
+                  {LAUNCH_TARGET_INFO[doc.market.launchTarget ?? "canhav_curve"].facts.map((fact) => (
+                    <li key={fact}>{fact}</li>
+                  ))}
+                </ul>
+              </Collapsible>
             </>
           )}
 
@@ -740,24 +743,21 @@ export function TokenDesignEditor({
                   </div>
                 ))}
               </div>
-              <StatusChip tone="success" variant="block">
-                <span className="block font-medium text-ink-100">
-                  Guaranteed by the contract, not a promise
-                </span>
-                {GOVERNANCE_FACTS.map((fact) => (
-                  <span key={fact} className="mt-1 block">
-                    {fact}
-                  </span>
-                ))}
+              <Collapsible summary="Guaranteed by the contract, not a promise">
+                <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
+                  {GOVERNANCE_FACTS.map((fact) => (
+                    <li key={fact}>{fact}</li>
+                  ))}
+                </ul>
                 <a
                   href={explorerAddressUrl(launchChain().factoryAddress)}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-2 block text-electric-300 transition-colors hover:text-electric-200"
+                  className="mt-2 block text-xs text-electric-300 transition-colors hover:text-electric-200"
                 >
                   Verified factory on Blockscout →
                 </a>
-              </StatusChip>
+              </Collapsible>
             </>
           )}
 
@@ -770,14 +770,13 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("legal", { counsel: v })}
                 options={COUNSEL_OPTIONS}
               />
-              <div>
-                <p className="text-xs font-medium text-ink-200">What typically matters</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-400">
+              <Collapsible summary="What typically matters">
+                <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
                   {LEGAL_TOPICS.map((t) => (
                     <li key={t}>{t}</li>
                   ))}
                 </ul>
-              </div>
+              </Collapsible>
               <StatusChip tone="neutral" variant="block">
                 {LEGAL_DISCLAIMER}
               </StatusChip>
@@ -877,10 +876,9 @@ export function TokenDesignEditor({
 
           {step === REVIEW_STEP && (
             <div className="space-y-5">
-              <p className="text-sm leading-relaxed text-ink-400">
-                Publishing makes this design public and snapshots it. Deploying
-                from a published design commits its hash on-chain, making the
-                design tamper-evident forever.
+              <p className="inline-flex items-center gap-1 text-sm leading-relaxed text-ink-400">
+                {PUBLISH_COPY.token.line}
+                <InfoTip>{PUBLISH_COPY.token.more}</InfoTip>
               </p>
               <p className="text-xs text-ink-400">{TOKEN_STEPS_COPY.reviewRow(build.done, build.total)}</p>
               {milestoneHint ? (

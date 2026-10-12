@@ -1,6 +1,7 @@
 "use client";
 
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { REVIEW_COPY, REVIEW_VERDICT_OPTIONS } from "@/content/kits/copy";
@@ -35,12 +36,14 @@ export function ReviewPasses({
     <section className="space-y-4 border-t border-ink-800/70 pt-6" aria-label={REVIEW_COPY.title}>
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-display text-sm font-semibold text-ink-50">{REVIEW_COPY.title}</h3>
+          <h3 className="inline-flex items-center gap-1 font-display text-sm font-semibold text-ink-50">
+            {REVIEW_COPY.title}
+            <InfoTip>{REVIEW_COPY.intro}</InfoTip>
+          </h3>
           <StatusChip tone={p.fail > 0 ? "warning" : p.open > 0 ? "neutral" : "success"} className="px-2 py-0.5 text-[11px]">
             {REVIEW_COPY.summary(p)}
           </StatusChip>
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-ink-400">{REVIEW_COPY.intro}</p>
       </div>
       <ol className="space-y-5">
         {passes.map((pass, i) => {
@@ -52,7 +55,7 @@ export function ReviewPasses({
             <li key={pass.id} className="space-y-2">
               <ChipRadioGroup<ReviewVerdict>
                 label={`${i + 1}. ${pass.title}`}
-                hint={pass.detail}
+                info={pass.detail}
                 value={verdict}
                 onChange={(v) => onPatchKit(setReviewVerdict(kit, pass.id, v === verdict ? null : v))}
                 options={REVIEW_VERDICT_OPTIONS}

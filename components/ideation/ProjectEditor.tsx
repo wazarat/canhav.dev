@@ -29,7 +29,7 @@ import { ChoiceCardGroups } from "@/components/ui/ChoiceCard";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { SegmentedField } from "@/components/ui/Segmented";
-import { Field, Input } from "@/components/ui/Input";
+import { Field, Input, inputClasses } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
@@ -71,6 +71,7 @@ import {
   startingPointLabel,
 } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
+import { PUBLISH_COPY, WORST_CASE_WHY } from "@/content/ideation";
 import {
   PROJECT_LIMITS,
   type ProjectDoc,
@@ -86,6 +87,7 @@ import {
   docSectors,
   sectorOfSubsector, requiresSubsector } from "@/lib/sectors";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { cn } from "@/lib/utils";
 import { type LaunchTarget, launchTargetFit } from "@/lib/launch-targets";
 import { launchTargetHandoffLine } from "@/content/launch-targets";
 import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
@@ -416,7 +418,8 @@ export function ProjectEditor({
             />
             <SegmentedField
               label={CHAIN_COPY.label}
-              hint={chainLocked ? CHAIN_COPY.locked : CHAIN_COPY.hint}
+              hint={chainLocked ? CHAIN_COPY.locked : undefined}
+              info={CHAIN_COPY.hint}
               value={chainKey}
               onChange={(v) => {
                 if (!chainLocked) patch({ chain: v as ProjectChain });
@@ -428,7 +431,7 @@ export function ProjectEditor({
             <ChoiceCardGroups
               label={SECTOR_COPY.label}
               required
-              hint={SECTOR_COPY.hint}
+              info={SECTOR_COPY.hint}
               value={sectors}
               onChange={onSectors}
               groups={[{ key: "sectors", heading: SECTOR_COPY.label, options: SECTOR_OPTIONS }]}
@@ -452,26 +455,28 @@ export function ProjectEditor({
               <ChoiceCardGroups
                 label={SECTOR_COPY.subsectorLabel}
                 required
-                hint={SECTOR_COPY.subsectorHint}
+                info={
+                  <>
+                    <span className="block">{SECTOR_COPY.subsectorHint}</span>
+                    {overlapHints.length > 0 ? <span className="mt-2 block">{overlapHints.join(" ")}</span> : null}
+                    {subsectorGated ? <span className="mt-2 block text-ink-400">{GATE_COPY.note(chain.short)}</span> : null}
+                  </>
+                }
                 value={subsectors}
                 onChange={onSubsectors}
                 groups={subsectorGroups}
                 maxPerGroup={PROJECT_LIMITS.subsectors.max}
-              >
-                {overlapHints.length > 0 ? (
-                  <p className="text-xs leading-relaxed text-ink-400">{overlapHints.join(" ")}</p>
-                ) : null}
-                {subsectorGated ? (
-                  <p className="text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
-                ) : null}
-              </ChoiceCardGroups>
+              />
             )}
             {showRail && (
               <>
                 {buildingLines.length ? (
                   <div className="space-y-2">
                     {shapeGroups.length === 0 ? (
-                      <span className="text-xs font-medium text-ink-200">{KIT_COPY.shapeLabel}</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+                        {KIT_COPY.shapeLabel}
+                        <InfoTip>{KIT_COPY.buildingHint}</InfoTip>
+                      </span>
                     ) : null}
                     <ul className="space-y-2">
                       {buildingLines.map((b) => (
@@ -490,48 +495,60 @@ export function ProjectEditor({
                         </li>
                       ))}
                     </ul>
-                    <p className="text-xs text-ink-500">{KIT_COPY.buildingHint}</p>
                   </div>
                 ) : null}
                 {shapeGroups.length > 0 ? (
                   <ChipMultiSelectGroups
                     label={KIT_COPY.shapeLabel}
-                    hint={KIT_COPY.shapeHint}
+                    info={
+                      <>
+                        <span className="block">{KIT_COPY.shapeHint}</span>
+                        {buildingLines.length ? <span className="mt-2 block">{KIT_COPY.buildingHint}</span> : null}
+                        {shapeGated ? <span className="mt-2 block text-ink-400">{GATE_COPY.note(chain.short)}</span> : null}
+                      </>
+                    }
                     value={kitShapes(kit)}
                     onChange={onShapes}
                     max={KIT_LIMITS.shapes.max}
                     groups={shapeGroups}
-                  >
-                    {shapeGated ? (
-                      <p className="mt-2 text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
-                    ) : null}
-                  </ChipMultiSelectGroups>
+                  />
                 ) : null}
                 {kitShapes(kit).length && kit ? (
-                  <div className="-mt-2 space-y-3 text-xs leading-relaxed text-ink-300">
-                    {kitShapes(kit).map((s) => (
-                      <div key={s}>
-                        <p>
-                          <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
-                          {shapeBlurb(s)}
-                        </p>
-                        <IdeasList shape={s} examples={shapeExamples(s)} kit={kit} onPatchKit={patchKit} />
+                  <>
+                    <Collapsible summary={KIT_COPY.aboutShapes}>
+                      <div className="space-y-3 text-xs leading-relaxed text-ink-300">
+                        {kitShapes(kit).map((s) => (
+                          <p key={s}>
+                            <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
+                            {shapeBlurb(s)}
+                          </p>
+                        ))}
+                        <div className="flex flex-wrap gap-2">
+                          {kitShapes(kit).map((s) => (
+                            <OptionResourceCard
+                              key={s}
+                              field="project.kit.shape"
+                              value={s}
+                              label={kitShapes(kit).length > 1 ? `Why ${shapeLabel(s)}` : undefined}
+                            />
+                          ))}
+                          <ShapeOverlapDialog doc={doc} />
+                        </div>
                       </div>
-                    ))}
-                    <p className="text-[11px] text-ink-500">{KIT_COPY.ideasHint}</p>
-                  </div>
+                    </Collapsible>
+                    <div className="space-y-3 text-xs leading-relaxed text-ink-300">
+                      {kitShapes(kit).map((s) => (
+                        <div key={s}>
+                          <p className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+                            {shapeLabel(s)}
+                            <InfoTip>{KIT_COPY.ideasHint}</InfoTip>
+                          </p>
+                          <IdeasList shape={s} examples={shapeExamples(s)} kit={kit} onPatchKit={patchKit} />
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 ) : null}
-                <div className="flex flex-wrap gap-2">
-                  {kitShapes(kit).map((s) => (
-                    <OptionResourceCard
-                      key={s}
-                      field="project.kit.shape"
-                      value={s}
-                      label={kitShapes(kit).length > 1 ? `Why ${shapeLabel(s)}` : undefined}
-                    />
-                  ))}
-                  <ShapeOverlapDialog doc={doc} />
-                </div>
                 <ChipRadioGroup
                   label={KIT_COPY.startingPointLabel}
                   value={kit?.startingPoint ?? ""}
@@ -541,7 +558,7 @@ export function ProjectEditor({
                 {kit?.startingPoint === "existing_product" && (
                   <TextField
                     label={KIT_COPY.existingProductLabel}
-                    hint={KIT_COPY.existingProductHint}
+                    info={KIT_COPY.existingProductHint}
                     value={kit.existingProduct ?? ""}
                     onChange={(v) => patchKit({ existingProduct: v })}
                     max={KIT_LIMITS.existingProduct.max}
@@ -562,7 +579,7 @@ export function ProjectEditor({
             />
             <ChipRadioGroup
               label={PERSONA_COPY.audienceLabel}
-              hint={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
+              info={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
               value={audience}
               onChange={(v) => patch({ audience: v })}
               options={AUDIENCE_OPTIONS}
@@ -595,7 +612,7 @@ export function ProjectEditor({
             )}
             <SelectField
               label="Who pays"
-              hint="Often not the same answer as who the user is."
+              info="Often not the same answer as who the user is."
               value={doc.payer}
               onChange={(v) => patch({ payer: v })}
               options={PAYER_OPTIONS}
@@ -669,7 +686,7 @@ export function ProjectEditor({
             <TextField
               label="Admin functions, and why they exist"
               required
-              hint='"None" is a valid and strong answer for immutable contracts. Say so explicitly.'
+              info='"None" is a valid and strong answer for immutable contracts. Say so explicitly.'
               value={doc.architecture.adminFunctions}
               onChange={(v) => patchSection("architecture", { adminFunctions: v })}
               min={PROJECT_LIMITS.architectureField.min}
@@ -700,12 +717,9 @@ export function ProjectEditor({
               options={WORST_CASE_OPTIONS}
             />
             {doc.worstCase && (
-              <StatusChip
-                tone={doc.worstCase === "nothing_serious" ? "info" : "warning"}
-                variant="block"
-              >
-                {WORST_CASE_PRESSURE[doc.worstCase]}
-              </StatusChip>
+              <Collapsible summary={WORST_CASE_WHY}>
+                <p className="text-xs leading-relaxed text-ink-200">{WORST_CASE_PRESSURE[doc.worstCase]}</p>
+              </Collapsible>
             )}
             <div className="space-y-5">
               {PROJECT_SECURITY_FIELDS.map(({ key, label }) => (
@@ -726,8 +740,10 @@ export function ProjectEditor({
             {chainKey === "robinhood_testnet" ? (
               <>
                 <StatusChip tone="warning" variant="block">
-                  <span className="block font-medium text-ink-100">{ROBINHOOD_MYTH.title}</span>
-                  <span className="mt-1 block">{ROBINHOOD_MYTH.body}</span>
+                  <span className="inline-flex items-center gap-1 font-medium text-ink-100">
+                    {ROBINHOOD_MYTH.title}
+                    <InfoTip>{ROBINHOOD_MYTH.body}</InfoTip>
+                  </span>
                 </StatusChip>
                 <label className="flex items-start gap-2.5 text-sm text-ink-200">
                   <input
@@ -753,7 +769,8 @@ export function ProjectEditor({
             />
             <Field
               label="GitHub repo"
-              hint="owner/name. Linking it adds commit history to your public page."
+              hint="owner/name"
+              info="Linking it adds commit history to your public page."
             >
               <Input
                 value={doc.githubRepo ?? ""}
@@ -763,7 +780,8 @@ export function ProjectEditor({
             </Field>
             <Field
               label="Testnet contract addresses"
-              hint="One 0x address per line. We read deploy history from the chain. The addresses are the claim, the chain is the evidence."
+              hint="One 0x address per line."
+              info="We read deploy history from the chain. The addresses are the claim, the chain is the evidence."
             >
               <textarea
                 value={(doc.testnetContracts ?? []).join("\n")}
@@ -775,13 +793,13 @@ export function ProjectEditor({
                   patch({ testnetContracts: list.length ? list : undefined });
                 }}
                 rows={3}
-                className="w-full rounded-xl border border-ink-700/60 bg-ink-950/70 px-3.5 py-2.5 font-mono text-xs text-ink-50 placeholder:text-ink-500 focus:border-electric-500/60 focus:outline-none focus:ring-1 focus:ring-electric-500/30"
+                className={cn(inputClasses, "font-mono text-xs")}
                 placeholder={"0x…\n0x…"}
               />
             </Field>
             <Field
               label="Team wallet"
-              hint='Shown as "declared by team". Deploy history for this wallet renders on your public page.'
+              info='Shown as "declared by team". Deploy history for this wallet renders on your public page.'
             >
               <Input
                 value={doc.verifyWallet ?? ""}
@@ -819,9 +837,9 @@ export function ProjectEditor({
 
         {docStep === "review" && (
           <div className="space-y-5">
-            <p className="text-sm leading-relaxed text-ink-400">
-              Publishing makes this page public and snapshots it. Every
-              version is kept, and the latest renders at your public URL.
+            <p className="inline-flex items-center gap-1 text-sm leading-relaxed text-ink-400">
+              {PUBLISH_COPY.project.line}
+              <InfoTip>{PUBLISH_COPY.project.more}</InfoTip>
             </p>
             <dl className="space-y-3 text-sm">
               <ReviewRow term="Sector" detail={sectorLabel(doc)} />

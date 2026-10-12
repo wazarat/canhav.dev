@@ -45,7 +45,16 @@ export function InfoTip({
   }, [open]);
 
   return (
-    <span ref={ref} className={cn("relative inline-flex align-middle", className)}>
+    // Stops clicks reaching a wrapping <label> or CheckItem, which would
+    // otherwise toggle the control the tip explains.
+    <span
+      ref={ref}
+      className={cn("relative inline-flex align-middle", className)}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      }}
+    >
       <button
         type="button"
         aria-label={label}

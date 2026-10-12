@@ -10,6 +10,7 @@ export function TextField({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   min,
@@ -20,6 +21,7 @@ export function TextField({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
   min?: number;
@@ -40,6 +42,7 @@ export function TextField({
       label={label}
       required={required}
       hint={hint}
+      info={info}
       counter={fmt(len)}
       range={min ? `${fmt(min)}–${fmt(max)}` : fmt(max)}
       counterMet={min ? len >= min : len > 0}

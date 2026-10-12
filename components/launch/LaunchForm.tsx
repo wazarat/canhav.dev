@@ -8,6 +8,8 @@ import { useAccount, useBalance, usePublicClient, useReadContract, useWriteContr
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
 import { Segmented, SegmentedField } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
@@ -45,12 +47,14 @@ import {
   validateTicker,
   validateWebsite,
   validateXHandle,
+  LAUNCH_STATUS_COPY,
 } from "@/content/launch";
 
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 
 import { AccountLink, type LinkedProject } from "./AccountLink";
 import { ConnectButton } from "./ConnectButton";
+import { LaunchStatusCard } from "./LaunchStatusCard";
 import { CurveProgress } from "./CurveProgress";
 import { friendlyCurveError } from "./curveErrors";
 import { ImagePicker } from "./ImagePicker";
@@ -126,6 +130,15 @@ export interface LaunchProjectOption {
 
 type ProjectMode = (typeof LAUNCH_PROJECT_COPY.options)[number]["value"];
 
+/** Shopify style section label inside the form card (M76). */
+function SectionHeading({ first, children }: { first?: boolean; children: React.ReactNode }) {
+  return (
+    <p className={cn("text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400", !first && "border-t border-ink-700/40 pt-5")}>
+      {children}
+    </p>
+  );
+}
+
 export function LaunchForm({
   prefill,
   designCommitment,
@@ -195,7 +208,7 @@ export function LaunchForm({
   const startProject = offerProject && projects !== null && projectMode === "create";
   /** The project the success screen ended up linking, for the agent prompt. */
   const [linkedProject, setLinkedProject] = useState<LinkedProject | null>(null);
-  const { isConnected, address, ensureChain } = useLaunchChain(chain);
+  const { isConnected, address, ensureChain, onCorrectChain } = useLaunchChain(chain);
   const { connector } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId: net.chainId });
@@ -607,7 +620,7 @@ export function LaunchForm({
           <div className="mb-5">
             <SegmentedField
               label={LAUNCH_CHAIN_COPY.label}
-              hint={LAUNCH_CHAIN_COPY.hint}
+              info={LAUNCH_CHAIN_COPY.hint}
               value={chain}
               onChange={(v) => setPickedChain(v)}
               options={LAUNCH_CHAIN_COPY.options}
@@ -624,6 +637,7 @@ export function LaunchForm({
 
         {step === 1 ? (
           <div className="space-y-5">
+            <SectionHeading first>{LAUNCH_STATUS_COPY.sections.token}</SectionHeading>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field
                 label="Name"
@@ -684,6 +698,7 @@ export function LaunchForm({
               onClear={clearImage}
             />
 
+            <SectionHeading>{LAUNCH_STATUS_COPY.sections.links}</SectionHeading>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field
                 label="X profile"
@@ -733,10 +748,12 @@ export function LaunchForm({
               />
             </Field>
 
+            <SectionHeading>{LAUNCH_STATUS_COPY.sections.buy}</SectionHeading>
             <Field
               label={LAUNCH_DEV_BUY.label}
               error={devBuyError}
-              hint={devBuyEth ? balanceLine : `${LAUNCH_DEV_BUY.hint} ${balanceLine}.`}
+              hint={balanceLine}
+              info={LAUNCH_DEV_BUY.hint}
             >
               <div className={cn(inputClasses, prefixedInput)}>
                 <input
@@ -754,18 +771,12 @@ export function LaunchForm({
             </Field>
 
             {!designCommitment ? (
-              <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <span>
-                    <span className="block text-sm font-medium text-ink-100">
-                      Add a commitment
-                    </span>
-                    <span className="mt-0.5 block text-xs text-ink-500">
-                      Why this token exists, the supply rationale and dated
-                      milestones. The hash goes on-chain with the token and can
-                      never be changed. Optional now, and needed later for
-                      milestone escrow and sale proceeds schedules.
-                    </span>
+              <div className="rounded-lg border border-ink-700/60 bg-ink-950/40 p-4 light:bg-ink-800/30">
+                <SectionHeading first>{LAUNCH_STATUS_COPY.sections.commitment}</SectionHeading>
+                <label className="mt-3 flex cursor-pointer items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-ink-100">
+                    Add a commitment
+                    <InfoTip>{LAUNCH_STATUS_COPY.commitmentBody}</InfoTip>
                   </span>
                   <input
                     type="checkbox"
@@ -809,7 +820,7 @@ export function LaunchForm({
                   <>
                     <SegmentedField
                       label={LAUNCH_PROJECT_COPY.label}
-                      hint={LAUNCH_PROJECT_COPY.hint}
+                      info={LAUNCH_PROJECT_COPY.hint}
                       value={projectMode}
                       onChange={(v) => setProjectMode(v)}
                       options={LAUNCH_PROJECT_COPY.options}
@@ -842,9 +853,9 @@ export function LaunchForm({
                       )
                     ) : null}
                     {projectMode === "create" ? (
-                      <p className="mt-3 text-xs leading-relaxed text-ink-500">
-                        {LAUNCH_PROJECT_COPY.createHint}
-                      </p>
+                      <div className="mt-3">
+                        <StatusChip tone="info" variant="block">{LAUNCH_PROJECT_COPY.createHint}</StatusChip>
+                      </div>
                     ) : null}
                   </>
                 )}
@@ -868,13 +879,15 @@ export function LaunchForm({
           <div className="space-y-5">
             {designCommitment ? (
               <div className="space-y-4">
-                <p className="text-sm leading-relaxed text-ink-300">
-                  This launch commits your published token design on-chain. The
-                  launcher records the design&apos;s snapshot hash, so the
-                  document behind this token can never be quietly rewritten.
+                <p className="inline-flex items-center gap-1 text-sm leading-relaxed text-ink-300">
+                  {LAUNCH_STATUS_COPY.designLine}
+                  <InfoTip>{LAUNCH_STATUS_COPY.designMore}</InfoTip>
                 </p>
-                <div className="rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
-                  <p className="text-sm font-medium text-ink-100">{designCommitment.name}</p>
+                <div className="rounded-lg border border-ink-700/60 bg-ink-950/40 p-4 light:bg-ink-800/30">
+                  <p className="inline-flex items-center gap-1 text-sm font-medium text-ink-100">
+                    {designCommitment.name}
+                    <InfoTip>{LAUNCH_STATUS_COPY.supplyNote}</InfoTip>
+                  </p>
                   <p className="mt-1 text-xs text-ink-500">
                     Published design ·{" "}
                     <Link
@@ -886,12 +899,6 @@ export function LaunchForm({
                   </p>
                   <p className="mt-2 break-all font-mono text-[11px] text-ink-500">
                     {designCommitment.snapshotHash}
-                  </p>
-                  <p className="mt-3 text-xs leading-relaxed text-ink-400">
-                    Only the supply is enforced by the contract. Allocations,
-                    vesting, distribution and everything else in the design are
-                    published commitments, snapshotted and tamper-evident, not
-                    code.
                   </p>
                 </div>
                 {designCommitment.milestoneCount > 0 ? (
@@ -1045,7 +1052,15 @@ export function LaunchForm({
         )}
       </Card>
 
-      <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <LaunchStatusCard
+          chainName={net.name}
+          live={open}
+          connected={isConnected}
+          correctChain={onCorrectChain}
+          tokenReady={step1Valid}
+          commitmentProblem={journeyProblem}
+        />
         <TokenPreviewCard
           name={name}
           ticker={ticker}

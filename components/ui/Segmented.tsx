@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 
 import { Field } from "@/components/ui/Input";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -106,6 +107,7 @@ export function SegmentedField<V extends string>({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   options,
@@ -114,6 +116,7 @@ export function SegmentedField<V extends string>({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: V | "";
   onChange: (value: V) => void;
   options: ReadonlyArray<SegmentedOption<V>>;
@@ -122,8 +125,11 @@ export function SegmentedField<V extends string>({
   // Not a <label>: a label around several buttons forwards clicks to the first.
   return (
     <div className="space-y-1.5">
-      <span className="block text-xs font-medium text-ink-200">
-        {label} {required ? <span className="text-rose-400">*</span> : null}
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+        <span>
+          {label} {required ? <span className="text-rose-400">*</span> : null}
+        </span>
+        {info ? <InfoTip>{info}</InfoTip> : null}
       </span>
       <Segmented value={value} onChange={onChange} options={options} ariaLabel={label} fill={fill} />
       {hint ? <span className="block text-xs text-ink-500">{hint}</span> : null}

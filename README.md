@@ -531,5 +531,10 @@ event window so judges can verify it.
   in a new tab (every launch, then the projects in progress, with a chain
   filter), and launched projects and designs leave the drafts lists, read
   Launched and cannot be deleted.
+- Oct 12, 2026. Quiet editors (M76). The project editor, the token design
+  editor and the launch form keep one short line per field; longer hints,
+  blurbs, gate notes and advice sit behind an info icon or a collapsed row.
+  The launch form has Shopify style sections and a Launch status card beside
+  it. The MCP pack and the exports are byte identical.
 
 This list grows as work lands on the branch.

@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckItem } from "@/components/ui/CheckItem";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { gatedStepsFor } from "@/content/kits/checklists";
@@ -28,12 +29,14 @@ export function FeaturesBlock({
   return (
     <div className="space-y-2 rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium text-ink-200">{CHECKLIST_COPY.featuresTitle}</p>
+        <p className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+          {CHECKLIST_COPY.featuresTitle}
+          <InfoTip>{CHECKLIST_COPY.featuresHint}</InfoTip>
+        </p>
         <StatusChip tone={progress.on ? "info" : "neutral"} className="px-2 py-0.5 text-[11px]">
           {CHECKLIST_COPY.featuresProgress(progress.on, progress.total)}
         </StatusChip>
       </div>
-      <p className="text-xs leading-relaxed text-ink-500">{CHECKLIST_COPY.featuresHint}</p>
       <ul className="space-y-0.5">
         {features.map((f) => {
           const on = hasFeature(kit, f.id);
@@ -44,13 +47,13 @@ export function FeaturesBlock({
               <CheckItem
                 checked={on}
                 onChange={(v) => onPatchKit(toggleFeature(kit, f.id, v))}
-                label={<span className={on ? "text-ink-50" : undefined}>{f.title}</span>}
-                description={
-                  <span className="block space-y-0.5">
-                    <span className="block">{f.detail}</span>
-                    {adds ? <span className="block text-[11px] text-ink-500">{adds}</span> : null}
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    <span className={on ? "text-ink-50" : undefined}>{f.title}</span>
+                    <InfoTip label={f.title}>{f.detail}</InfoTip>
                   </span>
                 }
+                description={adds ? <span className="block text-[11px] text-ink-500">{adds}</span> : undefined}
               />
             </li>
           );

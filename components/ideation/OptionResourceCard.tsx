@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { BookOpen, X } from "lucide-react";
 
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import {
@@ -150,13 +151,39 @@ export function OptionResourceCard({
   );
 }
 
-/** Field-level intro (explains a phrase or frames a question). */
+/**
+ * Field-level intro (explains a phrase or frames a question). Since M76 a
+ * quiet line: the title with an info icon whose popover carries the body,
+ * the worked example and the links. The deployability chip stays inline.
+ */
 export function FieldIntroCard({ intro }: { intro: ResourceIntroKey }) {
   const r: OptionResource = FIELD_INTROS[intro];
   return (
     <div className={cn("space-y-2", !r.deployability && "-mt-2")}>
       <DeployabilityChip resource={r} />
-      <ResourceTrigger resource={r} label={r.title ?? "What this means"} />
+      <span className="inline-flex items-center gap-1 text-[11px] text-ink-500">
+        {r.title ?? "What this means"}
+        <InfoTip title={r.title} label={r.title ?? "What this means"} align="left">
+          <span className="block">{r.body}</span>
+          {r.example ? <span className="mt-2 block text-ink-400">{r.example}</span> : null}
+          {r.links && r.links.length > 0 ? (
+            <span className="mt-2 block">
+              {r.links.map((l, i) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-electric-400 transition-colors hover:text-ink-50"
+                >
+                  {l.label}
+                  {i < r.links!.length - 1 ? " · " : ""}
+                </a>
+              ))}
+            </span>
+          ) : null}
+        </InfoTip>
+      </span>
     </div>
   );
 }

@@ -93,6 +93,8 @@ export const KIT_COPY = {
   overlapSharedTemplates: "Contract templates shared across the products",
   overlapNone: "Nothing is shared between these products yet.",
   overlapHow: "How the stack fits together",
+  /** The collapsed row that holds the shape blurbs and the overlap dialog (M76). */
+  aboutShapes: "About these shapes",
   startingPointLabel: "Starting point",
   existingProductLabel: "What exists today",
   existingProductHint: "A link or one line. Optional.",
@@ -155,6 +157,10 @@ export const RAIL_COPY = {
   coreOnly: "Core only",
   readFirst: (n: number) => `Read ${ordinal(n)}`,
   selectedOf: (selected: number, total: number) => `${selected} of ${total} selected`,
+  /** The info icon on a resource row (M76). */
+  why: "Why this resource",
+  /** The info icon beside the rail title (M76). */
+  about: "About the resource pack",
   footnote:
     "Core items are ticked for you. Untick what you already know, tick anything " +
     "extra. Your ticks travel with the project into AGENTS.md and the MCP tools.",
@@ -180,6 +186,8 @@ export const CHECKLIST_COPY = {
   /** Added and removed steps (M50). */
   customBadge: "Your step",
   customTag: "added by the team",
+  /** The info icon beside a product section title (M76). */
+  about: "About these steps",
   addTitle: "Add a step",
   addHint: "Anything this product needs that the list above does not cover. It is ticked and counted like the rest.",
   addPlaceholder: "What needs doing",

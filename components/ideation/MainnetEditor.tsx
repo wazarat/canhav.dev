@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { MAINNET_COPY } from "@/content/ideation";
 import { type ProjectChain, chainInfo } from "@/lib/chains";
@@ -50,15 +51,17 @@ export function MainnetEditor({
   return (
     <div className="space-y-4 rounded-xl border border-ink-800/70 p-4">
       <div>
-        <span className="text-xs font-medium text-ink-200">{MAINNET_COPY.label}</span>
-        <p className="mt-1 text-xs leading-relaxed text-ink-400">{MAINNET_COPY.hint}</p>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+          {MAINNET_COPY.label}
+          <InfoTip>{MAINNET_COPY.hint}</InfoTip>
+        </span>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1">
         <StatusChip tone="neutral">{MAINNET_COPY.chainLine(info.mainnetName, info.mainnetChainId)}</StatusChip>
-        <span className="text-[11px] text-ink-500">{MAINNET_COPY.chainHint}</span>
+        <InfoTip>{MAINNET_COPY.chainHint}</InfoTip>
       </div>
 
-      <Field label={MAINNET_COPY.contractsLabel} hint={MAINNET_COPY.contractsHint}>
+      <Field label={MAINNET_COPY.contractsLabel} info={MAINNET_COPY.contractsHint}>
         <div className="space-y-2">
           {contracts.map((c, i) => (
             <div key={i} className="flex items-start gap-2">
@@ -104,13 +107,13 @@ export function MainnetEditor({
       {companionOptions.length > 0 ? (
         <ChipRadioGroup
           label={MAINNET_COPY.companionLabel}
-          hint={MAINNET_COPY.companionHint}
+          info={MAINNET_COPY.companionHint}
           value={mainnet?.companionTemplate ?? ""}
           onChange={(v) => emit({ companionTemplate: v || undefined })}
           options={[...companionOptions, { value: "", label: MAINNET_COPY.companionClear }]}
         />
       ) : (
-        <Field label={MAINNET_COPY.companionLabel} hint={MAINNET_COPY.companionHint}>
+        <Field label={MAINNET_COPY.companionLabel} info={MAINNET_COPY.companionHint}>
           <StatusChip tone="neutral" variant="block">
             {MAINNET_COPY.companionNone}
           </StatusChip>
@@ -118,7 +121,7 @@ export function MainnetEditor({
       )}
 
       {chain === "robinhood_testnet" ? (
-        <Field label={MAINNET_COPY.ponsLabel} hint={MAINNET_COPY.ponsHint}>
+        <Field label={MAINNET_COPY.ponsLabel} info={MAINNET_COPY.ponsHint}>
           <div className="space-y-2">
             <Input
               value={pons?.tokenAddress ?? ""}

@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { Input } from "@/components/ui/Input";
 import { CheckItem } from "@/components/ui/CheckItem";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -101,7 +102,16 @@ export function ProductStepSection({
     <div className="space-y-5">
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold text-ink-50">{label}</h2>
+          <h2 className="inline-flex items-center gap-1.5 font-display text-lg font-semibold text-ink-50">
+            {label}
+            <InfoTip label={CHECKLIST_COPY.about}>
+              <span className="block">{CHECKLIST_COPY.productIntro}</span>
+              <span className="mt-2 block text-ink-400">{CHECKLIST_COPY.intro}</span>
+              {missing.length ? (
+                <span className="mt-2 block text-ink-100">{GATE_COPY.section(missing, chainName)}</span>
+              ) : null}
+            </InfoTip>
+          </h2>
           <span className="flex flex-wrap items-center gap-1.5">
             {section.groups.length ? (
               <StatusChip tone={progress.done === progress.total ? "success" : "neutral"}>
@@ -116,15 +126,8 @@ export function ProductStepSection({
         <p className="mt-1 text-sm leading-relaxed text-ink-400">{shapeBlurb(section.shape)}</p>
       </div>
 
-      <StatusChip tone="info" variant="block">
-        <span className="block">{CHECKLIST_COPY.productIntro}</span>
-        <span className="mt-1 block text-ink-400">{CHECKLIST_COPY.intro}</span>
-      </StatusChip>
-
       {missing.length ? (
-        <StatusChip tone="info" variant="block">
-          {GATE_COPY.section(missing, chainName)}
-        </StatusChip>
+        <StatusChip tone="info">{GATE_COPY.chipSuffix(missing, chainName, null)}</StatusChip>
       ) : null}
 
       <FeaturesBlock shape={section.shape} features={features} kit={kit} onPatchKit={onPatchKit} />
@@ -240,10 +243,11 @@ export function ProductStepSection({
       )}
 
       <div className="space-y-2 rounded-xl border border-ink-700/60 bg-ink-950/50 p-4">
-        <p className="text-xs font-medium text-ink-200">{CHECKLIST_COPY.addTitle}</p>
-        <p className="text-xs leading-relaxed text-ink-500">
-          {full ? CHECKLIST_COPY.addLimit(L.max) : CHECKLIST_COPY.addHint}
+        <p className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+          {CHECKLIST_COPY.addTitle}
+          <InfoTip>{CHECKLIST_COPY.addHint}</InfoTip>
         </p>
+        {full ? <p className="text-xs leading-relaxed text-ink-500">{CHECKLIST_COPY.addLimit(L.max)}</p> : null}
         <Input
           value={title}
           maxLength={L.titleMax}

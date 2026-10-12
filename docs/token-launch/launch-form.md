@@ -4,6 +4,10 @@
 
 The **Launch** tab (`/launch`) is a two-step form. Step 1, **Token**, collects what the token is. Step 2, **Launch**, is the review and the one transaction. This page explains each part. For what the transaction does on-chain, see [Create a token](create-a-token.md).
 
+## Reading the form
+
+The form is quiet by design. Each field keeps one short line under it; anything longer sits behind the small info icon beside the label, and a collapsed row opens on click. The card on the right reads **Launch status** with three chips, the chain, the wallet and the token readiness, so the form itself carries no state text. The sections are Token, Links, First buy, Commitment and Project.
+
 ## Chain
 
 The chain chooser at the top picks where the token launches: Robinhood Chain Testnet or Arbitrum Sepolia. It is hidden when the launch starts from a studio project or from a token design linked to one, because that launch goes on the project's chain.

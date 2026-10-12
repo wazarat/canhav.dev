@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { ENVIRONMENT_COPY, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
@@ -22,8 +23,10 @@ export function EnvironmentBlock({ kit, chain }: { kit: ProjectKit | undefined; 
   return (
     <section className="space-y-3" aria-label={ENVIRONMENT_COPY.title}>
       <div>
-        <h3 className="font-display text-sm font-semibold text-ink-50">{ENVIRONMENT_COPY.title}</h3>
-        <p className="mt-1 text-xs leading-relaxed text-ink-400">{ENVIRONMENT_COPY.intro}</p>
+        <h3 className="inline-flex items-center gap-1 font-display text-sm font-semibold text-ink-50">
+          {ENVIRONMENT_COPY.title}
+          <InfoTip>{ENVIRONMENT_COPY.intro}</InfoTip>
+        </h3>
       </div>
       <div className="space-y-2">
         {families.map((f) => (
@@ -65,8 +68,10 @@ function AcceptedOnChain({ kit, chain }: { kit: ProjectKit | undefined; chain: P
   return (
     <div className="space-y-2 border-t border-ink-800/70 pt-3">
       <div>
-        <h4 className="text-sm font-medium text-ink-100">{TEMPLATE_COPY.envTitle(name)}</h4>
-        <p className="mt-1 text-xs leading-relaxed text-ink-400">{TEMPLATE_COPY.envIntro}</p>
+        <h4 className="inline-flex items-center gap-1 text-sm font-medium text-ink-100">
+          {TEMPLATE_COPY.envTitle(name)}
+          <InfoTip>{TEMPLATE_COPY.envIntro}</InfoTip>
+        </h4>
       </div>
       {accepted.map((t) => {
         const on = templateOnChain(t, chain);
@@ -108,23 +113,27 @@ function Network({
   row: FamilyEnvironment["testnet"] | FamilyEnvironment["mainnet"];
 }) {
   return (
-    <span className="mt-1 block">
+    <span className="mt-1 flex items-center gap-1">
       <span className="text-ink-100">
         {label}, {ENVIRONMENT_COPY.status[row.status].toLowerCase()}.
-      </span>{" "}
-      {row.note}
-      {row.source ? (
-        <>
-          {" "}
-          <a
-            href={row.source}
-            target="_blank"
-            rel="noreferrer"
-            className="text-electric-400 transition-colors hover:text-ink-50"
-          >
-            {ENVIRONMENT_COPY.source}
-          </a>
-        </>
+      </span>
+      {row.note || row.source ? (
+        <InfoTip label={label}>
+          {row.note}
+          {row.source ? (
+            <>
+              {" "}
+              <a
+                href={row.source}
+                target="_blank"
+                rel="noreferrer"
+                className="text-electric-400 transition-colors hover:text-ink-50"
+              >
+                {ENVIRONMENT_COPY.source}
+              </a>
+            </>
+          ) : null}
+        </InfoTip>
       ) : null}
     </span>
   );

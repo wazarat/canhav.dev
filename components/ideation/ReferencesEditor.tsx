@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { REFERENCES_COPY } from "@/content/ideation";
 import { PROJECT_LIMITS, type ProjectReference, referenceIsLink } from "@/lib/ideation";
 
@@ -30,8 +31,10 @@ export function ReferencesEditor({
   return (
     <div className="space-y-3">
       <div>
-        <span className="text-xs font-medium text-ink-200">{REFERENCES_COPY.label}</span>
-        <p className="mt-1 text-xs leading-relaxed text-ink-400">{REFERENCES_COPY.hint}</p>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+          {REFERENCES_COPY.label}
+          <InfoTip>{REFERENCES_COPY.hint}</InfoTip>
+        </span>
       </div>
       <div className="space-y-3">
         {references.map((ref, i) => (

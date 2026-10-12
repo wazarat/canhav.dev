@@ -41,6 +41,7 @@ export function SelectField<V extends string>({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   options,
@@ -50,6 +51,7 @@ export function SelectField<V extends string>({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: V | "";
   onChange: (value: V | "") => void;
   options: ReadonlyArray<{ value: V; label: string; available?: boolean }>;
@@ -58,7 +60,7 @@ export function SelectField<V extends string>({
   clearable?: boolean;
 }) {
   return (
-    <Field label={label} required={required} hint={hint}>
+    <Field label={label} required={required} hint={hint} info={info}>
       <Select value={value} muted={!value} onChange={(e) => onChange(e.target.value as V | "")}>
         <option value="" disabled={!clearable}>
           {placeholder}

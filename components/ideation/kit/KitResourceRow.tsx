@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { CheckItem } from "@/components/ui/CheckItem";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { FAMILY_LABELS, FLAG_COPY, KIND_LABELS, RAIL_COPY } from "@/content/kits/copy";
 import type { KitResource } from "@/lib/kits";
@@ -50,6 +51,7 @@ export function KitResourceRow({
               {RAIL_COPY.readFirst(rank)}
             </span>
           ) : null}
+          <InfoTip label={RAIL_COPY.why}>{r.why}</InfoTip>
         </span>
       }
       description={
@@ -65,7 +67,6 @@ export function KitResourceRow({
               </StatusChip>
             ))}
           </span>
-          <span className="block">{r.why}</span>
         </span>
       }
     />

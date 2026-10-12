@@ -546,6 +546,21 @@ export const CHAIN_COPY = {
 } as const;
 
 /** The misconception this platform refuses to let stand quietly. */
+/** The one line that stays visible above the Security declarations; the pressure text sits behind it (M76). */
+export const WORST_CASE_WHY = "Why this matters";
+
+/** The Review step's publishing line, with the longer explanation behind the info icon (M76). */
+export const PUBLISH_COPY = {
+  project: {
+    line: "Publishing makes this page public and snapshots it.",
+    more: "Every version is kept, and the latest renders at your public URL.",
+  },
+  token: {
+    line: "Publishing makes this design public and snapshots it.",
+    more: "Deploying from a published design commits its hash on chain, making the design tamper evident forever.",
+  },
+} as const;
+
 export const ROBINHOOD_MYTH = {
   title: "A reality check before you publish",
   body:

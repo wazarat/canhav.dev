@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { InfoTip } from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,13 +30,17 @@ TextArea.displayName = "TextArea";
 
 /**
  * Label + control + hint/error/counter wrapper. Mirrors the field markup of
- * the contact modal so forms stay visually consistent.
+ * the contact modal so forms stay visually consistent. `hint` is the one
+ * short line that stays visible; anything longer goes in `info`, which
+ * renders as an InfoTip beside the label (M76).
  */
 export function Field({
   label,
   required,
   error,
   hint,
+  info,
+  infoTitle,
   counter,
   range,
   counterMet,
@@ -45,6 +50,9 @@ export function Field({
   required?: boolean;
   error?: string;
   hint?: string;
+  /** Longer helper copy behind the info icon beside the label. */
+  info?: React.ReactNode;
+  infoTitle?: string;
   /** Live character count, e.g. "123" (or a full "123/500" string). */
   counter?: string;
   /** Required range shown beside the counter, e.g. "80–2,000". */
@@ -56,8 +64,11 @@ export function Field({
   return (
     <label className="block space-y-1.5">
       <span className="flex items-baseline justify-between">
-        <span className="text-xs font-medium text-ink-200">
-          {label} {required ? <span className="text-rose-400">*</span> : null}
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+          <span>
+            {label} {required ? <span className="text-rose-400">*</span> : null}
+          </span>
+          {info ? <InfoTip title={infoTitle}>{info}</InfoTip> : null}
         </span>
         {counter || range ? (
           <span className="flex items-baseline gap-1 text-xs">

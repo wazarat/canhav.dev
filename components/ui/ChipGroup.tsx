@@ -77,6 +77,7 @@ export function ChipMultiSelect<V extends string>({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   options,
@@ -85,6 +86,7 @@ export function ChipMultiSelect<V extends string>({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: readonly V[];
   onChange: (value: V[]) => void;
   options: ReadonlyArray<ChipOption<V>>;
@@ -92,7 +94,7 @@ export function ChipMultiSelect<V extends string>({
 }) {
   const chosen = new Set(value);
   return (
-    <Field label={label} required={required} hint={hint}>
+    <Field label={label} required={required} hint={hint} info={info}>
       <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
         {options.map((opt) => {
           const selected = chosen.has(opt.value);
@@ -121,6 +123,7 @@ export function ChipRadioGroup<V extends string>({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   options,
@@ -128,12 +131,13 @@ export function ChipRadioGroup<V extends string>({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: V | "";
   onChange: (value: V) => void;
   options: ReadonlyArray<ChipOption<V>>;
 }) {
   return (
-    <Field label={label} required={required} hint={hint}>
+    <Field label={label} required={required} hint={hint} info={info}>
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
         {options.map((opt) => (
           <Chip
@@ -169,6 +173,7 @@ export function ChipMultiSelectGroups<V extends string>({
   label,
   required,
   hint,
+  info,
   value,
   onChange,
   groups,
@@ -179,6 +184,7 @@ export function ChipMultiSelectGroups<V extends string>({
   label: string;
   required?: boolean;
   hint?: string;
+  info?: React.ReactNode;
   value: readonly V[];
   onChange: (value: V[]) => void;
   groups: ReadonlyArray<ChipGroupSection<V>>;
@@ -190,7 +196,7 @@ export function ChipMultiSelectGroups<V extends string>({
   const headed = groups.length > 1;
   const chosen = new Set(value);
   return (
-    <Field label={label} required={required} hint={hint}>
+    <Field label={label} required={required} hint={hint} info={info}>
       <div className={cn(headed ? "space-y-3" : "")} role="group" aria-label={label}>
         {groups.map((group) => (
           <div key={group.key} role={headed ? "group" : undefined} aria-label={headed ? group.heading : undefined}>

@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { KitResourceRow } from "@/components/ideation/kit/KitResourceRow";
 import { Badge } from "@/components/ui/Badge";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { Segmented } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -95,6 +96,7 @@ export function KitRail({
     <section aria-label={RAIL_COPY.title} className="glass rounded-xl p-4">
       <Header
         title={RAIL_COPY.title}
+        info={RAIL_COPY.footnote}
         right={
           <StatusChip tone="info" className="px-2 py-0.5 text-[11px]">
             {RAIL_COPY.selectedOf(counts.selected, counts.total)}
@@ -158,9 +160,6 @@ export function KitRail({
         </div>
       )}
 
-      <p className="mt-4 border-t border-ink-800/70 pt-3 text-[11px] leading-relaxed text-ink-500">
-        {RAIL_COPY.footnote}
-      </p>
     </section>
   );
 }
@@ -214,10 +213,13 @@ function AcceptedTemplates({ kit }: { kit: ProjectKit }) {
   );
 }
 
-function Header({ title, right }: { title: string; right?: React.ReactNode }) {
+function Header({ title, info, right }: { title: string; info?: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <h2 className="font-display text-sm font-semibold text-ink-50">{title}</h2>
+      <h2 className="inline-flex items-center gap-1 font-display text-sm font-semibold text-ink-50">
+        {title}
+        {info ? <InfoTip label={RAIL_COPY.about}>{info}</InfoTip> : null}
+      </h2>
       {right}
     </div>
   );
