@@ -38,6 +38,8 @@ export interface ShapeOption extends ChipOption<ProductShape> {
   blurb: string;
   /** Two or three things a team could build with it, one line each (M41). */
   examples: readonly string[];
+  /** The label as a noun phrase after "I am building", for a subsector that picks this shape on its own. */
+  building?: string;
 }
 
 /** Every shape option, in SHAPE_SUBSECTORS (picker) order. */
@@ -63,6 +65,9 @@ export const STARTING_POINT_OPTIONS: ReadonlyArray<ChipOption<StartingPoint>> = 
 export const KIT_COPY = {
   shapeLabel: "What are you building",
   shapeHint: "Pick every layer your users touch. The research kit merges the packs for what you choose.",
+  /** One line per subsector that names its shape on its own. */
+  buildingLine: (phrase: string, sentence: string) => `I am building ${phrase}. ${sentence}`,
+  buildingHint: "These follow from the subsectors you picked. Untick a subsector to drop its product.",
   examplesTitle: "What you could build",
   startingPointLabel: "Starting point",
   existingProductLabel: "What exists today",
@@ -333,6 +338,15 @@ export interface ShapeGroup {
  * and Curated vault stays with Lending when Vaults is also ticked. One
  * group when one subsector is chosen, so no headings are needed.
  */
+/** "a restaking service", "stock and fund tokens". Falls back to the label with an article. */
+export function shapeBuildingPhrase(shape: ProductShape): string {
+  const o = SHAPE_OPTIONS.find((x) => x.value === shape);
+  if (!o) return shape;
+  if (o.building) return o.building;
+  const lower = o.label.toLowerCase();
+  return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
+}
+
 export function shapeGroupsFor(subsectors: readonly Subsector[]): ShapeGroup[] {
   const offered = new Set(offeredShapes(subsectors));
   const chosen = ALL_SUBSECTOR_OPTIONS.filter((o) => subsectors.includes(o.value));

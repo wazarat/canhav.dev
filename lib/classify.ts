@@ -4,6 +4,7 @@ import type { ProjectDoc } from "@/lib/ideation";
 import {
   type ProductShape,
   emptyProjectKit,
+  impliedShapesFor,
   kitShapes,
   kitsForSectors,
   withImpliedSubsectors,
@@ -57,7 +58,18 @@ export function subsectorsChange(doc: ProjectDoc, picked: readonly Subsector[]):
     sectors,
     picked.filter((s) => !held.includes(s)),
   );
-  return { subsectors: implied, ...kitAfter(doc, sectors, implied) };
+  const after = kitAfter(doc, sectors, implied);
+  // A subsector that offers exactly one shape picks it, so nobody is asked twice.
+  const auto = impliedShapesFor(implied);
+  const held2 = after.kit ? kitShapes(after.kit) : [];
+  if (!auto.some((s) => !held2.includes(s))) return { subsectors: implied, ...after };
+  const kits = kitsForSectors(sectors, implied);
+  const base = after.kit ?? doc.kit ?? emptyProjectKit(kits.length ? kits : kitsForDoc(doc));
+  const nextKits = kits.length ? kits : base.kits;
+  return {
+    subsectors: implied,
+    kit: { ...base, ...withShapes([...held2, ...auto]), kits: nextKits, id: nextKits[0] },
+  };
 }
 
 export function shapesChange(doc: ProjectDoc, picked: readonly ProductShape[]): Partial<ProjectDoc> {

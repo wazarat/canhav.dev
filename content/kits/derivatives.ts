@@ -8,6 +8,7 @@ import type { ShapeOption } from "@/content/kits/copy";
 export const DERIVATIVES_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   {
     value: "perp_exchange",
+    building: "a perpetuals venue",
     label: "Perpetuals venue",
     blurb:
       "Your users open leveraged long and short positions that never expire. You " +
@@ -21,6 +22,7 @@ export const DERIVATIVES_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "option_vault",
+    building: "an option vault",
     label: "Option vault",
     blurb:
       "Depositors hand you collateral and your vault writes or buys options on a " +
@@ -34,6 +36,7 @@ export const DERIVATIVES_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "delta_neutral_vault",
+    building: "a delta neutral yield product",
     label: "Delta neutral yield",
     blurb:
       "Depositors earn funding or basis while the price exposure is hedged away. You " +

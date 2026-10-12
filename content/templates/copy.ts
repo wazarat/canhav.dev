@@ -91,6 +91,11 @@ export const TEMPLATE_COPY = {
   links: { repo: "Repository", docs: "Docs" },
   chipNote: (live: number, total: number, chain: string) =>
     live ? `${live} of ${total} templates run on ${chain}` : `No template in this list runs on ${chain} yet`,
+  /** Under a product a subsector picked on its own, when no template is live on the project's mainnet. */
+  noneOnChainNote: (chain: string) => `No template for this runs on ${chain} yet`,
+  noneOnChainDetail: (chain: string) =>
+    `None of the contract templates in the catalog for this product is deployed on ${chain} yet. You still get every build step for it, so your agent can work through them over MCP and you have a guideline to build against while a template lands.`,
+  noneOnChainAria: "Why there is no template yet",
   /** Decisions on a project's build steps (M63). */
   stepTitle: "Contract templates",
   stepHint: "Candidates for this step. Accept what you will build on or integrate, reject what you will not, and the choice travels with the project into RESOURCES.md and the MCP tools.",

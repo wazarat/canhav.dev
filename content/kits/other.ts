@@ -4,6 +4,7 @@ import type { ShapeOption } from "@/content/kits/copy";
 export const OTHER_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   {
     value: "cover_pool",
+    building: "a cover pool",
     label: "Cover pool",
     blurb:
       "Capital providers fund a pool that pays out when a defined event happens. You " +
@@ -17,6 +18,7 @@ export const OTHER_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "governance_stack",
+    building: "token governance",
     label: "Token governance",
     blurb:
       "Holders vote and a treasury or a set of contracts does what the vote says. You " +

@@ -4,6 +4,7 @@ import type { ShapeOption } from "@/content/kits/copy";
 export const RWA_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   {
     value: "tokenized_security",
+    building: "stock and fund tokens",
     label: "Stock and fund tokens",
     blurb:
       "You issue or build on tokens that track a stock, a fund or a bond. You decide " +
@@ -17,6 +18,7 @@ export const RWA_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "private_credit_pool",
+    building: "a private credit pool",
     label: "Private credit pool",
     blurb:
       "Lenders pool capital and you or a delegate underwrite loans to named borrowers " +
@@ -30,6 +32,7 @@ export const RWA_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "asset_backed_token",
+    building: "a reserve-backed token",
     label: "Reserve-backed token",
     blurb:
       "You issue a token backed one to one by a reserve held off-chain or on another " +

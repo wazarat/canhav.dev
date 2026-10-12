@@ -4,6 +4,7 @@ import type { ShapeOption } from "@/content/kits/copy";
 export const STAKING_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   {
     value: "liquid_staking_token",
+    building: "a liquid staking token",
     label: "Liquid staking token",
     blurb:
       "Holders stake an asset with you and receive a liquid token that keeps earning " +
@@ -17,6 +18,7 @@ export const STAKING_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "restaking_service",
+    building: "a restaking service",
     label: "Restaking service",
     blurb:
       "Already staked assets secure a second service you run. You define the service, " +
@@ -30,6 +32,7 @@ export const STAKING_SHAPE_OPTIONS: ReadonlyArray<ShapeOption> = [
   },
   {
     value: "liquid_restaking_token",
+    building: "a liquid restaking token",
     label: "Liquid restaking token",
     blurb:
       "Users deposit an asset or a staking token and get back one liquid token backed " +

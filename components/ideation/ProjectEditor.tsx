@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Info } from "lucide-react";
 
 import { AgentChangesPanel } from "@/components/ideation/AgentChangesPanel";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
@@ -55,13 +56,14 @@ import {
   sectorLabel,
   subsectorLabel,
   subsectorLabels,
-  subsectorOptionsFor, closedSectorLabels } from "@/content/ideation";
+  subsectorOptionsFor, closedSectorLabels, ALL_SUBSECTOR_OPTIONS } from "@/content/ideation";
 import { kitsForDoc } from "@/content/kits";
 import {
   GATE_COPY,
   KIT_COPY,
   STARTING_POINT_OPTIONS,
   shapeBlurb,
+  shapeBuildingPhrase,
   shapeExamples,
   shapeGroupsFor,
   shapeLabel,
@@ -109,6 +111,7 @@ import {
   packCounts,
   packFor,
   SHAPE_FAMILIES,
+  impliedShapesFor,
 } from "@/lib/kits";
 
 /**
@@ -268,7 +271,30 @@ export function ProjectEditor({
       }),
     }));
   const subsectorGated = subsectorGroups.some((g) => g.options.some((o) => o.note));
-  const shapeGroups = shapeGroupsFor(subsectors).map((g) => ({
+  // A subsector that offers exactly one shape names it on its own (no second pick). Its
+  // shape is kept on the kit by subsectorsChange; older drafts catch up here.
+  const singleSubs = subsectors.filter((sub) => shapesFor([sub]).length === 1);
+  const impliedMissing = impliedShapesFor(subsectors).filter((s) => !kitShapes(kit).includes(s));
+  useEffect(() => {
+    if (impliedMissing.length) patch(shapesChange(doc, [...kitShapes(kit), ...impliedMissing]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [impliedMissing.join(",")]);
+  const buildingLines = singleSubs.map((sub) => {
+    const shape = shapesFor([sub])[0];
+    const option = ALL_SUBSECTOR_OPTIONS.find((o) => o.value === sub);
+    const missing = missingFamilies(shape, envRows);
+    const counts =
+      SHAPE_FAMILIES[shape].length === 0
+        ? templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [shape], chainKey), chainKey)
+        : null;
+    return {
+      shape,
+      line: KIT_COPY.buildingLine(shapeBuildingPhrase(shape), option?.sentence ?? ""),
+      gateNote: missing.length > 0 ? gateNote(missing) : null,
+      noTemplate: counts !== null && counts.total > 0 && counts.live === 0,
+    };
+  });
+  const shapeGroups = shapeGroupsFor(subsectors).filter((g) => !singleSubs.includes(g.subsector)).map((g) => ({
     key: g.subsector,
     heading: g.heading,
     options: g.options.map((o): ChipOption<ProductShape> => {
@@ -435,18 +461,56 @@ export function ProjectEditor({
             )}
             {showRail && (
               <>
-                <ChipMultiSelectGroups
-                  label={KIT_COPY.shapeLabel}
-                  hint={KIT_COPY.shapeHint}
-                  value={kitShapes(kit)}
-                  onChange={onShapes}
-                  max={KIT_LIMITS.shapes.max}
-                  groups={shapeGroups}
-                >
-                  {shapeGated ? (
-                    <p className="mt-2 text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
-                  ) : null}
-                </ChipMultiSelectGroups>
+                {buildingLines.length ? (
+                  <div className="space-y-2">
+                    {shapeGroups.length === 0 ? (
+                      <span className="text-xs font-medium text-ink-200">{KIT_COPY.shapeLabel}</span>
+                    ) : null}
+                    <ul className="space-y-2">
+                      {buildingLines.map((b) => (
+                        <li key={b.shape} className="rounded-xl border border-ink-700/60 bg-ink-950/50 px-3.5 py-2.5">
+                          <p className="text-sm leading-relaxed text-ink-100">{b.line}</p>
+                          {b.gateNote ? <p className="mt-1 text-xs text-ink-400">{b.gateNote}</p> : null}
+                          {b.noTemplate ? (
+                            <span className="group relative mt-2 inline-flex">
+                              <StatusChip tone="info">
+                                {TEMPLATE_COPY.noneOnChainNote(chain.mainnetName)}
+                                <button
+                                  type="button"
+                                  aria-label={TEMPLATE_COPY.noneOnChainAria}
+                                  className="ml-1.5 inline-flex rounded-full text-ink-400 transition-colors hover:text-ink-100 focus:outline-none"
+                                >
+                                  <Info aria-hidden className="h-3.5 w-3.5" />
+                                </button>
+                              </StatusChip>
+                              <span
+                                role="tooltip"
+                                className="glass pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-72 rounded-xl border border-ink-700/60 p-3 text-xs leading-relaxed text-ink-200 group-hover:block group-focus-within:block"
+                              >
+                                {TEMPLATE_COPY.noneOnChainDetail(chain.mainnetName)}
+                              </span>
+                            </span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-ink-500">{KIT_COPY.buildingHint}</p>
+                  </div>
+                ) : null}
+                {shapeGroups.length > 0 ? (
+                  <ChipMultiSelectGroups
+                    label={KIT_COPY.shapeLabel}
+                    hint={KIT_COPY.shapeHint}
+                    value={kitShapes(kit)}
+                    onChange={onShapes}
+                    max={KIT_LIMITS.shapes.max}
+                    groups={shapeGroups}
+                  >
+                    {shapeGated ? (
+                      <p className="mt-2 text-xs leading-relaxed text-ink-500">{GATE_COPY.note(chain.short)}</p>
+                    ) : null}
+                  </ChipMultiSelectGroups>
+                ) : null}
                 {kitShapes(kit).length ? (
                   <div className="-mt-3 space-y-4 text-sm leading-relaxed text-ink-300">
                     {kitShapes(kit).map((s) => (

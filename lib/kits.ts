@@ -98,6 +98,20 @@ export function shapesFor(subsectors: readonly Subsector[]): ProductShape[] {
 }
 
 /**
+ * The shapes a set of subsectors picks on its own: every subsector that
+ * offers exactly one shape names it, so the builder is not asked twice.
+ * Picker order, each once.
+ */
+export function impliedShapesFor(subsectors: readonly Subsector[]): ProductShape[] {
+  const out = new Set<ProductShape>();
+  for (const sub of subsectors) {
+    const offered = shapesFor([sub]);
+    if (offered.length === 1) out.add(offered[0]);
+  }
+  return PRODUCT_SHAPE_VALUES.filter((s) => out.has(s));
+}
+
+/**
  * Declared subsectors plus the ones the chosen shapes imply, limited to the
  * sectors the project is in, so a Liquidity project building a curated vault
  * does not report Lending.
