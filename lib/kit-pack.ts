@@ -7,12 +7,13 @@ import {
   type ContractTemplate,
   type TemplateAvailability,
   templateAvailability,
+  templateChainCounts,
   templateOnChain,
   templatesForShapes,
 } from "@/lib/templates";
 import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
-import { FAMILY_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
+import { FAMILY_LABELS, shapeExamples, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, launchTargetHandoffLine, launchTargetLabel } from "@/content/launch-targets";
@@ -48,6 +49,7 @@ import {
   featureProgress,
   featuresSuggesting,
   hasFeature,
+  ideaRows,
   templateCounts,
   templateState,
 } from "@/lib/kits";
@@ -134,6 +136,21 @@ export interface ResourcePackView {
   templates: TemplatesView;
   /** What the product includes, as the features the team ticked (M64). */
   features: FeaturesView;
+  /** What the team could build with each shape, the catalog lines it ticked and its own (M68 follow-up). */
+  ideas: { count: number; items: Array<{ shape: ProductShape; text: string; on: boolean; own: boolean }> };
+  /**
+   * Shapes with no contract template live on this chain's mainnet (M68
+   * follow-up), with how many run on the other mainnet and the way forward.
+   */
+  templateGaps: Array<{
+    shape: ProductShape;
+    label: string;
+    mainnet: string;
+    otherChain: ProjectChain;
+    otherMainnet: string;
+    liveOnOther: number;
+    plan: string;
+  }>;
   /** The venue the linked token design ideates for (M69). Null without a design or a choice. */
   launchTarget: LaunchTargetView | null;
   howToUse: string;
@@ -230,7 +247,7 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
 }
 
 export const HOW_TO_USE =
-  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted. features lists what the product includes as the team ticked it; a ticked feature's steps are in the checklist and the templates it suggests carry it in suggestedBy, so prefer those on their steps. launchTarget, when the linked token design has chosen a venue, names it with its fit on this chain and the templates whose Pons fit line says how they can sit behind a Pons launch; a venue marked off_chain runs on a mainnet this project's chain does not stand in for, so plan the testnet launch on the CanHav curve and say so.";
+  "Fetch rawUrl where present (agent skills, references and templates) and load them into context in readFirst order before touching code. Respect the flags. mainnet_only means no testnet deployment exists, not_on_robinhood means the resource is background reading and cannot be integrated on this chain, unofficial means a community artifact to verify before trusting, self_deploy means the protocol has no deployment on testnet 46630 and the team deploys these contracts itself and records them in its own manifest. chain names the testnet this project builds on, and shapesMissingTestnet lists the shapes whose protocol has no deployment there, for which the team or its agent writes the build steps that fit with set_build_steps. templates lists the contract templates for the shapes with the team's decision on each. accepted means the team will build on or integrate it, rejected means do not propose it again, open means undecided, and availability says what can be done with it on this chain (ready, self_deploy, unknown, unavailable). Never fork a template whose licenseClass is restricted. features lists what the product includes as the team ticked it; a ticked feature's steps are in the checklist and the templates it suggests carry it in suggestedBy, so prefer those on their steps. ideas lists what the team could build with each shape, the catalog lines it ticked (on) and the lines it wrote (own); read them before proposing product scope and add to them through update_project kit.ideas, never drop a line the team ticked. templateGaps lists the shapes with no contract template live on this chain's mainnet, with the count live on the other mainnet and a plan line; follow the plan, accept the other mainnet's templates and iterate for this chain against a fork or a mock, or say the project should move chain, and never present an undeployed template as a build plan. launchTarget, when the linked token design has chosen a venue, names it with its fit on this chain and the templates whose Pons fit line says how they can sit behind a Pons launch; a venue marked off_chain runs on a mainnet this project's chain does not stand in for, so plan the testnet launch on the CanHav curve and say so.";
 
 const DECISION_RANK: Record<TemplateState, number> = { accepted: 0, open: 1, rejected: 2 };
 
@@ -375,6 +392,28 @@ export function buildResourcePack(
     review: buildReviewView(doc)!,
     templates: { counts: templateCounts(templateItems.map((t) => t.id), kit), items: templateItems },
     features: { ...featureProgress(features, kit), items: featureItems },
+    ideas: {
+      count: kit.ideas?.length ?? 0,
+      items: shapes.flatMap((s) => ideaRows(kit, s, shapeExamples(s)).map((r) => ({ shape: s, ...r }))),
+    },
+    templateGaps: shapes.flatMap((s) => {
+      const here = templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [s], chain), chain);
+      if (!here.total || here.live) return [];
+      const otherChain: ProjectChain = chain === "robinhood_testnet" ? "arbitrum_sepolia" : "robinhood_testnet";
+      const other = chainInfo(otherChain);
+      const liveOnOther = templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [s], otherChain), otherChain).live;
+      return [
+        {
+          shape: s,
+          label: shapeLabel(s) ?? s,
+          mainnet: info.mainnetName,
+          otherChain,
+          otherMainnet: other.mainnetName,
+          liveOnOther,
+          plan: TEMPLATE_COPY.noneOnChainPlan(liveOnOther, other.mainnetName, info.mainnetName, other.name),
+        },
+      ];
+    }),
     launchTarget: opts.launchTarget ? launchTargetView(opts.launchTarget, chain, templateItems) : null,
     howToUse: HOW_TO_USE,
   };

@@ -69,6 +69,25 @@ export const KIT_COPY = {
   buildingLine: (phrase: string, sentence: string) => `I am building ${phrase}. ${sentence}`,
   buildingHint: "These follow from the subsectors you picked. Untick a subsector to drop its product.",
   examplesTitle: "What you could build",
+  ideasHint: "Tick what fits or add your own line. Your agent reads these through the MCP server and can add to them.",
+  ideaPlaceholder: "One line on what you would build",
+  ideaAdd: "Add",
+  ideaRemove: (text: string) => `Remove ${text}`,
+  ideaOwn: "Yours",
+  ideasExport: (n: number) => (n === 1 ? "One line the team ticked or wrote." : `${n} lines the team ticked or wrote.`),
+  /** The shapes dialog (M68 follow-up). */
+  overlapTrigger: "How the shapes relate",
+  overlapLead: (n: number) =>
+    n === 1
+      ? "One product. Its research pack, build steps and contract templates are its own."
+      : `${n} products. Each gets its own research pack, build steps and contract templates, and what they share is listed once so nothing is done twice.`,
+  overlapColumns: { resources: "Resources", steps: "Build steps", templates: "Templates" },
+  overlapOnly: (label: string) => `${label} only`,
+  overlapShared: "Shared",
+  overlapSharedSteps: "Build steps shared across the products",
+  overlapSharedTemplates: "Contract templates shared across the products",
+  overlapNone: "Nothing is shared between these products yet.",
+  overlapHow: "How the stack fits together",
   startingPointLabel: "Starting point",
   existingProductLabel: "What exists today",
   existingProductHint: "A link or one line. Optional.",

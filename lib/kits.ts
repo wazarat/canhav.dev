@@ -316,6 +316,19 @@ export interface ProjectKit {
    * it suggests first. Only ticked ids are stored, never injected.
    */
   features?: string[];
+  /**
+   * What the team could build with each shape (M68 follow-up), the catalog
+   * examples it ticked and the lines it wrote itself. Only ticked and own
+   * lines are stored, never injected. Read through the project MCP server
+   * and the exports so an agent can add to it.
+   */
+  ideas?: KitIdea[];
+}
+
+export interface KitIdea {
+  shape: ProductShape;
+  /** One line. A catalog example is stored by its exact text. */
+  text: string;
 }
 
 export type TemplateDecision = "accepted" | "rejected";
@@ -355,6 +368,8 @@ export const KIT_LIMITS = {
   hiddenSteps: { max: 400 },
   /** Cap on stored contract template decisions, above the catalog size. */
   templates: { max: 400 },
+  /** What you could build lines across the shapes, and their text. */
+  ideas: { max: 40, textMin: 3, textMax: 160 },
   /** Cap on ticked feature ids, above the catalog size. */
   features: { max: 400 },
 } as const;
@@ -446,6 +461,23 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
   }
   const hidden = idList(r.hiddenSteps).slice(0, KIT_LIMITS.hiddenSteps.max);
   if (hidden.length) kit.hiddenSteps = hidden;
+  if (Array.isArray(r.ideas)) {
+    const L = KIT_LIMITS.ideas;
+    const seen = new Set<string>();
+    const ideas: KitIdea[] = [];
+    for (const raw of r.ideas as unknown[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const c = raw as Record<string, unknown>;
+      if (!PRODUCT_SHAPE_VALUES.includes(c.shape as ProductShape)) continue;
+      if (typeof c.text !== "string" || !c.text.trim()) continue;
+      const text = c.text.trim().slice(0, L.textMax);
+      const key = `${c.shape}\n${text}`;
+      if (seen.has(key) || ideas.length >= L.max) continue;
+      seen.add(key);
+      ideas.push({ shape: c.shape as ProductShape, text });
+    }
+    if (ideas.length) kit.ideas = ideas;
+  }
   if (r.templates && typeof r.templates === "object" && !Array.isArray(r.templates)) {
     const decisions: Record<string, TemplateDecision> = {};
     let n = 0;
@@ -502,6 +534,15 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     }
   }
   if ((kit.hiddenSteps?.length ?? 0) > KIT_LIMITS.hiddenSteps.max) return "Too many removed build steps.";
+  if (kit.ideas) {
+    const L = KIT_LIMITS.ideas;
+    if (kit.ideas.length > L.max) return `At most ${L.max} lines under what you could build.`;
+    for (const i of kit.ideas) {
+      if (!PRODUCT_SHAPE_VALUES.includes(i.shape)) return "A what you could build line names an unknown product shape.";
+      if (i.text.trim().length < L.textMin) return `A what you could build line needs at least ${L.textMin} characters.`;
+      if (i.text.length > L.textMax) return `A what you could build line is over ${L.textMax} characters.`;
+    }
+  }
   if (kit.templates) {
     const entries = Object.entries(kit.templates);
     if (entries.length > KIT_LIMITS.templates.max) return "Too many template decisions.";
@@ -649,6 +690,43 @@ export interface FeatureItem {
 }
 
 export type FeatureLists = Partial<Record<ProductShape, readonly FeatureItem[]>>;
+
+// ---------------------------------------------------------------------------
+// What you could build (M68 follow-up). Ticked catalog examples and own lines.
+
+export function ideasFor(kit: Pick<ProjectKit, "ideas"> | undefined, shape: ProductShape): KitIdea[] {
+  return (kit?.ideas ?? []).filter((i) => i.shape === shape);
+}
+
+export function hasIdea(kit: Pick<ProjectKit, "ideas"> | undefined, shape: ProductShape, text: string): boolean {
+  return (kit?.ideas ?? []).some((i) => i.shape === shape && i.text === text);
+}
+
+/** Tick or untick one line. Never stores an empty list. */
+export function toggleIdea(
+  kit: Pick<ProjectKit, "ideas">,
+  shape: ProductShape,
+  text: string,
+  on: boolean,
+): Pick<ProjectKit, "ideas"> {
+  const clean = text.trim().slice(0, KIT_LIMITS.ideas.textMax);
+  const rest = (kit.ideas ?? []).filter((i) => !(i.shape === shape && i.text === clean));
+  const next = on && clean ? [...rest, { shape, text: clean }].slice(0, KIT_LIMITS.ideas.max) : rest;
+  return { ideas: next.length ? next : undefined };
+}
+
+/** The lines of a shape with the catalog examples first, each flagged own or catalog. */
+export function ideaRows(
+  kit: Pick<ProjectKit, "ideas"> | undefined,
+  shape: ProductShape,
+  examples: readonly string[],
+): Array<{ text: string; on: boolean; own: boolean }> {
+  const own = ideasFor(kit, shape).filter((i) => !examples.includes(i.text));
+  return [
+    ...examples.map((text) => ({ text, on: hasIdea(kit, shape, text), own: false })),
+    ...own.map((i) => ({ text: i.text, on: true, own: true })),
+  ];
+}
 
 export const FEATURE_ID = /^[a-z0-9_]+\.f\.[a-z0-9-]+$/;
 

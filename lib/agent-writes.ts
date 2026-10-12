@@ -272,6 +272,15 @@ export const projectPatchSchema = z
             }),
           )
           .max(KIT_LIMITS.review.max),
+        // What you could build (M68 follow-up), the list replaces the stored list.
+        ideas: z
+          .array(
+            z.strictObject({
+              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
+            }),
+          )
+          .max(KIT_LIMITS.ideas.max),
         // Contract template decisions (M63), template id to decision. A record,
         // so the owner's panel decides each id on its own. "open" clears one.
         templates: z
@@ -507,6 +516,14 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
       kit = { ...kit, ...setTemplateDecision(kit, id, d === "open" ? null : d) };
     for (const [id, on] of Object.entries(kitPatch.features ?? {}))
       kit = { ...kit, ...toggleFeature(kit, id, on) };
+    if (kitPatch.ideas) {
+      const own = new Set(kitShapes(kit));
+      const seen = new Set<string>();
+      const ideas = kitPatch.ideas
+        .map((i) => ({ shape: i.shape, text: i.text.trim() }))
+        .filter((i) => own.has(i.shape) && i.text && !seen.has(`${i.shape}\n${i.text}`) && seen.add(`${i.shape}\n${i.text}`));
+      kit = { ...kit, ideas: ideas.length ? ideas : undefined };
+    }
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
   }
@@ -595,6 +612,10 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     );
     const unknown = decided.filter((id) => !reachable.has(id));
     if (unknown.length) return `Unknown template ${unknown.slice(0, 3).join(", ")}. Read get_templates for the ids this project's shapes offer.`;
+  }
+  if (k.ideas?.length) {
+    const stray = k.ideas.filter((i) => !shapes.includes(i.shape));
+    if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${shapes.join(", ") || "none"}), so a what you could build line cannot name it.`;
   }
   const ticked = Object.keys(k.features ?? {});
   if (ticked.length) {
@@ -765,6 +786,7 @@ const PATH_LABELS: Record<string, string> = {
   "kit.resources.tick": "Resources to tick",
   "kit.resources.untick": "Resources to untick",
   "kit.review": "Review verdicts",
+  "kit.ideas": "What you could build",
   "market.launchTarget": "Market, launch venue",
   mainnet: "Mainnet record",
   "mainnet.contracts": "Mainnet contracts",

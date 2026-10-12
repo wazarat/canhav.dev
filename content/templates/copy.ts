@@ -96,6 +96,12 @@ export const TEMPLATE_COPY = {
   noneOnChainDetail: (chain: string) =>
     `None of the contract templates in the catalog for this product is deployed on ${chain} yet. You still get every build step for it, so your agent can work through them over MCP and you have a guideline to build against while a template lands.`,
   noneOnChainAria: "Why there is no template yet",
+  gapsTitle: "Template gaps on this chain",
+  /** The way forward when templates run on the other mainnet, under the detail. */
+  noneOnChainPlan: (live: number, otherMainnet: string, mainnet: string, otherTestnet: string) =>
+    live
+      ? `${live === 1 ? "One template" : `${live} templates`} for this ${live === 1 ? "runs" : "run"} on ${otherMainnet}. Accept ${live === 1 ? "it" : "them"} and iterate for ${mainnet}, or move the project to ${otherTestnet} and build there.`
+      : `No template for this runs on ${otherMainnet} either. Build from the steps and the kit files.`,
   /** Decisions on a project's build steps (M63). */
   stepTitle: "Contract templates",
   stepHint: "Candidates for this step. Accept what you will build on or integrate, reject what you will not, and the choice travels with the project into RESOURCES.md and the MCP tools.",

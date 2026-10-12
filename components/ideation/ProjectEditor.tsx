@@ -18,6 +18,8 @@ import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { KitRail } from "@/components/ideation/kit/KitRail";
 import { ProductStepSection } from "@/components/ideation/kit/ProductStepSection";
 import { EnvironmentBlock } from "@/components/ideation/kit/EnvironmentBlock";
+import { IdeasList } from "@/components/ideation/kit/IdeasList";
+import { ShapeOverlapDialog } from "@/components/ideation/kit/ShapeOverlapDialog";
 import { TEMPLATE_CATALOG } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { templateChainCounts, templatesForShapes } from "@/lib/templates";
@@ -287,11 +289,15 @@ export function ProjectEditor({
       SHAPE_FAMILIES[shape].length === 0
         ? templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [shape], chainKey), chainKey)
         : null;
+    const otherKey: ProjectChain = chainKey === "robinhood_testnet" ? "arbitrum_sepolia" : "robinhood_testnet";
+    const other = chainInfo(otherKey);
+    const liveThere = templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [shape], otherKey), otherKey).live;
     return {
       shape,
       line: KIT_COPY.buildingLine(shapeBuildingPhrase(shape), option?.sentence ?? ""),
       gateNote: missing.length > 0 ? gateNote(missing) : null,
       noTemplate: counts !== null && counts.total > 0 && counts.live === 0,
+      plan: TEMPLATE_COPY.noneOnChainPlan(liveThere, other.mainnetName, chain.mainnetName, other.name),
     };
   });
   const shapeGroups = shapeGroupsFor(subsectors).filter((g) => !singleSubs.includes(g.subsector)).map((g) => ({
@@ -468,8 +474,8 @@ export function ProjectEditor({
                     ) : null}
                     <ul className="space-y-2">
                       {buildingLines.map((b) => (
-                        <li key={b.shape} className="rounded-xl border border-ink-700/60 bg-ink-950/50 px-3.5 py-2.5">
-                          <p className="text-sm leading-relaxed text-ink-100">{b.line}</p>
+                        <li key={b.shape} className="rounded-xl border border-ink-700/60 bg-ink-950/50 px-3 py-2">
+                          <p className="text-xs leading-relaxed text-ink-100">{b.line}</p>
                           {b.gateNote ? <p className="mt-1 text-xs text-ink-400">{b.gateNote}</p> : null}
                           {b.noTemplate ? (
                             <span className="group relative mt-2 inline-flex">
@@ -485,9 +491,10 @@ export function ProjectEditor({
                               </StatusChip>
                               <span
                                 role="tooltip"
-                                className="glass pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-72 rounded-xl border border-ink-700/60 p-3 text-xs leading-relaxed text-ink-200 group-hover:block group-focus-within:block"
+                                className="glass pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-80 space-y-2 rounded-xl border border-ink-700/60 p-3 text-xs leading-relaxed text-ink-200 group-hover:block group-focus-within:block"
                               >
-                                {TEMPLATE_COPY.noneOnChainDetail(chain.mainnetName)}
+                                <span className="block">{TEMPLATE_COPY.noneOnChainDetail(chain.mainnetName)}</span>
+                                <span className="block text-ink-100">{b.plan}</span>
                               </span>
                             </span>
                           ) : null}
@@ -511,30 +518,18 @@ export function ProjectEditor({
                     ) : null}
                   </ChipMultiSelectGroups>
                 ) : null}
-                {kitShapes(kit).length ? (
-                  <div className="-mt-3 space-y-4 text-sm leading-relaxed text-ink-300">
+                {kitShapes(kit).length && kit ? (
+                  <div className="-mt-2 space-y-3 text-xs leading-relaxed text-ink-300">
                     {kitShapes(kit).map((s) => (
                       <div key={s}>
                         <p>
-                          {kitShapes(kit).length > 1 ? (
-                            <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
-                          ) : null}
+                          <span className="font-medium text-ink-100">{shapeLabel(s)}. </span>
                           {shapeBlurb(s)}
                         </p>
-                        {shapeExamples(s).length ? (
-                          <>
-                            <p className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-400">
-                              {KIT_COPY.examplesTitle}
-                            </p>
-                            <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-xs leading-relaxed text-ink-400">
-                              {shapeExamples(s).map((line) => (
-                                <li key={line}>{line}</li>
-                              ))}
-                            </ul>
-                          </>
-                        ) : null}
+                        <IdeasList shape={s} examples={shapeExamples(s)} kit={kit} onPatchKit={patchKit} />
                       </div>
                     ))}
+                    <p className="text-[11px] text-ink-500">{KIT_COPY.ideasHint}</p>
                   </div>
                 ) : null}
                 <div className="flex flex-wrap gap-2">
@@ -546,7 +541,7 @@ export function ProjectEditor({
                       label={kitShapes(kit).length > 1 ? `Why ${shapeLabel(s)}` : undefined}
                     />
                   ))}
-                  <FieldIntroCard intro="project.kit.shape" />
+                  <ShapeOverlapDialog doc={doc} />
                 </div>
                 <ChipRadioGroup
                   label={KIT_COPY.startingPointLabel}
