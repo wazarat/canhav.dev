@@ -13,6 +13,9 @@ export const AUTH_COPY = {
   signInPath: "/studio",
   signUpPath: "/sign-up",
   /** Wallet identity (M57). A token belongs to the account that holds its creator wallet. */
+  /** The studio header's account menu (2026-10-13). */
+  account: "Account",
+  signOut: "Sign out",
   wallets: "Wallets",
   walletsHint: "Add the wallet you launch with and its launches show up here.",
   claim: "Claim with this wallet",

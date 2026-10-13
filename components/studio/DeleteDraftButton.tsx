@@ -60,7 +60,7 @@ export function DeleteDraftButton({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 text-xs" role="group" aria-label={copy.action}>
+    <div className="flex basis-full flex-wrap items-center justify-end gap-2 text-xs sm:basis-auto" role="group" aria-label={copy.action}>
       {phase === "failed" ? (
         <span className="text-rose-400">{reason ?? copy.failed}</span>
       ) : (
