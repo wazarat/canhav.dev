@@ -653,6 +653,10 @@ export const MCP_GUIDE = {
           a: "Type /mcp, pick the server and choose Authenticate again. Make sure the browser is signed in to the CanHav account that owns this project.",
         },
         {
+          q: "The browser shows the studio home and no consent screen",
+          a: "Open the link printed in the terminal once more. If it happens again, sign out at canhav.com, open the link and sign in there. The consent screen follows the sign-in.",
+        },
+        {
           q: "The agent says the project does not belong to you",
           a: "You are signed in with a different CanHav account. Sign out in the browser, then authenticate again with the right one.",
         },

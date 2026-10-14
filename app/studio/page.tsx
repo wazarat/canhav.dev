@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { EntityList, type TokenChipFacts } from "@/components/studio/EntityList";
 import { LaunchesSummary } from "@/components/studio/LaunchesSummary";
@@ -11,6 +13,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { getCurvesAllChains } from "@/lib/indexer";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
+import { signInRedirectTarget } from "@/lib/sign-in-redirect";
 import { getEntityLinks, getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
 import { launchedSets } from "@/lib/launch-status";
 import { getMyLaunches } from "@/lib/my-launches";
@@ -29,8 +32,17 @@ export const dynamic = "force-dynamic";
  * launches summary, then the token designs and projects still in progress.
  * Launched records leave these two lists and live under Launches and on
  * /studio/launches.
+ *
+ * ?redirect_url= is the sign-in round trip (the export gate, and Clerk's
+ * OAuth consent screen during an MCP sign-in). The SignIn card follows it
+ * for a visitor; a signed-in account is sent on from here, otherwise the
+ * consent screen is never reached and the agent waits forever.
  */
-export default async function StudioPage() {
+export default async function StudioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string }>;
+}) {
   const header = (
     <div className="max-w-2xl">
       <p className="kicker">{STUDIO_COPY.kicker}</p>
@@ -65,6 +77,12 @@ export default async function StudioPage() {
         </div>
       </div>
     );
+  }
+  const { redirect_url: rawRedirect } = await searchParams;
+  if (rawRedirect !== undefined) {
+    const host = (await headers()).get("host") ?? "";
+    const target = signInRedirectTarget(rawRedirect, host);
+    if (target) redirect(target);
   }
 
   const [projects, designs, launches, links] = await Promise.all([

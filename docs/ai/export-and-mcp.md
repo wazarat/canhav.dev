@@ -100,7 +100,7 @@ Every project in the studio also has its own MCP server at `https://www.canhav.c
 claude mcp add --transport http canhav-<project> https://www.canhav.com/mcp/p/<project id>
 ```
 
-Unlike the shared server, a scoped server is owner-only and requires OAuth on every request. The first call returns 401 with a `WWW-Authenticate` header, which is what makes the client open the browser flow.
+Unlike the shared server, a scoped server is owner-only and requires OAuth on every request. The first call returns 401 with a `WWW-Authenticate` header, which is what makes the client open the browser flow. The browser flow goes through the studio sign-in page: Clerk sends the visitor to `/studio?redirect_url=` with the consent screen on the Account Portal as the target, the sign-in card follows it after a sign-in, and a signed-in account is sent on by the page itself.
 
 | Tool | Purpose |
 |------|---------|
