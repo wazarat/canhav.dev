@@ -103,8 +103,12 @@ export const AGENT_CHANGE_LIMITS = {
 } as const;
 
 export type AgentChangeTarget = "project" | "token_design";
-/** fields and build_steps change a draft; create records that an agent started the linked token design (M82). */
-export type AgentChangeKind = "fields" | "build_steps" | "create";
+/**
+ * fields and build_steps change a draft; create records that an agent
+ * started the linked token design (M82); link records a launch linked to
+ * or unlinked from the project (M89).
+ */
+export type AgentChangeKind = "fields" | "build_steps" | "create" | "link";
 /** withdrawn means the agent took a waiting proposal back (M88). */
 export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected" | "withdrawn";
 
@@ -984,6 +988,8 @@ const PATH_LABELS: Record<string, string> = {
   "mainnet.pair.pairAddress": "Trading pair address",
   "mainnet.pair.url": "Trading pair link",
   website: "Website",
+  tokenAddress: "Token",
+  linked: "Linked",
 };
 
 /**

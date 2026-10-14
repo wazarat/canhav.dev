@@ -11,7 +11,10 @@ import {
   type ProjectRow,
 } from "@/lib/ideation-db";
 import { kitShapes } from "@/lib/kits";
-import { getLaunchByToken, getLaunchesByProject } from "@/lib/launches-db";
+import { type LaunchRow, getLaunchByToken, getLaunchesByOwner, getLaunchesByProject, launchRowChain, setLaunchProject } from "@/lib/launches-db";
+import { ownedLaunch } from "@/lib/launch-ownership";
+import { findToken } from "@/lib/indexer";
+import { LAUNCH_REF_HINT, type LaunchRef, matchLaunchRef, parseLaunchRef, shortAddress } from "@/lib/launch-ref";
 import { docSectors } from "@/lib/sectors";
 
 /**
@@ -89,4 +92,74 @@ export async function projectChainLocked(projectId: string): Promise<boolean> {
     getLinkedTokenDesign(projectId),
   ]);
   return (launches?.length ?? 0) > 0 || Boolean(design?.deployed_token_address);
+}
+
+// ---------------------------------------------------------------------------
+// Linking a launch by reference (M89). One rule for the studio paste field
+// and the MCP link tools: the account must own the launch (its row, or the
+// creator wallet), a project must be the account's and on the launch's
+// chain, and a short reference must name exactly one of the account's
+// launches.
+
+export type LinkLaunchResult =
+  | { ok: true; address: string; name: string | null; project: { id: string; name: string } | null; previousProjectId: string | null }
+  | { ok: false; message: string; code: "bad_ref" | "not_owned" | "ambiguous" | "not_yours" | "chain_mismatch" | "not_linked_here" | "storage" };
+
+/** The launch a reference names, among what the account owns. */
+export async function resolveOwnedLaunch(
+  raw: string,
+  ownerId: string,
+): Promise<{ ok: true; launch: LaunchRow } | { ok: false; message: string; code: "bad_ref" | "not_owned" | "ambiguous" }> {
+  const ref: LaunchRef | null = parseLaunchRef(raw);
+  if (!ref) return { ok: false, code: "bad_ref", message: `${raw.trim() || "Nothing"} is not a token reference. Send ${LAUNCH_REF_HINT}.` };
+  if (ref.kind === "address") {
+    const launch = await ownedLaunch(ref.address, ownerId);
+    if (!launch) return { ok: false, code: "not_owned", message: `${shortAddress(ref.address)} is not a launch this account owns. It has to be recorded to the account, or created by a wallet verified on it.` };
+    return { ok: true, launch };
+  }
+  const mine = (await getLaunchesByOwner(ownerId)) ?? [];
+  const match = matchLaunchRef(ref, mine);
+  if (match.status === "one") return { ok: true, launch: match.launch };
+  if (match.status === "many")
+    return { ok: false, code: "ambiguous", message: `${raw.trim()} matches ${match.launches.length} of this account's launches (${match.launches.map((l) => shortAddress(l.token_address)).join(", ")}). Send the full address.` };
+  return { ok: false, code: "not_owned", message: `${raw.trim()} matches none of this account's launches. Read get_my_launches on the shared server, or send the full address.` };
+}
+
+/**
+ * Link a launch to a project, or unlink it (projectId null). `onlyFrom`
+ * makes an unlink refuse when the launch is linked to another project, the
+ * rule a project-scoped tool wants.
+ */
+export async function linkLaunch(
+  raw: string,
+  ownerId: string,
+  projectId: string | null,
+  opts: { onlyFrom?: string } = {},
+): Promise<LinkLaunchResult> {
+  const resolved = await resolveOwnedLaunch(raw, ownerId);
+  if (!resolved.ok) return resolved;
+  const launch = resolved.launch;
+  const address = launch.token_address.toLowerCase();
+  const chain = launchRowChain(launch);
+  let project: { id: string; name: string } | null = null;
+  if (projectId) {
+    const row = await getProjectById(projectId);
+    if (!row || row.owner_id !== ownerId) return { ok: false, code: "not_yours", message: "That project is not yours." };
+    if (projectChainOf(row.draft_doc) !== chain)
+      return { ok: false, code: "chain_mismatch", message: chainMismatch(projectChainOf(row.draft_doc), chain) };
+    project = { id: row.id, name: row.draft_doc.name };
+  } else if (opts.onlyFrom && launch.project_id !== opts.onlyFrom) {
+    return {
+      ok: false,
+      code: "not_linked_here",
+      message: launch.project_id
+        ? `${shortAddress(address)} is linked to another project, so this project's server cannot unlink it.`
+        : `${shortAddress(address)} is not linked to any project.`,
+    };
+  }
+  const ok = await setLaunchProject(address, ownerId, projectId);
+  if (ok === null) return { ok: false, code: "storage", message: "Storage not configured." };
+  if (!ok) return { ok: false, code: "not_owned", message: `${shortAddress(address)} is not a launch this account owns.` };
+  const token = await findToken(address);
+  return { ok: true, address, name: token?.name ?? null, project, previousProjectId: launch.project_id };
 }

@@ -305,7 +305,7 @@ await sql`
     owner_id text not null,
     target text not null check (target in ('project','token_design')),
     target_id uuid not null,
-    kind text not null check (kind in ('fields','build_steps','create')),
+    kind text not null check (kind in ('fields','build_steps','create','link')),
     patch jsonb not null,
     note text check (note is null or char_length(note) <= 400),
     status text not null check (status in ('proposed','applied','accepted','rejected','withdrawn')),
@@ -319,10 +319,11 @@ await sql`
 await sql`alter table launchpad.agent_changes add column if not exists applied_patch jsonb`;
 
 // M82. An agent may start the linked token design; the row that records it has kind create.
+// M89. An agent may link or unlink a launch; the row that records it has kind link.
 await sql`alter table launchpad.agent_changes drop constraint if exists agent_changes_kind_check`;
 await sql`
   alter table launchpad.agent_changes
-    add constraint agent_changes_kind_check check (kind in ('fields','build_steps','create'))
+    add constraint agent_changes_kind_check check (kind in ('fields','build_steps','create','link'))
 `;
 
 // M88. An agent may take back a waiting proposal; the row keeps the history as withdrawn.

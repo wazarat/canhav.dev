@@ -375,7 +375,7 @@ export const MCP_CONNECT = {
    */
   allowRules: (projectId: string, name: string): string => {
     const alias = mcpAlias(name, projectId);
-    const rules = ["get_*", "check_*", "set_*", "update_*", "create_*", "report_*", "withdraw_*"].map((t) => `mcp__${alias}__${t}`);
+    const rules = ["get_*", "check_*", "set_*", "update_*", "create_*", "report_*", "withdraw_*", "link_*", "unlink_*"].map((t) => `mcp__${alias}__${t}`);
     return JSON.stringify({ permissions: { allow: rules } }, null, 2);
   },
   projectPrompt: (projectId: string, name: string) =>
@@ -581,6 +581,12 @@ export const LAUNCH_PROJECT_COPY = {
   panelChoose: "Choose a launch…",
   panelLink: "Link this launch",
   panelLaunch: "Launch a token from this project",
+  /** Link by a pasted reference (M89). */
+  panelPaste: "Link a token by address",
+  panelPastePlaceholder: "0x… or 0x1234…abcd or the token page link",
+  panelPasteButton: "Link",
+  panelPasteHint:
+    "Paste the full address, the short form shown on a token row (0x1234…abcd) or the token page link. The token has to be one your account launched, on this project's chain. Your agent can do the same with link_launch.",
 } as const;
 
 /**
@@ -661,7 +667,7 @@ export const MCP_GUIDE = {
         "Publish or unpublish.",
         "Change the chain of a project that already has a token.",
         "Tick the distribution acknowledgement.",
-        "Unlink a token design, or link or unlink a launch. An agent can start a token design for a project that has none.",
+        "Unlink a token design. An agent can start a token design for a project that has none, and link or unlink a launch your account owns.",
       ],
     },
     other: {

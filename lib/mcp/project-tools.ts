@@ -55,7 +55,8 @@ import {
   projectPatchSchema,
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
-import { agentStateOf, listAgentChanges, listPendingChanges, withdrawAgentChange } from "@/lib/agent-writes-db";
+import { agentStateOf, listAgentChanges, listPendingChanges, recordAgentChange, withdrawAgentChange } from "@/lib/agent-writes-db";
+import { linkLaunch } from "@/lib/launch-project";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY } from "@/content/ideation";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
@@ -107,7 +108,7 @@ const AUTH_HINT =
 const NOT_YOURS =
   "No CanHav project with this id belongs to you. Open the project in the studio and copy its MCP server URL again.";
 const NO_DESIGN =
-  "No token has been launched from this project and no token design is linked to it. Start one with create_linked_token_design, or the owner links or launches one from the project's page in the CanHav studio.";
+  "No token has been launched from this project and no token design is linked to it. Start a design with create_linked_token_design, link a token the account already launched with link_launch, or the owner launches one from the project's page in the CanHav studio.";
 const NO_TOKEN =
   "This project's token design has not been deployed and no token has been launched from the project yet. Launch it from the project's page in the CanHav studio.";
 
@@ -349,7 +350,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                 ? "Nothing left. The project is published and its token has graduated."
                 : "Nothing left. The project is published and its token is deployed."
             : !design
-              ? `Start a token design with create_linked_token_design, or the owner links one in the studio or launches a token from canhav.com/launch?project=${project.id}.`
+              ? `Start a token design with create_linked_token_design, link a token the account already launched with link_launch, or the owner launches one from canhav.com/launch?project=${project.id}.`
               : designProblem
                 ? "Fix the token design draft in the studio."
                 : design.status !== "published"
@@ -1022,6 +1023,82 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         session: { ...session, view: sessionView(session), progress: planProgress(session.plan) },
         reviewUrl: reviewUrl(project.id),
       });
+    },
+    scope,
+  );
+
+  // Link a launched token to this project, or take the link off (M89). An
+  // owner level action, so it happens at once in propose and direct mode
+  // (reversible by the other tool) and is listed under Agent changes.
+  const TOKEN_REF = z
+    .string()
+    .min(6)
+    .max(300)
+    .describe("The token as a full 0x address, the short form the studio shows (0x1234…abcd), or the token page link (canhav.com/launch/t/0x…).");
+
+  async function recordLink(project: ProjectRow, address: string, linked: boolean, note: string | undefined) {
+    return recordAgentChange({
+      projectId: project.id,
+      ownerId: project.owner_id,
+      target: "project",
+      targetId: project.id,
+      kind: "link",
+      patch: { tokenAddress: address, linked },
+      note: note?.trim() ? note.trim().slice(0, AGENT_CHANGE_LIMITS.note.max) : null,
+      status: "applied",
+    });
+  }
+
+  registerMeteredTool(
+    server,
+    "link_launch",
+    {
+      title: "Link a launched token to this project",
+      description:
+        "Link a token launched through CanHav to this project (M89). token is the full 0x address, the short form the studio shows (0x1234…abcd, matched against the account's launches) or the token page link. The launch has to belong to the owner's account (recorded to it, or created by a wallet verified on it) and sit on this project's chain; a launch linked to another project moves here. Immediate in propose and direct mode, since unlink_launch reverses it, and listed under Agent changes as Launch link. Afterwards get_launch, get_curve_status and the other token tools answer for it. Refused when agent writes are off.",
+      inputSchema: z.object({ token: TOKEN_REF, note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (agentStateOf(project).mode === "off")
+        return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      const result = await linkLaunch(args.token, project.owner_id, project.id);
+      if (!result.ok) return errorResult(result.message);
+      const changeId = await recordLink(project, result.address, true, args.note);
+      return jsonResult({
+        linked: true,
+        address: result.address,
+        name: result.name,
+        launchUrl: launchUrl(result.address),
+        movedFromProjectId: result.previousProjectId && result.previousProjectId !== project.id ? result.previousProjectId : null,
+        changeId,
+        message: "Linked. The project's chain is now fixed to the token's chain, and the token tools on this server answer for it.",
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "unlink_launch",
+    {
+      title: "Take a launched token off this project",
+      description:
+        "Remove the link between a launched token and this project (M89). token takes the same forms as link_launch. Only a token linked to this project can be unlinked here. The launch itself is untouched. Refused when agent writes are off.",
+      inputSchema: z.object({ token: TOKEN_REF, note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (agentStateOf(project).mode === "off")
+        return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      const result = await linkLaunch(args.token, project.owner_id, null, { onlyFrom: project.id });
+      if (!result.ok) return errorResult(result.message);
+      const changeId = await recordLink(project, result.address, false, args.note);
+      return jsonResult({ linked: false, address: result.address, name: result.name, changeId, message: "Unlinked." });
     },
     scope,
   );

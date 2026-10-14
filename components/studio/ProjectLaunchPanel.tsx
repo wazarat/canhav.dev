@@ -8,6 +8,8 @@ import { Cable } from "lucide-react";
 import { LaunchAgentModal } from "@/components/launch/LaunchAgentModal";
 import { patchLaunchProject } from "@/components/studio/LaunchRowActions";
 import { Button } from "@/components/ui/Button";
+import { InfoTip } from "@/components/ui/InfoTip";
+import { Input } from "@/components/ui/Input";
 import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { MAINNET_COPY } from "@/content/ideation";
@@ -48,6 +50,29 @@ export function ProjectLaunchPanel({
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<PanelLaunch | null>(null);
+
+  const [pasted, setPasted] = useState("");
+
+  /** Link by a pasted reference (M89), the same rule the agent's link_launch applies. */
+  async function linkPasted() {
+    setWorking(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/launches/link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ref: pasted, projectId: project.id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? LAUNCH_PROJECT_COPY.failed);
+      setPasted("");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : LAUNCH_PROJECT_COPY.failed);
+    } finally {
+      setWorking(false);
+    }
+  }
 
   async function change(address: string, projectId: string | null) {
     setWorking(true);
@@ -127,6 +152,26 @@ export function ProjectLaunchPanel({
             </Button>
           </div>
         ) : null}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            placeholder={LAUNCH_PROJECT_COPY.panelPastePlaceholder}
+            aria-label={LAUNCH_PROJECT_COPY.panelPaste}
+            className="max-w-xs font-mono text-xs"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && pasted.trim() && !working) {
+                e.preventDefault();
+                void linkPasted();
+              }
+            }}
+          />
+          <Button size="sm" variant="outline" disabled={!pasted.trim() || working} onClick={() => void linkPasted()}>
+            {LAUNCH_PROJECT_COPY.panelPasteButton}
+          </Button>
+          <InfoTip>{LAUNCH_PROJECT_COPY.panelPasteHint}</InfoTip>
+        </div>
 
         {linked.length === 0 ? (
           <Link
