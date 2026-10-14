@@ -16,6 +16,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 export function EditorShell({
   kicker,
   name,
+  logo = null,
   publicBase,
   initialStatus,
   initialSlug,
@@ -33,6 +34,8 @@ export function EditorShell({
 }: {
   kicker: string;
   name: string;
+  /** The record's logo (M90), shown beside the name. */
+  logo?: string | null;
   publicBase: "/p" | "/t";
   initialStatus: "draft" | "published";
   initialSlug: string | null;
@@ -65,8 +68,12 @@ export function EditorShell({
             </Link>{" "}
             / {kicker}
           </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink-50">
-            {name || "Untitled"}
+          <h1 className="mt-2 flex items-center gap-3 font-display text-3xl font-semibold tracking-tight text-ink-50">
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo} alt="" className="h-10 w-10 shrink-0 rounded-lg border border-ink-700/60 object-cover" />
+            ) : null}
+            <span>{name || "Untitled"}</span>
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">

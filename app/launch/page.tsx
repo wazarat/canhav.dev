@@ -55,6 +55,7 @@ async function loadDesign(designId: string | undefined): Promise<{
     prefill: {
       name: doc.name.replace(LAUNCH_FORM.name.strip, "").slice(0, LAUNCH_FORM.name.max),
       ticker: doc.ticker,
+      ...(doc.logo ? { logo: doc.logo } : {}),
       supply: String(Math.floor(doc.supply.total)),
       // The form no longer offers vesting, so the whole supply mints to the
       // creator. A design that declares a team cohort gets a notice on the

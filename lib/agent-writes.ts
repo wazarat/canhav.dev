@@ -68,6 +68,7 @@ import {
 } from "@/lib/sectors";
 import { manualTokenStepIds, setTokenStepEvidence, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
 import type { SessionEvent } from "@/lib/agent-sessions";
+import { LOGO_LIMITS, isStoredImageUrl } from "@/lib/image-url";
 
 /**
  * Agent writes (M39). An agent connected to a project's MCP server may change
@@ -241,6 +242,8 @@ export const projectPatchSchema = z
       )
       .max(L.testnetContracts.max),
     addressBook: z.string().regex(/^https:\/\/\S+$/).max(L.addressBook.max),
+    // The logo (M90), a URL on CanHav's image store from set_logo; null clears it.
+    logo: z.string().max(LOGO_LIMITS.max).refine(isStoredImageUrl, "Logo must be an image uploaded to CanHav through set_logo").nullable(),
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The mainnet deployment and the Pons pairing (M70). Merged into the stored
     // record; contracts replace the stored list; null clears the whole record.
@@ -367,6 +370,7 @@ export const tokenDesignPatchSchema = z
   .strictObject({
     name: z.string().max(T.name.max),
     ticker: z.string().max(T.ticker.max).regex(T.ticker.pattern),
+    logo: z.string().max(LOGO_LIMITS.max).refine(isStoredImageUrl, "Logo must be an image uploaded to CanHav through set_logo").nullable(),
     rationale: z
       .strictObject({
         why: z.enum([
@@ -640,6 +644,7 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
   let next = deepMerge(doc, fields);
   // Testnet contracts arrive as rows or plain addresses and are stored as rows (M83).
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
+  if (patch.logo === null) next = dropKey(next, "logo");
   const a = { ...next.architecture };
   // The two dependency answers exclude each other. The one the agent sent wins.
   if (patch.architecture?.externalDepsNone === true) a.externalDeps = [];
@@ -793,7 +798,15 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
 }
 
 export function applyTokenDesignPatch(doc: TokenDesignDoc, patch: TokenDesignPatch): TokenDesignDoc {
-  return deepMerge(doc, patch);
+  const next = deepMerge(doc, patch);
+  return patch.logo === null ? dropKey(next, "logo") : next;
+}
+
+/** The object without one key, so a cleared optional field is never stored as null. */
+function dropKey<T extends object>(obj: T, key: string): T {
+  const { [key as keyof T]: _dropped, ...rest } = obj;
+  void _dropped;
+  return rest as T;
 }
 
 /** The build step ids this project's chosen shapes offer. */
@@ -988,6 +1001,7 @@ const PATH_LABELS: Record<string, string> = {
   "mainnet.pair.pairAddress": "Trading pair address",
   "mainnet.pair.url": "Trading pair link",
   website: "Website",
+  logo: "Logo",
   tokenAddress: "Token",
   linked: "Linked",
 };

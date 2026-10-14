@@ -150,7 +150,11 @@ export function EntityList({
                 key={row.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink-700/60 bg-ink-900 px-4 py-3"
               >
-                <div className="min-w-0">
+                {row.draft_doc.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={row.draft_doc.logo} alt="" className="h-8 w-8 shrink-0 rounded-md border border-ink-700/60 object-cover" />
+                ) : null}
+                <div className="min-w-0 flex-1">
                   <Link
                     href={`${hrefBase}/${row.id}`}
                     className="block truncate text-sm font-medium text-ink-50 transition-colors hover:text-electric-300"

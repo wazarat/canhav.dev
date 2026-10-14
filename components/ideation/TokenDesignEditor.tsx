@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { AllocationSplitEditor } from "@/components/ideation/AllocationSplitEditor";
 import { ComputedPanel } from "@/components/ideation/ComputedPanel";
 import { EditorShell } from "@/components/ideation/EditorShell";
+import { LogoField } from "@/components/ideation/LogoField";
 import { NameTickerCheck } from "@/components/ideation/NameTickerCheck";
 import { FieldIntroCard, OptionResourceCard } from "@/components/ideation/OptionResourceCard";
 import { SelectField } from "@/components/ui/Select";
@@ -29,7 +30,7 @@ import {
   DEPLOYABILITY_TIER_LABELS,
   type ResourceIntroKey,
 } from "@/content/ideation-resources";
-import { POST_LAUNCH_MILESTONE_COPY, PUBLISH_COPY } from "@/content/ideation";
+import { POST_LAUNCH_MILESTONE_COPY, PUBLISH_COPY, LOGO_COPY } from "@/content/ideation";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { TOKEN_STEPS_COPY, tokenBuildProgressOf } from "@/content/token-steps";
 import type { IndexedCurve } from "@/lib/indexer";
@@ -335,6 +336,7 @@ export function TokenDesignEditor({
     <EditorShell
       kicker="Token design"
       name={doc.name}
+      logo={doc.logo ?? null}
       publicBase="/t"
       initialStatus={initialStatus}
       initialSlug={initialSlug}
@@ -413,6 +415,7 @@ export function TokenDesignEditor({
                 />
               </Field>
               <NameTickerCheck designId={id} name={doc.name} ticker={doc.ticker} />
+              <LogoField value={doc.logo} onChange={(logo) => patch({ logo })} hint={LOGO_COPY.designHint} />
               <NumberField
                 label="Total supply"
                 required

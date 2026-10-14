@@ -20,6 +20,7 @@ import {
   optionLabel,
   sectorLabels,
   subsectorLabels,
+  LOGO_COPY,
   TESTNET_COPY,
 } from "@/content/ideation";
 import { buildProgress } from "@/content/kits/checklists";
@@ -132,8 +133,12 @@ export default async function ProjectPublicPage({
     <div className="container max-w-4xl py-14 md:py-20">
       <div>
         <p className="kicker">Project</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50">
-          {doc.name}
+        <h1 className="mt-3 flex items-center gap-4 font-display text-4xl font-semibold tracking-tight text-ink-50">
+          {doc.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={doc.logo} alt={LOGO_COPY.alt(doc.name)} className="h-14 w-14 shrink-0 rounded-xl border border-ink-700/60 object-cover" />
+          ) : null}
+          <span>{doc.name}</span>
         </h1>
         <div className="mt-4 flex flex-wrap gap-2">
           {sectorLabels(doc).map((label) => (

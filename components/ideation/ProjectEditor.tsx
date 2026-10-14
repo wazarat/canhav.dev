@@ -73,7 +73,8 @@ import {
   startingPointLabel,
 } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
-import { PUBLISH_COPY, STUDIO_COPY, TESTNET_COPY, WORST_CASE_WHY } from "@/content/ideation";
+import { LOGO_COPY, PUBLISH_COPY, STUDIO_COPY, TESTNET_COPY, WORST_CASE_WHY } from "@/content/ideation";
+import { LogoField } from "@/components/ideation/LogoField";
 import { registerCommands } from "@/lib/command-menu";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import {
@@ -395,6 +396,7 @@ export function ProjectEditor({
     <EditorShell
       kicker="Project"
       name={doc.name}
+      logo={doc.logo ?? null}
       publicBase="/p"
       initialStatus={initialStatus}
       initialSlug={initialSlug}
@@ -441,6 +443,7 @@ export function ProjectEditor({
               max={PROJECT_LIMITS.name.max}
               placeholder="What is this called?"
             />
+            <LogoField value={doc.logo} onChange={(logo) => patch({ logo })} hint={LOGO_COPY.projectHint} />
             <SegmentedField
               label={CHAIN_COPY.label}
               hint={chainLocked ? CHAIN_COPY.locked : undefined}

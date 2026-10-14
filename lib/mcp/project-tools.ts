@@ -57,6 +57,7 @@ import {
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges, listPendingChanges, recordAgentChange, withdrawAgentChange } from "@/lib/agent-writes-db";
 import { linkLaunch } from "@/lib/launch-project";
+import { storeImageFromBase64, storeImageFromUrl } from "@/lib/images";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY } from "@/content/ideation";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
@@ -627,7 +628,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet), and logo (a URL on CanHav's image store from set_logo, or null to clear). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -977,7 +978,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_linked_token_design",
     {
       title: "Change the linked token design's draft",
-      description: `Change fields of the token design linked to this project. Name and ticker, rationale, supply and allocations, vesting, distribution, market (including launchTarget, the venue the token ideates for, canhav_curve, pons or pools_xyz; Pons and Pools run on Robinhood Chain mainnet only, which check_design reports as a warning on an Arbitrum project), governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. Read the advice block on get_linked_token_design before changing the rationale. ${WRITE_RULES} Run check_design afterwards for warnings.`,
+      description: `Change fields of the token design linked to this project. Name and ticker, logo (a URL on CanHav's image store from set_logo, or null to clear), rationale, supply and allocations, vesting, distribution, market (including launchTarget, the venue the token ideates for, canhav_curve, pons or pools_xyz; Pons and Pools run on Robinhood Chain mainnet only, which check_design reports as a warning on an Arbitrum project), governance, legal and post-launch. The vesting cohort list replaces the stored list. Allocations are whole percentages and must total 100 before the design can publish. Read the advice block on get_linked_token_design before changing the rationale. ${WRITE_RULES} Run check_design afterwards for warnings.`,
       inputSchema: z.object({ changes: tokenDesignPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -1048,6 +1049,49 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       status: "applied",
     });
   }
+
+  registerMeteredTool(
+    server,
+    "set_logo",
+    {
+      title: "Set the logo",
+      description:
+        "Upload a logo for this project or for its linked token design (M90) and store it on the record. target is project or token_design. Send the image as url (an https image you host or found; it is fetched, checked and copied to CanHav's content addressed image store, up to 4 MB) or as data (base64, a data URL or bare base64 with mediaType, up to 1.5 MB; png, jpeg, webp or gif). The upload itself is immediate; setting the record's logo rides the project's write mode like any field change, and update_project or update_linked_token_design can later send logo null to clear it. A design's logo becomes the token image when the owner launches from the design. Shown in the studio, on the public page and on the Explore board.",
+      inputSchema: z.object({
+        target: z.enum(["project", "token_design"]),
+        url: z.string().regex(/^https:\/\/\S+$/).max(600).optional(),
+        data: z.string().max(2_100_000).optional(),
+        mediaType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]).optional(),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      if (agentStateOf(project).mode === "off")
+        return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      if (args.target === "token_design" && !design) return errorResult(NO_DESIGN);
+      if (Boolean(args.url) === Boolean(args.data)) return errorResult("Send url or data, not both and not neither.");
+      const stored = args.url ? await storeImageFromUrl(args.url) : await storeImageFromBase64(args.data!, args.mediaType);
+      if (!stored.ok) return errorResult(stored.message);
+      const result = await submitAgentChange(
+        project,
+        design,
+        project.owner_id,
+        args.target === "project"
+          ? { target: "project", kind: "fields", patch: { logo: stored.url } }
+          : { target: "token_design", kind: "fields", patch: { logo: stored.url } },
+        args.note,
+      );
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({
+        ...(await afterWrite(projectId, ctx, result)),
+        logo: { url: stored.url, hash: stored.hash, contentType: stored.contentType, bytes: stored.bytes },
+      });
+    },
+    scope,
+  );
 
   registerMeteredTool(
     server,

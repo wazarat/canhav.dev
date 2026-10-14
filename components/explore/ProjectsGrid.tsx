@@ -30,8 +30,12 @@ export async function ProjectsGrid() {
           href={`/p/${p.slug}`}
           className="card-surface card-lift block rounded-xl border border-ink-700/70 p-5"
         >
-          <p className="truncate font-display text-base font-semibold text-ink-50">
-            {p.draft_doc.name}
+          <p className="flex items-center gap-2 truncate font-display text-base font-semibold text-ink-50">
+            {p.draft_doc.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.draft_doc.logo} alt="" className="h-6 w-6 shrink-0 rounded-md border border-ink-700/60 object-cover" />
+            ) : null}
+            <span className="truncate">{p.draft_doc.name}</span>
           </p>
           <p className="mt-1 line-clamp-2 text-xs text-ink-400">{p.draft_doc.whatItDoes}</p>
           <div className="mt-4 flex flex-wrap gap-1.5">

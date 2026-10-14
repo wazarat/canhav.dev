@@ -10,6 +10,7 @@ import {
   validateProjectKit,
 } from "@/lib/kits";
 import { type JourneyMilestone, sortValue, validateMilestones } from "@/lib/journey";
+import { isStoredImageUrl } from "@/lib/image-url";
 import {
   LEGACY_SECTOR_MAP,
   SECTOR_SUBSECTORS,
@@ -316,6 +317,8 @@ export interface ProjectDoc {
   testnetContracts?: Array<TestnetContract | string>;
   /** Where the full address book lives, https only (M83). A file in the repo, an explorer list. */
   addressBook?: string;
+  /** The project's logo on CanHav's image store (M90). Optional, never injected. */
+  logo?: string;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -584,6 +587,11 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     if (rows.length) (rest as { testnetContracts?: TestnetContract[] }).testnetContracts = rows;
     else delete (rest as { testnetContracts?: unknown }).testnetContracts;
   }
+  if ("logo" in rest) {
+    const v = (rest as { logo?: unknown }).logo;
+    if (typeof v === "string" && isStoredImageUrl(v.trim())) (rest as { logo?: string }).logo = v.trim();
+    else delete (rest as { logo?: unknown }).logo;
+  }
   if ("addressBook" in rest) {
     const v = (rest as { addressBook?: unknown }).addressBook;
     if (typeof v === "string" && v.trim()) (rest as { addressBook?: string }).addressBook = v.trim().slice(0, PROJECT_LIMITS.addressBook.max);
@@ -686,6 +694,8 @@ export interface TokenDesignDoc {
   publishVersion: number;
   name: string;
   ticker: string;
+  /** The token's logo on CanHav's image store (M90), the launch form's default image. Optional, never injected. */
+  logo?: string;
   /** §1 Token rationale. */
   rationale: {
     why: RationaleWhy | "";
@@ -822,6 +832,11 @@ export function normalizeEvidence(raw: unknown, limits: { max: number; textMax: 
 
 export function normalizeTokenDesignDoc(raw: TokenDesignDoc): TokenDesignDoc {
   const { checklist, stepEvidence, ...rest } = raw as TokenDesignDoc & { checklist?: unknown; stepEvidence?: unknown };
+  if ("logo" in rest) {
+    const v = (rest as { logo?: unknown }).logo;
+    if (typeof v === "string" && isStoredImageUrl(v.trim())) (rest as { logo?: string }).logo = v.trim();
+    else delete (rest as { logo?: unknown }).logo;
+  }
   const clean = normalizeTokenChecklist(checklist);
   const evidence = normalizeEvidence(stepEvidence, TOKEN_DESIGN_LIMITS.evidence);
   let doc: TokenDesignDoc = {
@@ -1030,6 +1045,7 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     p = urlProblem("Address book", doc.addressBook, L.addressBook.max, "https");
     if (p) return p;
   }
+  if (doc.logo && !isStoredImageUrl(doc.logo)) return "Logo must be an image uploaded to CanHav.";
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
   if (doc.mainnet) {
@@ -1167,6 +1183,7 @@ export function validateTokenDesignDoc(doc: TokenDesignDoc): string | null {
   if (!doc.ticker.trim()) return "Ticker is required.";
   if (doc.ticker.length > L.ticker.max) return `Ticker is over ${L.ticker.max} characters.`;
   if (!L.ticker.pattern.test(doc.ticker)) return "Ticker must be uppercase letters and numbers only.";
+  if (doc.logo && !isStoredImageUrl(doc.logo)) return "Logo must be an image uploaded to CanHav.";
 
   // §1 Rationale
   if (!doc.rationale.why) return "Answer why this needs a token.";

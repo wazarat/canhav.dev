@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LOGO_COPY } from "@/content/ideation";
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { decodeEventLog, formatEther, parseEther } from "viem";
@@ -63,7 +64,8 @@ import { McpConnectCard } from "./McpConnectCard";
 import { TokenPreviewCard } from "./TokenPreviewCard";
 import { useLaunchChain } from "./useLaunchChain";
 
-type ImageState = { file: File; previewUrl: string } | null;
+/** A file picked here, or the design's stored logo (M90), which needs no upload. */
+type ImageState = { file: File; previewUrl: string } | { url: string } | null;
 type Step = 1 | 2;
 
 type FlowStatus =
@@ -99,6 +101,8 @@ function friendlyLaunchError(err: unknown, chainName: string): string {
 export interface LaunchPrefill {
   name: string;
   ticker: string;
+  /** The design's logo on the image store (M90), the token image unless the launcher picks another. */
+  logo?: string;
   /** The design document's committed total. Absent for a ground-up launch. */
   supply?: string;
   /** True when the design declares vesting cohorts the launch cannot apply. */
@@ -174,7 +178,7 @@ export function LaunchForm({
   // Seeded from the project's website when the launch starts from one (M78).
   const [website, setWebsite] = useState(project?.website ?? "");
   const [websiteError, setWebsiteError] = useState<string | undefined>(undefined);
-  const [image, setImage] = useState<ImageState>(null);
+  const [image, setImage] = useState<ImageState>(prefill?.logo ? { url: prefill.logo } : null);
   const [devBuyEth, setDevBuyEth] = useState("");
 
   // Step 2 — journey
@@ -232,7 +236,7 @@ export function LaunchForm({
 
   const previewUrlRef = useRef<string | null>(null);
   useEffect(() => {
-    previewUrlRef.current = image?.previewUrl ?? null;
+    previewUrlRef.current = image && "previewUrl" in image ? image.previewUrl : null;
   }, [image]);
   useEffect(() => {
     return () => {
@@ -242,17 +246,20 @@ export function LaunchForm({
 
   function selectImage(file: File) {
     setImage((prev) => {
-      if (prev) URL.revokeObjectURL(prev.previewUrl);
+      if (prev && "previewUrl" in prev) URL.revokeObjectURL(prev.previewUrl);
       return { file, previewUrl: URL.createObjectURL(file) };
     });
   }
 
   function clearImage() {
     setImage((prev) => {
-      if (prev) URL.revokeObjectURL(prev.previewUrl);
+      if (prev && "previewUrl" in prev) URL.revokeObjectURL(prev.previewUrl);
       return null;
     });
   }
+
+  const imageShown = image ? ("url" in image ? image.url : image.previewUrl) : null;
+  const imageName = image ? ("url" in image ? LOGO_COPY.designLogo : image.file.name) : null;
 
   const nameError = validateName(name);
   const tickerError = validateTicker(ticker);
@@ -406,13 +413,19 @@ export function LaunchForm({
       // 1. Image → content-addressed blob. Required, and step1Valid enforces
       // it; the guard keeps the type narrow.
       if (!image) throw new Error("Choose a token image first.");
-      working("Uploading image…");
-      const fd = new FormData();
-      fd.append("file", image.file);
-      const uploadRes = await fetch("/api/upload-image", { method: "POST", body: fd });
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadJson.error ?? "Image upload failed.");
-      const imageURI: string = uploadJson.url;
+      let imageURI: string;
+      if ("url" in image) {
+        // The design's logo is already on the content-addressed store (M90).
+        imageURI = image.url;
+      } else {
+        working("Uploading image…");
+        const fd = new FormData();
+        fd.append("file", image.file);
+        const uploadRes = await fetch("/api/upload-image", { method: "POST", body: fd });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadJson.error ?? "Image upload failed.");
+        imageURI = uploadJson.url;
+      }
 
       // 2. The description text and Telegram handle. Only the description's
       // keccak256 goes on-chain, so the text is stored first, keyed by the
@@ -693,8 +706,8 @@ export function LaunchForm({
 
             <ImagePicker
               required
-              previewUrl={image?.previewUrl ?? null}
-              fileName={image?.file.name ?? null}
+              previewUrl={imageShown}
+              fileName={imageName}
               onSelect={selectImage}
               onClear={clearImage}
             />
@@ -1066,7 +1079,7 @@ export function LaunchForm({
           name={name}
           ticker={ticker}
           description={description}
-          imageUrl={image?.previewUrl ?? null}
+          imageUrl={imageShown}
           xHandle={xHandle}
           telegram={telegram}
           website={websiteError ? "" : website.trim()}

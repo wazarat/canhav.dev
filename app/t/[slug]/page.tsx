@@ -182,8 +182,14 @@ export default async function TokenDesignPublicPage({
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="kicker">Token design</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50">
-            {doc.name} <span className="font-mono text-2xl text-electric-400">${doc.ticker}</span>
+          <h1 className="mt-3 flex items-center gap-4 font-display text-4xl font-semibold tracking-tight text-ink-50">
+            {doc.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={doc.logo} alt={`${doc.name} logo`} className="h-14 w-14 shrink-0 rounded-xl border border-ink-700/60 object-cover" />
+            ) : null}
+            <span>
+              {doc.name} <span className="font-mono text-2xl text-electric-400">${doc.ticker}</span>
+            </span>
           </h1>
           <div className="mt-4 flex flex-wrap gap-2">
             <StatusChip tone="neutral">

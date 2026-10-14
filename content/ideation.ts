@@ -499,6 +499,18 @@ export const REFERENCES_COPY = {
     "Files the team keeps for this project. A local path is on the team's machine, so open it only when you are working there.",
 } as const;
 
+/** The logo on a project or a token design (M90). */
+export const LOGO_COPY = {
+  label: "Logo",
+  projectHint: "PNG, JPG, WEBP or GIF, up to 4 MB. Shown on the studio, the public page and the Explore board. Your agent can set it with set_logo.",
+  designHint: "PNG, JPG, WEBP or GIF, up to 4 MB. Becomes the token image when you launch from this design, and shows on the public page and the Explore board. Your agent can set it with set_logo.",
+  uploading: "Uploading",
+  failed: "The image could not be uploaded.",
+  fileName: "Uploaded logo",
+  designLogo: "The design's logo",
+  alt: (name: string) => `${name || "Untitled"} logo`,
+} as const;
+
 /** Testnet contracts as labelled rows and the address book link (M83). */
 export const TESTNET_COPY = {
   contractsLabel: "Testnet contract addresses",

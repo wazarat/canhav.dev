@@ -22,8 +22,12 @@ export async function DesignsGrid() {
             className="card-surface card-lift block rounded-xl border border-ink-700/70 p-5"
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="truncate font-display text-base font-semibold text-ink-50">
-                {t.draft_doc.name}
+              <p className="flex items-center gap-2 truncate font-display text-base font-semibold text-ink-50">
+                {t.draft_doc.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.draft_doc.logo} alt="" className="h-6 w-6 shrink-0 rounded-md border border-ink-700/60 object-cover" />
+                ) : null}
+                <span className="truncate">{t.draft_doc.name}</span>
               </p>
               <span className="shrink-0 font-mono text-xs text-electric-300">
                 ${t.draft_doc.ticker}
