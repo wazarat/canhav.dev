@@ -73,7 +73,8 @@ import {
   startingPointLabel,
 } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
-import { PUBLISH_COPY, TESTNET_COPY, WORST_CASE_WHY } from "@/content/ideation";
+import { PUBLISH_COPY, STUDIO_COPY, TESTNET_COPY, WORST_CASE_WHY } from "@/content/ideation";
+import { registerCommands } from "@/lib/command-menu";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import {
   PROJECT_LIMITS,
@@ -344,6 +345,23 @@ export function ProjectEditor({
   );
   const removedByShape = useMemo(() => removedGroupsFor(kit), [kit]);
   const current = editorSteps[Math.min(step, editorSteps.length - 1)];
+
+  // The command menu's "Go to <step>" entries for this editor (M87). Labels
+  // follow the step pills, so a product step reads by its shape.
+  const stepLabels = editorSteps.map((s) => (s.kind === "doc" ? STEP_LABELS_KIT[s.key] : shapeLabel(s.shape) ?? s.shape)).join("\n");
+  useEffect(() => {
+    const C = STUDIO_COPY.command;
+    return registerCommands(
+      "project-editor-steps",
+      stepLabels.split("\n").map((label, i) => ({
+        id: `step:${i}`,
+        label: C.step(label),
+        group: C.groups.project,
+        keywords: "step",
+        run: () => setStep(i),
+      })),
+    );
+  }, [stepLabels]);
   const docStep = current.kind === "doc" ? current.key : null;
   const productShape = current.kind === "product" ? current.shape : null;
   const kitStep = docStep && docStep !== "review" ? docStep : null;

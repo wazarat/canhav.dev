@@ -8,6 +8,7 @@ import { LaunchesSummary } from "@/components/studio/LaunchesSummary";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { AccountMenu } from "@/components/studio/AccountMenu";
+import { CommandMenuHint } from "@/components/studio/CommandMenuHint";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { getCurvesAllChains } from "@/lib/indexer";
@@ -119,7 +120,10 @@ export default async function StudioPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         {header}
         <div className="flex flex-col items-end gap-3">
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            <CommandMenuHint />
+            <AccountMenu />
+          </div>
           <Button asChild variant="secondary">
             <Link href="/studiopro">{STUDIO_COPY.pro.join}</Link>
           </Button>
