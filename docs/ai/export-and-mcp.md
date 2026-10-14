@@ -121,7 +121,7 @@ Unlike the shared server, a scoped server is owner-only and requires OAuth on ev
 | `get_launch_journey` | The shared tool bound to this project's token. No arguments. The committed document with the on-chain and recomputed hashes |
 | `get_milestone_updates` | The shared tool bound to this project's token. No arguments. Creator updates grouped by milestone |
 
-The token tools answer with an error until a token is linked to the project, by a launch or through its deployed linked design. Their names match the shared server's on purpose, so a prompt written for `canhav` reads the same on `canhav-<project>`; Claude Code keeps the two apart by server name.
+The token tools answer with an error until a token is linked to the project, by a launch or through its deployed linked design. The design tools answer with an error until a design is linked, which the agent can do itself with `create_linked_token_design`. Their names match the shared server's on purpose, so a prompt written for `canhav` reads the same on `canhav-<project>`; Claude Code keeps the two apart by server name.
 
 The scoped server also registers one prompt, `prelaunch_review`. In Claude Code it appears as a slash command named after the server; it walks the passes against the open repository and reports a verdict with evidence for each. Clients that do not surface prompts get the same content through `get_prelaunch_review`.
 
@@ -146,6 +146,7 @@ An agent on a project's server can change that project's draft, tick build steps
 | `set_build_steps` | Tick or untick build steps by id (`done`, `undone`), add steps under one of the project's product shapes (`add` with `shape`, `title` and an optional `detail`), remove steps (`remove`, a step shared between shapes goes for all of them, a step the team added is deleted) and bring removed catalog steps back (`restore`). The owner decides each entry of a proposal on its own |
 | `get_token_build_steps` | The linked design's token build steps, eight design steps and eight launch stages, each with its id, phase, state and whether it is computed from the platform (publish, link, launch, the snipe window, graduation). Rows that do not apply leave the progress count |
 | `set_token_build_steps` | Tick or untick the linked design's manual token build steps by id. Computed ids are refused. Rides the same proposal flow as the design's fields |
+| `create_linked_token_design` | Start the token design when none is linked. Creates a blank draft named after the project (or `name`) with an optional `ticker`, links it at once in propose and direct mode alike (a blank draft is undoable in the studio) and lists the start under Agent changes as Started; `changes` in the `update_linked_token_design` shape then ride the write mode. Refused when a design is linked or writes are off |
 | `update_linked_token_design` | Change fields of the linked token design draft, including `market.launchTarget` (`canhav_curve`, `pons` or `pools_xyz`), which the AgentChangesPanel shows as one line, Market, launch venue |
 | `get_agent_changes` | The owner's mode and the recent agent changes with their status (proposed, applied, accepted, rejected). An accepted row carries `appliedPatch`, the part of the proposal the owner let through, possibly edited line by line |
 
@@ -157,7 +158,7 @@ Input that breaks a rule is refused with the field and the number that broke it,
 
 The paste prompt and the kit SKILL files ask the agent to tick each build step with `set_build_steps` as soon as it is done, with a note naming the file, and to record architecture facts as it learns them rather than at the end of a run. The owner sees each arrival as a notice at the bottom right of the open project editor, and the studio home marks a project row with the number of proposals waiting and the date of the newest direct write.
 
-What an agent cannot do. Publish or unpublish. Tick the distribution acknowledgement. Link or unlink a token design or a launch. Change the chain of a project that already has a token. These stay with a person in the studio.
+What an agent cannot do. Publish or unpublish. Tick the distribution acknowledgement. Unlink a token design, or link or unlink a launch (it can start a token design for a project that has none). Change the chain of a project that already has a token. These stay with a person in the studio.
 
 If an agent writes while the editor is open, the editor takes the new draft when nothing is unsaved. If there is unsaved typing, saving pauses and the editor asks for a reload, so neither side overwrites the other without anyone seeing it.
 

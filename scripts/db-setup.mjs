@@ -305,7 +305,7 @@ await sql`
     owner_id text not null,
     target text not null check (target in ('project','token_design')),
     target_id uuid not null,
-    kind text not null check (kind in ('fields','build_steps')),
+    kind text not null check (kind in ('fields','build_steps','create')),
     patch jsonb not null,
     note text check (note is null or char_length(note) <= 400),
     status text not null check (status in ('proposed','applied','accepted','rejected')),
@@ -317,6 +317,13 @@ await sql`
 
 // M44. The part of a proposal the owner let through, possibly edited.
 await sql`alter table launchpad.agent_changes add column if not exists applied_patch jsonb`;
+
+// M82. An agent may start the linked token design; the row that records it has kind create.
+await sql`alter table launchpad.agent_changes drop constraint if exists agent_changes_kind_check`;
+await sql`
+  alter table launchpad.agent_changes
+    add constraint agent_changes_kind_check check (kind in ('fields','build_steps','create'))
+`;
 
 await sql`
   create index if not exists agent_changes_project_idx

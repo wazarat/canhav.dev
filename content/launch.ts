@@ -661,7 +661,7 @@ export const MCP_GUIDE = {
         "Publish or unpublish.",
         "Change the chain of a project that already has a token.",
         "Tick the distribution acknowledgement.",
-        "Link or unlink a token design or a launch.",
+        "Unlink a token design, or link or unlink a launch. An agent can start a token design for a project that has none.",
       ],
     },
     other: {
@@ -708,7 +708,7 @@ export const MCP_GUIDE = {
   stepsPrompt: (projectId: string, name: string) =>
     `Use the ${mcpAlias(name, projectId)} get_build_steps tool. For each step, check this repository for written evidence that it is done. Use set_build_steps to tick only the ones you can point to, and tell me which file proves each. From now on, tick each step as soon as you finish it, with a note naming the file.`,
   tokenPrompt: (projectId: string, name: string) =>
-    `Use the ${mcpAlias(name, projectId)} get_linked_token_design and get_design_constraints tools. Propose a supply, an allocation split that totals 100 and vesting for each cohort with update_linked_token_design, then run check_design and tell me the warnings.`,
+    `Use the ${mcpAlias(name, projectId)} get_linked_token_design and get_design_constraints tools. If no design is linked yet, start one with create_linked_token_design. Propose a supply, an allocation split that totals 100 and vesting for each cohort with update_linked_token_design, then run check_design and tell me the warnings.`,
   /**
    * The one prompt a builder pastes into Claude. `mode` undefined is the
    * read-only version on the card; the guide passes the project's live

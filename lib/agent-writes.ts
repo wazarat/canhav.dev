@@ -97,7 +97,8 @@ export const AGENT_CHANGE_LIMITS = {
 } as const;
 
 export type AgentChangeTarget = "project" | "token_design";
-export type AgentChangeKind = "fields" | "build_steps";
+/** fields and build_steps change a draft; create records that an agent started the linked token design (M82). */
+export type AgentChangeKind = "fields" | "build_steps" | "create";
 export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected";
 
 export interface BuildStepsPatch {

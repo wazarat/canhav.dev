@@ -32,9 +32,13 @@ import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   type ProjectRow,
   type TokenDesignRow,
+  createProjectTokenLink,
+  createTokenDesign,
+  deleteTokenDesignDraft,
   getLinkedTokenDesign,
   getProject,
 } from "@/lib/ideation-db";
+import { emptyTokenDesignDoc } from "@/lib/ideation";
 
 /**
  * The one path an agent change takes, whatever tool sent it. Reads the
@@ -196,6 +200,47 @@ export async function projectedContext(
     } else skipped.push({ id: c.id, reason: next.message });
   }
   return { project: p, design: d, pending: { count: rows.length, changeIds, skipped } };
+}
+
+const ALREADY_LINKED = "A token design is already linked to this project. Change it with update_linked_token_design.";
+
+/**
+ * Start the linked token design from the agent (M82). A blank draft is
+ * created and linked at once in propose and direct mode alike, since a
+ * blank draft is undoable in the studio, and the row that records it has
+ * kind create so the history reads "Started token design". Fields the
+ * agent sends with it ride the project's write mode like any change.
+ */
+export async function createLinkedDesign(
+  project: ProjectRow,
+  ownerId: string,
+  input: { name: string; ticker?: string },
+): Promise<{ ok: true; design: TokenDesignRow; changeId: string | null } | { ok: false; message: string }> {
+  const { mode, rev } = agentStateOf(project);
+  if (rev === null) return { ok: false, message: NOT_READY };
+  if (mode === "off") return { ok: false, message: OFF };
+  if (await getLinkedTokenDesign(project.id)) return { ok: false, message: ALREADY_LINKED };
+  const doc = emptyTokenDesignDoc(input.name);
+  if (input.ticker) doc.ticker = input.ticker;
+  const design = await createTokenDesign(ownerId, doc);
+  if (!design) return { ok: false, message: NOT_READY };
+  const linked = await createProjectTokenLink(project.id, design.id, ownerId);
+  if (!linked.ok) {
+    // Lost a race with the studio. The design just made is an orphan draft; the link that won stands.
+    await deleteTokenDesignDraft(design.id, ownerId);
+    return { ok: false, message: ALREADY_LINKED };
+  }
+  const changeId = await recordAgentChange({
+    projectId: project.id,
+    ownerId,
+    target: "token_design",
+    targetId: design.id,
+    kind: "create",
+    patch: { name: doc.name, ...(doc.ticker ? { ticker: doc.ticker } : {}) },
+    note: null,
+    status: "applied",
+  });
+  return { ok: true, design, changeId };
 }
 
 export async function submitAgentChange(

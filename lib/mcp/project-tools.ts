@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   type ProjectDoc,
   type TokenDesignDoc,
+  TOKEN_DESIGN_LIMITS,
   emptyTokenDesignDoc,
   normalizeTokenDesignDoc,
   validateProjectDoc,
@@ -55,7 +56,7 @@ import {
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
-import { type PendingView, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
+import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY } from "@/content/ideation";
 import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
 import { featuresFor } from "@/content/kits/features";
@@ -104,7 +105,7 @@ const AUTH_HINT =
 const NOT_YOURS =
   "No CanHav project with this id belongs to you. Open the project in the studio and copy its MCP server URL again.";
 const NO_DESIGN =
-  "No token has been launched from this project and no token design is linked to it. Launch one from the project's page in the CanHav studio, or link a design there.";
+  "No token has been launched from this project and no token design is linked to it. Start one with create_linked_token_design, or the owner links or launches one from the project's page in the CanHav studio.";
 const NO_TOKEN =
   "This project's token design has not been deployed and no token has been launched from the project yet. Launch it from the project's page in the CanHav studio.";
 
@@ -346,7 +347,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                 ? "Nothing left. The project is published and its token has graduated."
                 : "Nothing left. The project is published and its token is deployed."
             : !design
-              ? `Link a token design to this project, or launch a token from canhav.com/launch?project=${project.id}.`
+              ? `Start a token design with create_linked_token_design, or the owner links one in the studio or launches a token from canhav.com/launch?project=${project.id}.`
               : designProblem
                 ? "Fix the token design draft in the studio."
                 : design.status !== "published"
@@ -885,6 +886,52 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       );
       if (!result.ok) return errorResult(result.message);
       return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "create_linked_token_design",
+    {
+      title: "Start this project's token design",
+      description: `Start the token design for this project when none is linked (M82). Creates a blank draft design named after the project (or name) with an optional ticker, links it to the project at once, and sends changes, the same shape update_linked_token_design takes, through the project's write mode. The creation itself is immediate in propose and direct mode alike, since a blank draft is undoable in the studio, and is listed under Agent changes as Started. Refused when a design is already linked (use update_linked_token_design) and when agent writes are off. Answers with the design id, its studio URL and the outcome of the changes. Then run check_design and read get_linked_token_design for the advice per product shape.`,
+      inputSchema: z.object({
+        name: z.string().min(TOKEN_DESIGN_LIMITS.name.min).max(TOKEN_DESIGN_LIMITS.name.max).optional(),
+        ticker: z.string().max(TOKEN_DESIGN_LIMITS.ticker.max).regex(TOKEN_DESIGN_LIMITS.ticker.pattern).optional(),
+        changes: tokenDesignPatchSchema.optional(),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      const created = await createLinkedDesign(project, project.owner_id, {
+        name: args.name ?? project.draft_doc.name,
+        ticker: args.ticker,
+      });
+      if (!created.ok) return errorResult(created.message);
+      const base = {
+        designId: created.design.id,
+        studioUrl: `https://www.canhav.com/studio/token/${created.design.id}`,
+        created: "A blank draft was created and linked to this project.",
+      };
+      if (!args.changes || Object.keys(args.changes).length === 0)
+        return jsonResult({ ...base, outcome: null, message: "No fields were sent. Fill the design with update_linked_token_design." });
+      const result = await submitAgentChange(
+        project,
+        created.design,
+        project.owner_id,
+        { target: "token_design", kind: "fields", patch: args.changes },
+        args.note,
+      );
+      if (!result.ok) return jsonResult({ ...base, outcome: null, message: result.message });
+      return jsonResult({
+        ...base,
+        ...(await afterWrite(projectId, ctx, result)),
+        changed: changeLines(created.design.draft_doc, args.changes).map((l) => l.path),
+      });
     },
     scope,
   );
