@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  AGENT_CHANGE_LIMITS,
   type AgentChange,
   type AgentChangeKind,
   type AgentChangeStatus,
@@ -92,6 +93,25 @@ export async function listAgentChanges(
     return (rows as ChangeRow[]).map(mapChange);
   } catch (err) {
     console.error("[agent-writes] list failed", err);
+    return [];
+  }
+}
+
+/** The proposals waiting on one project, oldest first, the order a projection applies them (M81). */
+export async function listPendingChanges(projectId: string, ownerId: string): Promise<AgentChange[]> {
+  const sql = getDb();
+  if (!sql) return [];
+  try {
+    const rows = await sql`
+      select id, target, kind, patch, note, status, created_at, resolved_at, applied_patch
+      from launchpad.agent_changes
+      where project_id = ${projectId} and owner_id = ${ownerId} and status = 'proposed'
+      order by created_at asc
+      limit ${AGENT_CHANGE_LIMITS.pending.max}
+    `;
+    return (rows as ChangeRow[]).map(mapChange);
+  } catch (err) {
+    console.error("[agent-writes] pending failed", err);
     return [];
   }
 }

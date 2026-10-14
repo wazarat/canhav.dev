@@ -55,7 +55,8 @@ import {
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
-import { submitAgentChange } from "@/lib/agent-writes-server";
+import { type PendingView, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
+import { AGENT_COPY } from "@/content/ideation";
 import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
 import { featuresFor } from "@/content/kits/features";
 import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
@@ -110,28 +111,69 @@ const NO_TOKEN =
 interface ProjectCtx {
   project: ProjectRow;
   design: TokenDesignRow | null;
+  /** draft is the stored draft; projected has the waiting proposals applied (M81). */
+  source: "draft" | "projected";
+  pending: PendingView;
 }
 
 async function loadProjectContext(
   projectId: string,
   userId: string,
+  preview: boolean | undefined,
 ): Promise<ProjectCtx | null> {
   const project = await getProject(projectId, userId);
   if (!project) return null;
   const design = await getLinkedTokenDesign(project.id);
-  return { project, design };
+  // In propose mode the agent reads what the draft becomes once the owner
+  // accepts, so a run can build on its own proposals. preview false reads
+  // the stored draft. Direct and off have nothing waiting (M81).
+  if (agentStateOf(project).mode === "propose" && preview !== false) {
+    const projected = await projectedContext(project, design, userId);
+    return { ...projected, source: "projected" };
+  }
+  return { project, design, source: "draft", pending: { count: 0, changeIds: [], skipped: [] } };
 }
 
 /** The preamble every tool shares. Returns a ToolResult on any failure. */
 async function withProject(
   projectId: string,
   ctx: unknown,
+  preview?: boolean,
 ): Promise<{ ok: true; value: ProjectCtx } | { ok: false; message: string }> {
   const userId = mcpUserId(ctx);
   if (!userId) return { ok: false, message: AUTH_HINT };
-  const loaded = await loadProjectContext(projectId, userId);
+  const loaded = await loadProjectContext(projectId, userId, preview);
   if (!loaded) return { ok: false, message: NOT_YOURS };
   return { ok: true, value: loaded };
+}
+
+/** The studio page where the owner decides proposals. */
+function reviewUrl(projectId: string): string {
+  return `https://www.canhav.com/studio/project/${projectId}#${AGENT_COPY.anchor}`;
+}
+
+/** source and pending in front of every read answer (M81). */
+function stateOf(v: ProjectCtx) {
+  return {
+    source: v.source,
+    pending: { ...v.pending, reviewUrl: reviewUrl(v.project.id) },
+  };
+}
+
+/**
+ * What a write answer carries beside its outcome (M81). After a proposal
+ * the projected progress, so the agent sees the step it just ticked.
+ */
+async function afterWrite(projectId: string, ctx: unknown, result: { outcome: "proposed" | "applied"; changeId: string | null; message: string }) {
+  const loaded = await withProject(projectId, ctx);
+  const kit = loaded.ok ? loaded.value.project.draft_doc.kit : undefined;
+  return {
+    outcome: result.outcome,
+    changeId: result.changeId,
+    message: result.message,
+    ...(loaded.ok ? { pending: { ...loaded.value.pending, reviewUrl: reviewUrl(projectId) } } : {}),
+    ...(loaded.ok && kit?.shape ? { projectedProgress: buildProgress(kit) } : {}),
+  };
 }
 
 /** The one token a project server speaks for (M45). */
@@ -214,23 +256,33 @@ export function registerProjectTools(server: McpServer, projectId: string): void
   const WRITE_RULES =
     "Drafts only, nothing is published. The project owner chose in the studio whether agent changes are proposed for review or written at once, and the result says which happened. Send only the fields you are changing.";
 
+  // Every read takes preview (M81). The description tail says what it does.
+  const PREVIEW_NOTE =
+    " In propose mode the answer is the projected state, the draft with the waiting proposals applied, and pending names them; pass preview false for the stored draft.";
+  const previewField = z
+    .boolean()
+    .optional()
+    .describe("false reads the stored draft instead of the projected state. Only matters in propose mode.");
+  const PREVIEW = z.object({ preview: previewField });
+
   registerMeteredTool(
     server,
     "get_project",
     {
       title: "Get this project",
       description:
-        "The full CanHav project record this server is bound to. Current draft, publication status, and the published snapshot when there is one. Takes no arguments.",
-      inputSchema: z.object({}),
+        "The full CanHav project record this server is bound to. Current draft, publication status, and the published snapshot when there is one." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project } = loaded.value;
       const snapshot = project.published_hash
         ? await getSnapshot(project.published_hash)
         : null;
       return jsonResult({
+        ...stateOf(loaded.value),
         id: project.id,
         slug: project.slug,
         status: project.status,
@@ -257,11 +309,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's status",
       description:
-        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked with its float, FDV to float, treasury share and warning codes, whether each side is published, whether a token is deployed or launched with the curve state of either, the research kit's build progress when the project has a product shape, and the next action. Takes no arguments.",
-      inputSchema: z.object({}),
+        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked with its float, FDV to float, treasury share and warning codes, whether each side is published, whether a token is deployed or launched with the curve state of either, the research kit's build progress when the project has a product shape, and the next action." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project, design } = loaded.value;
       const projectProblem = validateProjectDoc(project.draft_doc);
@@ -303,6 +355,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const kit = project.draft_doc.kit;
       const now = Math.floor(Date.now() / 1000);
       return jsonResult({
+        ...stateOf(loaded.value),
         project: {
           id: project.id,
           name: project.draft_doc.name,
@@ -382,17 +435,18 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's token design",
       description:
-        "The token design linked to this project, with its launchTarget (the venue it ideates for, canhav_curve, pons or pools_xyz, with its fit on this project's chain), its derived tokenomics, its warnings (including whether the rationale fits this project's product shapes and whether the venue runs on this project's mainnet), what the CanHav contracts can deploy of it, an advice block per product shape on whether a token fits and what it should lock, and its deployed token address when it has one. Read the advice before changing the rationale with update_linked_token_design. Takes no arguments.",
-      inputSchema: z.object({}),
+        "The token design linked to this project, with its launchTarget (the venue it ideates for, canhav_curve, pons or pools_xyz, with its fit on this project's chain), its derived tokenomics, its warnings (including whether the rationale fits this project's product shapes and whether the venue runs on this project's mainnet), what the CanHav contracts can deploy of it, an advice block per product shape on whether a token fits and what it should lock, and its deployed token address when it has one. Read the advice before changing the rationale with update_linked_token_design." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project, design } = loaded.value;
       if (!design) return errorResult(NO_DESIGN);
       const shapes = kitShapes(project.draft_doc.kit);
       const chain = projectChainOf(project.draft_doc);
       return jsonResult({
+        ...stateOf(loaded.value),
         id: design.id,
         slug: design.slug,
         status: design.status,
@@ -419,16 +473,17 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "The linked design's build steps",
       description:
-        "The token build steps for the design linked to this project, in order. Eight design steps and eight launch stages, each with its id, phase, what done looks like, the editor step it informs and its state. Rows marked computed are read from the platform (publish, link, launch, the snipe window, graduation) and cannot be ticked; a row that does not apply is left out of the progress count. Use the manual ids with set_token_build_steps. Takes no arguments.",
-      inputSchema: z.object({}),
+        "The token build steps for the design linked to this project, in order. Eight design steps and eight launch stages, each with its id, phase, what done looks like, the editor step it informs and its state. Rows marked computed are read from the platform (publish, link, launch, the snipe window, graduation) and cannot be ticked; a row that does not apply is left out of the progress count. Use the manual ids with set_token_build_steps." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { design } = loaded.value;
       if (!design) return errorResult(NO_DESIGN);
       const facts = await tokenFacts(design);
       return jsonResult({
+        ...stateOf(loaded.value),
         progress: tokenBuildProgressOf(design.draft_doc, facts),
         facts,
         steps: tokenBuildRowsOf(design.draft_doc, facts).map((r) => ({
@@ -477,11 +532,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's design constraints",
       description:
-        "This project's token design as testable assertions. Supply, allocations, per-cohort cliffs and durations, release type and derived float or FDV, split into enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the current draft. Takes no arguments.",
-      inputSchema: z.object({}),
+        "This project's token design as testable assertions. Supply, allocations, per-cohort cliffs and durations, release type and derived float or FDV, split into enforced-on-chain versus stated-by-team. Reads the published snapshot when there is one, otherwise the current draft." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { design } = loaded.value;
       if (!design) return errorResult(NO_DESIGN);
@@ -497,6 +552,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         }
       }
       return jsonResult({
+        ...stateOf(loaded.value),
         source,
         ...designConstraints(doc, design.deployed_token_address),
       });
@@ -597,11 +653,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps. Takes no arguments.",
-      inputSchema: z.object({}),
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const kit = loaded.value.project.draft_doc.kit;
       const items = checklistFor(kitShapes(kit));
@@ -614,6 +670,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const gatedOff = (i: { feature?: string }) => Boolean(i.feature) && !hasFeature(kit, i.feature!);
       const features = featuresFor(kitShapes(kit));
       return jsonResult({
+        ...stateOf(loaded.value),
         progress: buildProgress(kit),
         features: features.map((f) => ({
           id: f.id,
@@ -771,11 +828,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's contract templates",
       description:
-        "The contract templates this project can decide (M63, M80), the catalog placements under its shapes' subsectors plus every template a build step or feature of the shapes cites, each with via (subsector, step or feature). Grouped by the build step that lists them, with the rest under unplaced. Each carries kind (integrate, fork, factory, library), license and licenseClass, audit status, repo and docs, onChain (the mainnet status for the project's chain with a note) and availability (ready, self_deploy, unknown, unavailable), complexity, a Pons fit line when it can sit behind a Pons launch, and decision, the team's accepted, rejected or open. Inactive protocols are left out. Takes no arguments. Every id here is accepted by set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement.",
-      inputSchema: z.object({}),
+        "The contract templates this project can decide (M63, M80), the catalog placements under its shapes' subsectors plus every template a build step or feature of the shapes cites, each with via (subsector, step or feature). Grouped by the build step that lists them, with the rest under unplaced. Each carries kind (integrate, fork, factory, library), license and licenseClass, audit status, repo and docs, onChain (the mainnet status for the project's chain with a note) and availability (ready, self_deploy, unknown, unavailable), complexity, a Pons fit line when it can sit behind a Pons launch, and decision, the team's accepted, rejected or open. Inactive protocols are left out. Every id here is accepted by set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const pack = buildResourcePack(loaded.value.project.draft_doc);
       if (!pack) return errorResult(NO_SHAPE_HINT);
@@ -792,6 +849,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         }));
       const placed = new Set(steps.flatMap((st) => st.templates.map((t) => t.id)));
       return jsonResult({
+        ...stateOf(loaded.value),
         chain: pack.chain,
         counts: pack.templates.counts,
         steps,
@@ -867,15 +925,16 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Agent changes on this project",
       description:
-        "How the owner lets agents write to this project (off, propose or direct) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed. Takes no arguments.",
-      inputSchema: z.object({}),
+        "How the owner lets agents write to this project (off, propose or direct) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project } = loaded.value;
       const changes = await listAgentChanges(project.id, project.owner_id);
-      return jsonResult({ mode: agentStateOf(project).mode, changes });
+      return jsonResult({ ...stateOf(loaded.value),
+        mode: agentStateOf(project).mode, changes });
     },
     scope,
   );
@@ -886,15 +945,16 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Check this project record",
       description:
-        "Validate this project's draft against CanHav's project rules and report the first problem, or that it is ready to publish. Takes no arguments.",
-      inputSchema: z.object({}),
+        "Validate this project's draft against CanHav's project rules and report the first problem, or that it is ready to publish." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const draft: ProjectDoc = loaded.value.project.draft_doc;
       const firstProblem = validateProjectDoc(draft);
-      return jsonResult({ valid: firstProblem === null, firstProblem });
+      return jsonResult({ ...stateOf(loaded.value),
+        valid: firstProblem === null, firstProblem });
     },
     scope,
   );
@@ -930,15 +990,16 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's pre-launch review",
       description:
-        "The review passes that apply to this project's product shape, each with what a reviewer checks, the resources that define it, and the team's recorded verdict (pass, fail, not applicable, or open). Takes no arguments. Run the prelaunch_review prompt to walk them against a repository.",
-      inputSchema: z.object({}),
+        "The review passes that apply to this project's product shape, each with what a reviewer checks, the resources that define it, and the team's recorded verdict (pass, fail, not applicable, or open). Run the prelaunch_review prompt to walk them against a repository." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
     },
-    async (_args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const view = buildReviewView(loaded.value.project.draft_doc);
       if (!view) return errorResult(NO_SHAPE_HINT);
-      return jsonResult({ source: "draft", ...view });
+      return jsonResult({ ...stateOf(loaded.value),
+        source: "draft", ...view });
     },
     scope,
   );

@@ -10,7 +10,9 @@ import {
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
 import { getAgentChange, resolveAgentChange } from "@/lib/agent-writes-db";
-import { writeChange } from "@/lib/agent-writes-server";
+import { nextProjectDoc, nextTokenDesignDoc, projectedContext, writeChange } from "@/lib/agent-writes-server";
+import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
+import { AGENT_COPY } from "@/content/ideation";
 import { authGate } from "@/lib/ideation-api";
 
 export const runtime = "nodejs";
@@ -70,7 +72,22 @@ export async function POST(req: Request, { params }: Ctx) {
     const inEditor = change.target === "project" && body.appliedInEditor === true;
     if (!inEditor) {
       const written = await writeChange(id, gate.id, change.target, change.kind, applied);
-      if (!written.ok) return NextResponse.json({ error: written.message }, { status: 409 });
+      if (!written.ok) {
+        // The change may depend on proposals filed before it (M81).
+        const project = await getProject(id, gate.id);
+        const design = project ? await getLinkedTokenDesign(project.id) : null;
+        const projected = project ? await projectedContext(project, design, gate.id) : null;
+        const applies =
+          projected && change.target === "project"
+            ? nextProjectDoc(projected.project, change.kind, applied).ok
+            : projected?.design
+              ? nextTokenDesignDoc(projected.design, change.kind, applied).ok
+              : false;
+        return NextResponse.json(
+          { error: applies ? `${written.message} ${AGENT_COPY.dependsOnEarlier}` : written.message },
+          { status: 409 },
+        );
+      }
     }
   }
 

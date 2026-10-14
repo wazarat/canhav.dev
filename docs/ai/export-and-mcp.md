@@ -131,7 +131,7 @@ An agent on a project's server can change that project's draft, tick build steps
 
 | Mode | What happens to a change |
 |------|--------------------------|
-| Propose changes | It waits in the studio. The draft is unchanged until the owner accepts it. This is the default. |
+| Propose changes | It waits in the studio. The draft is unchanged until the owner accepts it. This is the default. Every read on the server returns the projected state, the draft with the waiting proposals applied oldest first, so the agent can build on its own proposals in one run. |
 | Write directly | It lands in the draft at once and is listed in the studio. |
 | Off | The agent reads only. Write tools return an error that says so. |
 
@@ -149,7 +149,9 @@ An agent on a project's server can change that project's draft, tick build steps
 | `update_linked_token_design` | Change fields of the linked token design draft, including `market.launchTarget` (`canhav_curve`, `pons` or `pools_xyz`), which the AgentChangesPanel shows as one line, Market, launch venue |
 | `get_agent_changes` | The owner's mode and the recent agent changes with their status (proposed, applied, accepted, rejected). An accepted row carries `appliedPatch`, the part of the proposal the owner let through, possibly edited line by line |
 
-Every write tool takes an optional `note` for the owner and answers with `outcome`, either `proposed` or `applied`.
+Every write tool takes an optional `note` for the owner and answers with `outcome`, either `proposed` or `applied`, plus `pending` (how many proposals wait, their ids and the review URL) and, for a project with a product shape, `projectedProgress`, the build progress once the waiting proposals are accepted.
+
+Projected state. In propose mode every read tool on a project server (`get_project`, `get_project_status`, `get_build_steps`, `get_templates`, `get_resource_pack`, `check_project`, `check_design`, the design and token step reads and the `prelaunch_review` prompt) answers with `source: "projected"` and the drafts as they become once the owner accepts what is waiting, applied oldest first, and a `pending` block with `count`, `changeIds` (the proposals the projection applied), `skipped` (waiting proposals that no longer apply, with the reason) and `reviewUrl`. Pass `preview: false` to read the stored draft (`source: "draft"`). In direct and off modes nothing waits, so both read the same. Proposals are checked against the projected drafts, so an agent can propose a product shape, then build steps for it, then a design, in one run; the studio marks a proposal that depends on earlier ones and the owner accepts in order.
 
 Input that breaks a rule is refused with the field and the number that broke it, for example `changes.architecture.contracts is 812 characters, max 800. Nothing was changed.` Up to three problems are named per call. The same wording appears in the studio when a proposal cannot be accepted. The limits themselves are the editor's (`PROJECT_LIMITS` and `TOKEN_DESIGN_LIMITS` in `lib/ideation.ts`, `KIT_LIMITS` in `lib/kits.ts`); a note is at most 400 characters.
 

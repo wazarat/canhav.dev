@@ -34,7 +34,7 @@ import {
 import type { ProjectDoc } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
 
-type Row = AgentChange & { lines: ChangeLine[] };
+type Row = AgentChange & { lines: ChangeLine[]; dependsOnEarlier?: boolean };
 
 interface State {
   available: boolean;
@@ -291,6 +291,7 @@ export function AgentChangesPanel({
                   disabled={working !== null}
                   paused={paused}
                   error={cardErrors[change.id] || null}
+                  hint={change.dependsOnEarlier ? AGENT_COPY.dependsOnEarlier : null}
                   onAccept={() => decide(change, "accept")}
                   onReject={() => decide(change, "reject")}
                 />
@@ -350,6 +351,7 @@ function PendingCard({
   disabled,
   paused,
   error,
+  hint,
   onAccept,
   onReject,
 }: {
@@ -361,6 +363,8 @@ function PendingCard({
   disabled: boolean;
   paused: boolean;
   error: string | null;
+  /** A line under the card, for a proposal that depends on earlier ones (M81). */
+  hint?: string | null;
   onAccept: () => void;
   onReject: () => void;
 }) {
@@ -458,6 +462,7 @@ function PendingCard({
           </div>
         </>
       )}
+      {hint ? <p className="text-xs text-ink-400">{hint}</p> : null}
       {error ? <p className="text-xs text-rose-400">{error}</p> : null}
       {selected === 0 && stored ? <p className="text-xs text-ink-500">{AGENT_COPY.nothingSelected}</p> : null}
       <div className="flex flex-wrap items-center gap-2">

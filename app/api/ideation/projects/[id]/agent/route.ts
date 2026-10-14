@@ -15,6 +15,7 @@ import {
   tokenStepTitles,
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges, setAgentWriteMode } from "@/lib/agent-writes-db";
+import { nextProjectDoc, nextTokenDesignDoc } from "@/lib/agent-writes-server";
 import { authGate } from "@/lib/ideation-api";
 import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
 import { type ProductShape, kitShapes } from "@/lib/kits";
@@ -77,11 +78,34 @@ export async function GET(_req: Request, { params }: Ctx) {
     return changeLines(c.status === "proposed" ? doc : undefined, c.patch);
   };
 
+  // A waiting proposal that fails on the stored draft but applies once the
+  // ones before it are accepted depends on them (M81). The card says so.
+  const dependsOnEarlier = new Set<string>();
+  let p = project;
+  let d = design;
+  for (const c of changes.filter((x) => x.status === "proposed").reverse()) {
+    if (c.target === "project") {
+      const stored = nextProjectDoc(project, c.kind, c.patch);
+      const projected = nextProjectDoc(p, c.kind, c.patch);
+      if (!stored.ok && projected.ok) dependsOnEarlier.add(c.id);
+      if (projected.ok) p = { ...p, draft_doc: projected.doc };
+    } else if (d) {
+      const stored = nextTokenDesignDoc(design!, c.kind, c.patch);
+      const projected = nextTokenDesignDoc(d, c.kind, c.patch);
+      if (!stored.ok && projected.ok) dependsOnEarlier.add(c.id);
+      if (projected.ok) d = { ...d, draft_doc: projected.doc };
+    }
+  }
+
   return NextResponse.json({
     available: rev !== null,
     mode,
     rev,
-    changes: changes.map((c) => ({ ...c, lines: lines(c) })),
+    changes: changes.map((c) => ({
+      ...c,
+      lines: lines(c),
+      ...(dependsOnEarlier.has(c.id) ? { dependsOnEarlier: true } : {}),
+    })),
   });
 }
 

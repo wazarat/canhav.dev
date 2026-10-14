@@ -22,6 +22,7 @@ import {
 import {
   agentStateOf,
   countPendingChanges,
+  listPendingChanges,
   recordAgentChange,
   writeProjectDraftAsAgent,
   writeTokenDesignDraftAsAgent,
@@ -140,6 +141,61 @@ export async function writeChange(
     if (await writeTokenDesignDraftAsAgent(design.id, ownerId, next.doc, rev)) return { ok: true };
   }
   return { ok: false, message: BUSY };
+}
+
+/** What is waiting on a project, as every read on its server reports it (M81). */
+export interface PendingView {
+  /** Proposals waiting for the owner. */
+  count: number;
+  /** The waiting proposals the projection applied, oldest first. */
+  changeIds: string[];
+  /** Waiting proposals that no longer apply to the draft, with the reason. */
+  skipped: Array<{ id: string; reason: string }>;
+}
+
+export interface ProjectedContext {
+  project: ProjectRow;
+  design: TokenDesignRow | null;
+  pending: PendingView;
+}
+
+/**
+ * The drafts with the waiting proposals applied, oldest first (M81). What
+ * an agent in propose mode reads by default, so a change it just proposed
+ * is visible to its next read and a run can build on its own proposals. A
+ * proposal that no longer applies (the draft moved under it, or it depends
+ * on one the owner rejected) is skipped and named. Nothing is written.
+ */
+export async function projectedContext(
+  project: ProjectRow,
+  design: TokenDesignRow | null,
+  ownerId: string,
+): Promise<ProjectedContext> {
+  const rows = await listPendingChanges(project.id, ownerId);
+  let p = project;
+  let d = design;
+  const changeIds: string[] = [];
+  const skipped: PendingView["skipped"] = [];
+  for (const c of rows) {
+    if (c.target === "project") {
+      const next = nextProjectDoc(p, c.kind, c.patch);
+      if (next.ok) {
+        p = { ...p, draft_doc: next.doc };
+        changeIds.push(c.id);
+      } else skipped.push({ id: c.id, reason: next.message });
+      continue;
+    }
+    if (!d) {
+      skipped.push({ id: c.id, reason: NO_DESIGN });
+      continue;
+    }
+    const next = nextTokenDesignDoc(d, c.kind, c.patch);
+    if (next.ok) {
+      d = { ...d, draft_doc: next.doc };
+      changeIds.push(c.id);
+    } else skipped.push({ id: c.id, reason: next.message });
+  }
+  return { project: p, design: d, pending: { count: rows.length, changeIds, skipped } };
 }
 
 export async function submitAgentChange(

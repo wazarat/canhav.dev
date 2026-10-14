@@ -895,6 +895,7 @@ export const AGENT_COPY = {
     off: "Agents can read this project and change nothing.",
   },
   unavailable: "Agent changes open once the database update for them has run.",
+  dependsOnEarlier: "This change builds on proposals above it. Accept those first.",
   pending: "Waiting for you",
   nonePending: "No changes are waiting.",
   history: "Earlier changes",
