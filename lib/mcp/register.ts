@@ -32,10 +32,35 @@ export function mcpUserId(ctx: unknown): string | null {
   return typeof userId === "string" ? userId : null;
 }
 
+/** MCP tool annotations (the spec's ToolAnnotations), hints a client may use for its approval flow. */
+export interface ToolAnnotations {
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
+/**
+ * Every CanHav tool is read-only unless its name says it writes (set_ and
+ * update_). No tool deletes anything and every write is idempotent, a
+ * proposal or a draft merge the owner can undo. Nothing here reaches the
+ * open web. A tool may override any hint (M79).
+ */
+export function toolAnnotations(name: string, override?: ToolAnnotations): ToolAnnotations {
+  const writes = /^(set_|update_)/.test(name);
+  return {
+    readOnlyHint: !writes,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+    ...override,
+  };
+}
+
 export function registerMeteredTool<Schema extends z.ZodType>(
   server: McpServer,
   name: string,
-  config: { title: string; description: string; inputSchema?: Schema },
+  config: { title: string; description: string; inputSchema?: Schema; annotations?: ToolAnnotations },
   cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
   /** scope names the mount, so a project-scoped server's calls are countable. */
   opts?: { scope?: string },
@@ -46,7 +71,7 @@ export function registerMeteredTool<Schema extends z.ZodType>(
     name: string,
     config: unknown,
     cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
-  ) => void)(name, config, async (args, ctx) => {
+  ) => void)(name, { ...config, annotations: toolAnnotations(name, config.annotations) }, async (args, ctx) => {
     // Metering hook. One structured log line per call so tool usage and
     // failure rates are visible in Vercel runtime logs. Counting lands here.
     const startedAt = Date.now();

@@ -6,8 +6,8 @@ import { InfoTip } from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
 /**
- * Typeform style choice rows (M74): a full width row with a keyed square on
- * the left (A, B, C), a title and a first person sentence. Zero or more
+ * Typeform style choice rows (M74): a full width row with a check square on
+ * the left (empty until chosen, M77), a title and a first person sentence. Zero or more
  * values, optional `max` over the whole picker and `maxPerGroup` within one
  * headed section; extra clicks are ignored, never an error. Options with
  * `available: false` are left out, the caller says what is coming in
@@ -32,8 +32,6 @@ export interface ChoiceGroup<V extends string> {
   heading: string;
   options: ReadonlyArray<ChoiceOption<V>>;
 }
-
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 export function ChoiceCardGroups<V extends string>({
   label,
@@ -61,7 +59,6 @@ export function ChoiceCardGroups<V extends string>({
 }) {
   const headed = groups.length > 1;
   const chosen = new Set(value);
-  let index = 0;
   // Not a <label>: a label around several buttons forwards clicks to the first.
   return (
     <div className="space-y-1.5">
@@ -84,8 +81,6 @@ export function ChoiceCardGroups<V extends string>({
                 {options.map((opt) => {
                   const selected = chosen.has(opt.value);
                   const disabled = opt.disabled === true;
-                  const letter = LETTERS[index % LETTERS.length];
-                  index += 1;
                   return (
                     <button
                       key={opt.value}
@@ -122,7 +117,7 @@ export function ChoiceCardGroups<V extends string>({
                             : "border-ink-700/60 bg-ink-950/50 text-ink-400 light:bg-ink-800/50",
                         )}
                       >
-                        {selected ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : letter}
+                        {selected ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
                       </span>
                       <span className="min-w-0">
                         <span className={cn("block text-sm font-medium", disabled ? "text-ink-500" : "text-ink-50")}>

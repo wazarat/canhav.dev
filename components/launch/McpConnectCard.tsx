@@ -126,6 +126,9 @@ export function McpConnectCard({
         ) : (
           <CopyLine label={l.addLabel} text={l.addCommand} />
         )}
+        {target.kind === "project" && !compact ? (
+          <p className="text-xs leading-relaxed text-ink-500">{MCP_GUIDE.sections.connect.prompts.card}</p>
+        ) : null}
         {target.kind === "launch" ? null : target.kind === "project" ? (
           <CopyBlock
             label={MCP_GUIDE.paste}

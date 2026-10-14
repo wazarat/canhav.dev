@@ -523,6 +523,23 @@ export const MAINNET_COPY = {
   ponsFeeLabel: "Creator fee recipient",
   ponsOffChain: (chainName: string) =>
     `Pons runs on Robinhood Chain mainnet. This project builds on ${chainName}, so there is no Pons pairing to record.`,
+  /** The external trading pair (M78). */
+  pairLabel: "Trading pair",
+  pairHint:
+    "Where the token trades outside CanHav once it is on mainnet. A Pons market, a Pools or Uniswap pool, or another venue, with the asset it is quoted in and the link people trade at. Shown on the token page and the public page.",
+  pairVenueLabel: "Venue",
+  pairVenuePlaceholder: "Choose a venue",
+  pairVenueClear: "No pair recorded",
+  pairQuoteLabel: "Quote asset",
+  pairQuoteHint: "A symbol such as ETH or USDC, or the token's address.",
+  pairQuotePlaceholder: "ETH, USDC or 0x…",
+  pairAddressLabel: "Pair or pool address",
+  pairAddressHint: "Optional.",
+  pairUrlLabel: "Trade link",
+  pairUrlPlaceholder: "https://",
+  pairLine: (venue: string, quote: string) => `Trades on ${venue} against ${quote}`,
+  pairTrade: (venue: string) => `Trade on ${venue}`,
+  pairAddressLine: "Pair address",
   /** Read-only surfaces. */
   panelTitle: "Mainnet",
   panelNone: "No mainnet contracts recorded yet. Add them on the Reality step once the product is live.",
@@ -818,6 +835,11 @@ export const STUDIO_COPY = {
     /** The API refuses a record whose token has launched (M75). */
     launched: "This record has a launched token, so it stays. Unlink the launch first if it should go.",
   },
+  /** Agent activity on a studio project row (M79). */
+  agent: {
+    proposed: (n: number) => (n === 1 ? "1 proposed" : `${n} proposed`),
+    wrote: (date: string) => `Agent wrote ${date}`,
+  },
   /** Launched-token lines on the studio Projects row and the launch list (M19d). */
   launch: {
     launched: "Token launched",
@@ -889,6 +911,16 @@ export const AGENT_COPY = {
     applied === total && edited === 0
       ? "Applied as proposed"
       : `${applied} of ${total} applied${edited ? `, ${edited} edited` : ""}`,
+  /** The notice in the editor when an agent proposes or writes (M79). */
+  toast: {
+    proposed: (n: number) => (n === 1 ? "The agent proposed 1 change." : `The agent proposed ${n} changes.`),
+    written: (n: number) =>
+      n === 1 ? "The agent wrote 1 change to the draft." : `The agent wrote ${n} changes to the draft.`,
+    waiting: (n: number) =>
+      n === 1 ? "1 agent change is waiting for you." : `${n} agent changes are waiting for you.`,
+    review: "Review",
+    dismiss: "Dismiss",
+  },
   unparseable: "This proposal no longer matches what agents may change, so it can only be rejected.",
   invalidDecision: "This decision cannot be applied.",
   busy: "Working",

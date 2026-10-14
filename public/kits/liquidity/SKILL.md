@@ -50,6 +50,9 @@ memory.
 6. Before any deposit of real value, run the review passes from the pack and
    record the evidence for each. For a hook, the protocol's security
    framework and the security foundations skill are mandatory.
+7. Tick each build step from `get_build_steps` with `set_build_steps` as
+   soon as it is done, with a note naming the file that proves it, rather
+   than at the end of the session.
 
 ## Rules that do not bend
 

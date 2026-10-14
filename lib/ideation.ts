@@ -1,7 +1,7 @@
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
-import { type LaunchTarget, isLaunchTarget } from "@/lib/launch-targets";
+import { type LaunchTarget, type PairVenue, isLaunchTarget, isPairVenue, pairVenueFits } from "@/lib/launch-targets";
 import {
   kitsForSectors,
   normalizeProjectKit,
@@ -304,6 +304,8 @@ export interface ProjectDoc {
   /** So where will the first hundred users actually come from? */
   firstHundredUsers: string;
   githubRepo?: string;
+  /** The product's website, https only (M78). Shown on the public page. */
+  website?: string;
   /** Testnet contract addresses, lowercase hex — feed the verify signals. */
   testnetContracts?: string[];
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
@@ -334,6 +336,24 @@ export interface MainnetRecord {
     tokenAddress: string;
     feeRecipient: string;
   };
+  /** An external trading pair the team recorded (M78). */
+  pair?: MainnetPair;
+}
+
+/**
+ * Where the token trades outside CanHav (M78): a Pons market, a Pools or
+ * Uniswap pool, or another venue. The pair lives on the mainnet the record's
+ * chain id names. Shown on the token page, the project page and the launch
+ * panel, with the trade link.
+ */
+export interface MainnetPair {
+  venue: PairVenue;
+  /** A symbol (1 to 12 characters) or a lowercase hex token address. */
+  quoteAsset: string;
+  /** The pair or pool contract, lowercase hex. Optional. */
+  pairAddress?: string;
+  /** Where to trade it, https only. */
+  url: string;
 }
 
 export const PROJECT_LIMITS = {
@@ -356,7 +376,10 @@ export const PROJECT_LIMITS = {
   externalDepName: { min: 2, max: 80 },
   externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
+  website: { max: 200 },
   testnetContracts: { max: 10 },
+  pairQuoteAsset: { min: 1, max: 12 },
+  pairUrl: { max: 200 },
   mainnetContracts: { max: 20 },
   mainnetLabel: { min: 1, max: 60 },
   references: { max: 40 },
@@ -759,6 +782,19 @@ export function hashIdeationDoc(doc: IdeationDoc): `0x${string}` {
 // client) and gate each editor step.
 
 const ADDRESS = /^0x[0-9a-f]{40}$/;
+/** A quote asset written as a ticker symbol (ETH, USDC, USDG). */
+const QUOTE_SYMBOL = /^[A-Za-z0-9.]{1,12}$/;
+
+/**
+ * The first problem with a link, or null. `https` demands the scheme the
+ * public page will follow; `http` also accepts plain http (dependency docs).
+ */
+export function urlProblem(label: string, value: string, max: number, scheme: "https" | "http"): string | null {
+  const re = scheme === "https" ? /^https:\/\/\S+$/ : /^https?:\/\/\S+$/;
+  if (!re.test(value)) return scheme === "https" ? `${label} must be an https URL.` : `${label} must be an http(s) URL.`;
+  if (value.length > max) return `${label} is over ${max} characters.`;
+  return null;
+}
 
 function checkText(
   label: string,
@@ -873,9 +909,8 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     p = checkText("Dependency name", dep.name, L.externalDepName);
     if (p) return p;
     if (dep.url) {
-      if (!/^https?:\/\/\S+$/.test(dep.url)) return "Dependency links must be http(s) URLs.";
-      if (dep.url.length > L.externalDepUrl.max)
-        return `Dependency link is over ${L.externalDepUrl.max} characters.`;
+      p = urlProblem("Dependency link", dep.url, L.externalDepUrl.max, "http");
+      if (p) return p;
     }
   }
   if (!a.oracleUse) return "Answer the oracle question, or pick none.";
@@ -905,6 +940,10 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
 
   if (doc.githubRepo && !/^[\w.-]+\/[\w.-]+$/.test(doc.githubRepo))
     return "GitHub repo must be owner/name.";
+  if (doc.website) {
+    p = urlProblem("Website", doc.website, L.website.max, "https");
+    if (p) return p;
+  }
   if (doc.testnetContracts) {
     if (doc.testnetContracts.length > L.testnetContracts.max)
       return `At most ${L.testnetContracts.max} testnet contracts.`;
@@ -945,12 +984,31 @@ export function normalizeMainnetRecord(raw: unknown): MainnetRecord | null {
         feeRecipient: typeof pn.feeRecipient === "string" ? pn.feeRecipient.trim().toLowerCase() : "",
       };
   }
+  const pair = normalizeMainnetPair(r.pair);
+  if (pair) out.pair = pair;
   return mainnetRecordEmpty(out) ? null : out;
+}
+
+/** A stored pair read back defensively (M78). Null without a known venue. */
+export function normalizeMainnetPair(raw: unknown): MainnetPair | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Record<string, unknown>;
+  if (!isPairVenue(p.venue)) return null;
+  const L = PROJECT_LIMITS;
+  const quote = typeof p.quoteAsset === "string" ? p.quoteAsset.trim() : "";
+  const out: MainnetPair = {
+    venue: p.venue,
+    quoteAsset: quote.startsWith("0x") ? quote.toLowerCase().slice(0, 42) : quote.slice(0, L.pairQuoteAsset.max),
+    url: typeof p.url === "string" ? p.url.trim().slice(0, L.pairUrl.max) : "",
+  };
+  const addr = typeof p.pairAddress === "string" ? p.pairAddress.trim().toLowerCase() : "";
+  if (addr) out.pairAddress = addr;
+  return out;
 }
 
 /** True when the record carries nothing worth storing, so the key is left out. */
 export function mainnetRecordEmpty(m: MainnetRecord | undefined | null): boolean {
-  return !m || (m.contracts.length === 0 && !m.companionTemplate && !m.pons);
+  return !m || (m.contracts.length === 0 && !m.companionTemplate && !m.pons && !m.pair);
 }
 
 /** The first problem with a mainnet record for this project, or null (M70). */
@@ -980,7 +1038,28 @@ export function validateMainnetRecord(doc: Pick<ProjectDoc, "chain" | "kit">, m:
     if (!ADDRESS.test(m.pons.tokenAddress)) return "The Pons token address must be lowercase hex.";
     if (!ADDRESS.test(m.pons.feeRecipient)) return "The Pons creator fee recipient must be lowercase hex.";
   }
+  if (m.pair) {
+    const p = validateMainnetPair(doc, m.pair);
+    if (p) return p;
+  }
   return null;
+}
+
+/** The first problem with an external trading pair for this project, or null (M78). */
+export function validateMainnetPair(doc: Pick<ProjectDoc, "chain">, pair: MainnetPair): string | null {
+  const L = PROJECT_LIMITS;
+  const chain = projectChainOf(doc);
+  const info = PROJECT_CHAIN_INFO[chain];
+  if (!isPairVenue(pair.venue)) return "Unknown trading pair venue.";
+  if (!pairVenueFits(pair.venue, chain)) {
+    const label = pair.venue === "pons" ? "Pons" : "Pools";
+    return `${label} runs on Robinhood Chain mainnet. A project on ${info.name} has no ${label} pair to record.`;
+  }
+  if (!ADDRESS.test(pair.quoteAsset) && !QUOTE_SYMBOL.test(pair.quoteAsset))
+    return `The quote asset must be a symbol of ${L.pairQuoteAsset.min} to ${L.pairQuoteAsset.max} characters or a lowercase hex address.`;
+  if (pair.pairAddress !== undefined && !ADDRESS.test(pair.pairAddress))
+    return "The pair address must be lowercase hex.";
+  return urlProblem("The trade link", pair.url, L.pairUrl.max, "https");
 }
 
 /** Cohorts that must have a vesting row: allocation > 0. */
@@ -1231,4 +1310,6 @@ export interface ProjectContext {
   chain: ProjectChain;
   /** The mainnet deployment and the Pons pairing the project records (M70), null when none. */
   mainnet?: MainnetRecord | null;
+  /** The product's website (M78), null when none. Seeds the launch form. */
+  website?: string | null;
 }

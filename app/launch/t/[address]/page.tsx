@@ -17,6 +17,7 @@ import { PoolActions, type PoolActionPool } from "@/components/launch/PoolAction
 import { MarketStats } from "@/components/launch/token/MarketStats";
 import { PriceChart } from "@/components/launch/token/PriceChart";
 import { TokenAbout } from "@/components/launch/token/TokenAbout";
+import { ExternalPairRow } from "@/components/launch/token/ExternalPairRow";
 import { TokenContextCard } from "@/components/launch/token/TokenContextCard";
 import { TradesTable } from "@/components/launch/token/TradesTable";
 import { SaleActions, type SaleActionSale } from "@/components/launch/SaleActions";
@@ -53,6 +54,7 @@ import {
 import { hasCommitment } from "@/lib/journey";
 import { getLaunchCommitment, getVerifiedUpdates } from "@/lib/journey-db";
 import { getLaunchProjectSummary } from "@/lib/launch-project";
+import { mainnetView } from "@/lib/mainnet-view";
 import {
   formatEthAmount,
   pricePoints,
@@ -265,6 +267,11 @@ export default async function TokenPage({
       getLaunchProjectSummary(token.address),
       ...(sales ?? []).map((s) => getRecentPurchases(s.saleId, undefined, chain)),
     ]);
+  // The external pair the linked project recorded (M78), published projects only.
+  const externalPair =
+    projectSummary && projectSummary.project.status === "published"
+      ? (mainnetView({ chain: projectSummary.project.chain, mainnet: projectSummary.project.mainnet ?? undefined })?.pair ?? null)
+      : null;
   const purchases: Record<string, IndexedPurchase[]> = {};
   (sales ?? []).forEach((s, i) => {
     purchases[s.saleId] = (purchaseLists[i] as IndexedPurchase[] | null) ?? [];
@@ -449,6 +456,7 @@ export default async function TokenPage({
           {!onCurve && !poolLive ? (
             <p className="mt-4 text-sm text-ink-400">{TOKEN_PAGE_COPY.trade.noMarket}</p>
           ) : null}
+          {externalPair ? <ExternalPairRow pair={externalPair} symbol={token.symbol} /> : null}
         </div>
 
         <div className="card-surface min-w-0 rounded-xl border border-ink-700/70 p-6">

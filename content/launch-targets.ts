@@ -1,7 +1,14 @@
 import type { ChipOption } from "@/components/ui/ChipGroup";
 import { MARKET_FACTS } from "@/content/ideation";
 import { PROJECT_CHAIN_INFO } from "@/lib/chains";
-import { type LaunchTarget, type LaunchTargetFit, launchTargetChainBound } from "@/lib/launch-targets";
+import {
+  type LaunchTarget,
+  type LaunchTargetFit,
+  PAIR_VENUES,
+  type PairVenue,
+  launchTargetChainBound,
+  pairVenueChainBound,
+} from "@/lib/launch-targets";
 
 /**
  * Launch venue copy (M69). The venue facts were checked on 2026-10-11
@@ -97,6 +104,26 @@ export const LAUNCH_TARGET_OPTIONS: ReadonlyArray<ChipOption<LaunchTarget>> = (
   label: LAUNCH_TARGET_INFO[value].label,
   ...(launchTargetChainBound(value) ? { note: LAUNCH_TARGET_COPY.robinhoodOnly } : {}),
 }));
+
+/** Labels for the venues an external trading pair can be recorded on (M78). */
+export const PAIR_VENUE_LABELS: Record<PairVenue, string> = {
+  pons: LAUNCH_TARGET_INFO.pons.label,
+  pools_xyz: LAUNCH_TARGET_INFO.pools_xyz.label,
+  uniswap: "Uniswap",
+  other: "Another venue",
+};
+
+export function pairVenueLabel(venue: PairVenue): string {
+  return PAIR_VENUE_LABELS[venue];
+}
+
+/** Select options in catalog order, the single-mainnet venues carrying the note. */
+export const PAIR_VENUE_OPTIONS: ReadonlyArray<{ value: PairVenue; label: string; chainBound: boolean }> =
+  PAIR_VENUES.map((value) => ({
+    value,
+    label: pairVenueChainBound(value) ? `${PAIR_VENUE_LABELS[value]} (${LAUNCH_TARGET_COPY.robinhoodOnly})` : PAIR_VENUE_LABELS[value],
+    chainBound: pairVenueChainBound(value),
+  }));
 
 /** The one line a project surface shows for the linked design's venue. */
 export function launchTargetHandoffLine(target: LaunchTarget, fit: LaunchTargetFit): string {

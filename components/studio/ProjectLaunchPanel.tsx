@@ -170,6 +170,22 @@ export function ProjectLaunchPanel({
                 </a>
               </p>
             ) : null}
+            {mainnet.pair ? (
+              <p className="text-ink-300">
+                {MAINNET_COPY.pairLine(mainnet.pair.venueLabel, mainnet.pair.quoteAsset)}.{" "}
+                <a href={mainnet.pair.url} target="_blank" rel="noreferrer" className="text-electric-300 hover:text-electric-200">
+                  {MAINNET_COPY.pairTrade(mainnet.pair.venueLabel)}
+                </a>
+                {mainnet.pair.pairAddress && mainnet.pair.pairUrl ? (
+                  <>
+                    {" · "}
+                    <a href={mainnet.pair.pairUrl} target="_blank" rel="noreferrer" className="font-mono text-electric-300 hover:text-electric-200">
+                      {mainnet.pair.pairAddress.slice(0, 6)}…{mainnet.pair.pairAddress.slice(-4)}
+                    </a>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
         ) : (
           <p className="mt-1 text-xs text-ink-500">{MAINNET_COPY.panelNone}</p>

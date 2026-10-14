@@ -330,6 +330,10 @@ function mainnetSections(doc: ProjectDoc, heading: "##" | "###"): string[] {
   for (const c of m.contracts) lines.push(`- **${c.label || "Contract"}:** ${c.address} (${c.url})`);
   if (m.companion) lines.push(`- **Companion contract template:** ${m.companion.name} (${m.companion.id})${m.companion.ponsFit ? `. ${m.companion.ponsFit}` : ""}`);
   if (m.pons) lines.push(`- **Pons token:** ${m.pons.tokenAddress} (${m.pons.tokenUrl})`, `- **Creator fee recipient:** ${m.pons.feeRecipient} (${m.pons.feeUrl})`);
+  if (m.pair) {
+    lines.push(`- **Trading pair:** ${m.pair.venueLabel}, quote ${m.pair.quoteAsset} (${m.pair.url})`);
+    if (m.pair.pairAddress) lines.push(`- **Pair address:** ${m.pair.pairAddress} (${m.pair.pairUrl})`);
+  }
   return lines;
 }
 
@@ -416,9 +420,10 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => decl(label, doc.security[key])),
   ];
   lines.push(...resourcePackSections(doc, "##"));
-  if (doc.githubRepo || doc.testnetContracts?.length || doc.verifyWallet) {
+  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.verifyWallet) {
     lines.push("", "## Declared pointers", "");
     if (doc.githubRepo) lines.push(`- **GitHub:** https://github.com/${doc.githubRepo}`);
+    if (doc.website) lines.push(`- **Website:** ${doc.website}`);
     if (doc.verifyWallet)
       lines.push(`- **Team wallet (declared, unproven):** ${doc.verifyWallet}`);
     for (const c of doc.testnetContracts ?? [])

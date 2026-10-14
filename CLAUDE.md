@@ -30,7 +30,7 @@ classes:
 - `Segmented` and `SegmentedField` (`Segmented.tsx`) for two to four
   exclusive options: chain, project mode, steppers, view toggles and
   tablists (`role="tablist"`). Options with `href` render as links.
-- `ChoiceCardGroups` (`ChoiceCard.tsx`) for full width lettered choice rows
+- `ChoiceCardGroups` (`ChoiceCard.tsx`) for full width choice rows
   (sectors, subsectors). `ChipMultiSelect` and `ChipRadioGroup` stay for
   short multi picks (shapes, verdicts, modes).
 - `Menu` and `MenuItem` (`Menu.tsx`) for dropdowns, `InfoTip` for helper

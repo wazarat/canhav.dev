@@ -37,6 +37,7 @@ export function projectContext(row: ProjectRow): ProjectContext {
     shapeLabels: shapeLabels(doc.kit),
     chain: projectChainOf(doc),
     mainnet: doc.mainnet ?? null,
+    website: doc.website ?? null,
     publicUrl:
       row.status === "published" && row.slug ? `https://www.canhav.com/p/${row.slug}` : null,
   };

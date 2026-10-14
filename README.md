@@ -536,5 +536,16 @@ event window so judges can verify it.
   blurbs, gate notes and advice sit behind an info icon or a collapsed row.
   The launch form has Shopify style sections and a Launch status card beside
   it. The MCP pack and the exports are byte identical.
+- Oct 14, 2026. Links, pair and agent notices (M77 to M79). Sector and
+  subsector rows lose their A to E letters. A project records its website beside
+  the GitHub repo on the Reality step, and an external trading pair (Pons, Pools,
+  Uniswap or another venue, the quote asset, an optional pair address and the
+  trade link) on the mainnet block; the token page's Trade card, the public page,
+  the launch panel, the exports and the MCP project blocks show it. The paste
+  prompt and the kit SKILL files ask the agent to tick build steps as it goes; a
+  notice at the bottom right of the project editor says when an agent proposed or
+  wrote, and the studio home marks rows with proposals waiting. The MCP guide
+  carries Claude Code allow rules that stop the per tool permission prompts, and
+  every tool carries MCP annotations.
 
 This list grows as work lands on the branch.

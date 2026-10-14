@@ -31,7 +31,9 @@ memory.
    before the first loan. A rule that overrides a holder's exit right is a
    finding.
 3. Work the build steps from `get_build_steps` in order and tick a step only
-   when the work is written down and you can point to it.
+   when the work is written down and you can point to it. Tick it with
+   `set_build_steps` right after you finish it, with a note naming the file,
+   rather than at the end of the session.
 4. Before anything holds value, walk `PRELAUNCH_REVIEW.md` and record a
    verdict with evidence for every pass.
 

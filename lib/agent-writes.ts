@@ -4,7 +4,7 @@ import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { TEMPLATE_CATALOG, templateById } from "@/content/templates";
 import { featuresFor } from "@/content/kits/features";
-import { LAUNCH_TARGETS } from "@/lib/launch-targets";
+import { LAUNCH_TARGETS, PAIR_VENUES } from "@/lib/launch-targets";
 import { TEMPLATE_ID, templatesForShapes } from "@/lib/templates";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { checklistFor, groupsFor } from "@/content/kits/checklists";
@@ -208,6 +208,7 @@ export const projectPatchSchema = z
       .partial(),
     firstHundredUsers: z.string().max(L.firstHundredUsers.max),
     githubRepo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
+    website: z.string().regex(/^https:\/\/\S+$/).max(L.website.max),
     testnetContracts: z.array(z.string().regex(/^0x[0-9a-f]{40}$/)).max(L.testnetContracts.max),
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The mainnet deployment and the Pons pairing (M70). Merged into the stored
@@ -228,6 +229,16 @@ export const projectPatchSchema = z
           .strictObject({
             tokenAddress: z.string().regex(/^0x[0-9a-f]{40}$/),
             feeRecipient: z.string().regex(/^0x[0-9a-f]{40}$/),
+          })
+          .nullable(),
+        // An external trading pair (M78). The chain rule and the quote asset
+        // shape are checked by validateMainnetPair through projectPatchProblem.
+        pair: z
+          .strictObject({
+            venue: z.enum(PAIR_VENUES),
+            quoteAsset: z.string().min(L.pairQuoteAsset.min).max(42),
+            pairAddress: z.string().regex(/^0x[0-9a-f]{40}$/).optional(),
+            url: z.string().regex(/^https:\/\/\S+$/).max(L.pairUrl.max),
           })
           .nullable(),
       })
@@ -532,11 +543,12 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
   // Mainnet record (M70). Stamp the chain id, drop nulls, and leave the key out when nothing is recorded.
   if ("mainnet" in patch) {
     const { mainnet: raw, ...rest } = next as ProjectDoc & { mainnet?: unknown };
-    const merged = (patch.mainnet === null ? null : raw) as (Partial<MainnetRecord> & { companionTemplate?: string | null; pons?: MainnetRecord["pons"] | null }) | null;
+    const merged = (patch.mainnet === null ? null : raw) as (Partial<MainnetRecord> & { companionTemplate?: string | null; pons?: MainnetRecord["pons"] | null; pair?: MainnetRecord["pair"] | null }) | null;
     if (merged) {
       const record: MainnetRecord = { chainId: chainInfo(projectChainOf(rest)).mainnetChainId, contracts: merged.contracts ?? [] };
       if (merged.companionTemplate) record.companionTemplate = merged.companionTemplate;
       if (merged.pons) record.pons = merged.pons;
+      if (merged.pair) record.pair = merged.pair;
       next = mainnetRecordEmpty(record) ? (rest as ProjectDoc) : { ...rest, mainnet: record };
     } else {
       next = rest as ProjectDoc;
@@ -796,7 +808,42 @@ const PATH_LABELS: Record<string, string> = {
   "mainnet.pons": "Pons pairing",
   "mainnet.pons.tokenAddress": "Pons token address",
   "mainnet.pons.feeRecipient": "Pons creator fee recipient",
+  "mainnet.pair": "Trading pair",
+  "mainnet.pair.venue": "Trading pair venue",
+  "mainnet.pair.quoteAsset": "Trading pair quote asset",
+  "mainnet.pair.pairAddress": "Trading pair address",
+  "mainnet.pair.url": "Trading pair link",
+  website: "Website",
 };
+
+/**
+ * What a poll of the agent changes list brought that was not there before
+ * (M79), for the editor's notice. `prev` null is the first load, which
+ * reports what is already waiting instead of pretending it is new.
+ */
+export interface AgentActivity {
+  proposed: number;
+  written: number;
+  waiting: number;
+}
+
+export function newChangeCounts(
+  prev: ReadonlySet<string> | null,
+  rows: ReadonlyArray<{ id: string; status: AgentChangeStatus }>,
+): AgentActivity | null {
+  if (prev === null) {
+    const waiting = rows.filter((r) => r.status === "proposed").length;
+    return waiting ? { proposed: 0, written: 0, waiting } : null;
+  }
+  let proposed = 0;
+  let written = 0;
+  for (const r of rows) {
+    if (prev.has(r.id)) continue;
+    if (r.status === "proposed") proposed += 1;
+    else if (r.status === "applied") written += 1;
+  }
+  return proposed || written ? { proposed, written, waiting: 0 } : null;
+}
 
 /** architecture.externalDeps reads as "Architecture, external deps". */
 export function pathLabel(path: string): string {

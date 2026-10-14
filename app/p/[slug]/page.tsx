@@ -67,6 +67,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/** The website chip reads as its host (M78). */
+function websiteHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 function Prose({ label, text }: { label: string; text: string }) {
   return (
     <div>
@@ -346,6 +355,18 @@ export default async function ProjectPublicPage({
                   )}
                 </div>
               )}
+              {doc.website && (
+                <StatusChip tone="neutral">
+                  <a
+                    href={doc.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition-colors hover:text-ink-50"
+                  >
+                    {websiteHost(doc.website)}
+                  </a>
+                </StatusChip>
+              )}
               {github && (
                 <StatusChip tone={commitsLast30Days > 0 ? "success" : "neutral"}>
                   <a
@@ -398,6 +419,22 @@ export default async function ProjectPublicPage({
                     {MAINNET_COPY.feeLine} {mainnet.pons.feeRecipient.slice(0, 6)}…{mainnet.pons.feeRecipient.slice(-4)}
                   </a>
                 </StatusChip>
+              </div>
+            ) : null}
+            {mainnet.pair ? (
+              <div className="flex flex-wrap gap-2">
+                <StatusChip tone="success">
+                  <a href={mainnet.pair.url} target="_blank" rel="noreferrer" className="transition-colors hover:text-ink-50">
+                    {MAINNET_COPY.pairLine(mainnet.pair.venueLabel, mainnet.pair.quoteAsset)}
+                  </a>
+                </StatusChip>
+                {mainnet.pair.pairAddress && mainnet.pair.pairUrl ? (
+                  <StatusChip tone="neutral">
+                    <a href={mainnet.pair.pairUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-ink-50">
+                      {MAINNET_COPY.pairAddressLine} {mainnet.pair.pairAddress.slice(0, 6)}…{mainnet.pair.pairAddress.slice(-4)}
+                    </a>
+                  </StatusChip>
+                ) : null}
               </div>
             ) : null}
           </Section>

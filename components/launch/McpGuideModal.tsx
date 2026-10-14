@@ -181,6 +181,9 @@ export function McpGuideModal({
               ))}
             </ol>
             <CopyLine label={S.connect.check} text={S.connect.checkCommand} />
+            <p className="text-xs font-medium text-ink-200">{S.connect.prompts.title}</p>
+            <p className="text-xs leading-relaxed text-ink-500">{S.connect.prompts.body}</p>
+            <CopyLine label={S.connect.prompts.label} text={MCP_CONNECT.allowRules(projectId, name)} />
           </GuideSection>
 
           <GuideSection n={3} title={S.read.title}>

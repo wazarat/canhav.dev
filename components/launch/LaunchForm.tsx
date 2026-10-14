@@ -171,7 +171,8 @@ export function LaunchForm({
   const [description, setDescription] = useState("");
   const [xHandle, setXHandle] = useState("");
   const [telegram, setTelegram] = useState("");
-  const [website, setWebsite] = useState("");
+  // Seeded from the project's website when the launch starts from one (M78).
+  const [website, setWebsite] = useState(project?.website ?? "");
   const [websiteError, setWebsiteError] = useState<string | undefined>(undefined);
   const [image, setImage] = useState<ImageState>(null);
   const [devBuyEth, setDevBuyEth] = useState("");

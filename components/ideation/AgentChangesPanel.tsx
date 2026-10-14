@@ -8,6 +8,7 @@ import { Input, inputClasses } from "@/components/ui/Input";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { AGENT_COPY } from "@/content/ideation";
 import {
+  type AgentActivity,
   type AgentChange,
   type AgentChangeStatus,
   type AgentWriteMode,
@@ -24,6 +25,7 @@ import {
   decidePatch,
   firstIssue,
   leafSpec,
+  newChangeCounts,
   pathLabel,
   projectPatchProblem,
   projectPatchSchema,
@@ -74,6 +76,7 @@ export function AgentChangesPanel({
   paused,
   onApply,
   onRemoteChange,
+  onActivity,
 }: {
   projectId: string;
   doc: ProjectDoc;
@@ -84,6 +87,8 @@ export function AgentChangesPanel({
   onApply: (next: ProjectDoc) => void;
   /** An agent wrote to the project draft after the editor loaded. */
   onRemoteChange: (rev: number) => void;
+  /** New rows since the last poll, or what is waiting on the first load (M79). */
+  onActivity?: (activity: AgentActivity) => void;
 }) {
   const [state, setState] = useState<State | null>(null);
   const [working, setWorking] = useState<string | null>(null);
@@ -96,6 +101,10 @@ export function AgentChangesPanel({
   remote.current = onRemoteChange;
   const held = useRef(rev);
   held.current = rev;
+  const activity = useRef(onActivity);
+  activity.current = onActivity;
+  /** Ids seen by the previous poll; null until the first load (M79). */
+  const seen = useRef<Set<string> | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -103,6 +112,9 @@ export function AgentChangesPanel({
       if (!res.ok) return;
       const next = (await res.json()) as State;
       setState(next);
+      const fresh = newChangeCounts(seen.current, next.changes);
+      seen.current = new Set(next.changes.map((c) => c.id));
+      if (fresh) activity.current?.(fresh);
       if (next.rev !== null && held.current !== undefined && next.rev > held.current)
         remote.current(next.rev);
     } catch {

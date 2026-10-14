@@ -37,6 +37,37 @@ export function launchTargetChainBound(target: LaunchTarget): boolean {
   return LAUNCH_TARGET_CHAIN_IDS[target].length > 0;
 }
 
+/**
+ * Venues an external trading pair can be recorded on (M78). Pons and Pools
+ * are bound to Robinhood Chain mainnet like the launch targets above;
+ * Uniswap and "other" run anywhere. The record itself lives on the project's
+ * mainnet block (lib/ideation.ts MainnetPair), labels in content/launch-targets.ts.
+ */
+export const PAIR_VENUES = ["pons", "pools_xyz", "uniswap", "other"] as const;
+export type PairVenue = (typeof PAIR_VENUES)[number];
+
+const PAIR_VENUE_CHAIN_IDS: Record<PairVenue, readonly number[]> = {
+  pons: LAUNCH_TARGET_CHAIN_IDS.pons,
+  pools_xyz: LAUNCH_TARGET_CHAIN_IDS.pools_xyz,
+  uniswap: [],
+  other: [],
+};
+
+export function isPairVenue(v: unknown): v is PairVenue {
+  return typeof v === "string" && (PAIR_VENUES as readonly string[]).includes(v);
+}
+
+/** True when the venue is tied to specific mainnets. */
+export function pairVenueChainBound(venue: PairVenue): boolean {
+  return PAIR_VENUE_CHAIN_IDS[venue].length > 0;
+}
+
+/** True when the venue runs on the project's mainnet (or on every mainnet). */
+export function pairVenueFits(venue: PairVenue, chain: ProjectChain): boolean {
+  const ids = PAIR_VENUE_CHAIN_IDS[venue];
+  return ids.length === 0 || ids.includes(chainInfo(chain).mainnetChainId);
+}
+
 /** The venue a design ideates for, read defensively from any market block. */
 export function launchTargetOf(doc: { market?: { launchTarget?: unknown } } | null | undefined): LaunchTarget | null {
   const v = doc?.market?.launchTarget;

@@ -14,6 +14,7 @@ import { getCurvesAllChains } from "@/lib/indexer";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import { signInRedirectTarget } from "@/lib/sign-in-redirect";
+import { agentActivityByOwner } from "@/lib/agent-writes-db";
 import { getEntityLinks, getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
 import { launchedSets } from "@/lib/launch-status";
 import { getMyLaunches } from "@/lib/my-launches";
@@ -85,11 +86,12 @@ export default async function StudioPage({
     if (target) redirect(target);
   }
 
-  const [projects, designs, launches, links] = await Promise.all([
+  const [projects, designs, launches, links, agent] = await Promise.all([
     getMyProjects(user.id),
     getMyTokenDesigns(user.id),
     getMyLaunches(user.id),
     getEntityLinks(user.id),
+    agentActivityByOwner(user.id),
   ]);
   // Token build chips (M46). One curve read for every deployed design.
   const deployedAny = (designs ?? []).some((d) => d.deployed_token_address);
@@ -151,6 +153,7 @@ export default async function StudioPage({
               empty="No projects yet. A project is what you're building; token optional."
               links={links.byProject}
               side="project"
+              agent={agent}
             />
           </div>
           {launched.projects.size || launched.designs.size ? (

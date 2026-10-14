@@ -241,3 +241,33 @@ export async function writeTokenDesignDraftAsAgent(
     return false;
   }
 }
+
+/** Agent activity per project for the studio home rows (M79). */
+export interface ProjectAgentActivity {
+  proposed: number;
+  /** ISO time of the newest direct write, null when none. */
+  lastWritten: string | null;
+}
+
+export async function agentActivityByOwner(ownerId: string): Promise<Map<string, ProjectAgentActivity>> {
+  const out = new Map<string, ProjectAgentActivity>();
+  const sql = getDb();
+  if (!sql) return out;
+  try {
+    const rows = await sql`
+      select project_id,
+             count(*) filter (where status = 'proposed')::int as proposed,
+             max(created_at) filter (where status = 'applied') as last_written
+      from launchpad.agent_changes
+      where owner_id = ${ownerId}
+      group by project_id
+    `;
+    for (const r of rows as Array<{ project_id: string; proposed: number; last_written: string | Date | null }>) {
+      const last = r.last_written ? new Date(r.last_written).toISOString() : null;
+      if (r.proposed || last) out.set(r.project_id, { proposed: r.proposed, lastWritten: last });
+    }
+  } catch (err) {
+    console.error("[agent-writes] activity failed", err);
+  }
+  return out;
+}

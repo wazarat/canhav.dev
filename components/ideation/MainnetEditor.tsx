@@ -6,10 +6,19 @@ import { Button } from "@/components/ui/Button";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { SelectField } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { MAINNET_COPY } from "@/content/ideation";
+import { PAIR_VENUE_OPTIONS } from "@/content/launch-targets";
 import { type ProjectChain, chainInfo } from "@/lib/chains";
-import { type MainnetContract, type MainnetRecord, PROJECT_LIMITS, mainnetRecordEmpty } from "@/lib/ideation";
+import {
+  type MainnetContract,
+  type MainnetPair,
+  type MainnetRecord,
+  PROJECT_LIMITS,
+  mainnetRecordEmpty,
+} from "@/lib/ideation";
+import { type PairVenue, pairVenueFits } from "@/lib/launch-targets";
 
 /**
  * The mainnet deployment and the Pons pairing on the Reality step (M70).
@@ -46,6 +55,23 @@ export function MainnetEditor({
   const setPons = (patch: Partial<NonNullable<MainnetRecord["pons"]>>) => {
     const next = { tokenAddress: pons?.tokenAddress ?? "", feeRecipient: pons?.feeRecipient ?? "", ...patch };
     emit({ pons: next.tokenAddress || next.feeRecipient ? next : undefined });
+  };
+  // The external trading pair (M78). Clearing the venue drops the whole pair.
+  const pair = mainnet?.pair;
+  const venueOptions = PAIR_VENUE_OPTIONS.filter((o) => pairVenueFits(o.value, chain));
+  const setPair = (patch: Partial<MainnetPair>) => {
+    if (!pair) return;
+    const next: MainnetPair = { ...pair, ...patch };
+    if (!next.pairAddress) delete next.pairAddress;
+    emit({ pair: next });
+  };
+  const setVenue = (venue: PairVenue | "") => {
+    if (!venue) {
+      const { pair: _drop, ...rest } = mainnet ?? { chainId: info.mainnetChainId, contracts };
+      onChange(mainnetRecordEmpty(rest as MainnetRecord) ? undefined : ({ ...rest, chainId: info.mainnetChainId } as MainnetRecord));
+      return;
+    }
+    emit({ pair: { venue, quoteAsset: pair?.quoteAsset ?? "", url: pair?.url ?? "", ...(pair?.pairAddress ? { pairAddress: pair.pairAddress } : {}) } });
   };
 
   return (
@@ -147,6 +173,50 @@ export function MainnetEditor({
           {MAINNET_COPY.ponsOffChain(info.name)}
         </StatusChip>
       )}
+
+      <div className="space-y-3">
+        <SelectField
+          label={MAINNET_COPY.pairLabel}
+          info={MAINNET_COPY.pairHint}
+          value={pair?.venue ?? ""}
+          onChange={setVenue}
+          options={venueOptions}
+          placeholder={MAINNET_COPY.pairVenuePlaceholder}
+          clearable
+        />
+        {pair ? (
+          <>
+            <Field label={MAINNET_COPY.pairQuoteLabel} hint={MAINNET_COPY.pairQuoteHint}>
+              <Input
+                value={pair.quoteAsset}
+                onChange={(e) => {
+                  const v = e.target.value.trim();
+                  setPair({ quoteAsset: v.startsWith("0x") ? v.toLowerCase() : v });
+                }}
+                maxLength={42}
+                placeholder={MAINNET_COPY.pairQuotePlaceholder}
+              />
+            </Field>
+            <Field label={MAINNET_COPY.pairAddressLabel} hint={MAINNET_COPY.pairAddressHint}>
+              <Input
+                value={pair.pairAddress ?? ""}
+                onChange={(e) => setPair({ pairAddress: e.target.value.trim().toLowerCase() || undefined })}
+                placeholder={MAINNET_COPY.addressPlaceholder}
+                className="font-mono text-xs"
+              />
+            </Field>
+            <Field label={MAINNET_COPY.pairUrlLabel}>
+              <Input
+                type="url"
+                value={pair.url}
+                onChange={(e) => setPair({ url: e.target.value.trim() })}
+                maxLength={L.pairUrl.max}
+                placeholder={MAINNET_COPY.pairUrlPlaceholder}
+              />
+            </Field>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
 import { AgentChangesPanel } from "@/components/ideation/AgentChangesPanel";
+import type { AgentActivity } from "@/lib/agent-writes";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useDraftSave } from "@/components/ideation/useDraftSave";
 
@@ -229,6 +231,9 @@ export function ProjectEditor({
     }
   }, [id, saveState, adopt, rev, setDoc]);
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
+  /** The agent notice (M79); seq restarts the hide timer on a repeat. */
+  const [activity, setActivity] = useState<(AgentActivity & { seq: number }) | null>(null);
+  const dismissActivity = useCallback(() => setActivity(null), []);
 
   const problems = useMemo(() => stepProblems(doc), [doc]);
   const overall = problems.review;
@@ -778,6 +783,14 @@ export function ProjectEditor({
                 placeholder="your-org/your-repo"
               />
             </Field>
+            <Field label="Website" info="Shown on your public page." hint="https only.">
+              <Input
+                type="url"
+                value={doc.website ?? ""}
+                onChange={(e) => patch({ website: e.target.value.trim() || undefined })}
+                placeholder="https://"
+              />
+            </Field>
             <Field
               label="Testnet contract addresses"
               hint="One 0x address per line."
@@ -965,7 +978,11 @@ export function ProjectEditor({
         paused={stale}
         onApply={setDoc}
         onRemoteChange={pullLatest}
+        onActivity={(a) => setActivity({ ...a, seq: Date.now() })}
       />
+      {activity ? (
+        <AgentActivityToast key={activity.seq} activity={activity} onDismiss={dismissActivity} />
+      ) : null}
       {linkPanel}
       </div>
       {rail ? (
