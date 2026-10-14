@@ -201,6 +201,12 @@ export const CHECKLIST_COPY = {
   evidence: "Evidence",
   evidenceHint: "The file, test, address or evidence id that proves the step. Agents record it with set_build_steps.",
   clearEvidence: (title: string) => `Clear the evidence on ${title}`,
+  /** A step that does not apply (M84). */
+  naTag: "Not applicable",
+  naBecause: (reason: string) => `Not applicable, because ${reason}`,
+  naHint: "A step that does not fit this product stays listed with the reason and leaves the count. Agents mark one with set_build_steps.",
+  markApplicable: "Applies after all",
+  markApplicableTitle: (title: string) => `Mark ${title} applicable again`,
   removedShared: (labels: readonly string[]) => `Removed for ${joinAnd(labels)} too.`,
   restore: "Restore",
   /** Features (M64). */

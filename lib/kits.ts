@@ -329,6 +329,13 @@ export interface ProjectKit {
    * of a shared step. Only non-empty lines are stored, never injected.
    */
   evidence?: Record<string, string>;
+  /**
+   * Build steps that do not apply to this product (M84), step id to the
+   * reason. Left out of progress and shown struck through with the reason,
+   * unlike a removed step, which disappears. Stored for every member id of
+   * a shared step. Only reasoned ids are stored, never injected.
+   */
+  notApplicable?: Record<string, string>;
 }
 
 export interface KitIdea {
@@ -376,6 +383,8 @@ export const KIT_LIMITS = {
   hiddenSteps: { max: 400 },
   /** Evidence lines per build step (M83). */
   evidence: { max: 400, textMax: 200 },
+  /** Not applicable reasons per build step (M84). */
+  notApplicable: { max: 400, textMin: 3, textMax: 200 },
   /** Cap on stored contract template decisions, above the catalog size. */
   templates: { max: 400 },
   /** What you could build lines across the shapes, and their text. */
@@ -513,6 +522,17 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     }
     if (n > 0) kit.evidence = lines;
   }
+  if (r.notApplicable && typeof r.notApplicable === "object" && !Array.isArray(r.notApplicable)) {
+    const L = KIT_LIMITS.notApplicable;
+    const reasons: Record<string, string> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.notApplicable as Record<string, unknown>)) {
+      if (!k || typeof v !== "string" || v.trim().length < L.textMin || n >= L.max) continue;
+      reasons[k] = v.trim().slice(0, L.textMax);
+      n++;
+    }
+    if (n > 0) kit.notApplicable = reasons;
+  }
   return kit;
 }
 
@@ -561,6 +581,13 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     const entries = Object.entries(kit.evidence);
     if (entries.length > L.max) return "Too many evidence lines.";
     if (entries.some(([, v]) => v.length > L.textMax)) return `An evidence line is over ${L.textMax} characters.`;
+  }
+  if (kit.notApplicable) {
+    const L = KIT_LIMITS.notApplicable;
+    const entries = Object.entries(kit.notApplicable);
+    if (entries.length > L.max) return "Too many not applicable steps.";
+    if (entries.some(([, v]) => v.trim().length < L.textMin)) return `A not applicable reason needs at least ${L.textMin} characters.`;
+    if (entries.some(([, v]) => v.length > L.textMax)) return `A not applicable reason is over ${L.textMax} characters.`;
   }
   if (kit.ideas) {
     const L = KIT_LIMITS.ideas;
@@ -1019,20 +1046,59 @@ export function stepGroupsFor(
   return productSectionsFor(lists, shared, shapes).flatMap((s) => s.groups);
 }
 
-export type GroupState = "done" | "partial" | "open";
+export type GroupState = "done" | "partial" | "open" | "na";
 
-/** done when every member id is ticked, partial when some are (an agent ticked one shape's id). */
-export function groupState(group: StepGroup, kit: Pick<ProjectKit, "checklist"> | undefined): GroupState {
+type StepStateKit = Pick<ProjectKit, "checklist" | "notApplicable">;
+
+/**
+ * na when every member id is marked not applicable (M84), done when every
+ * member id is ticked, partial when some are (an agent ticked one shape's id).
+ */
+export function groupState(group: StepGroup, kit: StepStateKit | undefined): GroupState {
+  const na = kit?.notApplicable ?? {};
+  if (group.ids.every((id) => Boolean(na[id]))) return "na";
   const done = kit?.checklist ?? {};
   const n = group.ids.filter((id) => done[id] === true).length;
   return n === group.ids.length ? "done" : n === 0 ? "open" : "partial";
 }
 
+/** The reason a group does not apply, the first member id that has one. */
+export function groupReason(group: Pick<StepGroup, "ids">, kit: Pick<ProjectKit, "notApplicable"> | undefined): string | null {
+  for (const id of group.ids) {
+    const reason = kit?.notApplicable?.[id];
+    if (reason) return reason;
+  }
+  return null;
+}
+
+/** Done of total, with the steps that do not apply left out of both (M84). */
 export function groupProgress(
   groups: readonly StepGroup[],
-  kit: Pick<ProjectKit, "checklist"> | undefined,
+  kit: StepStateKit | undefined,
 ): { done: number; total: number } {
-  return { done: groups.filter((g) => groupState(g, kit) === "done").length, total: groups.length };
+  const counted = groups.filter((g) => groupState(g, kit) !== "na");
+  return { done: counted.filter((g) => groupState(g, kit) === "done").length, total: counted.length };
+}
+
+/**
+ * Mark every member id of a group not applicable with a reason, which also
+ * unticks it, or clear the mark (M84). Never stores an empty record.
+ */
+export function setGroupNotApplicable(
+  kit: StepStateKit,
+  group: Pick<StepGroup, "ids">,
+  reason: string | null,
+): StepStateKit {
+  const clean = reason?.trim().slice(0, KIT_LIMITS.notApplicable.textMax) ?? "";
+  const next: Record<string, string> = { ...(kit.notApplicable ?? {}) };
+  let checklist: Pick<ProjectKit, "checklist"> = { checklist: kit.checklist };
+  for (const id of group.ids) {
+    if (clean) {
+      next[id] = clean;
+      checklist = toggleChecklistItem(checklist, id, false);
+    } else delete next[id];
+  }
+  return { ...checklist, notApplicable: Object.keys(next).length ? next : undefined };
 }
 
 /** Tick or clear every member id of a group. Never stores false. */

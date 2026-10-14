@@ -60,6 +60,8 @@ export async function GET(_req: Request, { params }: Ctx) {
     if (key.startsWith("remove:")) return `Remove. ${titles.get(key.slice(7)) ?? key.slice(7)}`; // copy-ok
     if (key.startsWith("restore:")) return `Restore. ${titles.get(key.slice(8)) ?? key.slice(8)}`; // copy-ok
     if (key.startsWith("evidence:")) return `Evidence. ${titles.get(key.slice(9)) ?? key.slice(9)}`; // copy-ok
+    if (key.startsWith("na:")) return `Not applicable. ${titles.get(key.slice(3)) ?? key.slice(3)}`; // copy-ok
+    if (key.startsWith("applicable:")) return `Applies again. ${titles.get(key.slice(11)) ?? key.slice(11)}`; // copy-ok
     return titles.get(key) ?? key;
   };
 

@@ -27,9 +27,11 @@ import {
   featuresSuggesting,
   groupEvidence,
   groupProgress,
+  groupReason,
   groupState,
   removeStepGroup,
   restoreSteps,
+  setGroupNotApplicable,
   setStepEvidence,
   setTemplateDecision,
   templateCounts,
@@ -143,6 +145,8 @@ export function ProductStepSection({
           {section.groups.map((group, i) => {
             const state = groupState(group, kit);
             const done = state === "done";
+            const na = state === "na";
+            const reason = groupReason(group, kit);
             const links = group.resources
               .map((id) => TITLE_BY_ID.get(id))
               .filter((r): r is NonNullable<typeof r> => Boolean(r));
@@ -154,16 +158,34 @@ export function ProductStepSection({
                 <CheckItem
                   className="min-w-0 flex-1"
                   checked={done}
+                  disabled={na}
                   onChange={(v) => onPatchKit(toggleStepGroup(kit, group, v))}
                   label={
-                    <span className={done ? "text-ink-400 line-through decoration-ink-600" : undefined}>
+                    <span className={done || na ? "text-ink-400 line-through decoration-ink-600" : undefined}>
                       <span className="mr-1.5 tabular text-ink-500">{i + 1}.</span>
                       {group.title}
                     </span>
                   }
                   description={
                     <span className="block space-y-1.5">
-                      <span className="block">{group.detail}</span>
+                      {na ? (
+                        <span className="flex flex-wrap items-center gap-2 text-[11px] text-ink-400">
+                          <span>{CHECKLIST_COPY.naBecause(reason ?? "")}</span>
+                          <button
+                            type="button"
+                            title={CHECKLIST_COPY.markApplicableTitle(group.title)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onPatchKit(setGroupNotApplicable(kit, group, null));
+                            }}
+                            className="text-electric-300 transition-colors hover:text-electric-200"
+                          >
+                            {CHECKLIST_COPY.markApplicable}
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="block">{group.detail}</span>
+                      )}
                       <span className="flex flex-wrap items-center gap-1.5">
                         <Badge className="px-2 py-0 text-[10px]">
                           {group.custom ? CHECKLIST_COPY.customBadge : STEP_LABELS_KIT[group.step]}

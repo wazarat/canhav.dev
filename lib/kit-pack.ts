@@ -36,7 +36,9 @@ import {
   type ReviewPass,
   type ReviewVerdict,
   type TemplateState,
+  type GroupState,
   groupEvidence,
+  groupReason,
   groupState,
   effectiveSelection,
   effectiveSubsectors,
@@ -113,7 +115,7 @@ export interface ResourcePackView {
   checklist: {
     done: number;
     total: number;
-    items: Array<ChecklistItem & { done: boolean; evidence?: string; shape: ProductShape; sharedWith: string[]; custom?: boolean }>;
+    items: Array<ChecklistItem & { done: boolean; notApplicable?: string; evidence?: string; shape: ProductShape; sharedWith: string[]; custom?: boolean }>;
     groups: Array<{
       key: string;
       title: string;
@@ -128,6 +130,10 @@ export interface ResourcePackView {
       /** The feature that gates the step (M64), when one does. */
       feature?: string;
       done: boolean;
+      /** done, partial, open or na (M84). */
+      state: GroupState;
+      /** Why the step does not apply, on a na group (M84). */
+      reason?: string;
       /** The evidence line recorded with the tick (M83). */
       evidence?: string;
       /** True for a step the team added (M50). */
@@ -378,6 +384,7 @@ export function buildResourcePack(
       items: checklistItems.map((i) => ({
         ...i,
         done: kit.checklist?.[i.id] === true,
+        ...(kit.notApplicable?.[i.id] ? { notApplicable: kit.notApplicable[i.id] } : {}),
         ...(kit.evidence?.[i.id] ? { evidence: kit.evidence[i.id] } : {}),
         shape: customShape.get(i.id) ?? (i.id.slice(0, i.id.indexOf(".")) as ProductShape),
         sharedWith: (groupOf.get(i.id)?.ids ?? []).filter((id) => id !== i.id),
@@ -395,6 +402,8 @@ export function buildResourcePack(
           templates: [...g.templates],
           ...(g.feature ? { feature: g.feature } : {}),
           done: groupState(g, kit) === "done",
+          state: groupState(g, kit),
+          ...(groupReason(g, kit) ? { reason: groupReason(g, kit)! } : {}),
           ...(groupEvidence(g, kit) ? { evidence: groupEvidence(g, kit)! } : {}),
           ...(g.custom ? { custom: true } : {}),
         })),

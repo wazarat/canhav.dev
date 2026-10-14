@@ -655,7 +655,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, evidence when a line was recorded with the tick, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, its state (done, open or na with the reason when the team said it does not apply, which leaves the count),  evidence when a line was recorded with the tick, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
       inputSchema: PREVIEW,
     },
     async (args, ctx) => {
@@ -693,6 +693,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               detail: i.detail,
               editorStep: i.step as string | null,
               done: kit.checklist?.[i.id] === true,
+              state: kit.notApplicable?.[i.id] ? "na" : kit.checklist?.[i.id] === true ? "done" : "open",
+              ...(kit.notApplicable?.[i.id] ? { reason: kit.notApplicable[i.id] } : {}),
               ...(kit.evidence?.[i.id] ? { evidence: kit.evidence[i.id] } : {}),
               custom: false,
               sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
@@ -707,6 +709,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             detail: c.detail,
             editorStep: null,
             done: kit.checklist?.[c.id] === true,
+            state: kit.notApplicable?.[c.id] ? "na" : kit.checklist?.[c.id] === true ? "done" : "open",
+            ...(kit.notApplicable?.[c.id] ? { reason: kit.notApplicable[c.id] } : {}),
             ...(kit.evidence?.[c.id] ? { evidence: kit.evidence[c.id] } : {}),
             custom: true,
             sharedWith: [] as string[],
@@ -762,7 +766,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_ideas",
     {
       title: "Edit what the team could build",
-      description: `Replace the "What you could build" lines of this project (M68 follow-up), one per product shape. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. Send the whole list you want stored. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
+      description: `Change the "What you could build" lines of this project, one per product shape. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. To add one line send add (M84), to drop one send remove by its exact text; the rest is untouched. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. ideas replaces the whole list instead; send one form per call. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
       inputSchema: z.object({
         ideas: z
           .array(
@@ -772,7 +776,27 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
           )
-          .max(KIT_LIMITS.ideas.max),
+          .max(KIT_LIMITS.ideas.max)
+          .optional(),
+        add: z
+          .array(
+            z.object({
+              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
+              from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
+            }),
+          )
+          .max(KIT_LIMITS.ideas.max)
+          .optional(),
+        remove: z
+          .array(
+            z.object({
+              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              text: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
+            }),
+          )
+          .max(KIT_LIMITS.ideas.max)
+          .optional(),
         note: noteField,
       }),
     },
@@ -780,11 +804,17 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project, design } = loaded.value;
+      const incremental = (args.add?.length ?? 0) + (args.remove?.length ?? 0) > 0;
+      if (args.ideas && incremental) return errorResult("Send ideas (the whole list) or add and remove, not both.");
+      if (!args.ideas && !incremental) return errorResult("Send ideas, add or remove.");
+      const kit = args.ideas
+        ? { ideas: args.ideas }
+        : { ...(args.add?.length ? { addIdeas: args.add } : {}), ...(args.remove?.length ? { removeIdeas: args.remove } : {}) };
       const result = await submitAgentChange(
         project,
         design,
         project.owner_id,
-        { target: "project", kind: "fields", patch: { kit: { ideas: args.ideas } } },
+        { target: "project", kind: "fields", patch: { kit } },
         args.note,
       );
       if (!result.ok) return errorResult(result.message);
@@ -798,7 +828,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_build_steps",
     {
       title: "Tick, add, remove or restore build steps",
-      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES}`,
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES}`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {

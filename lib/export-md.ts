@@ -215,7 +215,7 @@ function resourcePackSections(
       "",
       `${heading} Build steps`,
       "",
-      `${pack.checklist.done} of ${pack.checklist.total} done. ${CHECKLIST_COPY.countNote} In order.`,
+      `${pack.checklist.done} of ${pack.checklist.total} done. ${CHECKLIST_COPY.countNote} A step marked na does not apply and leaves the count. In order.`,
     );
     const label = (shape: ProductShape) => shapeLabel(shape) ?? shape;
     for (const shape of pack.shapes as ProductShape[]) {
@@ -233,6 +233,8 @@ function resourcePackSections(
           // A step the team added has no editor step, so it carries its own tag (M50).
           const where = g.custom ? CHECKLIST_COPY.customTag : STEP_LABELS_KIT[g.step];
           const evidence = g.evidence ? `\n   ${CHECKLIST_COPY.evidence}. ${g.evidence}` : "";
+          if (g.state === "na")
+            return `${n + 1}. [na] ~~**${g.title}**~~${tag} (${where}). ${CHECKLIST_COPY.naBecause(g.reason ?? "")}`;
           return `${n + 1}. [${g.done ? "x" : " "}] **${g.title}**${tag} (${where})${g.detail ? `. ${g.detail}` : ""}${evidence}`;
         }),
       );

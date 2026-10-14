@@ -38,6 +38,7 @@ import {
   type StartingPoint,
   type StepGroup,
   addCustomStep,
+  editIdea,
   effectiveSelection,
   emptyProjectKit,
   kitShapes,
@@ -46,12 +47,14 @@ import {
   removeStepGroup,
   restoreSteps,
   reviewPassesFor,
+  setGroupNotApplicable,
   setReviewVerdict,
   setStepEvidence,
   setTemplateDecision,
   toggleFeature,
   FEATURE_ID,
   toggleChecklistItem,
+  toggleIdea,
   toggleResource,
 } from "@/lib/kits";
 import {
@@ -114,6 +117,10 @@ export interface BuildStepsPatch {
   restore?: string[];
   /** Evidence per step id (M83). Empty text clears the line. */
   evidence?: Array<{ id: string; text: string }>;
+  /** Steps that do not apply, with the reason (M84). Project build steps only. */
+  notApplicable?: Array<{ id: string; reason: string }>;
+  /** Step ids to mark applicable again. */
+  applicable?: string[];
 }
 
 /** One recorded agent change, as the studio and the MCP tools see it. */
@@ -313,6 +320,24 @@ export const projectPatchSchema = z
             }),
           )
           .max(KIT_LIMITS.ideas.max),
+        // Add or remove single lines (M84), applied through toggleIdea and editIdea.
+        addIdeas: z
+          .array(
+            z.strictObject({
+              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
+              from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
+            }),
+          )
+          .max(KIT_LIMITS.ideas.max),
+        removeIdeas: z
+          .array(
+            z.strictObject({
+              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              text: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
+            }),
+          )
+          .max(KIT_LIMITS.ideas.max),
         // Contract template decisions (M63), template id to decision. A record,
         // so the owner's panel decides each id on its own. "open" clears one.
         templates: z
@@ -474,6 +499,16 @@ export const buildStepsPatchSchema = z.strictObject({
     .array(z.strictObject({ id: z.string().max(120), text: z.string().max(KIT_LIMITS.evidence.textMax) }))
     .max(AGENT_CHANGE_LIMITS.buildSteps.max)
     .default([]),
+  notApplicable: z
+    .array(
+      z.strictObject({
+        id: z.string().max(120),
+        reason: z.string().min(KIT_LIMITS.notApplicable.textMin).max(KIT_LIMITS.notApplicable.textMax),
+      }),
+    )
+    .max(AGENT_CHANGE_LIMITS.buildSteps.max)
+    .default([]),
+  applicable: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
 });
 
 /**
@@ -489,6 +524,8 @@ export function buildStepKeys(patch: BuildStepsPatch): string[] {
     ...(patch.remove ?? []).map((id) => `remove:${id}`),
     ...(patch.restore ?? []).map((id) => `restore:${id}`),
     ...(patch.evidence ?? []).map((e) => `evidence:${e.id}`),
+    ...(patch.notApplicable ?? []).map((e) => `na:${e.id}`),
+    ...(patch.applicable ?? []).map((id) => `applicable:${id}`),
   ];
 }
 
@@ -637,6 +674,9 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
         .filter((i) => own.has(i.shape) && i.text && !seen.has(`${i.shape}\n${i.text}`) && seen.add(`${i.shape}\n${i.text}`));
       kit = { ...kit, ideas: ideas.length ? ideas : undefined };
     }
+    for (const i of kitPatch.removeIdeas ?? []) kit = { ...kit, ...toggleIdea(kit, i.shape, i.text, false) };
+    for (const i of kitPatch.addIdeas ?? [])
+      kit = { ...kit, ...(i.from ? editIdea(kit, i.shape, i.from, i.text, true) : toggleIdea(kit, i.shape, i.text, true)) };
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
   }
@@ -731,8 +771,9 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
       return `Unknown template ${unknown.slice(0, 3).join(", ")}. This project's shapes can decide ${shown}${rest}.`;
     }
   }
-  if (k.ideas?.length) {
-    const stray = k.ideas.filter((i) => !shapes.includes(i.shape));
+  const ideaLines = [...(k.ideas ?? []), ...(k.addIdeas ?? []), ...(k.removeIdeas ?? [])];
+  if (ideaLines.length) {
+    const stray = ideaLines.filter((i) => !shapes.includes(i.shape));
     if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${shapes.join(", ") || "none"}), so a what you could build line cannot name it.`;
   }
   const ticked = Object.keys(k.features ?? {});
@@ -768,11 +809,17 @@ export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): stri
   const remove = patch.remove ?? [];
   const restore = patch.restore ?? [];
   const evidence = patch.evidence ?? [];
-  const unknown = [...patch.done, ...patch.undone, ...remove, ...restore, ...evidence.map((e) => e.id)].filter((id) => !known.has(id));
+  const na = patch.notApplicable ?? [];
+  const applicable = patch.applicable ?? [];
+  const unknown = [...patch.done, ...patch.undone, ...remove, ...restore, ...evidence.map((e) => e.id), ...na.map((e) => e.id), ...applicable].filter((id) => !known.has(id));
   if (unknown.length)
     return `Unknown build step ${unknown.slice(0, 3).join(", ")}. Read get_build_steps for the ids.`;
   const both = patch.done.filter((id) => patch.undone.includes(id));
   if (both.length) return `${both[0]} is in both done and undone.`;
+  const naAndDone = na.filter((e) => patch.done.includes(e.id));
+  if (naAndDone.length) return `${naAndDone[0].id} is in both done and notApplicable.`;
+  const naAndBack = na.filter((e) => applicable.includes(e.id));
+  if (naAndBack.length) return `${naAndBack[0].id} is in both notApplicable and applicable.`;
   const shapes = kitShapes(doc.kit);
   const badShape = add.find((a) => !shapes.includes(a.shape as ProductShape));
   if (badShape)
@@ -816,6 +863,13 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
       for (const id of ids) kit = { ...kit, ...setStepEvidence(kit, id, e.text) };
     }
   }
+  // Not applicable, with the reason, on every member id; applicable clears it (M84).
+  if (patch.notApplicable?.length || patch.applicable?.length) {
+    const groups = groupsFor(kitShapes(kit), kit);
+    const groupOf = (id: string) => groups.find((g) => g.ids.includes(id)) ?? { ids: [id] };
+    for (const e of patch.notApplicable ?? []) kit = { ...kit, ...setGroupNotApplicable(kit, groupOf(e.id), e.reason) };
+    for (const id of patch.applicable ?? []) kit = { ...kit, ...setGroupNotApplicable(kit, groupOf(id), null) };
+  }
   // Keys set to undefined by the helpers must not be stored.
   const clean = Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as ProjectDoc["kit"];
   return { ...doc, kit: clean };
@@ -826,8 +880,8 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
 
 /** Null when every id is a manual token step, else the problem. */
 export function tokenBuildStepsProblem(patch: BuildStepsPatch): string | null {
-  if ((patch.add?.length ?? 0) + (patch.remove?.length ?? 0) + (patch.restore?.length ?? 0) > 0)
-    return "Token build steps can be ticked, not added or removed. Send done, undone and evidence only.";
+  if ((patch.add?.length ?? 0) + (patch.remove?.length ?? 0) + (patch.restore?.length ?? 0) + (patch.notApplicable?.length ?? 0) + (patch.applicable?.length ?? 0) > 0)
+    return "Token build steps can be ticked, not added, removed or marked not applicable. Send done, undone and evidence only.";
   if (patch.done.length + patch.undone.length + (patch.evidence?.length ?? 0) === 0) return "Name at least one build step.";
   const known = tokenStepIds(TOKEN_STEPS);
   const manual = manualTokenStepIds(TOKEN_STEPS);
@@ -911,6 +965,8 @@ const PATH_LABELS: Record<string, string> = {
   "kit.resources.untick": "Resources to untick",
   "kit.review": "Review verdicts",
   "kit.ideas": "What you could build",
+  "kit.addIdeas": "What you could build, lines to add",
+  "kit.removeIdeas": "What you could build, lines to remove",
   "market.launchTarget": "Market, launch venue",
   mainnet: "Mainnet record",
   testnetContracts: "Testnet contracts",
@@ -990,6 +1046,8 @@ export function buildStepLines(patch: BuildStepsPatch): ChangeLine[] {
     ...(patch.remove ?? []).map((id) => ({ path: `remove:${id}`, before: "Listed", after: "Removed" })),
     ...(patch.restore ?? []).map((id) => ({ path: `restore:${id}`, before: "Removed", after: "Listed" })),
     ...(patch.evidence ?? []).map((e) => ({ path: `evidence:${e.id}`, before: "", after: e.text.trim() || "Cleared" })),
+    ...(patch.notApplicable ?? []).map((e) => ({ path: `na:${e.id}`, before: "Listed", after: `Not applicable, because ${e.reason.trim()}` })),
+    ...(patch.applicable ?? []).map((id) => ({ path: `applicable:${id}`, before: "Not applicable", after: "Listed" })),
   ];
 }
 
@@ -1074,6 +1132,8 @@ export function subsetBuildSteps(patch: BuildStepsPatch, keep: ReadonlySet<strin
     remove: (patch.remove ?? []).filter((id) => keep.has(`remove:${id}`)),
     restore: (patch.restore ?? []).filter((id) => keep.has(`restore:${id}`)),
     evidence: (patch.evidence ?? []).filter((e) => keep.has(`evidence:${e.id}`)),
+    notApplicable: (patch.notApplicable ?? []).filter((e) => keep.has(`na:${e.id}`)),
+    applicable: (patch.applicable ?? []).filter((id) => keep.has(`applicable:${id}`)),
   };
 }
 
@@ -1087,7 +1147,9 @@ export function buildStepsNarrow(stored: BuildStepsPatch, decided: BuildStepsPat
     (decided.add ?? []).every((a) => (stored.add ?? []).some((b) => sameAdd(a, b))) &&
     (decided.remove ?? []).every((id) => (stored.remove ?? []).includes(id)) &&
     (decided.restore ?? []).every((id) => (stored.restore ?? []).includes(id)) &&
-    (decided.evidence ?? []).every((e) => (stored.evidence ?? []).some((b) => sameAdd(e, b)))
+    (decided.evidence ?? []).every((e) => (stored.evidence ?? []).some((b) => sameAdd(e, b))) &&
+    (decided.notApplicable ?? []).every((e) => (stored.notApplicable ?? []).some((b) => sameAdd(e, b))) &&
+    (decided.applicable ?? []).every((id) => (stored.applicable ?? []).includes(id))
   );
 }
 
@@ -1208,6 +1270,8 @@ export function buildStepDecisionLines(patch: BuildStepsPatch, applied: BuildSte
     ...(applied.remove ?? []).map((id) => `remove:${id}`),
     ...(applied.restore ?? []).map((id) => `restore:${id}`),
     ...(applied.evidence ?? []).map((e) => `evidence:${e.id}`),
+    ...(applied.notApplicable ?? []).map((e) => `na:${e.id}`),
+    ...(applied.applicable ?? []).map((id) => `applicable:${id}`),
   ]);
   return buildStepLines(patch).map((l) => ({ ...l, applied: kept.has(l.path) }));
 }

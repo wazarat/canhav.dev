@@ -118,7 +118,7 @@ export function gatedStepsFor(shapes: ShapeInput): Array<{ id: string; title: st
  * Review, pack, exports, MCP) calls this.
  */
 export function buildProgress(
-  kit: (Pick<ProjectKit, "shape" | "shapes" | "checklist"> & KitSteps) | undefined,
+  kit: (Pick<ProjectKit, "shape" | "shapes" | "checklist" | "notApplicable"> & KitSteps) | undefined,
 ): {
   done: number;
   total: number;
