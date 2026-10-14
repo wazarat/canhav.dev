@@ -1443,6 +1443,8 @@ export interface PackFilter {
   step?: KitStep;
   priority?: KitPriority;
   family?: KitFamily;
+  /** One of the project's shapes (M85). Entries for every shape stay. */
+  shape?: ProductShape;
 }
 
 /** Chain families that only apply on their own chain. */
@@ -1518,6 +1520,7 @@ export function packFor(
     .filter((r) => !filter.step || r.steps.includes(filter.step))
     .filter((r) => !filter.priority || r.priority === filter.priority)
     .filter((r) => !filter.family || r.family === filter.family)
+    .filter((r) => !filter.shape || r.shapes === "all" || r.shapes.includes(filter.shape))
     .sort(compareResources);
 }
 

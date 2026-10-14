@@ -63,7 +63,7 @@ import { featuresFor } from "@/content/kits/features";
 import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
-import { NO_SHAPE_HINT, buildResourcePack, buildReviewView } from "@/lib/kit-pack";
+import { NO_SHAPE_HINT, PACK_SECTIONS, buildResourcePack, buildReviewView, packSections, packSummary, templatesRead } from "@/lib/kit-pack";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { launchTargetLabel } from "@/content/launch-targets";
 import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
@@ -862,33 +862,24 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's contract templates",
       description:
-        "The contract templates this project can decide (M63, M80), the catalog placements under its shapes' subsectors plus every template a build step or feature of the shapes cites, each with via (subsector, step or feature). Grouped by the build step that lists them, with the rest under unplaced. Each carries kind (integrate, fork, factory, library), license and licenseClass, audit status, repo and docs, onChain (the mainnet status for the project's chain with a note) and availability (ready, self_deploy, unknown, unavailable), complexity, a Pons fit line when it can sit behind a Pons launch, and decision, the team's accepted, rejected or open. Inactive protocols are left out. Every id here is accepted by set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement." + PREVIEW_NOTE,
-      inputSchema: PREVIEW,
+        "The contract templates this project can decide (M63, M80), the catalog placements under its shapes' subsectors plus every template a build step or feature of the shapes cites, each with via (subsector, step or feature). Each template is listed once under templates; steps lists the build steps that cite them with templateIds, and unplaced the ids no step lists. By default each row is a summary (id, name, provider, via, kind, licenseClass, audited, availability, onChain, complexity, decision, ponsFit as a flag, docsUrl, steps, suggestedBy); pass detail full for the whole record with license text, notes, repo, both chains and the Pons fit line. Narrow with step (a step id from get_build_steps), shape, decision (accepted, rejected, open) or ids (up to 20). Inactive protocols are left out. Every id here is accepted by set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement." + PREVIEW_NOTE,
+      inputSchema: z.object({
+        step: z.string().max(160).optional(),
+        shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
+        decision: z.enum(["accepted", "rejected", "open"]).optional(),
+        ids: z.array(z.string().max(80).regex(TEMPLATE_ID)).max(20).optional(),
+        detail: z.enum(["summary", "full"]).optional(),
+        preview: previewField,
+      }),
     },
-    async (args, ctx) => {
-      const loaded = await withProject(projectId, ctx, args.preview);
+    async ({ preview, ...filter }, ctx) => {
+      const loaded = await withProject(projectId, ctx, preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const pack = buildResourcePack(loaded.value.project.draft_doc);
       if (!pack) return errorResult(NO_SHAPE_HINT);
-      const byId = new Map(pack.templates.items.map((t) => [t.id, t] as const));
-      const steps = pack.checklist.groups
-        .filter((g) => g.templates.length > 0)
-        .map((g) => ({
-          id: g.key,
-          title: g.title,
-          shape: g.shape,
-          shapes: g.shapes,
-          done: g.done,
-          templates: g.templates.map((id) => byId.get(id)).filter((t): t is NonNullable<typeof t> => Boolean(t)),
-        }));
-      const placed = new Set(steps.flatMap((st) => st.templates.map((t) => t.id)));
-      return jsonResult({
-        ...stateOf(loaded.value),
-        chain: pack.chain,
-        counts: pack.templates.counts,
-        steps,
-        unplaced: pack.templates.items.filter((t) => !placed.has(t.id)),
-      });
+      if (filter.shape && !pack.shapes.includes(filter.shape))
+        return errorResult(`${filter.shape} is not one of this project's shapes (${pack.shapes.join(", ")}).`);
+      return jsonResult({ ...stateOf(loaded.value), ...templatesRead(pack, filter) });
     },
     scope,
   );
@@ -1045,21 +1036,28 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's resource pack",
       description:
-        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. Narrow with step, priority or family. The templates block carries the contract templates for the shapes with the team's decisions, and launchTarget the venue the linked design ideates for with the templates that carry a Pons fit.",
+        "The curated reading list CanHav recommends for this project's product shape, in read-first order, with fetchable URLs, the family each resource comes from, caveat flags, the chain the project builds on, and where the relevant protocols run on it today. Returns the resources the team ticked in the studio; pass includeUnselected to see everything. The whole pack is large, so start with summary true (counts per section and the identity header), then ask for sections (resources, checklist, review, templates, features, ideas, environment, launchTarget, templateGaps) and narrow with shape, step, priority or family. The templates block carries the contract templates for the shapes with the team's decisions (get_templates reads them by step, shape, decision or ids), and launchTarget the venue the linked design ideates for with the templates that carry a Pons fit." + PREVIEW_NOTE,
       inputSchema: z.object({
+        summary: z.boolean().optional(),
+        sections: z.array(z.enum(PACK_SECTIONS)).max(PACK_SECTIONS.length).optional(),
+        shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
         step: z.enum(KIT_STEPS as [KitStep, ...KitStep[]]).optional(),
         priority: z.enum(KIT_PRIORITY_ORDER as [KitPriority, ...KitPriority[]]).optional(),
         family: z.enum(KIT_FAMILY_ORDER as [KitFamily, ...KitFamily[]]).optional(),
         includeUnselected: z.boolean().optional(),
+        preview: previewField,
       }),
     },
-    async (args, ctx) => {
-      const loaded = await withProject(projectId, ctx);
+    async ({ preview, summary, sections, shape, ...args }, ctx) => {
+      const loaded = await withProject(projectId, ctx, preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project, design } = loaded.value;
-      const pack = buildResourcePack(project.draft_doc, { ...args, launchTarget: design ? launchTargetOf(design.draft_doc) : null });
+      const pack = buildResourcePack(project.draft_doc, { ...args, shape, launchTarget: design ? launchTargetOf(design.draft_doc) : null });
       if (!pack) return errorResult(NO_SHAPE_HINT);
-      return jsonResult({ source: "draft", ...pack });
+      if (shape && !pack.shapes.includes(shape))
+        return errorResult(`${shape} is not one of this project's shapes (${pack.shapes.join(", ")}).`);
+      if (summary) return jsonResult({ ...stateOf(loaded.value), ...packSummary(pack) });
+      return jsonResult({ ...stateOf(loaded.value), ...packSections(pack, sections, shape) });
     },
     scope,
   );
