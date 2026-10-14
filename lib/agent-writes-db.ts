@@ -207,6 +207,25 @@ export async function resolveAgentChange(
   }
 }
 
+/** Proposed to withdrawn, by the agent that filed it (M88). False when it was already decided. */
+export async function withdrawAgentChange(changeId: string, projectId: string, ownerId: string): Promise<boolean> {
+  const sql = getDb();
+  if (!sql) return false;
+  try {
+    const rows = await sql`
+      update launchpad.agent_changes
+      set status = 'withdrawn', resolved_at = now()
+      where id = ${changeId} and project_id = ${projectId} and owner_id = ${ownerId}
+        and status = 'proposed'
+      returning id
+    `;
+    return rows.length > 0;
+  } catch (err) {
+    console.error("[agent-writes] withdraw failed", err);
+    return false;
+  }
+}
+
 /**
  * Write a draft from outside the open editor and bump agent_rev, so an
  * editor holding the older copy is refused on its next save. Guarded on the

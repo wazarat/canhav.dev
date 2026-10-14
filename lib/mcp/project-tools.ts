@@ -55,7 +55,7 @@ import {
   projectPatchSchema,
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
-import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
+import { agentStateOf, listAgentChanges, listPendingChanges, withdrawAgentChange } from "@/lib/agent-writes-db";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY } from "@/content/ideation";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
@@ -521,7 +521,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         project,
         design,
         project.owner_id,
-        { target: "token_design", kind: "build_steps", patch: { done: args.done, undone: args.undone } },
+        { target: "token_design", kind: "build_steps", patch: { done: args.done, undone: args.undone, evidence: args.evidence } },
         args.note,
       );
       if (!result.ok) return errorResult(result.message);
@@ -844,7 +844,16 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         {
           target: "project",
           kind: "build_steps",
-          patch: { done: args.done, undone: args.undone, add: args.add, remove: args.remove, restore: args.restore },
+          patch: {
+            done: args.done,
+            undone: args.undone,
+            add: args.add,
+            remove: args.remove,
+            restore: args.restore,
+            evidence: args.evidence,
+            notApplicable: args.notApplicable,
+            applicable: args.applicable,
+          },
         },
         args.note,
       );
@@ -1019,11 +1028,49 @@ export function registerProjectTools(server: McpServer, projectId: string): void
 
   registerMeteredTool(
     server,
+    "withdraw_changes",
+    {
+      title: "Take back proposals",
+      description:
+        "Withdraw proposals of yours that the owner has not decided yet (M88). changeIds names them (from the changeId a write answered with, or get_agent_changes); all true withdraws every waiting proposal on this project instead. A withdrawn proposal leaves the projection at once, so a later read no longer applies it, and stays in the history as Withdrawn. Use it when a proposal is superseded (send the replacement first, then withdraw the old one) or was wrong. Proposals the owner already accepted or rejected, and direct writes, cannot be taken back; the owner undoes those in the studio. Refused when agent writes are off.",
+      inputSchema: z.object({
+        changeIds: z.array(z.string().uuid()).max(AGENT_CHANGE_LIMITS.pending.max).optional(),
+        all: z.boolean().optional(),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (agentStateOf(project).mode === "off")
+        return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      if (!args.all && !args.changeIds?.length) return errorResult("Send changeIds, or all true.");
+      const pending = await listPendingChanges(project.id, project.owner_id);
+      const wanted = args.all ? pending.map((c) => c.id) : args.changeIds!;
+      const pendingIds = new Set(pending.map((c) => c.id));
+      const notPending = wanted.filter((id) => !pendingIds.has(id));
+      if (notPending.length)
+        return errorResult(`${notPending.slice(0, 3).join(", ")} ${notPending.length === 1 ? "is" : "are"} not waiting on this project. Only proposals the owner has not decided can be withdrawn; read get_agent_changes for their status.`);
+      const withdrawn: string[] = [];
+      for (const id of wanted) if (await withdrawAgentChange(id, project.id, project.owner_id)) withdrawn.push(id);
+      const after = await withProject(projectId, ctx);
+      return jsonResult({
+        withdrawn,
+        message: withdrawn.length ? "Withdrawn. The owner sees them under Earlier changes as Withdrawn." : "Nothing was withdrawn.",
+        ...(after.ok ? { pending: { ...after.value.pending, reviewUrl: reviewUrl(projectId) } } : {}),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
     "get_agent_changes",
     {
       title: "Agent changes on this project",
       description:
-        "How the owner lets agents write to this project (off, propose or direct), the newest agent session (state, title, message, plan and link, see report_session) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed." + PREVIEW_NOTE,
+        "How the owner lets agents write to this project (off, propose or direct), the newest agent session (state, title, message, plan and link, see report_session) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined, withdrawn means the agent took it back with withdraw_changes. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed." + PREVIEW_NOTE,
       inputSchema: PREVIEW,
     },
     async (args, ctx) => {

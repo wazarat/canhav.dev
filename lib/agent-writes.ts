@@ -105,7 +105,8 @@ export const AGENT_CHANGE_LIMITS = {
 export type AgentChangeTarget = "project" | "token_design";
 /** fields and build_steps change a draft; create records that an agent started the linked token design (M82). */
 export type AgentChangeKind = "fields" | "build_steps" | "create";
-export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected";
+/** withdrawn means the agent took a waiting proposal back (M88). */
+export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected" | "withdrawn";
 
 export interface BuildStepsPatch {
   done: string[];

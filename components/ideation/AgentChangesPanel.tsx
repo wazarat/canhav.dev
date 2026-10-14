@@ -60,6 +60,7 @@ const STATUS_TONE: Record<AgentChangeStatus, StatusTone> = {
   applied: "success",
   accepted: "success",
   rejected: "neutral",
+  withdrawn: "neutral",
 };
 
 /**

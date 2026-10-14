@@ -1026,6 +1026,7 @@ export const AGENT_COPY = {
     applied: "Written by agent",
     accepted: "Accepted",
     rejected: "Rejected",
+    withdrawn: "Withdrawn by agent",
   },
   failed: "Could not update this change. Reload and try again.",
   modeFailed: "Could not save the setting. Reload and try again.",

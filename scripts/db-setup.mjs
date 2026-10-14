@@ -308,7 +308,7 @@ await sql`
     kind text not null check (kind in ('fields','build_steps','create')),
     patch jsonb not null,
     note text check (note is null or char_length(note) <= 400),
-    status text not null check (status in ('proposed','applied','accepted','rejected')),
+    status text not null check (status in ('proposed','applied','accepted','rejected','withdrawn')),
     created_at timestamptz not null default now(),
     resolved_at timestamptz,
     applied_patch jsonb
@@ -323,6 +323,13 @@ await sql`alter table launchpad.agent_changes drop constraint if exists agent_ch
 await sql`
   alter table launchpad.agent_changes
     add constraint agent_changes_kind_check check (kind in ('fields','build_steps','create'))
+`;
+
+// M88. An agent may take back a waiting proposal; the row keeps the history as withdrawn.
+await sql`alter table launchpad.agent_changes drop constraint if exists agent_changes_status_check`;
+await sql`
+  alter table launchpad.agent_changes
+    add constraint agent_changes_status_check check (status in ('proposed','applied','accepted','rejected','withdrawn'))
 `;
 
 await sql`
