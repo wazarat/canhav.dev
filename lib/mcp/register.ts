@@ -43,13 +43,13 @@ export interface ToolAnnotations {
 }
 
 /**
- * Every CanHav tool is read-only unless its name says it writes (set_ and
- * update_). No tool deletes anything and every write is idempotent, a
- * proposal or a draft merge the owner can undo. Nothing here reaches the
+ * Every CanHav tool is read-only unless its name says it writes (set_,
+ * update_, create_ and report_). No tool deletes anything and every write is
+ * idempotent, a proposal or a draft merge the owner can undo. Nothing here reaches the
  * open web. A tool may override any hint (M79).
  */
 export function toolAnnotations(name: string, override?: ToolAnnotations): ToolAnnotations {
-  const writes = /^(set_|update_)/.test(name);
+  const writes = /^(set_|update_|create_|report_)/.test(name);
   return {
     readOnlyHint: !writes,
     destructiveHint: false,

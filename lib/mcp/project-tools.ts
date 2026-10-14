@@ -58,6 +58,8 @@ import {
 import { agentStateOf, listAgentChanges } from "@/lib/agent-writes-db";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY } from "@/content/ideation";
+import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
+import { latestAgentSession, reportAgentSession } from "@/lib/agent-sessions-db";
 import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
 import { featuresFor } from "@/content/kits/features";
 import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
@@ -992,20 +994,52 @@ export function registerProjectTools(server: McpServer, projectId: string): void
 
   registerMeteredTool(
     server,
+    "report_session",
+    {
+      title: "Report what you are doing",
+      description:
+        "Tell the owner where this run stands (M86). state is working, awaiting_input (you need something from the owner, say what in message), done or error. title names the run in a few words, message is one or two sentences for the owner, plan is the whole list of steps you intend with a status each (pending, in_progress, done, canceled), replaced in full on every call, and externalUrl is where the work lives (a branch, a PR, a document). Call it with your plan before you start, after each step with the plan updated, and at the end with done and a short message. Reports update the open session; pass new true to start another run. The owner sees it live at the top of Agent changes, the editor notice fires when you wait on them or finish, and the studio row reads Agent working or Waiting on you. A session that stops reporting reads as stale after thirty minutes. Changes no draft, so it works in propose and direct mode; refused when agent writes are off.",
+      inputSchema: reportSessionSchema,
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (agentStateOf(project).mode === "off")
+        return errorResult("Agent writes are off for this project, so there is no session to report. The owner can turn them on in the studio, on the project page under Agent changes.");
+      const session = await reportAgentSession(project.id, project.owner_id, args);
+      if (!session) return errorResult("Agent sessions are not available for this project yet. The CanHav database has not been updated for them.");
+      return jsonResult({
+        session: { ...session, view: sessionView(session), progress: planProgress(session.plan) },
+        reviewUrl: reviewUrl(project.id),
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
     "get_agent_changes",
     {
       title: "Agent changes on this project",
       description:
-        "How the owner lets agents write to this project (off, propose or direct) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed." + PREVIEW_NOTE,
+        "How the owner lets agents write to this project (off, propose or direct), the newest agent session (state, title, message, plan and link, see report_session) and the recent agent changes with their status. Proposed means waiting on the owner, accepted and applied mean the draft has it, rejected means the owner declined. An accepted row carries appliedPatch, the part of the proposal the owner let through, possibly edited line by line, so compare it with patch to see what was dropped or changed." + PREVIEW_NOTE,
       inputSchema: PREVIEW,
     },
     async (args, ctx) => {
       const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project } = loaded.value;
-      const changes = await listAgentChanges(project.id, project.owner_id);
-      return jsonResult({ ...stateOf(loaded.value),
-        mode: agentStateOf(project).mode, changes });
+      const [changes, session] = await Promise.all([
+        listAgentChanges(project.id, project.owner_id),
+        latestAgentSession(project.id, project.owner_id),
+      ]);
+      return jsonResult({
+        ...stateOf(loaded.value),
+        mode: agentStateOf(project).mode,
+        session: session ? { ...session, view: sessionView(session), progress: planProgress(session.plan) } : null,
+        changes,
+      });
     },
     scope,
   );

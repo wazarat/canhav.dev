@@ -26,10 +26,18 @@ export function AgentActivityToast({ activity, onDismiss }: { activity: AgentAct
 
   const T = AGENT_COPY.toast;
   const lines: string[] = [];
+  if (activity.session) lines.push(T.session[activity.session]);
   if (activity.waiting) lines.push(T.waiting(activity.waiting));
   if (activity.proposed) lines.push(T.proposed(activity.proposed));
   if (activity.written) lines.push(T.written(activity.written));
-  const tone = activity.written && !activity.proposed && !activity.waiting ? "success" : "info";
+  const tone =
+    activity.session === "failed"
+      ? "error"
+      : activity.session === "waiting"
+        ? "warning"
+        : activity.session === "finished" || (activity.written && !activity.proposed && !activity.waiting)
+          ? "success"
+          : "info";
 
   return (
     <div

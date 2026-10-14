@@ -32,8 +32,11 @@ record, not from memory.
    without a decided claim, or a spend outside the timelock, is a finding.
 3. Work the build steps from `get_build_steps` in order and tick a step only
    when the work is written down and you can point to it. Tick it with
-   `set_build_steps` right after you finish it, with a note naming the file,
-   rather than at the end of the session.
+   `set_build_steps` right after you finish it, with the file that proves
+   it in evidence, rather than at the end of the session. A step that does
+   not fit this product is marked notApplicable with the reason. Report the
+   run with `report_session`, the plan before you start, updated after each
+   step, `awaiting_input` when you need the owner, `done` at the end.
 4. Before anything holds value, walk `PRELAUNCH_REVIEW.md` and record a
    verdict with evidence for every pass.
 

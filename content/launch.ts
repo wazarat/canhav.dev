@@ -375,7 +375,7 @@ export const MCP_CONNECT = {
    */
   allowRules: (projectId: string, name: string): string => {
     const alias = mcpAlias(name, projectId);
-    const rules = ["get_*", "check_*", "set_*", "update_*"].map((t) => `mcp__${alias}__${t}`);
+    const rules = ["get_*", "check_*", "set_*", "update_*", "create_*", "report_*"].map((t) => `mcp__${alias}__${t}`);
     return JSON.stringify({ permissions: { allow: rules } }, null, 2);
   },
   projectPrompt: (projectId: string, name: string) =>
@@ -641,7 +641,7 @@ export const MCP_GUIDE = {
     },
     write: {
       title: "Write",
-      lead: "An agent can fill in the project steps, tick build steps and edit the linked token design. It never publishes. You choose how it writes, and you can change your mind at any time. The prompt asks it to record progress as it goes, and a notice in the editor tells you when something was proposed or written.",
+      lead: "An agent can fill in the project steps, tick build steps and edit the linked token design. It never publishes. You choose how it writes, and you can change your mind at any time. The prompt asks it to report its plan and record progress as it goes, so the session card under Agent changes shows what it is doing, and a notice in the editor tells you when something was proposed or written, when it waits on you and when it finishes.",
       modeLabel: "Agent writes for this project",
       loading: "Checking the setting",
       unavailable: "Agent writes are not open on this project yet.",
@@ -706,7 +706,7 @@ export const MCP_GUIDE = {
   fillPrompt: (projectId: string, name: string) =>
     `Read this repository, then use the ${mcpAlias(name, projectId)} get_project tool to see the draft. Use update_project to fill in the architecture step from what the code actually does. Contracts, external dependencies, oracles, admin functions and upgradeability. Where nothing exists yet, say so plainly. Add a short note explaining each answer.`,
   stepsPrompt: (projectId: string, name: string) =>
-    `Use the ${mcpAlias(name, projectId)} get_build_steps tool. For each step, check this repository for written evidence that it is done. Use set_build_steps to tick only the ones you can point to, and tell me which file proves each. From now on, tick each step as soon as you finish it, with a note naming the file.`,
+    `Use the ${mcpAlias(name, projectId)} get_build_steps tool. Call report_session with the steps you will check as your plan. For each step, check this repository for written evidence that it is done. Use set_build_steps to tick only the ones you can point to, with the file in evidence, and tell me which file proves each. From now on, tick each step as soon as you finish it, with the file in evidence, mark a step that does not fit this product notApplicable with the reason, and keep report_session current.`,
   tokenPrompt: (projectId: string, name: string) =>
     `Use the ${mcpAlias(name, projectId)} get_linked_token_design and get_design_constraints tools. If no design is linked yet, start one with create_linked_token_design. Propose a supply, an allocation split that totals 100 and vesting for each cohort with update_linked_token_design, then run check_design and tell me the warnings.`,
   /**
@@ -727,9 +727,9 @@ export const MCP_GUIDE = {
       : `There is no resource pack yet because the project has no product shape. Skip get_resource_pack until I pick what I am building in Basics.`;
     const last =
       opts.mode === "propose"
-        ? `6. Agent writes are set to propose on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. As you work in this repository, tick each build step with set_build_steps as soon as it is done, with a note naming the file that proves it, and record architecture facts with update_project when you learn them. Do not wait for the end of the run. Each change waits under Agent changes on the project page until I accept it. Every read on this server already shows the draft with my waiting proposals applied (pending names them, preview false shows the stored draft), so keep building on what you proposed and tell me when to look.`
+        ? `6. Agent writes are set to propose on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. As you work in this repository, tick each build step with set_build_steps as soon as it is done, with a note naming the file that proves it, and record architecture facts with update_project when you learn them. Do not wait for the end of the run. Each change waits under Agent changes on the project page until I accept it. Every read on this server already shows the draft with my waiting proposals applied (pending names them, preview false shows the stored draft), so keep building on what you proposed and tell me when to look. Before you start, call report_session with your plan; call it again after each step with the plan updated, with awaiting_input when you need something from me, and with done and a short message at the end.`
         : opts.mode === "direct"
-          ? `6. Agent writes are set to direct on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. As you work in this repository, tick each build step with set_build_steps as soon as it is done, with a note naming the file that proves it, and record architecture facts with update_project when you learn them. Do not wait for the end of the run. Each change lands in the draft at once, so list what you changed and why.`
+          ? `6. Agent writes are set to direct on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. As you work in this repository, tick each build step with set_build_steps as soon as it is done, with a note naming the file that proves it, and record architecture facts with update_project when you learn them. Do not wait for the end of the run. Each change lands in the draft at once, so list what you changed and why. Before you start, call report_session with your plan; call it again after each step with the plan updated, with awaiting_input when you need something from me, and with done and a short message at the end.`
           : opts.mode === "off"
             ? `6. Agent writes are off on this project, so read only. If I ask you to fill something in, remind me to pick Propose changes or Write directly under Agent changes on the project page, then reconnect with /mcp.`
             : `6. Do not change the project in this run. The full guide on the project page has the version of this prompt that lets you write.`;

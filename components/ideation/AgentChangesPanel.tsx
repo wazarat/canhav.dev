@@ -7,6 +7,8 @@ import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Input, inputClasses } from "@/components/ui/Input";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { AGENT_COPY } from "@/content/ideation";
+import { AgentSessionCard } from "@/components/ideation/AgentSessionCard";
+import { type AgentSession, sessionEvent } from "@/lib/agent-sessions";
 import {
   type AgentActivity,
   type AgentChange,
@@ -40,6 +42,8 @@ interface State {
   available: boolean;
   mode: AgentWriteMode;
   rev: number | null;
+  /** The newest agent session (M86), null before the first report. */
+  session?: AgentSession | null;
   changes: Row[];
 }
 
@@ -105,6 +109,8 @@ export function AgentChangesPanel({
   activity.current = onActivity;
   /** Ids seen by the previous poll; null until the first load (M79). */
   const seen = useRef<Set<string> | null>(null);
+  /** The session the previous poll saw; undefined until the first load (M86). */
+  const seenSession = useRef<AgentSession | null | undefined>(undefined);
 
   const load = useCallback(async () => {
     try {
@@ -112,8 +118,11 @@ export function AgentChangesPanel({
       if (!res.ok) return;
       const next = (await res.json()) as State;
       setState(next);
-      const fresh = newChangeCounts(seen.current, next.changes);
+      const counts = newChangeCounts(seen.current, next.changes);
       seen.current = new Set(next.changes.map((c) => c.id));
+      const moved = sessionEvent(seenSession.current, next.session ?? null);
+      seenSession.current = next.session ?? null;
+      const fresh = moved ? { ...(counts ?? { proposed: 0, written: 0, waiting: 0 }), session: moved } : counts;
       if (fresh) activity.current?.(fresh);
       if (next.rev !== null && held.current !== undefined && next.rev > held.current)
         remote.current(next.rev);
@@ -257,6 +266,9 @@ export function AgentChangesPanel({
         </StatusChip>
       ) : (
         <>
+          <div className="mt-4">
+            <AgentSessionCard session={state.session ?? null} />
+          </div>
           <div className="mt-4">
             <ChipRadioGroup
               label={AGENT_COPY.modeLabel}

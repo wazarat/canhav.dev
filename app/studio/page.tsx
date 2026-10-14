@@ -15,6 +15,7 @@ import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import { signInRedirectTarget } from "@/lib/sign-in-redirect";
 import { agentActivityByOwner } from "@/lib/agent-writes-db";
+import { latestSessionsByOwner } from "@/lib/agent-sessions-db";
 import { getEntityLinks, getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
 import { launchedSets } from "@/lib/launch-status";
 import { getMyLaunches } from "@/lib/my-launches";
@@ -86,12 +87,13 @@ export default async function StudioPage({
     if (target) redirect(target);
   }
 
-  const [projects, designs, launches, links, agent] = await Promise.all([
+  const [projects, designs, launches, links, agent, sessions] = await Promise.all([
     getMyProjects(user.id),
     getMyTokenDesigns(user.id),
     getMyLaunches(user.id),
     getEntityLinks(user.id),
     agentActivityByOwner(user.id),
+    latestSessionsByOwner(user.id),
   ]);
   // Token build chips (M46). One curve read for every deployed design.
   const deployedAny = (designs ?? []).some((d) => d.deployed_token_address);
@@ -154,6 +156,7 @@ export default async function StudioPage({
               links={links.byProject}
               side="project"
               agent={agent}
+              sessions={sessions}
             />
           </div>
           {launched.projects.size || launched.designs.size ? (

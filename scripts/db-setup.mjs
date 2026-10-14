@@ -330,6 +330,29 @@ await sql`
     on launchpad.agent_changes (project_id, created_at desc)
 `;
 
+// M86. Agent sessions, what an agent is doing on a project right now: a
+// state, a title, a message, a plan replaced whole on every report, and an
+// external link. One row per run; the newest open row is the live one.
+await sql`
+  create table if not exists launchpad.agent_sessions (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    owner_id text not null,
+    state text not null check (state in ('working','awaiting_input','done','error')),
+    title text check (title is null or char_length(title) <= 120),
+    message text check (message is null or char_length(message) <= 600),
+    plan jsonb not null default '[]'::jsonb,
+    external_url text check (external_url is null or char_length(external_url) <= 300),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  )
+`;
+
+await sql`
+  create index if not exists agent_sessions_project_idx
+    on launchpad.agent_sessions (project_id, updated_at desc)
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

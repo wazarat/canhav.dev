@@ -859,6 +859,10 @@ export const STUDIO_COPY = {
   agent: {
     proposed: (n: number) => (n === 1 ? "1 proposed" : `${n} proposed`),
     wrote: (date: string) => `Agent wrote ${date}`,
+    /** The live session on a row (M86). */
+    working: "Agent working",
+    waiting: "Waiting on you",
+    failed: "Agent error",
   },
   /** Launched-token lines on the studio Projects row and the launch list (M19d). */
   launch: {
@@ -941,6 +945,40 @@ export const AGENT_COPY = {
       n === 1 ? "1 agent change is waiting for you." : `${n} agent changes are waiting for you.`,
     review: "Review",
     dismiss: "Dismiss",
+    /** The agent session moved (M86). */
+    session: {
+      waiting: "The agent is waiting on you.",
+      finished: "The agent finished its run.",
+      failed: "The agent stopped with an error.",
+    },
+  },
+  /** The live session card at the top of Agent changes (M86). */
+  session: {
+    title: "Agent session",
+    hint: "What the connected agent says it is doing. It reports a plan before it starts, after each step and when it finishes. A session that stops reporting reads as stale after thirty minutes.",
+    none: "No agent has reported a session on this project yet.",
+    states: {
+      working: "Working",
+      awaiting_input: "Waiting on you",
+      done: "Done",
+      error: "Error",
+      stale: "Stale",
+    },
+    untitled: "Untitled run",
+    plan: "Plan",
+    planProgress: (done: number, total: number) => `${done} of ${total}`,
+    planStatus: {
+      pending: "Pending",
+      in_progress: "In progress",
+      done: "Done",
+      canceled: "Canceled",
+    },
+    updated: (when: string) => `Reported ${when}`,
+    link: "Open the work",
+    justNow: "just now",
+    minutesAgo: (n: number) => (n === 1 ? "1 minute ago" : `${n} minutes ago`),
+    hoursAgo: (n: number) => (n === 1 ? "1 hour ago" : `${n} hours ago`),
+    daysAgo: (n: number) => (n === 1 ? "1 day ago" : `${n} days ago`),
   },
   unparseable: "This proposal no longer matches what agents may change, so it can only be rejected.",
   invalidDecision: "This decision cannot be applied.",

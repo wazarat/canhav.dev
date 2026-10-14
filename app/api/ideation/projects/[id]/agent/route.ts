@@ -16,6 +16,7 @@ import {
 } from "@/lib/agent-writes";
 import { agentStateOf, listAgentChanges, setAgentWriteMode } from "@/lib/agent-writes-db";
 import { nextProjectDoc, nextTokenDesignDoc } from "@/lib/agent-writes-server";
+import { latestAgentSession } from "@/lib/agent-sessions-db";
 import { authGate } from "@/lib/ideation-api";
 import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
 import { type ProductShape, kitShapes } from "@/lib/kits";
@@ -37,7 +38,10 @@ export async function GET(_req: Request, { params }: Ctx) {
 
   const design = await getLinkedTokenDesign(project.id);
   const { mode, rev } = agentStateOf(project);
-  const changes = await listAgentChanges(project.id, gate.id);
+  const [changes, session] = await Promise.all([
+    listAgentChanges(project.id, gate.id),
+    latestAgentSession(project.id, gate.id),
+  ]);
   // One title can sit under several shapes since M43, so the shape label follows it.
   const titles = new Map([
     ...checklistFor(kitShapes(project.draft_doc.kit)).map(
@@ -104,6 +108,7 @@ export async function GET(_req: Request, { params }: Ctx) {
     available: rev !== null,
     mode,
     rev,
+    session,
     changes: changes.map((c) => ({
       ...c,
       lines: lines(c),

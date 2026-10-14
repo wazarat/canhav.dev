@@ -46,8 +46,11 @@ reading list. Your job is to work from that list, not from memory.
    (the Morpho review files and checkers, the Trail of Bits workflow) and
    record the evidence for each pass.
 8. Tick each build step from `get_build_steps` with `set_build_steps` as
-   soon as it is done, with a note naming the file that proves it, rather
+   soon as it is done, with the file that proves it in evidence (a step that does not fit this product is marked notApplicable with the reason), rather
    than at the end of the session.
+9. Report the run with `report_session`. The plan before you start, the
+   plan updated after each step, `awaiting_input` with a message when you
+   need the owner, `done` with a short message at the end.
 
 ## Rules that do not bend
 

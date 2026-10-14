@@ -7,6 +7,7 @@ import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { STUDIO_COPY } from "@/content/ideation";
 import { tokenBuildProgressOf } from "@/content/token-steps";
 import type { ProjectAgentActivity } from "@/lib/agent-writes-db";
+import { type AgentSession, sessionView } from "@/lib/agent-sessions";
 import type { IndexedCurve } from "@/lib/indexer";
 import type { EntityLinkSummary, ProjectRow, TokenDesignRow } from "@/lib/ideation-db";
 
@@ -101,6 +102,7 @@ export function EntityList({
   launched,
   token,
   agent,
+  sessions,
 }: {
   title: string;
   rows: Array<ProjectRow | TokenDesignRow>;
@@ -115,6 +117,8 @@ export function EntityList({
   token?: TokenChipFacts;
   /** Agent proposals waiting and the newest direct write per project (M79). */
   agent?: Map<string, ProjectAgentActivity>;
+  /** The newest agent session per project (M86). */
+  sessions?: Map<string, AgentSession>;
 }) {
   return (
     <section className="space-y-3">
@@ -127,6 +131,16 @@ export function EntityList({
             const link = links.get(row.id);
             const tokenAddress = launched?.get(row.id) ?? null;
             const activity = agent?.get(row.id) ?? null;
+            const session = sessions?.get(row.id) ?? null;
+            const view = session ? sessionView(session) : null;
+            const sessionChip =
+              view === "working"
+                ? { tone: "info" as const, text: STUDIO_COPY.agent.working }
+                : view === "awaiting_input"
+                  ? { tone: "warning" as const, text: STUDIO_COPY.agent.waiting }
+                  : view === "error"
+                    ? { tone: "error" as const, text: STUDIO_COPY.agent.failed }
+                    : null;
             const wrote =
               activity?.lastWritten && Date.now() - new Date(activity.lastWritten).getTime() < WROTE_WINDOW_MS
                 ? new Date(activity.lastWritten).toLocaleDateString("en-US")
@@ -172,6 +186,11 @@ export function EntityList({
                   </p>
                 </div>
                 <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
+                  {sessionChip ? (
+                    <Link href={`${hrefBase}/${row.id}#agent-changes`}>
+                      <StatusChip tone={sessionChip.tone}>{sessionChip.text}</StatusChip>
+                    </Link>
+                  ) : null}
                   {activity?.proposed ? (
                     <Link href={`${hrefBase}/${row.id}#agent-changes`}>
                       <StatusChip tone="info">{STUDIO_COPY.agent.proposed(activity.proposed)}</StatusChip>

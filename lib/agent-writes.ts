@@ -67,6 +67,7 @@ import {
   sectorOfSubsector,
 } from "@/lib/sectors";
 import { manualTokenStepIds, setTokenStepEvidence, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
+import type { SessionEvent } from "@/lib/agent-sessions";
 
 /**
  * Agent writes (M39). An agent connected to a project's MCP server may change
@@ -993,6 +994,8 @@ export interface AgentActivity {
   proposed: number;
   written: number;
   waiting: number;
+  /** The agent session moved to waiting, done or error (M86). */
+  session?: SessionEvent;
 }
 
 export function newChangeCounts(
