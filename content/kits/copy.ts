@@ -197,6 +197,10 @@ export const CHECKLIST_COPY = {
   remove: (title: string) => `Remove ${title}`,
   removedTitle: "Removed steps",
   removedHint: "Removed steps leave the count. Restore one to bring it back with its tick.",
+  /** The evidence line under a step (M83). */
+  evidence: "Evidence",
+  evidenceHint: "The file, test, address or evidence id that proves the step. Agents record it with set_build_steps.",
+  clearEvidence: (title: string) => `Clear the evidence on ${title}`,
   removedShared: (labels: readonly string[]) => `Removed for ${joinAnd(labels)} too.`,
   restore: "Restore",
   /** Features (M64). */

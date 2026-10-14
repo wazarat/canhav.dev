@@ -78,6 +78,14 @@ export function ReferencesEditor({
               placeholder={REFERENCES_COPY.notePlaceholder}
               aria-label={REFERENCES_COPY.noteLabel}
             />
+            <Input
+              value={ref.evidence ?? ""}
+              onChange={(e) => update(i, { evidence: e.target.value.trim() || undefined })}
+              maxLength={L.referenceEvidence.max}
+              placeholder={REFERENCES_COPY.evidencePlaceholder}
+              aria-label={REFERENCES_COPY.evidenceLabel}
+              className="font-mono text-xs"
+            />
           </div>
         ))}
       </div>

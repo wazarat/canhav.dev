@@ -25,6 +25,7 @@ import {
   type TokenDesignDoc,
   type MainnetRecord,
   mainnetRecordEmpty,
+  testnetContractRows,
   validateMainnetRecord,
 } from "@/lib/ideation";
 import { JOURNEY_LIMITS } from "@/lib/journey";
@@ -46,6 +47,7 @@ import {
   restoreSteps,
   reviewPassesFor,
   setReviewVerdict,
+  setStepEvidence,
   setTemplateDecision,
   toggleFeature,
   FEATURE_ID,
@@ -61,7 +63,7 @@ import {
   docSectors,
   sectorOfSubsector,
 } from "@/lib/sectors";
-import { manualTokenStepIds, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
+import { manualTokenStepIds, setTokenStepEvidence, toggleTokenStep, tokenStepIds } from "@/lib/token-steps";
 
 /**
  * Agent writes (M39). An agent connected to a project's MCP server may change
@@ -110,6 +112,8 @@ export interface BuildStepsPatch {
   remove?: string[];
   /** Removed catalog step ids to bring back. */
   restore?: string[];
+  /** Evidence per step id (M83). Empty text clears the line. */
+  evidence?: Array<{ id: string; text: string }>;
 }
 
 /** One recorded agent change, as the studio and the MCP tools see it. */
@@ -211,7 +215,19 @@ export const projectPatchSchema = z
     firstHundredUsers: z.string().max(L.firstHundredUsers.max),
     githubRepo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
     website: z.string().regex(/^https:\/\/\S+$/).max(L.website.max),
-    testnetContracts: z.array(z.string().regex(/^0x[0-9a-f]{40}$/)).max(L.testnetContracts.max),
+    // Rows or plain addresses (M83); the list replaces the stored list.
+    testnetContracts: z
+      .array(
+        z.union([
+          z.string().regex(/^0x[0-9a-f]{40}$/),
+          z.strictObject({
+            address: z.string().regex(/^0x[0-9a-f]{40}$/),
+            label: z.string().max(L.mainnetLabel.max).optional(),
+          }),
+        ]),
+      )
+      .max(L.testnetContracts.max),
+    addressBook: z.string().regex(/^https:\/\/\S+$/).max(L.addressBook.max),
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The mainnet deployment and the Pons pairing (M70). Merged into the stored
     // record; contracts replace the stored list; null clears the whole record.
@@ -255,6 +271,7 @@ export const projectPatchSchema = z
           title: z.string().min(L.referenceTitle.min).max(L.referenceTitle.max),
           location: z.string().min(L.referenceLocation.min).max(L.referenceLocation.max),
           note: z.string().max(L.referenceNote.max).default(""),
+          evidence: z.string().max(L.referenceEvidence.max).optional(),
         }),
       )
       .max(L.references.max),
@@ -453,6 +470,10 @@ export const buildStepsPatchSchema = z.strictObject({
     .default([]),
   remove: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
   restore: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
+  evidence: z
+    .array(z.strictObject({ id: z.string().max(120), text: z.string().max(KIT_LIMITS.evidence.textMax) }))
+    .max(AGENT_CHANGE_LIMITS.buildSteps.max)
+    .default([]),
 });
 
 /**
@@ -467,6 +488,7 @@ export function buildStepKeys(patch: BuildStepsPatch): string[] {
     ...(patch.add ?? []).map((_, i) => `add:${i}`),
     ...(patch.remove ?? []).map((id) => `remove:${id}`),
     ...(patch.restore ?? []).map((id) => `restore:${id}`),
+    ...(patch.evidence ?? []).map((e) => `evidence:${e.id}`),
   ];
 }
 
@@ -573,6 +595,8 @@ function deepMerge<D>(base: D, patch: unknown): D {
 export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): ProjectDoc {
   const { sectors, subsectors, kit: kitPatch, ...fields } = patch;
   let next = deepMerge(doc, fields);
+  // Testnet contracts arrive as rows or plain addresses and are stored as rows (M83).
+  if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   const a = { ...next.architecture };
   // The two dependency answers exclude each other. The one the agent sent wins.
   if (patch.architecture?.externalDepsNone === true) a.externalDeps = [];
@@ -743,7 +767,8 @@ export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): stri
   const add = patch.add ?? [];
   const remove = patch.remove ?? [];
   const restore = patch.restore ?? [];
-  const unknown = [...patch.done, ...patch.undone, ...remove, ...restore].filter((id) => !known.has(id));
+  const evidence = patch.evidence ?? [];
+  const unknown = [...patch.done, ...patch.undone, ...remove, ...restore, ...evidence.map((e) => e.id)].filter((id) => !known.has(id));
   if (unknown.length)
     return `Unknown build step ${unknown.slice(0, 3).join(", ")}. Read get_build_steps for the ids.`;
   const both = patch.done.filter((id) => patch.undone.includes(id));
@@ -783,6 +808,14 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   }
   for (const id of patch.done) kit = { ...kit, ...toggleChecklistItem(kit, id, true) };
   for (const id of patch.undone) kit = { ...kit, ...toggleChecklistItem(kit, id, false) };
+  // Evidence lands on every member id of a shared step, so any id of the group reads it (M83).
+  if (patch.evidence?.length) {
+    const groups = groupsFor(kitShapes(kit), kit);
+    for (const e of patch.evidence) {
+      const ids = groups.find((g) => g.ids.includes(e.id))?.ids ?? [e.id];
+      for (const id of ids) kit = { ...kit, ...setStepEvidence(kit, id, e.text) };
+    }
+  }
   // Keys set to undefined by the helpers must not be stored.
   const clean = Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as ProjectDoc["kit"];
   return { ...doc, kit: clean };
@@ -794,11 +827,11 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
 /** Null when every id is a manual token step, else the problem. */
 export function tokenBuildStepsProblem(patch: BuildStepsPatch): string | null {
   if ((patch.add?.length ?? 0) + (patch.remove?.length ?? 0) + (patch.restore?.length ?? 0) > 0)
-    return "Token build steps can be ticked, not added or removed. Send done and undone only.";
-  if (patch.done.length + patch.undone.length === 0) return "Name at least one build step.";
+    return "Token build steps can be ticked, not added or removed. Send done, undone and evidence only.";
+  if (patch.done.length + patch.undone.length + (patch.evidence?.length ?? 0) === 0) return "Name at least one build step.";
   const known = tokenStepIds(TOKEN_STEPS);
   const manual = manualTokenStepIds(TOKEN_STEPS);
-  const all = [...patch.done, ...patch.undone];
+  const all = [...patch.done, ...patch.undone, ...(patch.evidence ?? []).map((e) => e.id)];
   const unknown = all.filter((id) => !known.has(id));
   if (unknown.length)
     return `Unknown build step ${unknown.slice(0, 3).join(", ")}. Read get_token_build_steps for the ids.`;
@@ -813,12 +846,9 @@ export function applyTokenBuildSteps(doc: TokenDesignDoc, patch: BuildStepsPatch
   let next = doc;
   for (const id of patch.done) next = { ...next, ...toggleTokenStep(next, id, true) };
   for (const id of patch.undone) next = { ...next, ...toggleTokenStep(next, id, false) };
-  if (next.checklist === undefined) {
-    const { checklist: _dropped, ...rest } = next;
-    void _dropped;
-    return rest as TokenDesignDoc;
-  }
-  return next;
+  for (const e of patch.evidence ?? []) next = { ...next, ...setTokenStepEvidence(next, e.id, e.text) };
+  // Keys set to undefined by the helpers must not be stored.
+  return Object.fromEntries(Object.entries(next).filter(([, v]) => v !== undefined)) as unknown as TokenDesignDoc;
 }
 
 /** Step id to title, for the studio's change lines. */
@@ -883,6 +913,8 @@ const PATH_LABELS: Record<string, string> = {
   "kit.ideas": "What you could build",
   "market.launchTarget": "Market, launch venue",
   mainnet: "Mainnet record",
+  testnetContracts: "Testnet contracts",
+  addressBook: "Address book",
   "mainnet.contracts": "Mainnet contracts",
   "mainnet.companionTemplate": "Companion contract",
   "mainnet.pons": "Pons pairing",
@@ -957,6 +989,7 @@ export function buildStepLines(patch: BuildStepsPatch): ChangeLine[] {
     })),
     ...(patch.remove ?? []).map((id) => ({ path: `remove:${id}`, before: "Listed", after: "Removed" })),
     ...(patch.restore ?? []).map((id) => ({ path: `restore:${id}`, before: "Removed", after: "Listed" })),
+    ...(patch.evidence ?? []).map((e) => ({ path: `evidence:${e.id}`, before: "", after: e.text.trim() || "Cleared" })),
   ];
 }
 
@@ -1040,6 +1073,7 @@ export function subsetBuildSteps(patch: BuildStepsPatch, keep: ReadonlySet<strin
     add: (patch.add ?? []).filter((_, i) => keep.has(`add:${i}`)),
     remove: (patch.remove ?? []).filter((id) => keep.has(`remove:${id}`)),
     restore: (patch.restore ?? []).filter((id) => keep.has(`restore:${id}`)),
+    evidence: (patch.evidence ?? []).filter((e) => keep.has(`evidence:${e.id}`)),
   };
 }
 
@@ -1052,7 +1086,8 @@ export function buildStepsNarrow(stored: BuildStepsPatch, decided: BuildStepsPat
     decided.undone.every((id) => stored.undone.includes(id)) &&
     (decided.add ?? []).every((a) => (stored.add ?? []).some((b) => sameAdd(a, b))) &&
     (decided.remove ?? []).every((id) => (stored.remove ?? []).includes(id)) &&
-    (decided.restore ?? []).every((id) => (stored.restore ?? []).includes(id))
+    (decided.restore ?? []).every((id) => (stored.restore ?? []).includes(id)) &&
+    (decided.evidence ?? []).every((e) => (stored.evidence ?? []).some((b) => sameAdd(e, b)))
   );
 }
 
@@ -1172,6 +1207,7 @@ export function buildStepDecisionLines(patch: BuildStepsPatch, applied: BuildSte
     ...(patch.add ?? []).flatMap((a, i) => ((applied.add ?? []).some((b) => sameAdd(a, b)) ? [`add:${i}`] : [])),
     ...(applied.remove ?? []).map((id) => `remove:${id}`),
     ...(applied.restore ?? []).map((id) => `restore:${id}`),
+    ...(applied.evidence ?? []).map((e) => `evidence:${e.id}`),
   ]);
   return buildStepLines(patch).map((l) => ({ ...l, applied: kept.has(l.path) }));
 }

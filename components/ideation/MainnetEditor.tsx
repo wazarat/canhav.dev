@@ -1,9 +1,7 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
-
-import { Button } from "@/components/ui/Button";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import { Field, Input } from "@/components/ui/Input";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { SelectField } from "@/components/ui/Select";
@@ -12,7 +10,6 @@ import { MAINNET_COPY } from "@/content/ideation";
 import { PAIR_VENUE_OPTIONS } from "@/content/launch-targets";
 import { type ProjectChain, chainInfo } from "@/lib/chains";
 import {
-  type MainnetContract,
   type MainnetPair,
   type MainnetRecord,
   PROJECT_LIMITS,
@@ -43,14 +40,11 @@ export function MainnetEditor({
   const L = PROJECT_LIMITS;
   const info = chainInfo(chain);
   const contracts = mainnet?.contracts ?? [];
-  const atMax = contracts.length >= L.mainnetContracts.max;
   const emit = (patch: Partial<MainnetRecord>) => {
     const next: MainnetRecord = { chainId: info.mainnetChainId, contracts, ...(mainnet ?? {}), ...patch };
     next.chainId = info.mainnetChainId;
     onChange(mainnetRecordEmpty(next) ? undefined : next);
   };
-  const updateContract = (i: number, patch: Partial<MainnetContract>) =>
-    emit({ contracts: contracts.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
   const pons = mainnet?.pons;
   const setPons = (patch: Partial<NonNullable<MainnetRecord["pons"]>>) => {
     const next = { tokenAddress: pons?.tokenAddress ?? "", feeRecipient: pons?.feeRecipient ?? "", ...patch };
@@ -88,46 +82,14 @@ export function MainnetEditor({
       </div>
 
       <Field label={MAINNET_COPY.contractsLabel} info={MAINNET_COPY.contractsHint}>
-        <div className="space-y-2">
-          {contracts.map((c, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <Input
-                value={c.label}
-                onChange={(e) => updateContract(i, { label: e.target.value })}
-                maxLength={L.mainnetLabel.max}
-                placeholder={MAINNET_COPY.labelPlaceholder}
-                aria-label={MAINNET_COPY.labelField}
-                className="w-40 shrink-0"
-              />
-              <Input
-                value={c.address}
-                onChange={(e) => updateContract(i, { address: e.target.value.trim().toLowerCase() })}
-                placeholder={MAINNET_COPY.addressPlaceholder}
-                aria-label={MAINNET_COPY.addressField}
-                className="flex-1 font-mono text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => emit({ contracts: contracts.filter((_, j) => j !== i) })}
-                aria-label={MAINNET_COPY.remove(c.label)}
-                title={MAINNET_COPY.removeTitle}
-                className="mt-1.5 rounded-md p-1.5 text-ink-500 transition-colors hover:bg-ink-800/60 hover:text-ink-100"
-              >
-                <Trash2 aria-hidden className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={atMax}
-            onClick={() => emit({ contracts: [...contracts, { label: "", address: "" }] })}
-          >
-            {MAINNET_COPY.add}
-          </Button>
-          {atMax ? <p className="text-xs text-ink-500">{MAINNET_COPY.limit(L.mainnetContracts.max)}</p> : null}
-        </div>
+        <ContractRowsEditor
+          rows={contracts}
+          onChange={(rows) => emit({ contracts: rows })}
+          max={L.mainnetContracts.max}
+          labelMax={L.mainnetLabel.max}
+          copy={MAINNET_COPY}
+          empty={() => ({ label: "", address: "" })}
+        />
       </Field>
 
       {companionOptions.length > 0 ? (

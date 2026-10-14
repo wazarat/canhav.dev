@@ -20,12 +20,13 @@ import {
   optionLabel,
   sectorLabels,
   subsectorLabels,
+  TESTNET_COPY,
 } from "@/content/ideation";
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
-import { type ProjectDoc, type StatusDecl, docAudience } from "@/lib/ideation";
+import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
@@ -106,7 +107,7 @@ export default async function ProjectPublicPage({
     doc.verifyWallet ? getWalletTxCount(doc.verifyWallet, projectChainOf(doc)) : null,
     doc.githubRepo ? getGithubActivity(doc.githubRepo) : null,
     doc.testnetContracts
-      ? Promise.all(doc.testnetContracts.map((a) => getBlockscoutVerification(a, projectChainOf(doc))))
+      ? Promise.all(testnetContractRows(doc).map((c) => getBlockscoutVerification(c.address, projectChainOf(doc))))
       : null,
     // Tokens launched from this project through the studio (M19d).
     getLaunchesByProject(row.id),
@@ -347,13 +348,20 @@ export default async function ProjectPublicPage({
                             rel="noreferrer"
                             className="transition-colors hover:text-ink-50"
                           >
-                            {check.name ?? `${check.address.slice(0, 10)}…`}{" "}
+                            {testnetContractRows(doc)[i]?.label ?? check.name ?? `${check.address.slice(0, 10)}…`}{" "}
                             {check.verified ? "(verified source)" : "(unverified)"}
                           </a>
                         </StatusChip>
                       ),
                   )}
                 </div>
+              )}
+              {doc.addressBook && (
+                <StatusChip tone="neutral">
+                  <a href={doc.addressBook} target="_blank" rel="noreferrer" className="transition-colors hover:text-ink-50">
+                    {TESTNET_COPY.exportAddressBook}
+                  </a>
+                </StatusChip>
               )}
               {doc.website && (
                 <StatusChip tone="neutral">

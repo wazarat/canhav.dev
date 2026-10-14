@@ -496,6 +496,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           state: r.state,
           done: r.state === "done",
           computed: r.computed,
+          ...(design.draft_doc.stepEvidence?.[r.step.id] ? { evidence: design.draft_doc.stepEvidence[r.step.id] } : {}),
         })),
       });
     },
@@ -507,7 +508,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_token_build_steps",
     {
       title: "Tick or untick the linked design's build steps",
-      description: `Mark token build steps of the linked design as done or not done, by id from get_token_build_steps. Only the manual steps, the computed ones are refused. Tick a step when the work is written down and you can point to it, not when it is started. ${WRITE_RULES}`,
+      description: `Mark token build steps of the linked design as done or not done, by id from get_token_build_steps. Only the manual steps, the computed ones are refused. Tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file, a test, a tx, an REA evidence id, up to 200 characters) stored beside the step and shown in the studio and the exports; empty text clears it. ${WRITE_RULES}`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {
@@ -623,7 +624,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts, verifyWallet). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine) and note, which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -654,7 +655,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, evidence when a line was recorded with the tick, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
       inputSchema: PREVIEW,
     },
     async (args, ctx) => {
@@ -692,6 +693,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               detail: i.detail,
               editorStep: i.step as string | null,
               done: kit.checklist?.[i.id] === true,
+              ...(kit.evidence?.[i.id] ? { evidence: kit.evidence[i.id] } : {}),
               custom: false,
               sharedWith: (groupOf.get(i.id) ?? []).filter((id) => id !== i.id),
               templates: [...(i.templates ?? [])],
@@ -705,6 +707,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             detail: c.detail,
             editorStep: null,
             done: kit.checklist?.[c.id] === true,
+            ...(kit.evidence?.[c.id] ? { evidence: kit.evidence[c.id] } : {}),
             custom: true,
             sharedWith: [] as string[],
             templates: [] as string[],
@@ -795,7 +798,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_build_steps",
     {
       title: "Tick, add, remove or restore build steps",
-      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES}`,
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES}`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {

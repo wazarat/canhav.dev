@@ -202,6 +202,8 @@ export interface ProjectReference {
   location: string;
   /** What it is for. May be empty. */
   note: string;
+  /** A handle that justifies a claim, an REA evidence id, a test name, a commit (M83). */
+  evidence?: string;
 }
 
 /** True when a reference points at the web rather than a local path. */
@@ -306,8 +308,14 @@ export interface ProjectDoc {
   githubRepo?: string;
   /** The product's website, https only (M78). Shown on the public page. */
   website?: string;
-  /** Testnet contract addresses, lowercase hex — feed the verify signals. */
-  testnetContracts?: string[];
+  /**
+   * Testnet contracts, lowercase hex with an optional label (M83). Older
+   * docs hold plain strings; read them with testnetContractRows(). Feed the
+   * verify signals.
+   */
+  testnetContracts?: Array<TestnetContract | string>;
+  /** Where the full address book lives, https only (M83). A file in the repo, an explorer list. */
+  addressBook?: string;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -316,6 +324,20 @@ export interface ProjectDoc {
    * before. Published with the record, unlike `references`.
    */
   mainnet?: MainnetRecord;
+}
+
+/** One testnet contract, labelled by the team or its agent (M83). */
+export interface TestnetContract {
+  /** Lowercase hex. */
+  address: string;
+  label?: string;
+}
+
+/** The testnet contracts as rows, whether the doc stores strings or rows. */
+export function testnetContractRows(doc: Pick<ProjectDoc, "testnetContracts">): TestnetContract[] {
+  return (doc.testnetContracts ?? []).map((c) =>
+    typeof c === "string" ? { address: c } : c.label?.trim() ? { address: c.address, label: c.label.trim() } : { address: c.address },
+  );
 }
 
 /** One deployed contract on the mainnet, labelled by the team. */
@@ -377,7 +399,8 @@ export const PROJECT_LIMITS = {
   externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
   website: { max: 200 },
-  testnetContracts: { max: 10 },
+  testnetContracts: { max: 100 },
+  addressBook: { max: 200 },
   pairQuoteAsset: { min: 1, max: 12 },
   pairUrl: { max: 200 },
   mainnetContracts: { max: 20 },
@@ -386,6 +409,7 @@ export const PROJECT_LIMITS = {
   referenceTitle: { min: 2, max: 80 },
   referenceLocation: { min: 1, max: 300 },
   referenceNote: { max: 200 },
+  referenceEvidence: { max: 120 },
 } as const;
 
 /**
@@ -530,13 +554,40 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
       if (!v || typeof v !== "object" || refs.length >= L.references.max) continue;
       const r = v as Record<string, unknown>;
       if (typeof r.title !== "string" || typeof r.location !== "string") continue;
+      const evidence = typeof r.evidence === "string" && r.evidence.trim() ? r.evidence.trim().slice(0, L.referenceEvidence.max) : undefined;
       refs.push({
         title: r.title.slice(0, L.referenceTitle.max),
         location: r.location.slice(0, L.referenceLocation.max),
         note: typeof r.note === "string" ? r.note.slice(0, L.referenceNote.max) : "",
+        ...(evidence ? { evidence } : {}),
       });
     }
     (rest as { references?: ProjectReference[] }).references = refs;
+  }
+  // Testnet contracts (M83): strings lift to rows, garbage drops, the key is never invented.
+  const rawContracts = (rest as { testnetContracts?: unknown }).testnetContracts;
+  if (rawContracts !== undefined) {
+    const L = PROJECT_LIMITS;
+    const rows: TestnetContract[] = [];
+    for (const v of Array.isArray(rawContracts) ? (rawContracts as unknown[]) : []) {
+      if (rows.length >= L.testnetContracts.max) break;
+      if (typeof v === "string") {
+        if (v.trim()) rows.push({ address: v.trim().toLowerCase() });
+        continue;
+      }
+      if (!v || typeof v !== "object") continue;
+      const c = v as Record<string, unknown>;
+      if (typeof c.address !== "string" || !c.address.trim()) continue;
+      const label = typeof c.label === "string" && c.label.trim() ? c.label.trim().slice(0, L.mainnetLabel.max) : undefined;
+      rows.push({ address: c.address.trim().toLowerCase(), ...(label ? { label } : {}) });
+    }
+    if (rows.length) (rest as { testnetContracts?: TestnetContract[] }).testnetContracts = rows;
+    else delete (rest as { testnetContracts?: unknown }).testnetContracts;
+  }
+  if ("addressBook" in rest) {
+    const v = (rest as { addressBook?: unknown }).addressBook;
+    if (typeof v === "string" && v.trim()) (rest as { addressBook?: string }).addressBook = v.trim().slice(0, PROJECT_LIMITS.addressBook.max);
+    else delete (rest as { addressBook?: unknown }).addressBook;
   }
   // Chain (M52): kept when it is a known chain, dropped when it is garbage, never invented.
   if ("chain" in rest && !isProjectChain((rest as { chain?: unknown }).chain))
@@ -713,6 +764,8 @@ export interface TokenDesignDoc {
    * tick after launch never changes the hash the launch committed.
    */
   checklist?: Record<string, true>;
+  /** Evidence per ticked build step, a file, a test, a tx, an REA evidence id (M83). */
+  stepEvidence?: Record<string, string>;
 }
 
 export const TOKEN_DESIGN_LIMITS = {
@@ -730,6 +783,8 @@ export const TOKEN_DESIGN_LIMITS = {
   failureCriteria: { max: 800 },
   /** Token build step ticks. */
   checklist: { max: 200 },
+  /** Evidence lines per build step (M83). */
+  evidence: { max: 200, textMax: 200 },
 } as const;
 
 /** Only true entries survive, capped. Undefined when nothing is left. */
@@ -751,10 +806,29 @@ export function normalizeTokenChecklist(raw: unknown): Record<string, true> | un
  * step ticks, dropped when garbage or empty and never added, so a document
  * without the key is byte identical and every published hash holds.
  */
+/** Evidence lines keyed by step id, trimmed and capped; nothing when empty (M83). */
+export function normalizeEvidence(raw: unknown, limits: { max: number; textMax: number }): Record<string, string> | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return undefined;
+  const out: Record<string, string> = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!k || typeof v !== "string" || !v.trim()) continue;
+    if (n >= limits.max) break;
+    out[k] = v.trim().slice(0, limits.textMax);
+    n += 1;
+  }
+  return n ? out : undefined;
+}
+
 export function normalizeTokenDesignDoc(raw: TokenDesignDoc): TokenDesignDoc {
-  const { checklist, ...rest } = raw as TokenDesignDoc & { checklist?: unknown };
+  const { checklist, stepEvidence, ...rest } = raw as TokenDesignDoc & { checklist?: unknown; stepEvidence?: unknown };
   const clean = normalizeTokenChecklist(checklist);
-  let doc = clean ? { ...(rest as TokenDesignDoc), checklist: clean } : (rest as TokenDesignDoc);
+  const evidence = normalizeEvidence(stepEvidence, TOKEN_DESIGN_LIMITS.evidence);
+  let doc: TokenDesignDoc = {
+    ...(rest as TokenDesignDoc),
+    ...(clean ? { checklist: clean } : {}),
+    ...(evidence ? { stepEvidence: evidence } : {}),
+  };
   // An unknown launch venue is dropped, a missing one is never added (M69).
   if (doc.market && "launchTarget" in doc.market && !isLaunchTarget(doc.market.launchTarget)) {
     const { launchTarget: _drop, ...market } = doc.market;
@@ -947,8 +1021,14 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.testnetContracts) {
     if (doc.testnetContracts.length > L.testnetContracts.max)
       return `At most ${L.testnetContracts.max} testnet contracts.`;
-    for (const addr of doc.testnetContracts)
-      if (!ADDRESS.test(addr)) return "Testnet contract addresses must be lowercase hex.";
+    for (const c of testnetContractRows(doc)) {
+      if (!ADDRESS.test(c.address)) return "Testnet contract addresses must be lowercase hex.";
+      if (c.label && c.label.length > L.mainnetLabel.max) return `A testnet contract label is over ${L.mainnetLabel.max} characters.`;
+    }
+  }
+  if (doc.addressBook) {
+    p = urlProblem("Address book", doc.addressBook, L.addressBook.max, "https");
+    if (p) return p;
   }
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";

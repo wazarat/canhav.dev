@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -25,10 +25,12 @@ import {
   type StepGroup,
   addCustomStep,
   featuresSuggesting,
+  groupEvidence,
   groupProgress,
   groupState,
   removeStepGroup,
   restoreSteps,
+  setStepEvidence,
   setTemplateDecision,
   templateCounts,
   templateState,
@@ -146,6 +148,7 @@ export function ProductStepSection({
               .filter((r): r is NonNullable<typeof r> => Boolean(r));
             const others = other(group);
             const templates = ranked(group);
+            const evidence = groupEvidence(group, kit);
             return (
               <li key={group.key} className="flex items-start gap-1">
                 <CheckItem
@@ -215,6 +218,28 @@ export function ProductStepSection({
                             ))}
                           </span>
                         </details>
+                      ) : null}
+                      {evidence ? (
+                        <span className="flex items-start gap-1.5 text-[11px] text-ink-400">
+                          <span className="min-w-0">
+                            <span className="text-ink-500">{CHECKLIST_COPY.evidence}. </span>
+                            {evidence}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={CHECKLIST_COPY.clearEvidence(group.title)}
+                            title={CHECKLIST_COPY.clearEvidence(group.title)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              let next: Pick<ProjectKit, "evidence"> = { evidence: kit.evidence };
+                              for (const id of group.ids) next = setStepEvidence(next, id, null);
+                              onPatchKit(next);
+                            }}
+                            className="shrink-0 rounded-md p-0.5 text-ink-500 transition-colors hover:text-ink-100"
+                          >
+                            <X className="h-3 w-3" aria-hidden />
+                          </button>
+                        </span>
                       ) : null}
                       {state === "partial" ? (
                         <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">

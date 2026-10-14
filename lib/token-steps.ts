@@ -1,5 +1,5 @@
 import type { IndexedCurve } from "@/lib/indexer";
-import type { TokenDesignDoc } from "@/lib/ideation";
+import { TOKEN_DESIGN_LIMITS, type TokenDesignDoc } from "@/lib/ideation";
 
 /**
  * Token build steps (M46). The guided steps for a token design and its
@@ -119,6 +119,19 @@ export function tokenBuildProgress(
 ): { done: number; total: number } {
   const rows = tokenBuildRows(steps, doc, facts).filter((r) => r.state !== "na");
   return { done: rows.filter((r) => r.state === "done").length, total: rows.length };
+}
+
+/** Set or clear the evidence line of one token step (M83). Empty text clears. */
+export function setTokenStepEvidence(
+  doc: Pick<TokenDesignDoc, "stepEvidence">,
+  id: string,
+  text: string | null,
+): Pick<TokenDesignDoc, "stepEvidence"> {
+  const next: Record<string, string> = { ...(doc.stepEvidence ?? {}) };
+  const clean = text?.trim().slice(0, TOKEN_DESIGN_LIMITS.evidence.textMax) ?? "";
+  if (clean) next[id] = clean;
+  else delete next[id];
+  return Object.keys(next).length ? { stepEvidence: next } : { stepEvidence: undefined };
 }
 
 /** Flip one manual step and return the patched field. Never stores false. */

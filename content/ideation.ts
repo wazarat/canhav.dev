@@ -492,9 +492,29 @@ export const REFERENCES_COPY = {
   remove: (title: string) => `Remove ${title || "this file"}`,
   removeTitle: "Remove this file",
   limit: (max: number) => `At most ${max} files.`,
+  evidenceLabel: "Evidence handle",
+  evidencePlaceholder: "Evidence handle, an REA evidence id or a test name (optional)",
   exportTitle: "Your files",
   exportIntro:
     "Files the team keeps for this project. A local path is on the team's machine, so open it only when you are working there.",
+} as const;
+
+/** Testnet contracts as labelled rows and the address book link (M83). */
+export const TESTNET_COPY = {
+  contractsLabel: "Testnet contract addresses",
+  contractsHint:
+    "A label and an address per contract, up to a hundred. We read deploy history from the chain. The addresses are the claim, the chain is the evidence. Your agent can record them with update_project.",
+  labelPlaceholder: "Vault",
+  addressPlaceholder: "0x…",
+  labelField: "Contract label",
+  addressField: "Contract address",
+  add: "Add a contract",
+  remove: (label: string) => `Remove ${label || "this contract"}`,
+  removeTitle: "Remove this contract",
+  limit: (max: number) => `At most ${max} testnet contracts.`,
+  addressBookLabel: "Address book",
+  addressBookHint: "https only. The file or explorer list that holds every deployed address, for a deployment larger than this list.",
+  exportAddressBook: "Address book",
 } as const;
 
 /** The mainnet deployment and the Pons pairing (M70). No colons, no em dashes. */

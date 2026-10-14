@@ -41,6 +41,7 @@ import {
   sectorLabels,
   subsectorLabels,
   MAINNET_COPY,
+  TESTNET_COPY,
 } from "@/content/ideation";
 import {
   ENVIRONMENT_COPY,
@@ -71,6 +72,7 @@ import {
   filledPersonas,
   isSaleEvent,
   vestedCohorts,
+  testnetContractRows,
 } from "@/lib/ideation";
 import {
   DEPLOYABILITY_COPY,
@@ -230,7 +232,8 @@ function resourcePackSections(
           const tag = others.length ? ` (${CHECKLIST_COPY.sharedTag(others)})` : "";
           // A step the team added has no editor step, so it carries its own tag (M50).
           const where = g.custom ? CHECKLIST_COPY.customTag : STEP_LABELS_KIT[g.step];
-          return `${n + 1}. [${g.done ? "x" : " "}] **${g.title}**${tag} (${where})${g.detail ? `. ${g.detail}` : ""}`;
+          const evidence = g.evidence ? `\n   ${CHECKLIST_COPY.evidence}. ${g.evidence}` : "";
+          return `${n + 1}. [${g.done ? "x" : " "}] **${g.title}**${tag} (${where})${g.detail ? `. ${g.detail}` : ""}${evidence}`;
         }),
       );
       if (above.length)
@@ -348,7 +351,8 @@ function referenceSections(doc: ProjectDoc): string[] {
     "",
     ...refs.map((r) => {
       const where = referenceIsLink(r) ? `[${r.title}](${r.location.trim()})` : `${r.title}, \`${r.location.trim()}\``;
-      return `- **${where}**${r.note.trim() ? `. ${r.note.trim()}` : ""}`;
+      const evidence = r.evidence?.trim() ? ` Evidence \`${r.evidence.trim()}\`.` : "";
+      return `- **${where}**${r.note.trim() ? `. ${r.note.trim()}` : ""}${evidence}`;
     }),
   ];
 }
@@ -420,14 +424,15 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => decl(label, doc.security[key])),
   ];
   lines.push(...resourcePackSections(doc, "##"));
-  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.verifyWallet) {
+  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.addressBook || doc.verifyWallet) {
     lines.push("", "## Declared pointers", "");
     if (doc.githubRepo) lines.push(`- **GitHub:** https://github.com/${doc.githubRepo}`);
     if (doc.website) lines.push(`- **Website:** ${doc.website}`);
     if (doc.verifyWallet)
       lines.push(`- **Team wallet (declared, unproven):** ${doc.verifyWallet}`);
-    for (const c of doc.testnetContracts ?? [])
-      lines.push(`- **Testnet contract:** ${c} (${launchChain(projectChainOf(doc)).explorerUrl}/address/${c})`);
+    for (const c of testnetContractRows(doc))
+      lines.push(`- **Testnet contract${c.label ? `, ${c.label}` : ""}:** ${c.address} (${launchChain(projectChainOf(doc)).explorerUrl}/address/${c.address})`);
+    if (doc.addressBook) lines.push(`- **${TESTNET_COPY.exportAddressBook}:** ${doc.addressBook}`);
   }
   lines.push(...mainnetSections(doc, "##"));
   lines.push("");
@@ -569,8 +574,9 @@ export function buildTokenDesignMarkdown(
         .filter((r) => r.step.phase === phase)
         .forEach((r, n) => {
           const tag = r.state === "na" ? ` (${TOKEN_STEPS_COPY.naTag})` : r.computed ? ` (${TOKEN_STEPS_COPY.computedTag})` : "";
+          const evidence = doc.stepEvidence?.[r.step.id] ? `\n   ${CHECKLIST_COPY.evidence}. ${doc.stepEvidence[r.step.id]}` : "";
           lines.push(
-            `${n + 1}. [${r.state === "done" ? "x" : " "}] **${r.step.title}**${tag} (${TOKEN_STEP_LABELS[r.step.step]}). ${r.step.detail}`,
+            `${n + 1}. [${r.state === "done" ? "x" : " "}] **${r.step.title}**${tag} (${TOKEN_STEP_LABELS[r.step.step]}). ${r.step.detail}${evidence}`,
           );
         });
     }

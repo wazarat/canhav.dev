@@ -73,7 +73,8 @@ import {
   startingPointLabel,
 } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
-import { PUBLISH_COPY, WORST_CASE_WHY } from "@/content/ideation";
+import { PUBLISH_COPY, TESTNET_COPY, WORST_CASE_WHY } from "@/content/ideation";
+import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import {
   PROJECT_LIMITS,
   type ProjectDoc,
@@ -81,6 +82,7 @@ import {
   emptyConsumerPersona,
   emptyPersona,
   validateProjectDoc,
+  testnetContractRows,
 } from "@/lib/ideation";
 import {
   SECTOR_SUBSECTORS,
@@ -791,23 +793,22 @@ export function ProjectEditor({
                 placeholder="https://"
               />
             </Field>
-            <Field
-              label="Testnet contract addresses"
-              hint="One 0x address per line."
-              info="We read deploy history from the chain. The addresses are the claim, the chain is the evidence."
-            >
-              <textarea
-                value={(doc.testnetContracts ?? []).join("\n")}
-                onChange={(e) => {
-                  const list = e.target.value
-                    .split("\n")
-                    .map((s) => s.trim().toLowerCase())
-                    .filter(Boolean);
-                  patch({ testnetContracts: list.length ? list : undefined });
-                }}
-                rows={3}
-                className={cn(inputClasses, "font-mono text-xs")}
-                placeholder={"0x…\n0x…"}
+            <Field label={TESTNET_COPY.contractsLabel} info={TESTNET_COPY.contractsHint}>
+              <ContractRowsEditor
+                rows={testnetContractRows(doc)}
+                onChange={(rows) => patch({ testnetContracts: rows.length ? rows : undefined })}
+                max={PROJECT_LIMITS.testnetContracts.max}
+                labelMax={PROJECT_LIMITS.mainnetLabel.max}
+                copy={TESTNET_COPY}
+                empty={() => ({ address: "" })}
+              />
+            </Field>
+            <Field label={TESTNET_COPY.addressBookLabel} info={TESTNET_COPY.addressBookHint}>
+              <Input
+                type="url"
+                value={doc.addressBook ?? ""}
+                onChange={(e) => patch({ addressBook: e.target.value.trim() || undefined })}
+                placeholder="https://"
               />
             </Field>
             <Field

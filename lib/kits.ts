@@ -323,6 +323,12 @@ export interface ProjectKit {
    * and the exports so an agent can add to it.
    */
   ideas?: KitIdea[];
+  /**
+   * Evidence per ticked build step (M83), step id to one line, a file, a
+   * test name, an address, an REA evidence id. Stored for every member id
+   * of a shared step. Only non-empty lines are stored, never injected.
+   */
+  evidence?: Record<string, string>;
 }
 
 export interface KitIdea {
@@ -368,6 +374,8 @@ export const KIT_LIMITS = {
   customSteps: { max: 40, titleMin: 3, titleMax: 120, detailMax: 400 },
   /** Cap on removed catalog step ids, well above the number that exist. */
   hiddenSteps: { max: 400 },
+  /** Evidence lines per build step (M83). */
+  evidence: { max: 400, textMax: 200 },
   /** Cap on stored contract template decisions, above the catalog size. */
   templates: { max: 400 },
   /** What you could build lines across the shapes, and their text. */
@@ -494,6 +502,17 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
   }
   const features = idList(r.features).slice(0, KIT_LIMITS.features.max);
   if (features.length) kit.features = features;
+  if (r.evidence && typeof r.evidence === "object" && !Array.isArray(r.evidence)) {
+    const L = KIT_LIMITS.evidence;
+    const lines: Record<string, string> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.evidence as Record<string, unknown>)) {
+      if (!k || typeof v !== "string" || !v.trim() || n >= L.max) continue;
+      lines[k] = v.trim().slice(0, L.textMax);
+      n++;
+    }
+    if (n > 0) kit.evidence = lines;
+  }
   return kit;
 }
 
@@ -537,6 +556,12 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     }
   }
   if ((kit.hiddenSteps?.length ?? 0) > KIT_LIMITS.hiddenSteps.max) return "Too many removed build steps.";
+  if (kit.evidence) {
+    const L = KIT_LIMITS.evidence;
+    const entries = Object.entries(kit.evidence);
+    if (entries.length > L.max) return "Too many evidence lines.";
+    if (entries.some(([, v]) => v.length > L.textMax)) return `An evidence line is over ${L.textMax} characters.`;
+  }
   if (kit.ideas) {
     const L = KIT_LIMITS.ideas;
     if (kit.ideas.length > L.max) return `At most ${L.max} lines under what you could build.`;
@@ -834,6 +859,28 @@ export function checklistProgress(
   return { done: items.filter((i) => done[i.id] === true).length, total: items.length };
 }
 
+/** Set or clear the evidence line of one step id (M83). Empty text clears. */
+export function setStepEvidence(
+  kit: Pick<ProjectKit, "evidence">,
+  id: string,
+  text: string | null,
+): Pick<ProjectKit, "evidence"> {
+  const next: Record<string, string> = { ...(kit.evidence ?? {}) };
+  const clean = text?.trim().slice(0, KIT_LIMITS.evidence.textMax) ?? "";
+  if (clean) next[id] = clean;
+  else delete next[id];
+  return Object.keys(next).length ? { evidence: next } : { evidence: undefined };
+}
+
+/** The evidence line of a group, the first member id that has one. */
+export function groupEvidence(group: Pick<StepGroup, "ids">, kit: Pick<ProjectKit, "evidence"> | undefined): string | null {
+  for (const id of group.ids) {
+    const line = kit?.evidence?.[id];
+    if (line) return line;
+  }
+  return null;
+}
+
 /** Flip one item and return the patched field. Never stores false. */
 export function toggleChecklistItem(
   kit: Pick<ProjectKit, "checklist">,
@@ -1098,19 +1145,22 @@ export function addCustomStep(
  * restored later with its ticks intact.
  */
 export function removeStepGroup(
-  kit: KitSteps & Pick<ProjectKit, "checklist">,
+  kit: KitSteps & Pick<ProjectKit, "checklist" | "evidence">,
   group: StepGroup,
-): Pick<ProjectKit, "customSteps" | "hiddenSteps" | "checklist"> {
+): Pick<ProjectKit, "customSteps" | "hiddenSteps" | "checklist" | "evidence"> {
   if (group.custom) {
     const rest = (kit.customSteps ?? []).filter((c) => c.id !== group.key);
     return {
       customSteps: rest.length ? rest : undefined,
       hiddenSteps: kit.hiddenSteps,
       ...toggleChecklistItem(kit, group.key, false),
+      ...setStepEvidence(kit, group.key, null),
     };
   }
   const hidden = [...new Set([...(kit.hiddenSteps ?? []), ...group.ids])].slice(0, KIT_LIMITS.hiddenSteps.max);
-  return { customSteps: kit.customSteps, hiddenSteps: hidden, checklist: kit.checklist };
+  let evidence: Pick<ProjectKit, "evidence"> = { evidence: kit.evidence };
+  for (const id of group.ids) evidence = setStepEvidence(evidence, id, null);
+  return { customSteps: kit.customSteps, hiddenSteps: hidden, checklist: kit.checklist, ...evidence };
 }
 
 /** Bring removed catalog steps back. */
