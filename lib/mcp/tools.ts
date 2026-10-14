@@ -236,13 +236,18 @@ export function registerAllTools(server: McpServer): void {
       } else {
         return errorResult("Pass either a slug or an inline doc.");
       }
-      const firstProblem = validateTokenDesignDoc(design);
-      return jsonResult({
-        valid: firstProblem === null,
-        firstProblem,
-        warnings: designWarnings(design, { shapes, chain }),
-        deployability: designDeployability(design),
-      });
+      try {
+        const firstProblem = validateTokenDesignDoc(design);
+        return jsonResult({
+          valid: firstProblem === null,
+          firstProblem,
+          warnings: designWarnings(design, { shapes, chain }),
+          deployability: designDeployability(design),
+        });
+      } catch (err) {
+        // An inline doc is untrusted; a shape the rules cannot read is an answer, not a 500 (M80).
+        return errorResult(`The design could not be read. ${err instanceof Error ? err.message : String(err)}. Pass a doc in the shape get_token returns under draft.`);
+      }
     },
   );
   registerMeteredTool(

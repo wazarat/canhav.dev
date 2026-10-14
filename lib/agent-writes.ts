@@ -2,10 +2,11 @@ import { z } from "zod";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { TEMPLATE_CATALOG, templateById } from "@/content/templates";
+import { templateById } from "@/content/templates";
 import { featuresFor } from "@/content/kits/features";
 import { LAUNCH_TARGETS, PAIR_VENUES } from "@/lib/launch-targets";
-import { TEMPLATE_ID, templatesForShapes } from "@/lib/templates";
+import { TEMPLATE_ID } from "@/lib/templates";
+import { reachableTemplateIds } from "@/lib/template-reach";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { checklistFor, groupsFor } from "@/content/kits/checklists";
 import { offeredShapes } from "@/content/kits/copy";
@@ -468,12 +469,86 @@ export function buildStepKeys(patch: BuildStepsPatch): string[] {
   ];
 }
 
+const ADDRESS_PATTERN = "/^0x[0-9a-f]{40}$/";
+
+function valueAtPath(input: unknown, path: ReadonlyArray<PropertyKey>): unknown {
+  let cur: unknown = input;
+  for (const part of path) {
+    if (cur === null || typeof cur !== "object") return undefined;
+    cur = (cur as Record<PropertyKey, unknown>)[part];
+  }
+  return cur;
+}
+
+function sizeOf(v: unknown): number | null {
+  if (typeof v === "string") return v.length;
+  if (Array.isArray(v)) return v.length;
+  if (typeof v === "number") return v;
+  return null;
+}
+
+function unitOf(origin: unknown, size: number): string {
+  if (origin === "string") return size === 1 ? "character" : "characters";
+  if (origin === "array" || origin === "set") return size === 1 ? "item" : "items";
+  return "";
+}
+
+/**
+ * One zod issue in words an agent can act on, the field path in front and
+ * the number that broke the rule beside the limit (M80). "architecture
+ * .contracts is 812 characters, max 800" instead of "Invalid input".
+ */
+export function describeIssue(issue: z.core.$ZodIssue, input?: unknown): string {
+  const path = issue.path.map((p) => String(typeof p === "object" && p !== null ? (p as { key: PropertyKey }).key : p)).join(".");
+  const field = path || "The input";
+  const actual = sizeOf(valueAtPath(input, issue.path as PropertyKey[]));
+  switch (issue.code) {
+    case "too_big": {
+      const size = actual ?? null;
+      const unit = unitOf(issue.origin, size ?? 0);
+      const is = size === null ? "is too long" : `is ${size}${unit ? ` ${unit}` : ""}`;
+      return `${field} ${is}, max ${issue.maximum}${unit && size === null ? ` ${unitOf(issue.origin, 2)}` : ""}.`;
+    }
+    case "too_small": {
+      const size = actual ?? null;
+      const unit = unitOf(issue.origin, size ?? 0);
+      const is = size === null ? "is too short" : `is ${size}${unit ? ` ${unit}` : ""}`;
+      return `${field} ${is}, min ${issue.minimum}${unit && size === null ? ` ${unitOf(issue.origin, 2)}` : ""}.`;
+    }
+    case "invalid_format": {
+      const pattern = "pattern" in issue ? String(issue.pattern) : null;
+      if (pattern === ADDRESS_PATTERN) return `${field} must be a lowercase 0x address of 40 hex characters.`;
+      if (issue.format === "regex" && pattern) return `${field} must match ${pattern}.`;
+      return `${field} must be a valid ${issue.format}.`;
+    }
+    case "unrecognized_keys":
+      return `${field} has no field ${issue.keys.join(", ")}.`;
+    case "invalid_value":
+      return `${field} must be one of ${issue.values.map((v) => String(v)).join(", ")}.`;
+    case "invalid_type":
+      return `${field} must be ${/^[aeiou]/.test(issue.expected) ? "an" : "a"} ${issue.expected}${actual === null && valueAtPath(input, issue.path as PropertyKey[]) === undefined ? " and is missing" : ""}.`;
+    case "invalid_key":
+      return `${field} is not a valid key${"origin" in issue && issue.origin === "record" ? " in this record" : ""}.`;
+    case "invalid_union":
+      return `${field} does not match any of the accepted shapes.`;
+    default:
+      return path ? `${path}. ${issue.message}` : issue.message;
+  }
+}
+
+/** Up to three issues of a zod failure in words, then what happened to the change. */
+export function describeIssues(error: z.ZodError, input?: unknown): string {
+  const lines = error.issues.slice(0, 3).map((i) => describeIssue(i, input));
+  if (!lines.length) return "The change is not valid. Nothing was changed.";
+  const more = error.issues.length > 3 ? ` ${error.issues.length - 3} more.` : "";
+  return `${lines.join(" ")}${more} Nothing was changed.`;
+}
+
 /** First readable problem in a zod failure, with the field path in front. */
-export function firstIssue(error: z.ZodError): string {
+export function firstIssue(error: z.ZodError, input?: unknown): string {
   const issue = error.issues[0];
   if (!issue) return "The change is not valid.";
-  const path = issue.path.join(".");
-  return path ? `${path} is not valid. ${issue.message}` : issue.message;
+  return describeIssue(issue, input);
 }
 
 // ---------------------------------------------------------------------------
@@ -621,11 +696,15 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
   if (decided.length) {
     if (shapes.length === 0)
       return "This project has no product shape yet, so it has no contract templates. Send kit.shapes first.";
-    const reachable = new Set(
-      templatesForShapes(TEMPLATE_CATALOG, shapes, projectChainOf(next), { includeInactive: true }).map((t) => t.id),
-    );
+    // The one decidable set (M80), the same get_templates lists.
+    const reachable = reachableTemplateIds(shapes, projectChainOf(next), { includeInactive: true });
     const unknown = decided.filter((id) => !reachable.has(id));
-    if (unknown.length) return `Unknown template ${unknown.slice(0, 3).join(", ")}. Read get_templates for the ids this project's shapes offer.`;
+    if (unknown.length) {
+      const ids = [...reachable];
+      const shown = ids.slice(0, 20).join(", ");
+      const rest = ids.length > 20 ? ` and ${ids.length - 20} more on get_templates` : "";
+      return `Unknown template ${unknown.slice(0, 3).join(", ")}. This project's shapes can decide ${shown}${rest}.`;
+    }
   }
   if (k.ideas?.length) {
     const stray = k.ideas.filter((i) => !shapes.includes(i.shape));

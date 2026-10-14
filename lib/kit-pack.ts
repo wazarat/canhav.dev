@@ -2,6 +2,7 @@ import { KIT_CATALOG } from "@/content/kits/catalog";
 import { featuresFor } from "@/content/kits/features";
 import { TEMPLATE_CATALOG } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
+import { type TemplateVia, reachableTemplatesFor } from "@/lib/template-reach";
 import {
   type ChainDeployment,
   type ContractTemplate,
@@ -169,6 +170,8 @@ export interface LaunchTargetView {
 
 export interface TemplatePackView
   extends Omit<ContractTemplate, "chains"> {
+  /** How the project reaches it (M80). subsector from the catalog placement, step or feature from a citation. */
+  via: TemplateVia;
   /** accepted, rejected or open. */
   decision: TemplateState;
   /** What the team can do with it on the project's chain. */
@@ -326,8 +329,11 @@ export function buildResourcePack(
     for (const g of section.groups)
       for (const t of g.templates) stepsOf.set(t, [...(stepsOf.get(t) ?? []), g.key]);
   const features = featuresFor(shapes);
-  const templateItems: TemplatePackView[] = templatesForShapes(TEMPLATE_CATALOG, shapes, chain).map((t) => ({
+  // Every template the project can decide (M80), subsector placements and the ids its steps and features cite.
+  const reach = reachableTemplatesFor(shapes, chain);
+  const templateItems: TemplatePackView[] = reach.items.map((t) => ({
     ...t,
+    via: reach.via.get(t.id) ?? "subsector",
     decision: templateState(kit, t.id),
     availability: templateAvailability(t, chain),
     onChain: templateOnChain(t, chain),

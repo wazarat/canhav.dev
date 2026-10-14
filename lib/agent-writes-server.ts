@@ -13,6 +13,7 @@ import {
   applyTokenDesignPatch,
   buildStepsPatchSchema,
   buildStepsProblem,
+  describeIssues,
   projectPatchProblem,
   projectPatchSchema,
   tokenBuildStepsProblem,
@@ -78,13 +79,13 @@ export function nextProjectDoc(
 ): { ok: true; doc: ProjectRow["draft_doc"] } | { ok: false; message: string } {
   if (kind === "build_steps") {
     const parsed = buildStepsPatchSchema.safeParse(patch);
-    if (!parsed.success) return { ok: false, message: "The build step change is not valid." };
+    if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
     const problem = buildStepsProblem(row.draft_doc, parsed.data);
     if (problem) return { ok: false, message: problem };
     return { ok: true, doc: applyBuildSteps(row.draft_doc, parsed.data) };
   }
   const parsed = projectPatchSchema.safeParse(patch);
-  if (!parsed.success) return { ok: false, message: "The change is not valid." };
+  if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
   const problem = projectPatchProblem(row.draft_doc, parsed.data);
   if (problem) return { ok: false, message: problem };
   return { ok: true, doc: applyProjectPatch(row.draft_doc, parsed.data) };
@@ -97,13 +98,13 @@ export function nextTokenDesignDoc(
 ): { ok: true; doc: TokenDesignRow["draft_doc"] } | { ok: false; message: string } {
   if (kind === "build_steps") {
     const parsed = buildStepsPatchSchema.safeParse(patch);
-    if (!parsed.success) return { ok: false, message: "The build step change is not valid." };
+    if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
     const problem = tokenBuildStepsProblem(parsed.data);
     if (problem) return { ok: false, message: problem };
     return { ok: true, doc: applyTokenBuildSteps(row.draft_doc, parsed.data) };
   }
   const parsed = tokenDesignPatchSchema.safeParse(patch);
-  if (!parsed.success) return { ok: false, message: "The change is not valid." };
+  if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
   return { ok: true, doc: applyTokenDesignPatch(row.draft_doc, parsed.data) };
 }
 

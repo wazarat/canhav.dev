@@ -3,6 +3,8 @@ import "server-only";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { z } from "zod";
 
+import { describeIssues } from "@/lib/agent-writes";
+
 /**
  * The metering seam: every MCP tool registers through registerMeteredTool,
  * so per-tool call counting can be added later in exactly one place without
@@ -57,6 +59,26 @@ export function toolAnnotations(name: string, override?: ToolAnnotations): ToolA
   };
 }
 
+/**
+ * The SDK validates tool input before the callback runs and words the
+ * failure its own way, with no field length in it. So the SDK gets a
+ * Standard Schema that publishes the zod schema's JSON Schema (tools/list is
+ * unchanged) and accepts every input, and registerMeteredTool parses the
+ * input itself and answers with describeIssues (M80), the same wording the
+ * studio uses.
+ */
+function lenientSchema(schema: z.ZodType): unknown {
+  const std = (schema as unknown as { "~standard": { jsonSchema?: unknown } })["~standard"];
+  return {
+    "~standard": {
+      version: 1,
+      vendor: "canhav",
+      validate: (value: unknown) => ({ value }),
+      jsonSchema: std.jsonSchema,
+    },
+  };
+}
+
 export function registerMeteredTool<Schema extends z.ZodType>(
   server: McpServer,
   name: string,
@@ -65,18 +87,36 @@ export function registerMeteredTool<Schema extends z.ZodType>(
   /** scope names the mount, so a project-scoped server's calls are countable. */
   opts?: { scope?: string },
 ): void {
+  const schema = config.inputSchema;
   // The SDK's registerTool generics are stricter than we need; the runtime
   // contract (zod schema in, {content} out) is exactly what we pass.
   (server.registerTool as unknown as (
     name: string,
     config: unknown,
     cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
-  ) => void)(name, { ...config, annotations: toolAnnotations(name, config.annotations) }, async (args, ctx) => {
+  ) => void)(
+    name,
+    {
+      ...config,
+      ...(schema ? { inputSchema: lenientSchema(schema) } : {}),
+      annotations: toolAnnotations(name, config.annotations),
+    },
+    async (rawArgs, ctx) => {
     // Metering hook. One structured log line per call so tool usage and
     // failure rates are visible in Vercel runtime logs. Counting lands here.
     const startedAt = Date.now();
     let result: ToolResult;
     try {
+      let args = rawArgs;
+      if (schema) {
+        const parsed = schema.safeParse(rawArgs ?? {});
+        if (!parsed.success) {
+          result = errorResult(describeIssues(parsed.error, rawArgs));
+          console.info(JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: 0, isError: true, invalidInput: true, ...(opts?.scope ? { scope: opts.scope } : {}) }));
+          return result;
+        }
+        args = parsed.data as z.infer<Schema>;
+      }
       result = await cb(args, ctx);
     } catch (err) {
       console.info(

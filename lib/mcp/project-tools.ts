@@ -6,6 +6,8 @@ import { z } from "zod";
 import {
   type ProjectDoc,
   type TokenDesignDoc,
+  emptyTokenDesignDoc,
+  normalizeTokenDesignDoc,
   validateProjectDoc,
   validateTokenDesignDoc,
 } from "@/lib/ideation";
@@ -46,6 +48,7 @@ import {
 } from "@/lib/mcp/register";
 import {
   AGENT_CHANGE_LIMITS,
+  applyTokenDesignPatch,
   buildStepsPatchSchema,
   changeLines,
   projectPatchSchema,
@@ -172,6 +175,24 @@ async function tokenFacts(design: TokenDesignRow, curve?: IndexedCurve | null): 
 
 function curveSummary(curve: IndexedCurve | null, now: number) {
   return curve ? { state: curveState(curve, now), progressPct: summarizeCurve(curve, now).progressPct } : null;
+}
+
+/**
+ * An inline design from an agent, read defensively (M80). Missing sections
+ * are filled from the empty design so the validator and the derivations
+ * never read a field off undefined; the validator then names what is wrong.
+ */
+function safeTokenDesignDoc(raw: Record<string, unknown>): TokenDesignDoc {
+  const empty = emptyTokenDesignDoc() as unknown as Record<string, unknown>;
+  const merged: Record<string, unknown> = { ...empty };
+  for (const [k, v] of Object.entries(raw)) {
+    const base = empty[k];
+    if (Array.isArray(base) && !Array.isArray(v)) continue;
+    merged[k] = base && typeof base === "object" && !Array.isArray(base) && v && typeof v === "object" && !Array.isArray(v)
+      ? { ...(base as Record<string, unknown>), ...(v as Record<string, unknown>) }
+      : v;
+  }
+  return normalizeTokenDesignDoc(merged as unknown as TokenDesignDoc);
 }
 
 function publicUrl(base: "p" | "t", row: { slug: string | null; status: string }) {
@@ -489,32 +510,49 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Check this project's token design",
       description:
-        "Run CanHav's design warning rules and deployability classification against this project's token design draft, including whether the rationale fits this project's product shapes and whether the launch venue runs on this project's chain. Pass an inline TokenDesignDoc JSON (kind 'token_design', version 1) to check an edit before saving it. Otherwise takes no arguments.",
-      inputSchema: z.object({ doc: z.record(z.string(), z.unknown()).optional() }),
+        "Run CanHav's design warning rules and deployability classification against this project's token design draft, including whether the rationale fits this project's product shapes and whether the launch venue runs on this project's chain. To check an edit before saving it pass changes, the same shape update_linked_token_design takes (name, ticker, rationale, supply, vesting, distribution, market, governance, legal, postLaunch, only the fields you are changing), which is laid over the linked draft, or over an empty design when none is linked. A whole TokenDesignDoc can be passed as doc instead (kind token_design, version 1, the shape get_linked_token_design returns under draft). Without either, checks the linked draft.",
+      inputSchema: z.object({
+        changes: tokenDesignPatchSchema.optional(),
+        doc: z.record(z.string(), z.unknown()).optional(),
+      }),
     },
-    async ({ doc }, ctx) => {
+    async ({ doc, changes }, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
+      if (doc && changes) return errorResult("Pass changes or doc, not both.");
+      const { project, design } = loaded.value;
       let candidate: TokenDesignDoc;
+      let checked: string;
       if (doc) {
         if (doc.kind !== "token_design" || doc.version !== 1)
           return errorResult('Inline doc must have kind "token_design" and version 1.');
-        candidate = doc as unknown as TokenDesignDoc;
+        // An inline doc is untrusted. The normaliser and the validator read
+        // it defensively; anything they cannot read is the first problem.
+        candidate = safeTokenDesignDoc(doc);
+        checked = "inline doc";
+      } else if (changes) {
+        const base = design ? design.draft_doc : emptyTokenDesignDoc(project.draft_doc.name);
+        candidate = applyTokenDesignPatch(base, changes);
+        checked = design ? "the linked draft with changes applied" : "an empty design with changes applied";
       } else {
-        const { design } = loaded.value;
         if (!design) return errorResult(NO_DESIGN);
         candidate = design.draft_doc;
+        checked = "this project's linked design draft";
       }
-      const firstProblem = validateTokenDesignDoc(candidate);
-      const shapes = kitShapes(loaded.value.project.draft_doc.kit);
-      const chain = projectChainOf(loaded.value.project.draft_doc);
-      return jsonResult({
-        checked: doc ? "inline doc" : "this project's linked design draft",
-        valid: firstProblem === null,
-        firstProblem,
-        warnings: designWarnings(candidate, { shapes, chain }),
-        deployability: designDeployability(candidate),
-      });
+      const shapes = kitShapes(project.draft_doc.kit);
+      const chain = projectChainOf(project.draft_doc);
+      try {
+        const firstProblem = validateTokenDesignDoc(candidate);
+        return jsonResult({
+          checked,
+          valid: firstProblem === null,
+          firstProblem,
+          warnings: designWarnings(candidate, { shapes, chain }),
+          deployability: designDeployability(candidate),
+        });
+      } catch (err) {
+        return errorResult(`The design could not be read. ${err instanceof Error ? err.message : String(err)}. Send changes in the update_linked_token_design shape, or a doc in the shape get_linked_token_design returns under draft.`);
+      }
     },
     scope,
   );
@@ -733,7 +771,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's contract templates",
       description:
-        "The contract templates that fit this project's product shapes (M63), grouped by the build step that lists them, with the rest under unplaced. Each carries kind (integrate, fork, factory, library), license and licenseClass, audit status, repo and docs, onChain (the mainnet status for the project's chain with a note) and availability (ready, self_deploy, unknown, unavailable), complexity, a Pons fit line when it can sit behind a Pons launch, and decision, the team's accepted, rejected or open. Inactive protocols are left out. Takes no arguments. Record decisions with set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement.",
+        "The contract templates this project can decide (M63, M80), the catalog placements under its shapes' subsectors plus every template a build step or feature of the shapes cites, each with via (subsector, step or feature). Grouped by the build step that lists them, with the rest under unplaced. Each carries kind (integrate, fork, factory, library), license and licenseClass, audit status, repo and docs, onChain (the mainnet status for the project's chain with a note) and availability (ready, self_deploy, unknown, unavailable), complexity, a Pons fit line when it can sit behind a Pons launch, and decision, the team's accepted, rejected or open. Inactive protocols are left out. Takes no arguments. Every id here is accepted by set_template_decisions. Never fork a template whose licenseClass is restricted; integrate it or reject it and name the replacement.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -768,7 +806,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_template_decisions",
     {
       title: "Accept or reject contract templates",
-      description: `Record the team's decision on contract templates by id from get_templates. decisions maps a template id to accepted, rejected or open (open clears a decision). Decide only after the team has agreed in the conversation and say why in the note. One decision per template per project, shown on every build step that lists it. ${WRITE_RULES}`,
+      description: `Record the team's decision on contract templates by id from get_templates (every id it lists, placed or cited, is accepted here; an unknown id answers with the ids this project can decide). decisions maps a template id to accepted, rejected or open (open clears a decision). Decide only after the team has agreed in the conversation and say why in the note. One decision per template per project, shown on every build step that lists it. ${WRITE_RULES}`,
       inputSchema: z.object({
         decisions: z
           .record(z.string().max(80).regex(TEMPLATE_ID), z.enum(["accepted", "rejected", "open"]))
