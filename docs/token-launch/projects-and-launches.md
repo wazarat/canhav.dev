@@ -19,7 +19,7 @@ A launch can be linked only when it is recorded to your account, which happens w
 | The launch form | The optional **Project** block: link one of your projects, or start a project for this token. See [The launch form](launch-form.md). |
 | From a project | The **Launch a token from this project** link in the project's Token launch panel opens `/launch?project=<id>`. The launch is linked automatically and goes on the project's chain. |
 | Studio, Launches list | **Link a project** on the launch's row. Pick one of your projects, or **Start a project for this token**. |
-| Studio, project page | The **Token launch** panel lists your unlinked launches on the project's chain. |
+| Studio, project page | The **Token launch** panel on Overview lists your unlinked launches on the project's chain, and takes a token's address, short form or page link to link one. |
 | The token page | The **Link a project** button across from the name, shown to the account that owns the launch. |
 
 Once linked, the same controls offer **Change** and **Unlink**.
@@ -43,7 +43,7 @@ A project's MCP server reads one token: the token deployed from its linked desig
 
 ## Mainnet and the Pons pairing
 
-A project can record its mainnet deployment beside the testnet launch, on the Reality step of the studio. The contracts live on the mainnet the project's chain stands in for, Robinhood Chain (4663) for a Robinhood testnet project and Arbitrum One (42161) for an Arbitrum Sepolia project, and the public page, the Token launch panel and the exports link each address to that mainnet's explorer. The companion contract is picked from the templates the team accepted on the Build step that carry a Pons fit line, and on a Robinhood project the Pons launch it is paired with is recorded with its token address and the creator fee recipient. Pons runs on Robinhood Chain mainnet only, so an Arbitrum project records contracts and a companion but no pairing. Agents read the record on `get_project_status` and `get_launch` and write it through `update_project`.
+A project can record its mainnet deployment beside the testnet launch, under Deployments on the project page. The contracts live on the mainnet the project's chain stands in for, Robinhood Chain (4663) for a Robinhood testnet project and Arbitrum One (42161) for an Arbitrum Sepolia project, and the public page, the Token launch panel and the exports link each address to that mainnet's explorer. The companion contract is picked from the templates the team accepted under Build that carry a Pons fit line, and on a Robinhood project the Pons launch it is paired with is recorded with its token address and the creator fee recipient. Pons runs on Robinhood Chain mainnet only, so an Arbitrum project records contracts and a companion but no pairing. Agents read the record on `get_project_status` and `get_launch` and write it through `update_project`.
 
 ## Related
 

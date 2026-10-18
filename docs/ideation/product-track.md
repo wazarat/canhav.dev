@@ -1,27 +1,28 @@
 # Product track
 
-**Available now.** The sections below match the studio Project editor.
+**Available now.** The fields below are the project record. Where each one lives on the project page is named in its heading; the page itself is described in [Studio](studio.md).
 
 The Product track is a design document for what you are building. A product with no token is a legitimate published outcome.
 
-Project page sections: Overview, Build, Decisions, Deployments, Publish, in a left sidebar on wide screens (Build opens into Design, Testnet, Review and Launch) and a tab strip on phones. The five sections never change with the product shapes; shapes are labels and filters on the Build tab. Overview holds the agent (session, write mode, proposals), the connect block and the resource pack behind a Read drawer. Decisions holds what is being built, the chain, the template decisions, the architecture facts and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list.
+The project page has five sections, Overview, Build, Decisions, Deployments and Publish, in a left sidebar on wide screens and a row of tabs on phones. The sections never change with the product shapes. Decisions holds what is being built, the chain, the template decisions, the contract architecture and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list. Build holds the build steps.
 
 ---
 
-## Sector, subsector, what it does, users and payers, why this chain, current stage
+## What you are building (Decisions) and the public record (Publish)
 
 ### Asked
 
 | Field | Notes |
 |-------|-------|
-| Project name | Required |
-| Chain | Robinhood testnet or Arbitrum Sepolia. Where the project builds and tests, and the chain a token launched from it goes on. Projects from before the choice existed read as Robinhood testnet. Fixed once a token is linked to the project, by a launch or by a deployed linked token design. The resource pack, the environment block and the testnet notes follow it, and the Robinhood distribution acknowledgement is only asked of a Robinhood project. |
-| Sector | Credit, Liquidity, Derivatives, Staking, RWA and Other. Each is a card with its name ("Credit sector application") and a sentence that starts "I am looking to". Pick every sentence that fits. All six are open since M68. Other may describe itself in a text field instead of picking a subsector. |
+| Project name | Required. Asked in the new project pop up, edited under Publish. |
+| Chain | Under Decisions. Robinhood testnet or Arbitrum Sepolia. Where the project builds and tests, and the chain a token launched from it goes on. Projects from before the choice existed read as Robinhood testnet. Fixed once a token is linked to the project, by a launch or by a deployed linked token design. The resource pack, the environment block and the testnet notes follow it, and the Robinhood distribution acknowledgement is only asked of a Robinhood project. |
+| Sector | Under Decisions (one can be picked in the new project pop up). Credit, Liquidity, Derivatives, Staking, RWA and Other. Each is a card with its name ("Credit sector application") and a sentence that starts "I am looking to". Pick every sentence that fits. All six are open since M68. Other may describe itself in a text field instead of picking a subsector. |
 | Subsector | Asked for each chosen sector that has subsectors, grouped under the sector name when more than one does. Each subsector is a card with its name and a sentence. Credit offers Lending, Leveraged yield and Fixed income; Liquidity offers Vaults and Pools; Derivatives offers Perp DEX, Option vaults and Delta neutral; Staking offers Liquid staking, Restaking and Liquid restaking; RWA offers Tokenized securities, Private credit and Asset-backed tokens; Other offers Underwriting and Governance. All sixteen are open. A subsector whose every shape relies on a protocol with no deployment on the project's testnet carries a note such as "Not on Robinhood testnet yet" and can still be picked. Pick one to three per sector. When a project is in more than one sector and a subsector shares product shapes with one under another chosen sector, that one is ticked too and a line under the cards says why; it can be unticked again. |
-| What are you building | Asked once a chosen sector has a subsector. A subsector that offers exactly one shape (every subsector of Derivatives, Staking, RWA and Other) names it on its own, so the step shows a sentence such as "I am building a restaking service. I am looking to let already staked assets secure a second service for extra reward." instead of a second pick, and unticking the subsector drops the product. Where no contract template in the catalog runs on the project's mainnet yet, the sentence carries a note with a hover explanation saying the build steps still come and the team's agent can work through them over MCP. Subsectors that offer several shapes keep the chips. Product shapes are grouped by subsector. Lending offers Curated vault, Earn inside your app and Collateral-backed loans; Fixed income offers Fixed-rate yield on your asset, Fixed-rate savings inside your app, Borrow against fixed-rate positions and Leveraged fixed-yield loop; Leveraged yield offers Leveraged fixed-yield loop and Yield-token products; Vaults offers Curated vault and Earn inside your app (the same two shapes reached through Lending), Liquidity allocator and Permissioned vault; Pools offers Basic AMM pool, Concentrated liquidity pool and Pool with custom hooks. The four sectors opened in M65 to M68 offer one shape per subsector (Perpetuals venue, Option vault, Delta neutral yield, Liquid staking token, Restaking service, Liquid restaking token, Stock and fund tokens, Private credit pool, Reserve-backed token, Cover pool, Token governance), whose chain fit comes from the contract templates on their steps rather than a protocol family. Twenty-four shapes in all. A shape that spans subsectors is offered whenever one of them is chosen and appears once, and the picker shows subsector headings only when more than one subsector is chosen. Picking a shape also ticks its subsectors under any other chosen sector. Pick as many as apply; the resource pack, build steps and review passes are the union across the chosen shapes. Optional, but the research kit that follows is filtered by it. Each option has a "Why this matters" card with a worked example, and each chosen shape lists two or three things you could build with it as tickable lines, each with an edit button, and a field to add your own; editing a catalog line stores your wording in its place and removing it brings the original back. The ticks and the lines live on the project and reach the team's agent through the resource pack, `set_ideas` and `update_project`. "How the shapes relate" opens a dialog that lists the chosen shapes with what each brings on its own and what they share across the research pack, the build steps and the contract templates, then the stack prose. Where no catalog template runs on the project's mainnet the note's tooltip also says how many run on the other mainnet and offers the way forward, accept those and iterate for this chain or move the project to the other chain, and the resource pack carries the same plan under `templateGaps`. The testnet note: a shape carries a note when a protocol family it relies on has no official or community deployment on the project's testnet (on Robinhood testnet the Pendle and Uniswap shapes, with Morpho's community deployment counting; on Arbitrum Sepolia the Morpho and Pendle shapes, with Uniswap deployed). It can still be picked and published. Its Build section names the missing protocol, and the team or its agent removes the steps that do not fit and adds its own. |
+| What are you building | Asked once a chosen sector has a subsector. A subsector that offers exactly one shape (every subsector of Derivatives, Staking, RWA and Other) names it on its own, so the step shows a sentence such as "I am building a restaking service. I am looking to let already staked assets secure a second service for extra reward." instead of a second pick, and unticking the subsector drops the product. Where no contract template in the catalog runs on the project's mainnet yet, the sentence carries a note with a hover explanation saying the build steps still come and the team's agent can work through them over MCP. Subsectors that offer several shapes keep the chips. Product shapes are grouped by subsector. Lending offers Curated vault, Earn inside your app and Collateral-backed loans; Fixed income offers Fixed-rate yield on your asset, Fixed-rate savings inside your app, Borrow against fixed-rate positions and Leveraged fixed-yield loop; Leveraged yield offers Leveraged fixed-yield loop and Yield-token products; Vaults offers Curated vault and Earn inside your app (the same two shapes reached through Lending), Liquidity allocator and Permissioned vault; Pools offers Basic AMM pool, Concentrated liquidity pool and Pool with custom hooks. The four sectors opened in M65 to M68 offer one shape per subsector (Perpetuals venue, Option vault, Delta neutral yield, Liquid staking token, Restaking service, Liquid restaking token, Stock and fund tokens, Private credit pool, Reserve-backed token, Cover pool, Token governance), whose chain fit comes from the contract templates on their steps rather than a protocol family. Twenty-four shapes in all. A shape that spans subsectors is offered whenever one of them is chosen and appears once, and the picker shows subsector headings only when more than one subsector is chosen. Picking a shape also ticks its subsectors under any other chosen sector. Pick as many as apply; the resource pack, build steps and review passes are the union across the chosen shapes. Optional, but the research kit that follows is filtered by it. "About these shapes" opens a short blurb per chosen shape. The "what you could build" lines of each shape (catalog examples and the team's own) are no longer edited on the page; they stay on the project and reach the team's agent through the resource pack and `set_ideas`. Where no catalog template runs on the project's mainnet the note's tooltip also says how many run on the other mainnet and offers the way forward, accept those and iterate for this chain or move the project to the other chain, and the resource pack carries the same plan under `templateGaps`. The testnet note: a shape carries a note when a protocol family it relies on has no official or community deployment on the project's testnet (on Robinhood testnet the Pendle and Uniswap shapes, with Morpho's community deployment counting; on Arbitrum Sepolia the Morpho and Pendle shapes, with Uniswap deployed). It can still be picked and published. Its Build section names the missing protocol, and the team or its agent removes the steps that do not fit and adds its own. |
 | Starting point | Asked with the shape. From scratch; On top of an existing product (with an optional link or one line about what exists today). |
-| What it does | One paragraph |
-| Who you sell to | Optional. Businesses (B2B) or Individuals (B2C). The persona table below follows the choice. Switching keeps the other table's rows stored but hidden. |
+| Logo | Under Publish (and in the new project pop up). Shown on the studio, the public page and the Explore board. |
+| What it does | Under Publish. One paragraph, at least eighty characters to publish; the new project pop up takes a short description that fills it. |
+| Who you sell to | Under Publish. Optional. Businesses (B2B) or Individuals (B2C). The persona table below follows the choice. Switching keeps the other table's rows stored but hidden. |
 | Who the user is | Optional. An ideal customer persona table with one to three personas. For a B2B audience each persona has Team size (a number or a range), Geography (city, country, or continent), Industry, Primary contact (a role or title) and Revenue range. For a B2C audience each persona has Age range (a number or a range), Geography, Crypto experience (new, some, active, professional), How they find you and What they hold. Starts with one persona; add up to three. |
 | Who pays | Optional. The user pays, or someone else pays (with a line about who) |
 | Why this chain specifically | Optional. Free text |
@@ -35,7 +36,7 @@ Projects saved under a retired sector (underwriting and risk, oracles and data, 
 
 ---
 
-## Contract architecture and external dependencies
+## Contract architecture and external dependencies (Decisions)
 
 ### Asked
 
@@ -52,7 +53,7 @@ None.
 
 ---
 
-## Admin functions
+## Admin functions (Decisions)
 
 ### Asked
 
@@ -66,7 +67,7 @@ None.
 
 ---
 
-## Worst-case bug impact and security status declarations
+## Worst-case bug impact and security status declarations (Decisions)
 
 ### Asked
 
@@ -88,11 +89,13 @@ Copy pressure scales with the worst-case answer. That is framing only, not valid
 
 On the public page, “not yet” on high blast-radius answers reads as a live risk the team chose to publish.
 
+**Project files.** Decisions ends with the team's own files by reference, a title, a link or a path on the team's machine, a note and an optional evidence handle. Nothing is uploaded and nothing here is published; the list reaches the agent through the project's server and the draft exports.
+
 ---
 
-## Reality
+## Reality (Publish and Deployments)
 
-Before publish, the editor requires an explicit acknowledgement from a project on Robinhood testnet (an Arbitrum Sepolia project is not asked):
+Before publish, the Publish section requires an explicit acknowledgement from a project on Robinhood testnet (an Arbitrum Sepolia project is not asked):
 
 > Robinhood Chain does not provide distribution to Robinhood brokerage customers. Deploying here puts your app in front of nobody by default. CanHav is an independent project with no affiliation with Robinhood Markets, Inc. Listing here is not a channel to its users either.
 
@@ -100,32 +103,30 @@ Before publish, the editor requires an explicit acknowledgement from a project o
 
 | Field | Notes |
 |-------|-------|
-| Myth acknowledgement | Required checkbox |
-| Where will your first hundred users come from? | Free text |
+| Myth acknowledgement | Required checkbox, under Publish |
+| Where will your first hundred users come from? | Free text, under Publish |
 
 ### Computed
 
-| Block | Notes |
-|-------|-------|
-| Where this runs today | Shown under the acknowledgement for a project with a research kit and a product shape. One chip for Robinhood Chain and one for each protocol family the chosen shapes rely on (Morpho, Pendle, Uniswap), with the testnet 46630 and mainnet 4663 status (official deployment, community deployment, manifest only, no deployment), a note and a source, then the recommended path (testnet with mocks, a local fork of mainnet, mainnet staging behind caps) and, for a family with a path of its own such as Uniswap, which a team deploys on testnet itself, a second list, and the date the rows were last checked. The chip's dot follows the testnet status. `get_resource_pack` returns the same rows in `environment`. |
+Where each protocol family the chosen shapes rely on runs today (the testnet and mainnet status, the note, the source and the recommended path) is no longer shown on the page. An agent reads the same rows in `environment` on `get_resource_pack`, and the exports carry them.
 
-Optional verify signals (wallet, GitHub repo, testnet contract addresses) attach for public credibility checks scoped to the **project**, not to a linked token.
+Optional verify signals attach for public credibility checks scoped to the **project**, not to a linked token: the GitHub repo and the website under Publish; the testnet contract addresses (label and address rows with explorer links), the address book and the team wallet under Deployments.
 
-**Mainnet and Pons pairing (M70).** Under the verify signals on the Reality step, a project records its mainnet deployment beside the testnet launch. The chain is fixed to the mainnet the project's chain stands in for (Robinhood Chain 4663 or Arbitrum One 42161). Contracts are label and address rows, linked to that mainnet's explorer on the public page, the Token launch panel and in the exports. The companion contract is chosen among the templates accepted on the Build step that carry a Pons fit line, so the Pons pairing names the template the companion is built from. On a Robinhood project the Pons launch's token address and creator fee recipient are recorded too; an Arbitrum project sees a note instead, since Pons runs on Robinhood Chain mainnet only. The record is optional and never injected (a project without one hashes as before), published with the record, and reachable to agents through `update_project` (`mainnet`), `get_project_status` and the `project` block of `get_launch`. Each signal is omitted silently if it fails to load. See [Public pages](public-pages.md).
+**Mainnet and Pons pairing (M70).** Under Deployments, a project records its mainnet deployment beside the testnet launch. The chain is fixed to the mainnet the project's chain stands in for (Robinhood Chain 4663 or Arbitrum One 42161). Contracts are label and address rows, linked to that mainnet's explorer on the public page, the Token launch panel and in the exports. The companion contract is chosen among the templates accepted on the Build step that carry a Pons fit line, so the Pons pairing names the template the companion is built from. On a Robinhood project the Pons launch's token address and creator fee recipient are recorded too; an Arbitrum project sees a note instead, since Pons runs on Robinhood Chain mainnet only. The record is optional and never injected (a project without one hashes as before), published with the record, and reachable to agents through `update_project` (`mainnet`), `get_project_status` and the `project` block of `get_launch`. Each signal is omitted silently if it fails to load. See [Public pages](public-pages.md).
 
 ---
 
-## Build steps, one list under four milestones
+## Build steps (Build)
 
-The Build tab lists every step of every chosen shape under Design, Testnet, Review and Launch (the editor step a catalog step informs decides its milestone; `get_build_steps` reports it as `milestone`). A Now view shows the next three open steps. Review passes sit under Review as rows with a verdict, and Launch holds three derived rows, testnet contracts recorded, token linked, project published.
+The Build section lists every step of every chosen shape as one list under four milestones, Design, Testnet, Review and Launch. The editor area a catalog step informs decides its milestone, and `get_build_steps` reports it as `milestone`. A Now view shows the next three open steps; All steps shows the milestones in full, and the sidebar opens one milestone at a time. Each step carries a status (Todo, Done, Partial, Not applicable with a reason that leaves the count), the shapes it belongs to, a Read menu of the resources that help, an evidence line, the first contract template that fits it with Using and Not using and the rest behind a fold, and Remove. A step that is the same work across several chosen shapes (running the review passes, planning the fork and staging, choosing markets, assigning roles, the dead deposit, the scenario walk, the testnet deployment) is listed once with every shape's label; ticking it ticks the step for every shape, and the studio row, the public page, the readiness list, the exports and `get_build_steps` count it once.
 
-Between Reality and Review the editor shows one section per product shape the project builds, with a violet Build pill in the step nav so a builder can tell the product from the project record. Each section lists that shape's build steps in order, each with a checkbox, the editor step it informs and the resources that help. A step that is the same work across several chosen shapes (running the review passes, planning the fork and staging, choosing markets, assigning roles, the dead deposit, the scenario walk, the testnet deployment) is listed once under the first shape that has it, with "This step is also part of X and Y"; ticking it ticks the step for every shape, and the studio row, the public page, Review, the exports and `get_build_steps` count it once. A later section ends with how many of its steps are shared and listed above. These steps never block publishing. The list is a starting point. Any step can be removed with the bin beside it (a shared step goes for every shape it serves, and removed catalog steps sit under Removed steps where they can be restored with their tick), and a team can add its own steps at the end of a section with a title and an optional line on what done looks like, up to forty per project. Added steps are ticked and counted like the rest and show a Your step badge. An agent connected to the project's MCP server can tick, add, remove and restore steps through the same proposal flow as every other change.
+Review passes sit under Review as rows with a verdict each (Pass, Fail, Not applicable). Launch holds three rows derived from the record, testnet contracts recorded, token linked and project published, each opening the section that settles it. What this product includes folds out per shape: a ticked feature adds the steps it gates and ranks the templates it suggests first. These steps never block publishing. The list is a starting point: removed catalog steps sit under Removed steps where they can be restored with their tick, and a team can add its own steps under a shape with a title and an optional line on what done looks like, up to forty per project, ticked and counted like the rest and marked Your step. An agent connected to the project's MCP server can tick, add, remove and restore steps, record evidence and mark steps not applicable through the same proposal flow as every other change.
 
 ---
 
-## Review and publish
+## Readiness and publish (Publish)
 
-Publishing snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional. See [The two ideation tracks](two-tracks.md).
+The Publish section ends with a readiness list: the sector, subsector, shapes, starting point, build progress, stage, personas, worst case and security declarations as they stand, then either "Everything checks out" or the first open item with a button to the section that holds it. Decisions and Publish carry a dot in the sidebar while they hold open items, and the Publish button's tooltip names the first one. Publishing snapshots the document and assigns a public slug under `/p/...`. Linking to a token design is optional. See [The two ideation tracks](two-tracks.md).
 
 ---
 

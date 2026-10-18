@@ -15,7 +15,7 @@ Every published Product or Token design page (`/p/[slug]` and `/t/[slug]`) has t
 
 ### Exports from a draft
 
-A project's research happens before publishing, so its owner can export from the current draft. The Review step of the project editor offers both files once the project has a product shape; the route is `/api/export/project/<project id>` and answers only to the signed-in owner, 404 to anyone else.
+A project's research happens before publishing, so its owner can export from the current draft. The Publish section of the project page offers both files once the project has a product shape; the route is `/api/export/project/<project id>` and answers only to the signed-in owner, 404 to anyone else.
 
 | Artifact | Purpose |
 |----------|---------|
@@ -82,7 +82,7 @@ It adds the shared server, reads the launch by address (curve, pool, sales, and 
 | Launch success screen | The prompt in a copy block, right after launching |
 | Studio, Launches list | An **Agent prompt** button on each launch row |
 | Token page | An **Agent prompt** button across from the name, for the account the launch is recorded to. Other visitors do not see it |
-| Studio, project page | An **Agent prompt** button beside each launch in the Token launch panel |
+| Studio, project page | An **Agent prompt** button beside each launch in the Token launch panel on Overview |
 
 Reading a launch needs no sign-in. The prompt only asks you to authenticate if you want your own launches through `get_my_launches`.
 
@@ -90,7 +90,7 @@ A launch is linked to a project on the launch form or afterwards in the studio, 
 
 ### The project prompt
 
-Open a project in the studio. The **Agent prompt** button across from the project's name, and the connect card at the bottom of the page, open the guide for that project's server. It leads with one prompt to paste, and its last step follows the write mode you pick at the top of the guide. Under "Read the steps yourself" the guide also has every step by hand: the add command, signing in with `/mcp`, checking with `claude mcp list`, example prompts, the server address for other apps, troubleshooting and the command to remove the server.
+Open a project in the studio. The **Agent prompt** button across from the project's name opens the guide for that project's server, and the connect block on Overview carries the add command and the prompt. It leads with one prompt to paste, and its last step follows the write mode you pick at the top of the guide. Under "Read the steps yourself" the guide also has every step by hand: the add command, signing in with `/mcp`, checking with `claude mcp list`, example prompts, the server address for other apps, troubleshooting and the command to remove the server.
 
 ## Project-scoped servers
 
@@ -127,7 +127,7 @@ The scoped server also registers one prompt, `prelaunch_review`. In Claude Code 
 
 ### Writing to a draft
 
-An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how, either at the top of the project's agent guide or on the project page under Agent changes. A proposal is decided line by line there: the owner can drop a line, edit a value before accepting it, or accept and reject the whole change. Only the lines the owner kept reach the draft, and `get_agent_changes` shows them as `appliedPatch` beside the original `patch`.
+An agent on a project's server can change that project's draft, tick build steps, and change the linked token design's draft. The owner decides how, either at the top of the project's agent guide or on the project page under Overview. A proposal is accepted or rejected whole there (Accept all, Reject all), with the draft's current value shown beside the agent's for each line. `get_agent_changes` shows what reached the draft as `appliedPatch` beside the original `patch`.
 
 | Mode | What happens to a change |
 |------|--------------------------|
@@ -153,7 +153,7 @@ An agent on a project's server can change that project's draft, tick build steps
 | `link_launch` | Link a token launched through CanHav to the project. `token` is the full address, the short form the studio shows (`0x1234…abcd`, matched against the account's launches) or the token page link. The launch must belong to the owner's account and sit on the project's chain; a launch linked to another project moves. Immediate in both modes, listed under Agent changes as Launch link |
 | `unlink_launch` | Take a token linked to this project off it. Same `token` forms |
 | `withdraw_changes` | Take back proposals the owner has not decided yet, by `changeIds` or `all: true`. A withdrawn proposal leaves the projection at once and stays in the history as Withdrawn by agent. Accepted, rejected and direct writes cannot be taken back |
-| `get_agent_changes` | The owner's mode, the newest agent `session` (state with `view`, which reads `stale` for a working session older than thirty minutes, title, message, plan with `progress`, link) and the recent agent changes with their status (proposed, applied, accepted, rejected, withdrawn). An accepted row carries `appliedPatch`, the part of the proposal the owner let through, possibly edited line by line |
+| `get_agent_changes` | The owner's mode, the newest agent `session` (state with `view`, which reads `stale` for a working session older than thirty minutes, title, message, plan with `progress`, link) and the recent agent changes with their status (proposed, applied, accepted, rejected, withdrawn). An accepted row carries `appliedPatch`, what reached the draft |
 
 Every write tool takes an optional `note` for the owner and answers with `outcome`, either `proposed` or `applied`, plus `pending` (how many proposals wait, their ids and the review URL) and, for a project with a product shape, `projectedProgress`, the build progress once the waiting proposals are accepted.
 
@@ -161,13 +161,13 @@ Projected state. In propose mode every read tool on a project server (`get_proje
 
 Input that breaks a rule is refused with the field and the number that broke it, for example `changes.architecture.contracts is 812 characters, max 800. Nothing was changed.` Up to three problems are named per call. The same wording appears in the studio when a proposal cannot be accepted. The limits themselves are the editor's (`PROJECT_LIMITS` and `TOKEN_DESIGN_LIMITS` in `lib/ideation.ts`, `KIT_LIMITS` in `lib/kits.ts`); a note is at most 400 characters.
 
-The paste prompt and the kit SKILL files ask the agent to tick each build step with `set_build_steps` as soon as it is done, with a note naming the file, and to record architecture facts as it learns them rather than at the end of a run. The owner sees each arrival as a notice at the bottom right of the open project editor, and the studio home marks a project row with the number of proposals waiting and the date of the newest direct write.
+The paste prompt and the kit SKILL files ask the agent to tick each build step with `set_build_steps` as soon as it is done, with a note naming the file, and to record architecture facts as it learns them rather than at the end of a run. The owner sees each arrival as a notice at the bottom right of the open project page, and the studio home marks a project row with the number of proposals waiting and the date of the newest direct write.
 
-Agent sessions. After Linear's agent sessions, an agent reports what it is doing with `report_session`: a plan before it starts, the plan updated after each step, `awaiting_input` with a message when it needs the owner, and `done` or `error` at the end. The project editor shows the live session at the top of Agent changes (state, title, message, the plan as a checklist, when it last reported, the link), the notice at the bottom right fires when the agent waits on the owner or finishes, and the studio row reads Agent working, Waiting on you or Agent error. A working session that stops reporting reads as stale after thirty minutes; the next report revives it. The paste prompt, the build steps prompt and every kit SKILL file ask for it.
+Agent sessions. After Linear's agent sessions, an agent reports what it is doing with `report_session`: a plan before it starts, the plan updated after each step, `awaiting_input` with a message when it needs the owner, and `done` or `error` at the end. The project page shows the live session on Overview (state, title, message, the plan as a checklist, when it last reported, the link), and the header line reads Agent working or Waiting on you; the notice at the bottom right fires when the agent waits on the owner or finishes, and the studio row reads Agent working, Waiting on you or Agent error. A working session that stops reporting reads as stale after thirty minutes; the next report revives it. The paste prompt, the build steps prompt and every kit SKILL file ask for it.
 
 What an agent cannot do. Publish or unpublish. Tick the distribution acknowledgement. Unlink a token design (it can start one for a project that has none, and it can link or unlink a launch the account owns). Change the chain of a project that already has a token. These stay with a person in the studio.
 
-If an agent writes while the editor is open, the editor takes the new draft when nothing is unsaved. If there is unsaved typing, saving pauses and the editor asks for a reload, so neither side overwrites the other without anyone seeing it.
+If an agent writes while the project page is open, the page takes the new draft when nothing is unsaved. If there is unsaved typing, saving pauses and the page asks for a reload, so neither side overwrites the other without anyone seeing it.
 
 ### Resource pack fields
 

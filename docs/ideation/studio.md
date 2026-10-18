@@ -2,18 +2,35 @@
 
 **Available now.** Requires a CanHav [account](../accounts/clerk-accounts.md).
 
-The studio (`/studio`) is where a signed-in account sees everything it owns: its launches, its projects and its token designs. The **Log in or sign up** button in the navigation opens it. Once you are signed in the button reads **Studio**. On every studio page a breadcrumb after the logo reads **Studio / <the project or token design you have open>**; the name opens a switcher that lists the rest and offers **New project** and **Studio home**. The account menu (wallets, sign out) sits at the right.
+The studio (`/studio`) is where a signed-in account sees everything it owns: its launches, its projects and its token designs. The **Log in or sign up** button in the navigation opens it. Once you are signed in the button reads **Studio**.
+
+On every studio page the navigation carries a breadcrumb after the logo, **Studio / the project or token design you have open**. The name opens a switcher that lists your projects and token designs with the current one marked, plus **New project** and **Studio home**. On the studio home the breadcrumb reads **Studio** alone and the switcher sits on that word. The account menu (wallets, sign out) sits at the right. On a phone the breadcrumb shows only the name.
+
+A command menu opens with Cmd K (Ctrl K elsewhere) or the key hint in the studio header. It creates a project or a token design, goes to a studio page, opens any of your records, and on a project page jumps to a section.
 
 ## The studio page
 
 | Section | What it lists |
 |---------|---------------|
-| Start something new | The **Token Design** card creates a blank design. The **Studio** card opens the new project pop up (also under **New project** in the command menu and the nav switcher, and at `/studio/new` as a deep link), four short steps: the name (required), a sector or "I have not decided yet", the chain and one line on what it does, then a logo and whether you want a native token (yes starts a linked token design named after the project). Only the name is needed. |
+| Start something new | The **Token Design** card creates a blank design. The **Studio** card opens the new project pop up. |
 | Launches | A collapsed summary with the count and the newest token. Open it for the three newest launches, each row opening the token page. With more than three launches a **View all launches** button opens the full list in a new tab. |
 | Token designs | Your token design drafts and published designs that have not launched. |
-| In progress | Your project drafts and published projects that have not launched, each with its linked token design. |
+| In progress | Your project drafts and published projects that have not launched, each with its linked token design, its build progress and, when an agent is connected, whether it is working, waiting on you or has proposals for you. |
 
 A record whose token has launched leaves the two lists above and shows under Launches, with a **Launched** chip wherever it appears. Launched records cannot be deleted; the API answers with the reason.
+
+### Starting a project
+
+The new project pop up opens from the **Studio** card, from **New project** in the command menu and in the switcher, and at `/studio/new` as a deep link. It stays on the page you are on. Four short steps, and only the first is required:
+
+| Step | Asks |
+|------|------|
+| Name | The project name, three characters or more. Enter moves on. |
+| Sector | One of the six sectors as a card, or **I have not decided yet**. Optional. |
+| Chain | Robinhood testnet (the default) or Arbitrum Sepolia, and a short description of the project. Optional. |
+| Logo and token | A logo, and whether you want a native token: **Yes**, **No** or **Not sure**. Yes creates a token design named after the project and links it. Optional. |
+
+Every step says the same thing at the bottom: everything here can be changed later while you ideate and build. **Create project** makes the project and opens it. Nothing is stored until then, so closing the pop up leaves nothing behind.
 
 ### The launches page
 
@@ -29,36 +46,78 @@ A record whose token has launched leaves the two lists above and shows under Lau
 
 A launch appears here when it was made while you were signed in. A launch that reached you only through a token design has no project control of its own; it follows the design's link.
 
-## The project editor
+## The project page
 
-Every step keeps at most one short line under a field. Longer helper copy sits behind the info icon beside the label; blurbs, the review and reality intros and the venue facts open from a collapsed row. Nothing moved out of the MCP pack or the exports, so an agent reads exactly what it read before.
+A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's five sections, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
 
+| Section | Holds |
+|---------|-------|
+| Overview | What the project is in one strip, the agent, how to connect one, the resource pack, the linked token design and the token launch panel |
+| Build | Every build step under four milestones, Design, Testnet, Review and Launch |
+| Decisions | What you are building, the chain, the contract templates you decided on, the contract architecture, the security declarations and your project files |
+| Deployments | Testnet contracts, the tokens linked to the project, the mainnet record |
+| Publish | The rest of the public record, the readiness list and the hand off to your agent |
 
-A project opens at `/studio/project/<id>`. Its steps are Basics, Architecture, Security, Reality, one step per product shape, and Review. The fields are described in [Product track](product-track.md).
+The sidebar also lists **Agent changes** (Overview, scrolled to the agent) and, once published, **Public page**. Decisions and Publish carry a dot while they hold fields the public record still needs. The fields themselves are described in [Product track](product-track.md).
 
-Across from the project's name:
+### The header
 
-| Button | What it does |
-|--------|--------------|
-| Link a token (Token launch once one is linked) | Jumps to the Token launch panel |
+Across from the project's name, on every section:
+
+| Control | What it does |
+|---------|--------------|
+| Agent line | Connect agent, Agent connected, Agent working or Waiting on you, from the connected agent's last report |
+| Link a token (Token launch once one is linked) | Jumps to the Token launch panel on Overview |
 | Agent prompt | Opens the guide for connecting an agent to this project |
-| Publish, Republish, Unpublish | Publishes a snapshot to `/p/<slug>` |
+| Draft or Published | The record's state, with the public link once published |
+| Publish, Republish, Unpublish | Publishes a snapshot to `/p/<slug>`. Disabled while the readiness list has open items, with the first one as the tooltip |
 
-Further down the page, on every step:
+Edits save on their own a moment after you stop typing. If an agent writes to the draft while the page is open and nothing here is unsaved, the page takes the new draft; with unsaved typing it pauses saving and asks for a reload instead.
 
-| Panel | What it does |
-|-------|--------------|
-| Agent changes | How agents may write to this project (Propose changes, Write directly, or Off), proposals waiting for you, and the history. A proposal is decided line by line: untick a line to leave it out, or edit a value before you accept it |
+### Overview
+
+| Block | What it shows |
+|-------|---------------|
+| The strip | The short description, the product shapes, the chain, the stage and the build progress |
+| Resource pack | One line with how many core resources your agent holds, and **Read** opens the pack in a drawer where you can tick and untick what the agent is given. The pack itself lives with the agent, through `get_resource_pack`, `RESOURCES.md` and `AGENTS.md` |
+| Agent session | What the connected agent says it is doing: its state, a title, a message, its plan as a checklist and when it last reported |
+| How agents write | Propose changes (the default), Write directly, or Off |
+| Waiting for you | Proposals the agent made, each with the current value beside the agent's, with **Accept all** and **Reject all**. A proposal that builds on earlier ones is accepted after them |
+| Earlier changes | The history of what agents proposed, wrote, and what you decided |
+| Read this project from your agent | The add command and the prompt to paste |
 | Linked token design | Link, create and link, or unlink a token design |
-| Token launch | The launches linked to this project, each with an Agent prompt and Unlink, a picker for your unlinked launches on the same chain, and a link to launch a token from the project |
-| Read this project from your agent | The connect card for the project's MCP server |
+| Token launch | The launches linked to this project, each with an Agent prompt and Unlink, a picker for your unlinked launches on the same chain, a field to link one by address, short form or page link, and a link to launch a token from the project |
 
-Other things worth knowing:
+### Build
 
-- **Chain.** A project builds on Robinhood testnet or Arbitrum Sepolia, chosen in Basics. It is fixed once a token is linked to the project.
-- **Project files.** In the Architecture step you can add references to your own files (a spec, a repository path, a document link). They are never published. They appear in the draft exports and to an agent on the project's server.
-- **Build steps.** Each product shape has its own step with a checklist. You can add your own steps and remove ones that do not apply.
-- **Exports.** The Review step offers `RESOURCES.md` and `AGENTS.md` built from the draft, once the project has a product shape.
+Build lists every step of every chosen shape as one list under four milestones. **Now** shows the next three open steps; **All steps** shows the milestones in full, and the sidebar's Design, Testnet, Review and Launch items open one milestone at a time (`?tab=build&milestone=testnet`). With more than one shape a shape filter narrows the list.
+
+| On a step | What it does |
+|-----------|--------------|
+| Status | Todo, Done, Partial (a step shared between shapes ticked for some of them) or Not applicable. Done ticks the step for every shape that carries it. Not applicable asks for a reason, leaves the step out of the count and shows it struck through; Applies again brings it back |
+| Shape labels | Which chosen shapes the step belongs to |
+| Read | The two or three resources that help with this step |
+| Evidence | One line, a file, a test name, an address or a commit, stored with the step and shown in the exports |
+| Template | The first contract template that fits the step, with **Using** and **Not using**. The rest sit behind **+N more** with their full cards. A decision travels to every step that lists the template and to Decisions |
+| Remove | Takes the step out of the list. Removed catalog steps sit under **Removed steps** and can be restored with their tick |
+
+Under Review the pre-launch review passes sit as rows with a verdict each, Pass, Fail or Not applicable. Under Launch three rows are derived from the record, testnet contracts recorded, token linked and project published, each opening the section that settles it. **What this product includes** folds out per shape: a ticked feature adds the steps it gates and ranks the templates it suggests first. **Add a step** adds your own under a shape, ticked and counted like the rest, up to forty per project.
+
+Build steps never block publishing. An agent connected to the project's server ticks, adds, removes and restores them through the same proposal flow as every other change, and reads the milestone of each step as `milestone` on `get_build_steps`.
+
+### Decisions
+
+The choices with a reason behind them, each editable in place: what you are building (sectors, subsectors, product shapes, the starting point), the chain (fixed once a token is linked to the project), the contract templates decided on Build with the agent's note where an agent decided one, the contracts, external dependencies, oracles, admin functions and upgradeability, the worst case a bug could cause and the five security declarations, and your project files (a spec, a repository path, a document link, never published, visible to your agent).
+
+### Deployments
+
+One card for the project's chain. Testnet contracts as label and address rows, each with an explorer link, the address book link and the team wallet; the tokens launched from or linked to the project with their token page and explorer links; and the mainnet record, the contracts, the companion template, the Pons pairing and the external trading pair. See [Projects and launches](../token-launch/projects-and-launches.md).
+
+### Publish
+
+The fields of the public record that no other section holds: name, logo, what it does, who you sell to and the personas, who pays, why this chain, the stage, where the first hundred users come from, the GitHub repo, the website and, on a Robinhood project, the distribution acknowledgement. Under them the readiness list summarises the record and names what is still missing, with an **Open Decisions** button where the field lives there. Once everything checks out, publish from the header. The hand off block offers `RESOURCES.md` and `AGENTS.md` built from the draft, the link to launch a token from the project and the prompt that makes an agent load the resource pack.
+
+Publishing snapshots the document and assigns a public slug under `/p/...`. See [Public pages](public-pages.md).
 
 ## The token design editor
 
@@ -66,10 +125,11 @@ A token design opens at `/studio/token/<id>`. Its sections are described in [Tok
 
 ## Agents in the studio
 
-Every project has its own MCP server, and every launch has a ready prompt. See [Markdown export and MCP](../ai/export-and-mcp.md) for the tools, the write modes, and what an agent can never do (publish, link, or change a locked chain).
+Every project has its own MCP server, and every launch has a ready prompt. See [Markdown export and MCP](../ai/export-and-mcp.md) for the tools, the write modes, and what an agent can never do (publish, link a token design, or change a locked chain).
 
 ## Related
 
 - [The two ideation tracks](two-tracks.md)
+- [Product track](product-track.md)
 - [Public pages](public-pages.md)
 - [Projects and launches](../token-launch/projects-and-launches.md)
