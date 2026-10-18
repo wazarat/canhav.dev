@@ -12,12 +12,11 @@ A command menu opens with Cmd K (Ctrl K elsewhere) or the key hint in the studio
 
 | Section | What it lists |
 |---------|---------------|
-| Start something new | The **Token Design** card creates a blank design. The **Studio** card opens the new project pop up. |
-| Launches | A collapsed summary with the count and the newest token. Open it for the three newest launches, each row opening the token page. With more than three launches a **View all launches** button opens the full list in a new tab. |
-| Token designs | Your token design drafts and published designs that have not launched. |
+| Start a project | One card that opens the new project pop up. The studio launches projects; a token design is started from a project (the pop up's last step, or the Overview's link panel) rather than from the home. |
+| Launches | A collapsed line, "You have launched N tokens", counting only this account's launches: the ones made while signed in and the ones its verified wallets created on chain. Open it for the three newest, each row opening the token page. With more than three a **View all launches** button opens the full list in a new tab. |
 | In progress | Your project drafts and published projects that have not launched, each with its linked token design, its build progress and, when an agent is connected, whether it is working, waiting on you or has proposals for you. |
 
-A record whose token has launched leaves the two lists above and shows under Launches, with a **Launched** chip wherever it appears. Launched records cannot be deleted; the API answers with the reason.
+A project whose token has launched leaves the list and shows under Launches, with a **Launched** chip wherever it appears. Token designs are reached from their project, the switcher and the command menu. Launched records cannot be deleted; the API answers with the reason.
 
 ### Starting a project
 

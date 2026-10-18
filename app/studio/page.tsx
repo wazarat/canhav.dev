@@ -3,14 +3,13 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { EntityList, type TokenChipFacts } from "@/components/studio/EntityList";
+import { EntityList } from "@/components/studio/EntityList";
 import { LaunchesSummary } from "@/components/studio/LaunchesSummary";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { CommandMenuHint } from "@/components/studio/CommandMenuHint";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { getCurvesAllChains } from "@/lib/indexer";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import { signInRedirectTarget } from "@/lib/sign-in-redirect";
@@ -30,10 +29,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * The studio home (M75 order): the account row, the three track cards, the
- * launches summary, then the token designs and projects still in progress.
- * Launched records leave these two lists and live under Launches and on
- * /studio/launches.
+ * The studio home (M75 order, projects only since 2026-10-18): the account
+ * row, the start a project card, the launches summary, then the projects
+ * still in progress. Token designs are reached from a project's Overview,
+ * the switcher and the command menu. Launched records leave the list and
+ * live under Launches and on /studio/launches.
  *
  * ?redirect_url= is the sign-in round trip (the export gate, and Clerk's
  * OAuth consent screen during an MCP sign-in). The SignIn card follows it
@@ -95,13 +95,6 @@ export default async function StudioPage({
     agentActivityByOwner(user.id),
     latestSessionsByOwner(user.id),
   ]);
-  // Token build chips (M46). One curve read for every deployed design.
-  const deployedAny = (designs ?? []).some((d) => d.deployed_token_address);
-  const token: TokenChipFacts = {
-    linkedDesignIds: new Set(links.byDesign.keys()),
-    curves: deployedAny ? await getCurvesAllChains() : null,
-    now: Math.floor(Date.now() / 1000),
-  };
   const launched = launchedSets({
     launches: launches ?? [],
     designs: designs ?? [],
@@ -136,32 +129,20 @@ export default async function StudioPage({
         <div className="mt-10 space-y-10">
           <StudioTrackCards />
           <LaunchesSummary launches={launches} projects={linkProjects} />
-          <div className="grid gap-10 md:grid-cols-2">
-            <EntityList
-              title="Token designs"
-              rows={designs.filter((d) => !launched.designs.has(d.id))}
-              hrefBase="/studio/token"
-              publicBase="/t"
-              token={token}
-              empty="No token designs yet. A design is what you're issuing; product optional."
-              links={links.byDesign}
-              side="design"
-            />
-            <EntityList
-              title={STUDIO_COPY.inProgress}
-              rows={projects.filter((p) => !launched.projects.has(p.id))}
-              hrefBase="/studio/project"
-              publicBase="/p"
-              empty="No projects yet. A project is what you're building; token optional."
-              links={links.byProject}
-              side="project"
-              agent={agent}
-              sessions={sessions}
-            />
-          </div>
-          {launched.projects.size || launched.designs.size ? (
+          <EntityList
+            title={STUDIO_COPY.inProgress}
+            rows={projects.filter((p) => !launched.projects.has(p.id))}
+            hrefBase="/studio/project"
+            publicBase="/p"
+            empty="No projects yet. Start one above."
+            links={links.byProject}
+            side="project"
+            agent={agent}
+            sessions={sessions}
+          />
+          {launched.projects.size ? (
             <p className="text-xs text-ink-500">
-              {STUDIO_COPY.launches.draftsNote(launched.projects.size, launched.designs.size)}{" "}
+              {STUDIO_COPY.launches.draftsNote(launched.projects.size)}{" "}
               <Link
                 href="/studio/launches"
                 target="_blank"

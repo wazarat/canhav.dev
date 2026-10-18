@@ -851,7 +851,7 @@ export const MARKET_FACTS = [
 
 export const STUDIO_COPY = {
   kicker: "Studio",
-  title: "Ideation",
+  title: "Launch projects",
   /** The drafts list on the studio home (M91). The track itself is called Studio, so the list is not. */
   inProgress: "In progress",
   /** The nav switcher on studio routes (M92). The plan word is the product name, Studio or Studio+. */
@@ -869,9 +869,9 @@ export const STUDIO_COPY = {
     current: "Current",
   },
   subtitle:
-    "Ship a DeFi product that is researched before it is launched. Start " +
-    "with a token design grounded in real constraints and published " +
-    "tradeoffs; project records and agent launches follow on the same rails.",
+    "Start a project, build it with your agent over MCP, publish the record " +
+    "and launch its token when you are ready. Everything you have started is " +
+    "below.",
   /** Draft rows only. Published records are unpublished from their editor first. */
   delete: {
     action: "Delete",
@@ -934,10 +934,11 @@ export const STUDIO_COPY = {
   launches: {
     title: "Launches",
     /** The collapsed summary line. */
+    /** Only this account's launches, the ones made while signed in and the ones its verified wallets created. */
     summary: (count: number, newest: string | null) =>
       count === 1
-        ? `1 launch${newest ? `, ${newest}` : ""}`
-        : `${count} launches${newest ? `, newest ${newest}` : ""}`,
+        ? `You have launched 1 token${newest ? `, ${newest}` : ""}`
+        : `You have launched ${count} tokens${newest ? `, newest ${newest}` : ""}`,
     viewAll: "View all launches",
     viewAllHint: "Opens in a new tab",
     launchOne: "Launch a token",
@@ -951,8 +952,8 @@ export const STUDIO_COPY = {
     chainFilter: "Chain",
     allChains: "All chains",
     launchedChip: "Launched",
-    draftsNote: (projects: number, designs: number) =>
-      `${projects} launched project${projects === 1 ? "" : "s"} and ${designs} launched design${designs === 1 ? "" : "s"} are listed under Launches.`,
+    draftsNote: (projects: number) =>
+      `${projects} launched project${projects === 1 ? " is" : "s are"} listed under Launches.`,
   },
   /** The services offer for small teams, under the account row (2026-10-09). */
   pro: {
@@ -1080,22 +1081,12 @@ export const POST_LAUNCH_MILESTONE_COPY = {
 } as const;
 
 /** The three launch tracks, in launch order: tokens, then projects, then agents. */
+/** The one track card on the studio home (2026-10-18). The token design and agents launch cards left the home. */
 export const STUDIO_TRACKS = {
-  token: {
-    title: "Token Design",
-    description: "Design, sanity-check, and launch a token backed by research.",
-    cta: "Start a token design",
-    ctaWorking: "Creating a draft...",
-  },
   projects: {
-    title: "Studio",
-    description: "Keep track of what you are building and publish the record, token optional.",
+    title: "Start a project",
+    description: "Name it, pick a sector, build it with your agent and publish the record. A token is optional and starts from the project.",
     cta: "Start a project",
-  },
-  agents: {
-    title: "Agents Launch",
-    description: "Register and verify onchain agents for your product.",
-    note: "Coming soon. Opens after Projects.",
   },
 } as const;
 
