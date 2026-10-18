@@ -55,15 +55,19 @@ function IconGraphic({ icon: Icon, tint }: { icon: React.ComponentType<{ classNa
 
 /**
  * The sector step of the new project flow (M91): the six sectors as the
- * studio track cards, plus an undecided card, as one optional radio group.
- * Clicking the chosen card again clears it.
+ * studio track cards, then one thin full width row for "I have not decided
+ * yet", as one optional radio group. Clicking the chosen one again clears
+ * it.
  */
 export function SectorCards({ value, onChange }: { value: SectorChoice; onChange: (v: SectorChoice) => void }) {
   const C = NEW_PROJECT_COPY.sector;
-  const cards: Array<{ value: Sector | "undecided"; title: string; sentence: string }> = [
-    ...SECTOR_OPTIONS.map((o) => ({ value: o.value, title: o.title ?? o.label, sentence: o.sentence ?? "" })),
-    { value: "undecided", title: C.undecidedTitle, sentence: C.undecidedSentence },
-  ];
+  const cards: Array<{ value: Sector; title: string; sentence: string }> = SECTOR_OPTIONS.map((o) => ({
+    value: o.value,
+    title: o.title ?? o.label,
+    sentence: o.sentence ?? "",
+  }));
+  const undecided = value === "undecided";
+  const Undecided = ICONS.undecided;
   return (
     <div role="radiogroup" aria-label={C.label} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((card, i) => {
@@ -96,6 +100,31 @@ export function SectorCards({ value, onChange }: { value: SectorChoice; onChange
           </button>
         );
       })}
+      <button
+        type="button"
+        role="radio"
+        aria-checked={undecided}
+        onClick={() => onChange(undecided ? "" : "undecided")}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors sm:col-span-2 lg:col-span-3",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500/60",
+          undecided ? "border-ink-400 bg-ink-800/40" : "border-ink-700/60 hover:border-ink-500",
+        )}
+      >
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ink-700/60 bg-ink-900 text-ink-300">
+          <Undecided className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-ink-50">{C.undecidedTitle}</span>
+          <span className="block text-xs text-ink-400">{C.undecidedSentence}</span>
+        </span>
+        {undecided ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-ink-700/60 bg-ink-900 px-2 py-0.5 text-[11px] font-medium text-ink-100">
+            <Check aria-hidden className="h-3 w-3" />
+            {C.selected}
+          </span>
+        ) : null}
+      </button>
     </div>
   );
 }

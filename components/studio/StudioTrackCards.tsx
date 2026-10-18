@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { TrackCardShell, trackCardSurface } from "@/components/studio/TrackCardShell";
 import { SoonBadge } from "@/components/ui/SoonBadge";
 import { STUDIO_TRACKS } from "@/content/ideation";
+import { openNewProject } from "@/lib/new-project";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * and Studio (both live) → Agents Launch (coming soon). The card shell lives
  * in TrackCardShell (M91) so the new project flow's sector cards share it;
  * graphics are purpose-built minis. Since M91 the Studio card opens the new
- * project flow at /studio/new instead of creating a blank draft.
+ * project pop up instead of creating a blank draft.
  */
 
 /** Mini allocation meters: the token track's signature output. */
@@ -154,9 +154,10 @@ export function StudioTrackCards() {
           />
         </button>
 
-        <Link
-          href="/studio/new"
-          className={cn(trackCardSurface, "block hover:border-neon-500/60 focus-visible:ring-neon-500/70")}
+        <button
+          type="button"
+          onClick={openNewProject}
+          className={cn(trackCardSurface, "hover:border-neon-500/60 focus-visible:ring-neon-500/70")}
         >
           <TrackCardShell
             tint="neon"
@@ -170,7 +171,7 @@ export function StudioTrackCards() {
               </span>
             }
           />
-        </Link>
+        </button>
 
         <div className="glass overflow-hidden rounded-xl border border-ink-800/70">
           <TrackCardShell

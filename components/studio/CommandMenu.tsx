@@ -17,6 +17,7 @@ import {
   registeredCommands,
   subscribeCommands,
 } from "@/lib/command-menu";
+import { openNewProject } from "@/lib/new-project";
 import { cn } from "@/lib/utils";
 
 /**
@@ -93,7 +94,7 @@ export function CommandMenu() {
   const commands = useMemo<Command[]>(() => {
     const go = (href: string) => () => router.push(href);
     const fixed: Command[] = [
-      { id: "new:project", label: C.newProject, group: C.groups.create, hint: C.newProjectHint, keywords: "create", run: go("/studio/new") },
+      { id: "new:project", label: C.newProject, group: C.groups.create, hint: C.newProjectHint, keywords: "create", run: openNewProject },
       { id: "new:design", label: C.newDesign, group: C.groups.create, hint: C.newDesignHint, keywords: "create token", run: () => createDraft("token") },
       ...registered.filter((c) => c.group === C.groups.project),
       { id: "go:studio", label: C.studio, group: C.groups.go, run: go("/studio") },

@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { NewProjectWizard } from "@/components/studio/new/NewProjectWizard";
 import { NEW_PROJECT_COPY } from "@/content/studio-new";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
-import { imagesConfigured } from "@/lib/images";
+import { NEW_PROJECT_PARAM } from "@/lib/new-project";
 
 /**
- * The new project flow (M91): name, sector, chain and one line, logo and
- * token, then one POST that creates the project and opens it. A route
- * rather than a modal so the switcher, the command menu and the track card
- * can all link here and a reload keeps the page. Unlinked from navigation
- * like every studio page.
+ * The new project flow is a pop up on the studio pages (M91 follow up).
+ * This route is the deep link to it: signed in it lands on the studio home
+ * with the pop up open, signed out it goes through the sign in card and
+ * comes back here.
  */
 export const metadata: Metadata = {
   title: NEW_PROJECT_COPY.title,
@@ -23,7 +21,6 @@ export const dynamic = "force-dynamic";
 export default async function NewProjectPage() {
   if (!isAuthConfigured()) redirect("/studio");
   const user = await getSessionUser();
-  // The studio home's sign in card follows redirect_url back here.
   if (!user) redirect("/studio?redirect_url=/studio/new");
-  return <NewProjectWizard logoUploads={imagesConfigured()} />;
+  redirect(`/studio?${NEW_PROJECT_PARAM}=1`);
 }

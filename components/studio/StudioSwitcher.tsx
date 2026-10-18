@@ -14,6 +14,7 @@ import {
   studioEntityFromPath,
   subscribeStudioEntity,
 } from "@/lib/studio-entity";
+import { openNewProject } from "@/lib/new-project";
 import { cn } from "@/lib/utils";
 
 /**
@@ -118,7 +119,7 @@ function SwitcherItems({ current, go }: { current: StudioEntity | null; go: (hre
         </>
       )}
       <div className="my-1 border-t border-ink-700/40" />
-      <MenuItem onSelect={() => go("/studio/new")}>
+      <MenuItem onSelect={openNewProject}>
         <Plus aria-hidden className="h-3.5 w-3.5 text-ink-500" />
         {C.newProject}
       </MenuItem>

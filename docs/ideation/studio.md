@@ -8,7 +8,7 @@ The studio (`/studio`) is where a signed-in account sees everything it owns: its
 
 | Section | What it lists |
 |---------|---------------|
-| Start something new | The **Token Design** card creates a blank design. The **Studio** card opens the new project flow at `/studio/new`, four short steps: the name (required), a sector or "I have not decided yet", the chain and one line on what it does, then a logo and whether you want a native token (yes starts a linked token design named after the project). Only the name is needed. |
+| Start something new | The **Token Design** card creates a blank design. The **Studio** card opens the new project pop up (also under **New project** in the command menu and the nav switcher, and at `/studio/new` as a deep link), four short steps: the name (required), a sector or "I have not decided yet", the chain and one line on what it does, then a logo and whether you want a native token (yes starts a linked token design named after the project). Only the name is needed. |
 | Launches | A collapsed summary with the count and the newest token. Open it for the three newest launches, each row opening the token page. With more than three launches a **View all launches** button opens the full list in a new tab. |
 | Token designs | Your token design drafts and published designs that have not launched. |
 | In progress | Your project drafts and published projects that have not launched, each with its linked token design. |
