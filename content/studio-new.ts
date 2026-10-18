@@ -7,6 +7,8 @@ export const NEW_PROJECT_COPY = {
   kicker: "Studio",
   title: "Start a project",
   lead: "Four short steps. Only the name is needed now, the rest can wait for the editor.",
+  /** Under the body on every step. */
+  editableLater: "Everything here can be changed later, at any point while you ideate and build.",
   cancel: "Cancel",
   steps: {
     name: "Name",
@@ -28,16 +30,17 @@ export const NEW_PROJECT_COPY = {
     selected: "Chosen",
   },
   chain: {
-    whatItDoesLabel: "What it does",
+    whatItDoesLabel: "Short description of your project",
     whatItDoesHint: "One line is enough here. The full description comes later in the editor.",
     whatItDoesPlaceholder: "A vault that lends idle treasury into fixed rate markets.",
   },
   finish: {
     uploadsOff: "Logo upload is not set up on this deployment. Add a logo later from the editor.",
     tokenLabel: "Do you want a native token?",
-    tokenHint: "Yes starts a token design named after the project and links it. You can rename it or unlink it later.",
+    tokenHint: "Yes starts a token design named after the project and links it. You can rename it or unlink it later. No and Not sure start nothing; a design can be added from the project page at any time.",
     tokenYes: "Yes",
-    tokenNo: "Not now",
+    tokenNo: "No",
+    tokenUnsure: "Not sure",
   },
   actions: {
     back: "Back",

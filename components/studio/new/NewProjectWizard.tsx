@@ -24,7 +24,7 @@ interface Draft {
   chain: ProjectChain;
   whatItDoes: string;
   logo?: string;
-  wantsToken: "yes" | "no" | "";
+  wantsToken: "yes" | "no" | "unsure" | "";
 }
 
 const STEP_KEYS = ["name", "sector", "chain", "finish"] as const;
@@ -186,12 +186,14 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
               options={[
                 { value: "yes", label: C.finish.tokenYes },
                 { value: "no", label: C.finish.tokenNo },
+                { value: "unsure", label: C.finish.tokenUnsure },
               ]}
             />
             {draft.wantsToken === "yes" ? <NameTickerCheck designId="" name={draft.name} ticker="" /> : null}
           </>
         )}
 
+        <p className="text-xs text-ink-500">{C.editableLater}</p>
         {error ? (
           <StatusChip tone="error" variant="block">
             {error}
