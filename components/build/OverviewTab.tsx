@@ -37,6 +37,7 @@ export function OverviewTab({
   agent,
   paused,
   onPatchKit,
+  onOpenResources,
   linkPanel,
 }: {
   id: string;
@@ -46,6 +47,8 @@ export function OverviewTab({
   agent: AgentChangesHandle;
   paused: boolean;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  /** Opens the resources drawer on the pack. */
+  onOpenResources: () => void;
   /** The token design link, the launch panel and the MCP card, rendered by the server page. */
   linkPanel?: React.ReactNode;
 }) {
@@ -76,7 +79,7 @@ export function OverviewTab({
         </CardSection>
         {kit?.shape ? (
           <CardSection>
-            <ResourcesLine doc={doc} kit={kit} onPatchKit={onPatchKit} />
+            <ResourcesLine doc={doc} kit={kit} onOpen={onOpenResources} />
           </CardSection>
         ) : null}
       </Card>

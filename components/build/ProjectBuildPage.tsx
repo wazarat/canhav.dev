@@ -10,6 +10,7 @@ import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
 import { PublishTab } from "@/components/build/PublishTab";
+import { type ResourceView, ResourcesDrawer } from "@/components/build/ResourcesDrawer";
 import { useAgentChanges } from "@/components/build/useAgentChanges";
 import { useTabParam } from "@/components/build/useTabParam";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
@@ -74,6 +75,8 @@ export function ProjectBuildPage({
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
   const { tab, setTab, milestone, setMilestone } = useTabParam();
   const [activity, setActivity] = useState<(AgentActivity & { seq: number }) | null>(null);
+  /** The resources drawer's section, null while closed. */
+  const [resourceView, setResourceView] = useState<ResourceView | null>(null);
   const dismissActivity = useCallback(() => setActivity(null), []);
 
   /**
@@ -159,6 +162,7 @@ export function ProjectBuildPage({
         agent={agent}
         paused={stale}
         onPatchKit={patchKit}
+        onOpenResources={() => setResourceView("pack")}
         linkPanel={linkPanel}
       />
     ),
@@ -196,6 +200,7 @@ export function ProjectBuildPage({
           publicHref={published && slug ? `/p/${slug}` : null}
           onTab={setTab}
           onMilestone={setMilestone}
+          onResource={setResourceView}
         />
       </aside>
       <div className="min-w-0 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
@@ -225,6 +230,14 @@ export function ProjectBuildPage({
       <div className="mt-8">{body[tab]}</div>
       {activity ? <AgentActivityToast key={activity.seq} activity={activity} onDismiss={dismissActivity} /> : null}
       </div>
+      <ResourcesDrawer
+        view={resourceView}
+        onClose={() => setResourceView(null)}
+        doc={doc}
+        kit={kit}
+        chain={projectChainOf(doc)}
+        onPatchKit={patchKit}
+      />
     </div>
   );
 }

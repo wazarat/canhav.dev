@@ -108,7 +108,7 @@ Before publish, the Publish section requires an explicit acknowledgement from a 
 
 ### Computed
 
-Where each protocol family the chosen shapes rely on runs today (the testnet and mainnet status, the note, the source and the recommended path) is no longer shown on the page. An agent reads the same rows in `environment` on `get_resource_pack`, and the exports carry them.
+Where each protocol family the chosen shapes rely on runs today (the testnet and mainnet status, the note, the source and the recommended path) opens from the sidebar's Resources group as **Where protocols run**. An agent reads the same rows in `environment` on `get_resource_pack`, and the exports carry them.
 
 Optional verify signals attach for public credibility checks scoped to the **project**, not to a linked token: the GitHub repo and the website under Publish; the testnet contract addresses (label and address rows with explorer links), the address book and the team wallet under Deployments.
 

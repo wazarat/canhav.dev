@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, ChevronDown, ExternalLink, Globe, Hammer, LayoutDashboard, Scale, Server } from "lucide-react";
+import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, LayoutDashboard, Map, Scale, Server } from "lucide-react";
+
+import { RESOURCE_VIEWS, type ResourceView } from "@/components/build/ResourcesDrawer";
 
 import { AGENT_COPY } from "@/content/ideation";
 import { BUILD_COPY, BUILD_TABS, type BuildTab } from "@/content/build";
@@ -15,6 +17,12 @@ const ICONS: Record<BuildTab, React.ComponentType<{ className?: string }>> = {
   decisions: Scale,
   deployments: Server,
   publish: Globe,
+};
+
+const RESOURCE_ICONS: Record<ResourceView, React.ComponentType<{ className?: string }>> = {
+  pack: BookOpen,
+  templates: FileCode2,
+  environment: Map,
 };
 
 const ITEM = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors";
@@ -36,6 +44,7 @@ export function BuildSidebar({
   publicHref,
   onTab,
   onMilestone,
+  onResource,
 }: {
   name: string;
   logo: string | null;
@@ -46,7 +55,10 @@ export function BuildSidebar({
   publicHref: string | null;
   onTab: (tab: BuildTab) => void;
   onMilestone: (m: Milestone | "") => void;
+  /** Opens the resources drawer on one section. */
+  onResource: (view: ResourceView) => void;
 }) {
+  const R = BUILD_COPY.resources;
   return (
     <nav aria-label={BUILD_COPY.kicker} className="flex h-full flex-col gap-1 p-3">
       <div className="mb-3 flex items-center gap-2.5 px-2 pt-1">
@@ -123,6 +135,19 @@ export function BuildSidebar({
           <span className="flex-1 truncate">{BUILD_COPY.sidebar.publicPage}</span>
         </Link>
       ) : null}
+
+      <div className="my-2 border-t border-ink-700/40" />
+      <p className="px-3 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500">{R.groupTitle}</p>
+      <p className="px-3 pb-1.5 text-[11px] leading-relaxed text-ink-500">{R.groupHint}</p>
+      {RESOURCE_VIEWS.map((v) => {
+        const Icon = RESOURCE_ICONS[v];
+        return (
+          <button key={v} type="button" onClick={() => onResource(v)} className={cn(ITEM, IDLE)}>
+            <Icon className="h-4 w-4 shrink-0 text-ink-500" aria-hidden />
+            <span className="flex-1 truncate">{R.views[v]}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }

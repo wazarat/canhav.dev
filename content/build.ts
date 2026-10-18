@@ -107,6 +107,16 @@ export const BUILD_COPY = {
     drawerClose: "Close",
     saving: "Saving",
     saved: "Saved",
+    /** The sidebar group and the drawer sections (2026-10-18). */
+    groupTitle: "Resources",
+    groupHint: "Optional reading. Your agent gets all of it over MCP and picks what it needs.",
+    optional: "Reading this is optional. Your agent receives every section over MCP and chooses what to use; tick and untick here to shape what it is given.",
+    views: {
+      pack: "Resource pack",
+      templates: "Contract templates",
+      environment: "Where protocols run",
+    },
+    templatesNone: "No contract template fits the chosen shapes yet.",
   },
   overview: {
     progress: (done: number, total: number) => `Build ${done} of ${total}`,

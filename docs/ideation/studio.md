@@ -58,7 +58,7 @@ A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the lef
 | Deployments | Testnet contracts, the tokens linked to the project, the mainnet record |
 | Publish | The rest of the public record, the readiness list and the hand off to your agent |
 
-The sidebar also lists **Agent changes** (Overview, scrolled to the agent) and, once published, **Public page**. Decisions and Publish carry a dot while they hold fields the public record still needs. The fields themselves are described in [Product track](product-track.md).
+The sidebar also lists **Agent changes** (Overview, scrolled to the agent) and, once published, **Public page**. Under them a **Resources** group lists what the project gets from CanHav, each opening a drawer: the **Resource pack** (tick and untick what the agent is given), the **Contract templates** that fit the chosen shapes (Accept or Reject each) and **Where protocols run** (the testnet and mainnet status of each protocol the shapes rely on, with the recommended path). Reading them is optional; the agent receives every section over MCP and picks what it needs. Decisions and Publish carry a dot while they hold fields the public record still needs. The fields themselves are described in [Product track](product-track.md).
 
 ### The header
 
@@ -79,7 +79,7 @@ Edits save on their own a moment after you stop typing. If an agent writes to th
 | Block | What it shows |
 |-------|---------------|
 | The strip | The short description, the product shapes, the chain, the stage and the build progress |
-| Resource pack | One line with how many core resources your agent holds, and **Read** opens the pack in a drawer where you can tick and untick what the agent is given. The pack itself lives with the agent, through `get_resource_pack`, `RESOURCES.md` and `AGENTS.md` |
+| Resource pack | One line with how many core resources your agent holds, and **Read** opens the same drawer as the sidebar's Resource pack, where you can tick and untick what the agent is given. The pack itself lives with the agent, through `get_resource_pack`, `RESOURCES.md` and `AGENTS.md` |
 | Agent session | What the connected agent says it is doing: its state, a title, a message, its plan as a checklist and when it last reported |
 | How agents write | Propose changes (the default), Write directly, or Off |
 | Waiting for you | Proposals the agent made, each with the current value beside the agent's, with **Accept all** and **Reject all**. A proposal that builds on earlier ones is accepted after them |
