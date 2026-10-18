@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
 import { LogoField } from "@/components/ideation/LogoField";
-import { NameTickerCheck } from "@/components/ideation/NameTickerCheck";
 import { StepNav } from "@/components/ideation/StepNav";
 import { TextField } from "@/components/ideation/TextField";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
@@ -189,7 +188,6 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
                 { value: "unsure", label: C.finish.tokenUnsure },
               ]}
             />
-            {draft.wantsToken === "yes" ? <NameTickerCheck designId="" name={draft.name} ticker="" /> : null}
           </>
         )}
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BuildHeader } from "@/components/build/BuildHeader";
+import { BuildSidebar } from "@/components/build/BuildSidebar";
 import { BuildTab as BuildTabView } from "@/components/build/BuildTab";
 import { BuildTabs } from "@/components/build/BuildTabs";
 import { DecisionsTab } from "@/components/build/DecisionsTab";
@@ -71,7 +72,7 @@ export function ProjectBuildPage({
   const saveState = useAutosave(doc, save);
   const [heldRev, setHeldRev] = useState(initialRev);
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
-  const { tab, setTab } = useTabParam();
+  const { tab, setTab, milestone, setMilestone } = useTabParam();
   const [activity, setActivity] = useState<(AgentActivity & { seq: number }) | null>(null);
   const dismissActivity = useCallback(() => setActivity(null), []);
 
@@ -161,7 +162,17 @@ export function ProjectBuildPage({
         linkPanel={linkPanel}
       />
     ),
-    build: <BuildTabView kit={kit} chain={projectChainOf(doc)} facts={facts} onPatchKit={patchKit} onGoTab={setTab} />,
+    build: (
+      <BuildTabView
+        kit={kit}
+        chain={projectChainOf(doc)}
+        facts={facts}
+        milestone={milestone}
+        onMilestone={setMilestone}
+        onPatchKit={patchKit}
+        onGoTab={setTab}
+      />
+    ),
     decisions: (
       <DecisionsTab doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
@@ -171,8 +182,23 @@ export function ProjectBuildPage({
     ),
   };
 
+  const slug = publishStatus.kind === "published" ? publishStatus.slug : initialSlug;
+
   return (
-    <div className="container py-14 md:py-20">
+    <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
+      <aside className="hidden lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-r lg:border-ink-700/40">
+        <BuildSidebar
+          name={doc.name}
+          logo={doc.logo ?? null}
+          tab={tab}
+          milestone={milestone}
+          problems={tabDots}
+          publicHref={published && slug ? `/p/${slug}` : null}
+          onTab={setTab}
+          onMilestone={setMilestone}
+        />
+      </aside>
+      <div className="min-w-0 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
       <BuildHeader
         id={id}
         name={doc.name}
@@ -188,7 +214,7 @@ export function ProjectBuildPage({
         onUnpublish={unpublish}
         headerActions={headerActions}
       />
-      <div className="mt-8">
+      <div className="mt-6 lg:hidden">
         <BuildTabs tab={tab} onChange={setTab} problems={tabDots} />
       </div>
       {stale ? (
@@ -198,6 +224,7 @@ export function ProjectBuildPage({
       ) : null}
       <div className="mt-8">{body[tab]}</div>
       {activity ? <AgentActivityToast key={activity.seq} activity={activity} onDismiss={dismissActivity} /> : null}
+      </div>
     </div>
   );
 }

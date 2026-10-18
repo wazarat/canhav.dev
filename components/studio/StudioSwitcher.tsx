@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Check, ChevronDown, Plus } from "lucide-react";
 
@@ -33,7 +34,14 @@ const serverSnapshot = (): StudioEntity | null => null;
  * designs, the current one marked, plus New project and Studio home. The
  * name follows the editor as it is typed through lib/studio-entity.
  */
-export function StudioSwitcher({ plan = "studio" }: { plan?: StudioPlan }) {
+export function StudioSwitcher({
+  plan = "studio",
+  variant = "button",
+}: {
+  plan?: StudioPlan;
+  /** "breadcrumb" renders "/ Studio / <name>" after the logo, the name carrying the menu (2026-10-18). */
+  variant?: "button" | "breadcrumb";
+}) {
   const C = STUDIO_COPY.switcher;
   const router = useRouter();
   const pathname = usePathname();
@@ -42,6 +50,61 @@ export function StudioSwitcher({ plan = "studio" }: { plan?: StudioPlan }) {
   const fromPath = studioEntityFromPath(pathname);
   const current = live ?? (fromPath ? { ...fromPath, name: "" } : null);
   const name = current ? current.name.trim() || C.untitled : null;
+  const studioWord = (
+    <>
+      {C.studio}
+      {plan === "studio_plus" ? <span className="text-gradient-brand">{C.plus}</span> : null}
+    </>
+  );
+  const items = <SwitcherItems current={current} go={(href) => router.push(href)} />;
+
+  if (variant === "breadcrumb") {
+    const sep = (
+      <span aria-hidden className="text-ink-600">
+        /
+      </span>
+    );
+    const triggerClass =
+      "inline-flex max-w-[12rem] items-center gap-1 rounded-md px-1.5 py-1 text-sm font-medium text-ink-50 transition-colors hover:bg-ink-800/60";
+    return (
+      <div className="flex min-w-0 items-center gap-1.5">
+        {sep}
+        {name ? (
+          <>
+            <Link href="/studio" className="hidden shrink-0 text-sm font-medium text-ink-300 transition-colors hover:text-ink-50 sm:inline">
+              {studioWord}
+            </Link>
+            <span className="hidden sm:inline">{sep}</span>
+            <Menu
+              align="left"
+              width="w-72"
+              trigger={({ open, toggle }) => (
+                <button type="button" onClick={toggle} aria-expanded={open} aria-haspopup="menu" aria-label={C.open} className={triggerClass}>
+                  <span className="truncate">{name}</span>
+                  <ChevronDown aria-hidden className={cn("h-3.5 w-3.5 shrink-0 text-ink-500 transition-transform", open && "rotate-180")} />
+                </button>
+              )}
+            >
+              {items}
+            </Menu>
+          </>
+        ) : (
+          <Menu
+            align="left"
+            width="w-72"
+            trigger={({ open, toggle }) => (
+              <button type="button" onClick={toggle} aria-expanded={open} aria-haspopup="menu" aria-label={C.open} className={triggerClass}>
+                {studioWord}
+                <ChevronDown aria-hidden className={cn("h-3.5 w-3.5 shrink-0 text-ink-500 transition-transform", open && "rotate-180")} />
+              </button>
+            )}
+          >
+            {items}
+          </Menu>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Menu
@@ -56,10 +119,7 @@ export function StudioSwitcher({ plan = "studio" }: { plan?: StudioPlan }) {
           aria-label={C.open}
           className="max-w-[14rem] gap-1.5"
         >
-          <span className={cn("shrink-0", name && "hidden sm:inline")}>
-            {C.studio}
-            {plan === "studio_plus" ? <span className="text-gradient-brand">{C.plus}</span> : null}
-          </span>
+          <span className={cn("shrink-0", name && "hidden sm:inline")}>{studioWord}</span>
           {name ? (
             <>
               <span aria-hidden className="hidden text-ink-500 sm:inline">
@@ -73,7 +133,7 @@ export function StudioSwitcher({ plan = "studio" }: { plan?: StudioPlan }) {
       )}
     >
       {/* The panel mounts only while the menu is open, so the records load on every open. */}
-      <SwitcherItems current={current} go={(href) => router.push(href)} />
+      {items}
     </Menu>
   );
 }

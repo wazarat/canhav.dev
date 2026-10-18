@@ -151,6 +151,9 @@ export const BUILD_COPY = {
     decisions: "Decisions has open fields",
     publish: "Publish has open fields",
   } satisfies Record<ProblemTab, string>,
+  sidebar: {
+    publicPage: "Public page",
+  },
   classic: {
     placeholder: "This tab is on its way.",
     link: "Open the classic editor",

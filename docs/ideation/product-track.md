@@ -4,7 +4,7 @@
 
 The Product track is a design document for what you are building. A product with no token is a legitimate published outcome.
 
-Project page tabs: Overview, Build, Decisions, Deployments, Publish. The five tabs never change with the product shapes; shapes are labels and filters on the Build tab. Overview holds the agent (session, write mode, proposals), the connect block and the resource pack behind a Read drawer. Decisions holds what is being built, the chain, the template decisions, the architecture facts and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list.
+Project page sections: Overview, Build, Decisions, Deployments, Publish, in a left sidebar on wide screens (Build opens into Design, Testnet, Review and Launch) and a tab strip on phones. The five sections never change with the product shapes; shapes are labels and filters on the Build tab. Overview holds the agent (session, write mode, proposals), the connect block and the resource pack behind a Read drawer. Decisions holds what is being built, the chain, the template decisions, the architecture facts and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list.
 
 ---
 

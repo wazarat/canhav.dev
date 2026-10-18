@@ -2,7 +2,7 @@
 
 **Available now.** Requires a CanHav [account](../accounts/clerk-accounts.md).
 
-The studio (`/studio`) is where a signed-in account sees everything it owns: its launches, its projects and its token designs. The **Log in or sign up** button in the navigation opens it. Once you are signed in the button reads **Studio**, and on every studio page it becomes a switcher that names the project or token design you have open, lists the rest, and offers **New project** and **Studio home**. The account menu (wallets, sign out) sits beside it.
+The studio (`/studio`) is where a signed-in account sees everything it owns: its launches, its projects and its token designs. The **Log in or sign up** button in the navigation opens it. Once you are signed in the button reads **Studio**. On every studio page a breadcrumb after the logo reads **Studio / <the project or token design you have open>**; the name opens a switcher that lists the rest and offers **New project** and **Studio home**. The account menu (wallets, sign out) sits at the right.
 
 ## The studio page
 

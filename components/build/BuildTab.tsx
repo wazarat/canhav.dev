@@ -52,12 +52,17 @@ export function BuildTab({
   kit,
   chain,
   facts,
+  milestone,
+  onMilestone,
   onPatchKit,
   onGoTab,
 }: {
   kit: ProjectKit | undefined;
   chain: ProjectChain;
   facts: LaunchFacts;
+  /** The milestone in view, held in the URL by the page; empty for all. */
+  milestone: Milestone | "";
+  onMilestone: (m: Milestone | "") => void;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
   onGoTab: (tab: BuildTabName) => void;
 }) {
@@ -65,10 +70,14 @@ export function BuildTab({
   const shapes = kitShapes(kit);
   const shapesKey = shapes.join(",");
   const [shape, setShape] = useState<ProductShape | "">("");
-  const [milestone, setMilestone] = useState<Milestone | "">("");
-  const [view, setView] = useState<"now" | "all">("now");
+  const [view, setView] = useState<"now" | "all">(milestone ? "all" : "now");
   // A shape that left the kit must leave the filter too.
   useEffect(() => setShape(""), [shapesKey]);
+  // Picking a milestone (the sidebar, the filter) means seeing every step of it.
+  useEffect(() => {
+    if (milestone) setView("all");
+  }, [milestone]);
+  const setMilestone = onMilestone;
 
   const sections = useMemo(() => sectionsFor(shapes, kit ?? {}), [shapesKey, kit]); // eslint-disable-line react-hooks/exhaustive-deps
   const byMilestone = useMemo(() => groupsByMilestone(sections), [sections]);
