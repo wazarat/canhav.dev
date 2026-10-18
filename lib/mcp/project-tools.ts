@@ -58,6 +58,7 @@ import {
 import { agentStateOf, listAgentChanges, listPendingChanges, recordAgentChange, withdrawAgentChange } from "@/lib/agent-writes-db";
 import { linkLaunch } from "@/lib/launch-project";
 import { storeImageFromBase64, storeImageFromUrl } from "@/lib/images";
+import { milestoneOf, milestoneOfStep } from "@/lib/build-milestones";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY } from "@/content/ideation";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
@@ -659,7 +660,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's build steps",
       description:
-        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, whether it is ticked, its state (done, open or na with the reason when the team said it does not apply, which leaves the count),  evidence when a line was recorded with the tick, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
+        "The build steps for this project's product shapes, in order, each with its id, its shape, what done looks like, the editor step it informs, its milestone (design, testnet, review or launch, the group the studio's Build tab shows it under), whether it is ticked, its state (done, open or na with the reason when the team said it does not apply, which leaves the count),  evidence when a line was recorded with the tick, whether the team added it (custom), sharedWith, the ids of the same step under the project's other shapes, templates, the contract template ids that fit the step (decide them with set_template_decisions, read them with get_templates), and feature when a ticked feature gates the step. The features block lists what the product can include with on per feature (change it with set_features); gated lists the steps whose feature is not ticked. Steps shared between shapes count once in progress, so tick every id in sharedWith together. removed lists the catalog steps the team took out, which can be restored. Use the ids with set_build_steps." + PREVIEW_NOTE,
       inputSchema: PREVIEW,
     },
     async (args, ctx) => {
@@ -696,6 +697,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               title: i.title,
               detail: i.detail,
               editorStep: i.step as string | null,
+              milestone: milestoneOfStep(i.step),
               done: kit.checklist?.[i.id] === true,
               state: kit.notApplicable?.[i.id] ? "na" : kit.checklist?.[i.id] === true ? "done" : "open",
               ...(kit.notApplicable?.[i.id] ? { reason: kit.notApplicable[i.id] } : {}),
@@ -712,6 +714,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             title: c.title,
             detail: c.detail,
             editorStep: null,
+            milestone: milestoneOf({ key: c.id, step: "review", custom: true }),
             done: kit.checklist?.[c.id] === true,
             state: kit.notApplicable?.[c.id] ? "na" : kit.checklist?.[c.id] === true ? "done" : "open",
             ...(kit.notApplicable?.[c.id] ? { reason: kit.notApplicable[c.id] } : {}),

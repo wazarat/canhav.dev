@@ -13,6 +13,7 @@ import {
   templatesForShapes,
 } from "@/lib/templates";
 import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
+import { milestoneOf } from "@/lib/build-milestones";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { FAMILY_LABELS, shapeExamples, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
@@ -534,6 +535,7 @@ export function buildResourcePack(
           title: g.title,
           detail: g.detail,
           step: g.step,
+          milestone: milestoneOf(g),
           shape: section.shape,
           shapes: [...g.shapes],
           ids: [...g.ids],

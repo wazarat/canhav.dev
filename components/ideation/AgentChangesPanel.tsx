@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
@@ -8,52 +8,31 @@ import { Input, inputClasses } from "@/components/ui/Input";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { AGENT_COPY } from "@/content/ideation";
 import { AgentSessionCard } from "@/components/ideation/AgentSessionCard";
-import { type AgentSession, sessionEvent } from "@/lib/agent-sessions";
+import { type AgentChangeRow, useAgentChanges } from "@/components/build/useAgentChanges";
 import {
   type AgentActivity,
-  type AgentChange,
   type AgentChangeStatus,
-  type AgentWriteMode,
   type BuildStepsPatch,
   type ChangeLine,
-  type Decision,
   type LeafSpec,
-  type ProjectPatch,
-  applyBuildSteps,
-  applyProjectPatch,
   buildStepKeys,
   buildStepsPatchSchema,
   changeLines,
-  decidePatch,
-  firstIssue,
   leafSpec,
-  newChangeCounts,
   pathLabel,
-  projectPatchProblem,
   projectPatchSchema,
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
 
-type Row = AgentChange & { lines: ChangeLine[]; dependsOnEarlier?: boolean };
-
-interface State {
-  available: boolean;
-  mode: AgentWriteMode;
-  rev: number | null;
-  /** The newest agent session (M86), null before the first report. */
-  session?: AgentSession | null;
-  changes: Row[];
-}
+type Row = AgentChangeRow;
 
 /** The owner's per-card decision (M44): unticked lines and edited values. */
 interface CardDecision {
   dropped: Set<string>;
   edits: Record<string, unknown>;
 }
-
-const POLL_MS = 15_000;
 
 const STATUS_TONE: Record<AgentChangeStatus, StatusTone> = {
   proposed: "info",
@@ -68,11 +47,13 @@ const STATUS_TONE: Record<AgentChangeStatus, StatusTone> = {
  * lists proposals with the draft's current value beside the agent's, and
  * keeps a history of what agents wrote.
  *
- * Each pending line has a checkbox and, for a plain value, an inline editor
- * (M44). The decided patch is re-validated through the same schema the
- * agent's input passed, then merged into the editor's own copy for a project
- * change (so typing in progress is kept and autosave stores both) or written
- * by the server for a token design change.
+ * The poll, the mode switch and accept or reject live in useAgentChanges
+ * (M93), shared with the BUILD page. This panel keeps the per line editing
+ * (M44): each pending line has a checkbox and, for a plain value, an inline
+ * editor, and the decided patch goes to the hook, which re-validates it
+ * through the same schema the agent's input passed and merges it into the
+ * editor's own copy for a project change (so typing in progress is kept and
+ * autosave stores both) or has the server write a token design change.
  */
 export function AgentChangesPanel({
   projectId,
@@ -95,162 +76,23 @@ export function AgentChangesPanel({
   /** New rows since the last poll, or what is waiting on the first load (M79). */
   onActivity?: (activity: AgentActivity) => void;
 }) {
-  const [state, setState] = useState<State | null>(null);
-  const [working, setWorking] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const agent = useAgentChanges({ projectId, doc, rev, onApply, onRemoteChange, onActivity });
   const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Record<string, CardDecision>>({});
-  const base = `/api/ideation/projects/${projectId}/agent`;
-  const remote = useRef(onRemoteChange);
-  remote.current = onRemoteChange;
-  const held = useRef(rev);
-  held.current = rev;
-  const activity = useRef(onActivity);
-  activity.current = onActivity;
-  /** Ids seen by the previous poll; null until the first load (M79). */
-  const seen = useRef<Set<string> | null>(null);
-  /** The session the previous poll saw; undefined until the first load (M86). */
-  const seenSession = useRef<AgentSession | null | undefined>(undefined);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(base, { cache: "no-store" });
-      if (!res.ok) return;
-      const next = (await res.json()) as State;
-      setState(next);
-      const counts = newChangeCounts(seen.current, next.changes);
-      seen.current = new Set(next.changes.map((c) => c.id));
-      const moved = sessionEvent(seenSession.current, next.session ?? null);
-      seenSession.current = next.session ?? null;
-      const fresh = moved ? { ...(counts ?? { proposed: 0, written: 0, waiting: 0 }), session: moved } : counts;
-      if (fresh) activity.current?.(fresh);
-      if (next.rev !== null && held.current !== undefined && next.rev > held.current)
-        remote.current(next.rev);
-    } catch {
-      // A missed poll is fine, the next one catches up.
-    }
-  }, [base]);
-
-  useEffect(() => {
-    const onMode = () => void load();
-    window.addEventListener(AGENT_COPY.modeEvent, onMode);
-    return () => window.removeEventListener(AGENT_COPY.modeEvent, onMode);
-  }, [load]);
-
-  useEffect(() => {
-    void load();
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") void load();
-    }, POLL_MS);
-    return () => clearInterval(timer);
-  }, [load]);
-
-  if (!state) return null;
-
-  async function setMode(mode: AgentWriteMode) {
-    setError(null);
-    const before = state;
-    setState((s) => (s ? { ...s, mode } : s));
-    try {
-      const res = await fetch(base, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode }),
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      setState(before);
-      setError(AGENT_COPY.modeFailed);
-    }
-  }
+  if (!agent.state) return null;
+  const state = agent.state;
 
   const decisionOf = (id: string): CardDecision => decisions[id] ?? { dropped: new Set(), edits: {} };
   const setDecision = (id: string, next: CardDecision) => setDecisions((d) => ({ ...d, [id]: next }));
 
-  /** The patch the owner decided on, validated. */
-  function decided(change: Row): { ok: true; patch: unknown } | { ok: false; message: string } {
-    const d = decisionOf(change.id);
-    const decision: Decision = { dropped: d.dropped, edits: d.edits };
-    const patch = decidePatch(change.kind, change.patch, decision);
-    const schema =
-      change.kind === "build_steps"
-        ? buildStepsPatchSchema
-        : change.target === "project"
-          ? projectPatchSchema
-          : tokenDesignPatchSchema;
-    const parsed = schema.safeParse(patch);
-    if (!parsed.success) return { ok: false, message: firstIssue(parsed.error) };
-    // Dropping a line can leave the rest without what it relied on (M51).
-    if (change.kind === "fields" && change.target === "project") {
-      const problem = projectPatchProblem(doc, parsed.data as ProjectPatch);
-      if (problem) return { ok: false, message: problem };
-    }
-    return { ok: true, patch: parsed.data };
-  }
-
-  /** The project draft with the decided patch merged in. */
-  function merged(change: Row, patch: unknown): ProjectDoc | null {
-    if (change.kind === "build_steps") {
-      const parsed = buildStepsPatchSchema.safeParse(patch);
-      return parsed.success ? applyBuildSteps(doc, parsed.data as BuildStepsPatch) : null;
-    }
-    const parsed = projectPatchSchema.safeParse(patch);
-    return parsed.success ? applyProjectPatch(doc, parsed.data) : null;
-  }
-
   async function decide(change: Row, action: "accept" | "reject") {
-    setWorking(change.id);
-    setError(null);
-    setNotice(null);
     setCardErrors((e) => ({ ...e, [change.id]: "" }));
-    const inEditor = action === "accept" && change.target === "project";
-    let body: Record<string, unknown> = { action, appliedInEditor: inEditor };
-    let next: ProjectDoc | null = null;
-    if (action === "accept") {
-      const result = decided(change);
-      if (!result.ok) {
-        setCardErrors((e) => ({ ...e, [change.id]: result.message }));
-        setWorking(null);
-        return;
-      }
-      body = { ...body, patch: result.patch };
-      if (inEditor) {
-        next = merged(change, result.patch);
-        if (!next) {
-          setCardErrors((e) => ({ ...e, [change.id]: AGENT_COPY.invalidDecision }));
-          setWorking(null);
-          return;
-        }
-      }
-    }
-    try {
-      const res = await fetch(`${base}/${change.id}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const json = (await res.json().catch(() => null)) as { error?: string } | null;
-        if (res.status === 400 && json?.error) {
-          setCardErrors((e) => ({ ...e, [change.id]: json.error ?? "" }));
-          return;
-        }
-        throw new Error();
-      }
-      if (next) onApply(next);
-      if (action === "accept" && change.target === "token_design")
-        setNotice(AGENT_COPY.tokenAccepted);
-      await load();
-    } catch {
-      setError(AGENT_COPY.failed);
-    } finally {
-      setWorking(null);
-    }
+    const message = action === "accept" ? await agent.accept(change, decisionOf(change.id)) : await agent.reject(change);
+    if (message) setCardErrors((e) => ({ ...e, [change.id]: message }));
   }
 
-  const pending = state.changes.filter((c) => c.status === "proposed");
-  const earlier = state.changes.filter((c) => c.status !== "proposed");
+  const { pending, earlier, working, error, notice } = agent;
 
   return (
     <section
@@ -275,7 +117,7 @@ export function AgentChangesPanel({
               label={AGENT_COPY.modeLabel}
               hint={AGENT_COPY.modeHints[state.mode]}
               value={state.mode}
-              onChange={setMode}
+              onChange={(m) => void agent.setMode(m)}
               options={AGENT_COPY.modes}
             />
           </div>

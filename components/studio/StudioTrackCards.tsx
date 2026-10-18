@@ -1,26 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
+import { TrackCardShell, trackCardSurface } from "@/components/studio/TrackCardShell";
 import { SoonBadge } from "@/components/ui/SoonBadge";
 import { STUDIO_TRACKS } from "@/content/ideation";
 import { cn } from "@/lib/utils";
 
 /**
- * The studio's three launch tracks as product cards, in launch order:
- * Token Design and Projects (both live) → Agents Launch (coming soon).
- * Card shell follows the ProductLines conventions (glass, tinted visual
- * area, floating panel, bottom fade); graphics are purpose-built minis.
- * The icon tile header was removed on 2026-10-09.
+ * The studio's three tracks as product cards, in launch order: Token Design
+ * and Studio (both live) → Agents Launch (coming soon). The card shell lives
+ * in TrackCardShell (M91) so the new project flow's sector cards share it;
+ * graphics are purpose-built minis. Since M91 the Studio card opens the new
+ * project flow at /studio/new instead of creating a blank draft.
  */
-
-const TINTS = {
-  electric: "bg-[radial-gradient(120%_90%_at_50%_8%,rgba(61,123,255,0.22),transparent_62%)]",
-  neon: "bg-[radial-gradient(120%_90%_at_50%_8%,rgba(139,92,246,0.14),transparent_62%)]",
-  signal: "bg-[radial-gradient(120%_90%_at_50%_8%,rgba(34,211,238,0.12),transparent_62%)]",
-} as const;
 
 /** Mini allocation meters: the token track's signature output. */
 function TokenGraphic() {
@@ -101,63 +97,9 @@ function AgentsGraphic() {
   );
 }
 
-function CardShell({
-  tint,
-  badge,
-  graphic,
-  title,
-  description,
-  footer,
-  muted,
-}: {
-  tint: keyof typeof TINTS;
-  /** Sits over the top right of the visual band. */
-  badge?: React.ReactNode;
-  graphic: React.ReactNode;
-  title: string;
-  description: string;
-  footer: React.ReactNode;
-  muted?: boolean;
-}) {
-  return (
-    <>
-      <div
-        className={cn(
-          "relative h-[130px] overflow-hidden border-b border-ink-800/60 bg-ink-950/40",
-          TINTS[tint],
-        )}
-      >
-        {badge && <div className="absolute right-4 top-4 z-10">{badge}</div>}
-        <div
-          className={cn(
-            "mx-5 mt-5 rounded-t-xl border border-b-0 border-ink-700/70 bg-ink-950/90 p-3.5 shadow-[0_24px_50px_-24px_rgba(0,0,0,0.7)]",
-            muted && "opacity-60",
-          )}
-        >
-          {graphic}
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-ink-950/90" />
-      </div>
-      <div className="space-y-2 p-5">
-        <h3
-          className={cn(
-            "font-display text-lg font-semibold tracking-tight",
-            muted ? "text-ink-200" : "text-ink-50",
-          )}
-        >
-          {title}
-        </h3>
-        <p className="text-sm leading-relaxed text-ink-400">{description}</p>
-        {footer}
-      </div>
-    </>
-  );
-}
-
-/** Both live tracks create a blank draft the same way, then open its editor. */
+/** The token track creates a blank draft, then opens its editor. */
 const TRACK_ROUTES = {
   token: { api: "/api/ideation/token-designs", editor: "/studio/token" },
-  project: { api: "/api/ideation/projects", editor: "/studio/project" },
 } as const;
 
 type TrackKind = keyof typeof TRACK_ROUTES;
@@ -194,9 +136,9 @@ export function StudioTrackCards() {
           onClick={() => void createDraft("token")}
           disabled={working !== null}
           aria-busy={working === "token"}
-          className="group glass w-full overflow-hidden rounded-xl border border-ink-700/60 text-left transition-colors duration-150 hover:border-electric-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500/70 disabled:cursor-wait disabled:opacity-80"
+          className={cn(trackCardSurface, "hover:border-electric-500/60 focus-visible:ring-electric-500/70 disabled:cursor-wait disabled:opacity-80")}
         >
-          <CardShell
+          <TrackCardShell
             tint="electric"
             graphic={<TokenGraphic />}
             title={STUDIO_TRACKS.token.title}
@@ -212,31 +154,26 @@ export function StudioTrackCards() {
           />
         </button>
 
-        <button
-          type="button"
-          onClick={() => void createDraft("project")}
-          disabled={working !== null}
-          aria-busy={working === "project"}
-          className="group glass w-full overflow-hidden rounded-xl border border-ink-700/60 text-left transition-colors duration-150 hover:border-neon-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-500/70 disabled:cursor-wait disabled:opacity-80"
+        <Link
+          href="/studio/new"
+          className={cn(trackCardSurface, "block hover:border-neon-500/60 focus-visible:ring-neon-500/70")}
         >
-          <CardShell
+          <TrackCardShell
             tint="neon"
             graphic={<ProjectsGraphic />}
             title={STUDIO_TRACKS.projects.title}
             description={STUDIO_TRACKS.projects.description}
             footer={
               <span className="inline-flex items-center gap-1 pt-1 text-sm font-medium text-neon-400 transition-colors group-hover:text-ink-50">
-                {working === "project"
-                  ? STUDIO_TRACKS.projects.ctaWorking
-                  : STUDIO_TRACKS.projects.cta}
+                {STUDIO_TRACKS.projects.cta}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </span>
             }
           />
-        </button>
+        </Link>
 
         <div className="glass overflow-hidden rounded-xl border border-ink-800/70">
-          <CardShell
+          <TrackCardShell
             muted
             tint="signal"
             badge={<SoonBadge accent="signal" />}

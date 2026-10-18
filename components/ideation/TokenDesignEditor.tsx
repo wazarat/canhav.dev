@@ -334,6 +334,7 @@ export function TokenDesignEditor({
 
   return (
     <EditorShell
+      entity={{ kind: "token_design", id }}
       kicker="Token design"
       name={doc.name}
       logo={doc.logo ?? null}

@@ -1,0 +1,160 @@
+"use client";
+
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
+
+import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
+import { MainnetEditor } from "@/components/ideation/MainnetEditor";
+import { Card, CardSection } from "@/components/ui/Card";
+import { Field, Input } from "@/components/ui/Input";
+import { StatusChip } from "@/components/ui/StatusChip";
+import { BUILD_COPY } from "@/content/build";
+import { TESTNET_COPY } from "@/content/ideation";
+import { TEMPLATE_CATALOG } from "@/content/templates";
+import { chainInfo, projectChainOf } from "@/lib/chains";
+import { explorerAddressUrl, explorerTokenUrl } from "@/lib/explorer";
+import { type ProjectDoc, PROJECT_LIMITS, testnetContractRows } from "@/lib/ideation";
+import { kitShapes } from "@/lib/kits";
+import { templatesForShapes } from "@/lib/templates";
+
+/** A token tied to the project, a launch or the linked design's deployment. */
+export interface DeployedToken {
+  address: string;
+  name: string;
+  symbol: string | null;
+  /** ISO time when known. */
+  launchedAt: string | null;
+}
+
+function Heading({ children }: { children: React.ReactNode }) {
+  return <h2 className="font-display text-base font-semibold text-ink-50">{children}</h2>;
+}
+
+/**
+ * The Deployments tab (M96): one card for the project's chain. The testnet
+ * contracts with the address book and the team wallet, the tokens launched
+ * from or linked to the project, and the mainnet record with the Pons
+ * pairing and the external pair.
+ */
+export function DeploymentsTab({
+  doc,
+  patch,
+  setDoc,
+  tokens,
+}: {
+  doc: ProjectDoc;
+  patch: (p: Partial<ProjectDoc>) => void;
+  setDoc: (next: ProjectDoc) => void;
+  tokens: DeployedToken[];
+}) {
+  const D = BUILD_COPY.deployments;
+  const chainKey = projectChainOf(doc);
+  const chain = chainInfo(chainKey);
+  const companionOptions = templatesForShapes(TEMPLATE_CATALOG, kitShapes(doc.kit), chainKey)
+    .filter((t) => t.ponsFit && doc.kit?.templates?.[t.id] === "accepted")
+    .map((t) => ({ value: t.id, label: t.name }));
+  const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+
+  return (
+    <div className="max-w-2xl">
+      <Card>
+        <CardSection className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Heading>{D.testnet}</Heading>
+            <StatusChip tone="neutral">{chain.name}</StatusChip>
+          </div>
+          <Field label={TESTNET_COPY.contractsLabel} info={TESTNET_COPY.contractsHint}>
+            <ContractRowsEditor
+              rows={testnetContractRows(doc)}
+              onChange={(rows) => patch({ testnetContracts: rows.length ? rows : undefined })}
+              max={PROJECT_LIMITS.testnetContracts.max}
+              labelMax={PROJECT_LIMITS.mainnetLabel.max}
+              copy={TESTNET_COPY}
+              empty={() => ({ address: "" })}
+            />
+          </Field>
+          {testnetContractRows(doc).some((c) => /^0x[0-9a-f]{40}$/i.test(c.address)) ? (
+            <ul className="space-y-1 text-xs">
+              {testnetContractRows(doc)
+                .filter((c) => /^0x[0-9a-f]{40}$/i.test(c.address))
+                .map((c) => (
+                  <li key={c.address} className="flex flex-wrap items-center gap-2">
+                    <span className="text-ink-300">{c.label || short(c.address)}</span>
+                    <a
+                      href={explorerAddressUrl(c.address, chainKey)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 font-mono text-electric-300 transition-colors hover:text-electric-200"
+                    >
+                      {short(c.address)} <ExternalLink aria-hidden className="h-3 w-3" />
+                    </a>
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+          <Field label={TESTNET_COPY.addressBookLabel} info={TESTNET_COPY.addressBookHint}>
+            <Input
+              type="url"
+              value={doc.addressBook ?? ""}
+              onChange={(e) => patch({ addressBook: e.target.value.trim() || undefined })}
+              placeholder="https://"
+            />
+          </Field>
+          <Field label="Team wallet" info='Shown as "declared by team". Deploy history for this wallet renders on your public page.'>
+            <Input
+              value={doc.verifyWallet ?? ""}
+              onChange={(e) => patch({ verifyWallet: e.target.value.trim().toLowerCase() || undefined })}
+              placeholder="0x…"
+              className="font-mono text-xs"
+            />
+          </Field>
+        </CardSection>
+
+        <CardSection className="space-y-3">
+          <Heading>{D.tokens}</Heading>
+          {tokens.length === 0 ? (
+            <p className="text-xs text-ink-500">{D.tokensEmpty}</p>
+          ) : (
+            <ul className="space-y-2">
+              {tokens.map((t) => (
+                <li key={t.address} className="flex flex-wrap items-center gap-3 text-sm">
+                  <StatusChip tone="success">
+                    {t.name}
+                    {t.symbol ? ` $${t.symbol}` : ""}
+                  </StatusChip>
+                  <Link href={`/launch/t/${t.address}`} className="text-xs text-electric-300 transition-colors hover:text-electric-200">
+                    {D.tokenPage}
+                  </Link>
+                  <a
+                    href={explorerTokenUrl(t.address, chainKey)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 font-mono text-xs text-electric-300 transition-colors hover:text-electric-200"
+                  >
+                    {short(t.address)} <ExternalLink aria-hidden className="h-3 w-3" />
+                  </a>
+                  {t.launchedAt ? (
+                    <span className="text-[11px] text-ink-500">{new Date(t.launchedAt).toLocaleDateString("en-US")}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardSection>
+
+        <CardSection className="space-y-4">
+          <Heading>{D.mainnet}</Heading>
+          <MainnetEditor
+            mainnet={doc.mainnet}
+            chain={chainKey}
+            companionOptions={companionOptions}
+            onChange={(next) => {
+              const { mainnet: _old, ...rest } = doc;
+              setDoc(next ? { ...rest, mainnet: next } : (rest as ProjectDoc));
+            }}
+          />
+        </CardSection>
+      </Card>
+    </div>
+  );
+}

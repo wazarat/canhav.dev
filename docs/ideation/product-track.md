@@ -4,7 +4,7 @@
 
 The Product track is a design document for what you are building. A product with no token is a legitimate published outcome.
 
-Editor steps: Basics, Architecture, Security, Reality, then one step for each product shape the project is building, then Review.
+Project page tabs: Overview, Build, Decisions, Deployments, Publish. The five tabs never change with the product shapes; shapes are labels and filters on the Build tab. Overview holds the agent (session, write mode, proposals), the connect block and the resource pack behind a Read drawer. Decisions holds what is being built, the chain, the template decisions, the architecture facts and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list.
 
 ---
 
@@ -115,7 +115,9 @@ Optional verify signals (wallet, GitHub repo, testnet contract addresses) attach
 
 ---
 
-## Build steps, one section per product shape
+## Build steps, one list under four milestones
+
+The Build tab lists every step of every chosen shape under Design, Testnet, Review and Launch (the editor step a catalog step informs decides its milestone; `get_build_steps` reports it as `milestone`). A Now view shows the next three open steps. Review passes sit under Review as rows with a verdict, and Launch holds three derived rows, testnet contracts recorded, token linked, project published.
 
 Between Reality and Review the editor shows one section per product shape the project builds, with a violet Build pill in the step nav so a builder can tell the product from the project record. Each section lists that shape's build steps in order, each with a checkbox, the editor step it informs and the resources that help. A step that is the same work across several chosen shapes (running the review passes, planning the fork and staging, choosing markets, assigning roles, the dead deposit, the scenario walk, the testnet deployment) is listed once under the first shape that has it, with "This step is also part of X and Y"; ticking it ticks the step for every shape, and the studio row, the public page, Review, the exports and `get_build_steps` count it once. A later section ends with how many of its steps are shared and listed above. These steps never block publishing. The list is a starting point. Any step can be removed with the bin beside it (a shared step goes for every shape it serves, and removed catalog steps sit under Removed steps where they can be restored with their tick), and a team can add its own steps at the end of a section with a title and an optional line on what done looks like, up to forty per project. Added steps are ticked and counted like the rest and show a Your step badge. An agent connected to the project's MCP server can tick, add, remove and restore steps through the same proposal flow as every other change.
 

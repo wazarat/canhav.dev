@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { type SessionUser, getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
+import { projectDocFromCreate } from "@/lib/project-create";
 import { STUDIO_COPY } from "@/content/ideation";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/lib/ideation";
 import {
   createProject,
+  createProjectTokenLink,
   createTokenDesign,
   deleteProjectDraft,
   deleteTokenDesignDraft,
@@ -34,6 +36,8 @@ import {
  */
 
 const MAX_DOC_BYTES = 200_000;
+/** A create body is a handful of short fields; anything bigger is not from the studio. */
+const MAX_CREATE_BYTES = 20_000;
 const STALE_DRAFT = "This draft changed outside this editor. Reload to see the latest.";
 
 export async function authGate(): Promise<SessionUser | NextResponse> {
@@ -51,23 +55,46 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
   const table = kind === "project" ? ("projects" as const) : ("token_designs" as const);
 
   return {
-    /** POST /api/ideation/<entity> — create a blank draft. */
+    /**
+     * POST /api/ideation/<entity> — create a draft. A token design takes a
+     * name. A project takes the new project flow's fields (M91) and, with
+     * withTokenDesign, also starts a linked token design named after it.
+     */
     async create(req: Request) {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
-      let name = "";
+      let body: unknown = {};
       try {
-        const body = await req.json();
-        if (typeof body?.name === "string") name = body.name.slice(0, 60);
+        const raw = await req.text();
+        if (raw.length > MAX_CREATE_BYTES)
+          return NextResponse.json({ error: "Request too large." }, { status: 413 });
+        if (raw.trim()) body = JSON.parse(raw);
       } catch {
-        // empty body is fine
+        // empty or invalid body is fine, a blank draft is the answer
       }
-      const row =
-        kind === "project"
-          ? await createProject(gate.id, emptyProjectDoc(name))
-          : await createTokenDesign(gate.id, emptyTokenDesignDoc(name));
+      if (kind === "token_design") {
+        const name =
+          body && typeof body === "object" && typeof (body as { name?: unknown }).name === "string"
+            ? (body as { name: string }).name.slice(0, 60)
+            : "";
+        const row = await createTokenDesign(gate.id, emptyTokenDesignDoc(name));
+        if (!row) return db503();
+        return NextResponse.json({ id: row.id });
+      }
+      const { doc, withTokenDesign } = projectDocFromCreate(body);
+      const row = await createProject(gate.id, doc);
       if (!row) return db503();
-      return NextResponse.json({ id: row.id });
+      if (!withTokenDesign) return NextResponse.json({ id: row.id });
+      // The design is optional. If it cannot be made or linked, the project
+      // still answers and the wizard says the design was skipped.
+      const design = await createTokenDesign(gate.id, emptyTokenDesignDoc(doc.name));
+      if (!design) return NextResponse.json({ id: row.id, tokenDesignId: null });
+      const linked = await createProjectTokenLink(row.id, design.id, gate.id);
+      if (!linked.ok) {
+        await deleteTokenDesignDraft(design.id, gate.id);
+        return NextResponse.json({ id: row.id, tokenDesignId: null });
+      }
+      return NextResponse.json({ id: row.id, tokenDesignId: design.id });
     },
 
     /** GET /api/ideation/<entity> — list the caller's records. */

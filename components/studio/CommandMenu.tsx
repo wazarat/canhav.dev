@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
+import { STUDIO_ROUTES as ROUTES, useStudioRecords } from "@/components/studio/useStudioRecords";
 import { inputClasses } from "@/components/ui/Input";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { STUDIO_COPY } from "@/content/ideation";
@@ -18,22 +19,12 @@ import {
 } from "@/lib/command-menu";
 import { cn } from "@/lib/utils";
 
-const ROUTES = {
-  project: { api: "/api/ideation/projects", editor: "/studio/project" },
-  token: { api: "/api/ideation/token-designs", editor: "/studio/token" },
-} as const;
-
-interface Row {
-  id: string;
-  draft_doc: { name?: string };
-  updated_at: string;
-}
-
 /**
  * The studio command menu (M87), after Linear's Cmd K. Opens on Cmd K (Ctrl
  * K elsewhere) or the header hint anywhere under /studio. Static commands
  * create a draft or go to a page; the owner's projects and designs load on
- * first open; pages register their own commands through lib/command-menu.
+ * every open (useStudioRecords, shared with the nav switcher since M92);
+ * pages register their own commands through lib/command-menu.
  * One input, a grouped list, arrow keys and Enter. No dependency.
  */
 export function CommandMenu() {
@@ -41,8 +32,7 @@ export function CommandMenu() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const [records, setRecords] = useState<{ projects: Row[]; designs: Row[] } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { records, loading } = useStudioRecords(open);
   const [notice, setNotice] = useState<string | null>(null);
   const [registered, setRegistered] = useState<Command[]>(() => registeredCommands());
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,7 +48,16 @@ export function CommandMenu() {
 
   useModalBehavior({ onClose: close, containerRef, active: open });
 
-  useEffect(() => subscribeCommands(() => setRegistered(registeredCommands())), []);
+  // A page registers its commands from an effect that may run before this
+  // menu subscribes (children mount first), so the registry is read again
+  // on subscribe and on every open, not only on change.
+  useEffect(() => {
+    setRegistered(registeredCommands());
+    return subscribeCommands(() => setRegistered(registeredCommands()));
+  }, []);
+  useEffect(() => {
+    if (open) setRegistered(registeredCommands());
+  }, [open]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -76,29 +75,9 @@ export function CommandMenu() {
     };
   }, []);
 
-  // The owner's records, once per page load, the first time the menu opens.
   useEffect(() => {
-    if (!open) return;
-    inputRef.current?.focus();
-    if (records || loading) return;
-    let live = true;
-    setLoading(true);
-    Promise.all([ROUTES.project.api, ROUTES.token.api].map((url) => fetch(url, { cache: "no-store" })))
-      .then(async ([p, d]) => {
-        if (!p.ok || !d.ok) throw new Error();
-        const [pj, dj] = (await Promise.all([p.json(), d.json()])) as [{ rows: Row[] }, { rows: Row[] }];
-        if (live) setRecords({ projects: pj.rows, designs: dj.rows });
-      })
-      .catch(() => {
-        if (live) setRecords({ projects: [], designs: [] });
-      })
-      .finally(() => {
-        if (live) setLoading(false);
-      });
-    return () => {
-      live = false;
-    };
-  }, [open, records, loading]);
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   async function createDraft(kind: keyof typeof ROUTES) {
     const res = await fetch(ROUTES[kind].api, {
@@ -114,7 +93,7 @@ export function CommandMenu() {
   const commands = useMemo<Command[]>(() => {
     const go = (href: string) => () => router.push(href);
     const fixed: Command[] = [
-      { id: "new:project", label: C.newProject, group: C.groups.create, hint: C.newProjectHint, keywords: "create", run: () => createDraft("project") },
+      { id: "new:project", label: C.newProject, group: C.groups.create, hint: C.newProjectHint, keywords: "create", run: go("/studio/new") },
       { id: "new:design", label: C.newDesign, group: C.groups.create, hint: C.newDesignHint, keywords: "create token", run: () => createDraft("token") },
       ...registered.filter((c) => c.group === C.groups.project),
       { id: "go:studio", label: C.studio, group: C.groups.go, run: go("/studio") },

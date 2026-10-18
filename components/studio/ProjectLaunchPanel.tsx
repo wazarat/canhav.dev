@@ -35,6 +35,8 @@ export function ProjectLaunchPanel({
   candidates,
   venueLine = null,
   mainnet = null,
+  className,
+  showMainnet = true,
 }: {
   project: { id: string; name: string; hasKit: boolean };
   linked: PanelLaunch[];
@@ -44,6 +46,10 @@ export function ProjectLaunchPanel({
   venueLine?: string | null;
   /** The mainnet contracts and the Pons pairing the project records (M70). */
   mainnet?: MainnetView | null;
+  /** Replaces the default outer surface and margin (the BUILD page passes its own, M94). */
+  className?: string;
+  /** False on the BUILD page, where Deployments owns the mainnet record. */
+  showMainnet?: boolean;
 }) {
   const router = useRouter();
   const [choice, setChoice] = useState("");
@@ -91,7 +97,7 @@ export function ProjectLaunchPanel({
   return (
     <div
       id={LAUNCH_PROJECT_COPY.panelAnchor}
-      className="glass mt-6 max-w-2xl scroll-mt-28 rounded-xl border border-ink-800/70 p-5"
+      className={cn("scroll-mt-28", className ?? "glass mt-6 max-w-2xl rounded-xl border border-ink-800/70 p-5")}
     >
       <h3 className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.panelTitle}</h3>
       <p className="mt-1 text-xs text-ink-500">{LAUNCH_PROJECT_COPY.panelLead}</p>
@@ -184,6 +190,7 @@ export function ProjectLaunchPanel({
       </div>
       {error ? <p className="mt-2 text-xs text-rose-400">{error}</p> : null}
 
+      {showMainnet ? (
       <div className="mt-5 border-t border-ink-800/70 pt-4">
         <h4 className="text-xs font-medium text-ink-200">{MAINNET_COPY.panelTitle}</h4>
         {mainnet ? (
@@ -236,6 +243,7 @@ export function ProjectLaunchPanel({
           <p className="mt-1 text-xs text-ink-500">{MAINNET_COPY.panelNone}</p>
         )}
       </div>
+      ) : null}
 
       <LaunchAgentModal
         open={prompt !== null}

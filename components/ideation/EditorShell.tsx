@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 
 import { AutosaveIndicator } from "@/components/ideation/AutosaveIndicator";
@@ -8,12 +9,14 @@ import type { PublishStatus } from "@/components/ideation/usePublish";
 import type { SaveState } from "@/components/ideation/useAutosave";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { type StudioEntityKind, setStudioEntity } from "@/lib/studio-entity";
 
 /**
  * Shared chrome for both ideation editors: header (back link, name, autosave
  * + publish state), step pills, body, and back/next footer.
  */
 export function EditorShell({
+  entity,
   kicker,
   name,
   logo = null,
@@ -32,6 +35,8 @@ export function EditorShell({
   headerActions,
   children,
 }: {
+  /** The record this editor holds, for the nav switcher (M92). */
+  entity: { kind: StudioEntityKind; id: string };
   kicker: string;
   name: string;
   /** The record's logo (M90), shown beside the name. */
@@ -53,6 +58,12 @@ export function EditorShell({
   headerActions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  // The switcher follows the name as it is typed and clears on unmount.
+  useEffect(() => {
+    setStudioEntity({ kind: entity.kind, id: entity.id, name });
+    return () => setStudioEntity(null);
+  }, [entity.kind, entity.id, name]);
+
   const isPublished =
     publishStatus.kind === "published" ||
     (initialStatus === "published" && publishStatus.kind !== "unpublished");

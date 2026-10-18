@@ -2,16 +2,16 @@
 
 **Available now.** Requires a CanHav [account](../accounts/clerk-accounts.md).
 
-The studio (`/studio`) is where a signed-in account sees everything it owns: its launches, its projects and its token designs. The **Log in or sign up** button in the navigation opens it, and once you are signed in the button reads **Studio**.
+The studio (`/studio`) is where a signed-in account sees everything it owns: its launches, its projects and its token designs. The **Log in or sign up** button in the navigation opens it. Once you are signed in the button reads **Studio**, and on every studio page it becomes a switcher that names the project or token design you have open, lists the rest, and offers **New project** and **Studio home**. The account menu (wallets, sign out) sits beside it.
 
 ## The studio page
 
 | Section | What it lists |
 |---------|---------------|
-| Start something new | Cards that create a blank project or a blank token design. |
+| Start something new | The **Token Design** card creates a blank design. The **Studio** card opens the new project flow at `/studio/new`, four short steps: the name (required), a sector or "I have not decided yet", the chain and one line on what it does, then a logo and whether you want a native token (yes starts a linked token design named after the project). Only the name is needed. |
 | Launches | A collapsed summary with the count and the newest token. Open it for the three newest launches, each row opening the token page. With more than three launches a **View all launches** button opens the full list in a new tab. |
 | Token designs | Your token design drafts and published designs that have not launched. |
-| Projects | Your project drafts and published projects that have not launched, each with its linked token design. |
+| In progress | Your project drafts and published projects that have not launched, each with its linked token design. |
 
 A record whose token has launched leaves the two lists above and shows under Launches, with a **Launched** chip wherever it appears. Launched records cannot be deleted; the API answers with the reason.
 

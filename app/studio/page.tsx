@@ -7,7 +7,6 @@ import { EntityList, type TokenChipFacts } from "@/components/studio/EntityList"
 import { LaunchesSummary } from "@/components/studio/LaunchesSummary";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
-import { AccountMenu } from "@/components/studio/AccountMenu";
 import { CommandMenuHint } from "@/components/studio/CommandMenuHint";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -120,10 +119,7 @@ export default async function StudioPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         {header}
         <div className="flex flex-col items-end gap-3">
-          <div className="flex items-center gap-2">
-            <CommandMenuHint />
-            <AccountMenu />
-          </div>
+          <CommandMenuHint />
           <Button asChild variant="secondary">
             <Link href="/studiopro">{STUDIO_COPY.pro.join}</Link>
           </Button>
@@ -152,7 +148,7 @@ export default async function StudioPage({
               side="design"
             />
             <EntityList
-              title="Projects"
+              title={STUDIO_COPY.inProgress}
               rows={projects.filter((p) => !launched.projects.has(p.id))}
               hrefBase="/studio/project"
               publicBase="/p"

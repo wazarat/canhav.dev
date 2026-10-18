@@ -852,6 +852,22 @@ export const MARKET_FACTS = [
 export const STUDIO_COPY = {
   kicker: "Studio",
   title: "Ideation",
+  /** The drafts list on the studio home (M91). The track itself is called Studio, so the list is not. */
+  inProgress: "In progress",
+  /** The nav switcher on studio routes (M92). The plan word is the product name, Studio or Studio+. */
+  switcher: {
+    studio: "Studio",
+    plus: "+",
+    projects: "Projects",
+    designs: "Token designs",
+    newProject: "New project",
+    home: "Studio home",
+    loading: "Loading",
+    empty: "Nothing yet",
+    untitled: "Untitled",
+    open: "Switch project or design",
+    current: "Current",
+  },
   subtitle:
     "Ship a DeFi product that is researched before it is launched. Start " +
     "with a token design grounded in real constraints and published " +
@@ -891,7 +907,7 @@ export const STUDIO_COPY = {
       project: "This project",
     },
     newProject: "New project",
-    newProjectHint: "A blank draft in the studio",
+    newProjectHint: "Name, sector, chain and logo in four steps",
     newDesign: "New token design",
     newDesignHint: "A blank design draft",
     studio: "Studio home",
@@ -1072,10 +1088,9 @@ export const STUDIO_TRACKS = {
     ctaWorking: "Creating a draft...",
   },
   projects: {
-    title: "Projects",
-    description: "A published record of what you are building, token optional.",
+    title: "Studio",
+    description: "Keep track of what you are building and publish the record, token optional.",
     cta: "Start a project",
-    ctaWorking: "Creating a draft...",
   },
   agents: {
     title: "Agents Launch",

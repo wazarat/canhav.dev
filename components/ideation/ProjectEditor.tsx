@@ -394,6 +394,7 @@ export function ProjectEditor({
 
   return (
     <EditorShell
+      entity={{ kind: "project", id }}
       kicker="Project"
       name={doc.name}
       logo={doc.logo ?? null}

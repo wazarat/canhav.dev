@@ -32,6 +32,7 @@ export function LinkPanel({
   selfName,
   linked,
   candidates,
+  className,
 }: {
   selfType: "project" | "token_design";
   selfId: string;
@@ -39,6 +40,8 @@ export function LinkPanel({
   selfName?: string;
   linked: LinkedSummary | null;
   candidates: LinkCandidate[];
+  /** Replaces the default outer surface and margin (the BUILD page passes its own, M94). */
+  className?: string;
 }) {
   const router = useRouter();
   const [choice, setChoice] = useState("");
@@ -124,7 +127,7 @@ export function LinkPanel({
   const editorBase = selfType === "project" ? "/studio/token" : "/studio/project";
 
   return (
-    <div className="glass mt-10 max-w-2xl rounded-xl border border-ink-800/70 p-5">
+    <div className={className ?? "glass mt-10 max-w-2xl rounded-xl border border-ink-800/70 p-5"}>
       <h3 className="text-sm font-medium text-ink-100">
         Linked {otherLabel}
       </h3>
