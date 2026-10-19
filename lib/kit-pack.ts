@@ -223,6 +223,8 @@ export interface FeaturesView {
 
 export interface ReviewPassView extends Omit<ReviewPass, "resources"> {
   verdict: ReviewVerdict | null;
+  /** The evidence behind the verdict (M121), null when none. */
+  evidence: string | null;
   resources: Array<{ id: string; title: string; url: string; rawUrl?: string }>;
 }
 
@@ -252,6 +254,7 @@ export function buildReviewView(doc: ProjectDoc): ReviewView | null {
     passes: passes.map((p) => ({
       ...p,
       verdict: kit.review?.[p.id] ?? null,
+      evidence: kit.reviewEvidence?.[p.id] ?? null,
       resources: p.resources
         .map((id) => BY_ID.get(id))
         .filter((r): r is NonNullable<typeof r> => Boolean(r))

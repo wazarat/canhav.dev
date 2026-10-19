@@ -309,7 +309,7 @@ function resourcePackSections(
       "",
       ...pack.review.passes.map(
         (r, n) =>
-          `${n + 1}. **${r.title}** [${r.verdict ? REVIEW_VERDICT_LABELS[r.verdict] : "Open"}]. ${r.detail} Defined by ${r.resources.map((x) => `[${x.title}](${x.url})`).join(", ")}.`,
+          `${n + 1}. **${r.title}** [${r.verdict ? REVIEW_VERDICT_LABELS[r.verdict] : "Open"}]. ${r.detail} Defined by ${r.resources.map((x) => `[${x.title}](${x.url})`).join(", ")}.${r.evidence ? ` Evidence: ${r.evidence}.` : ""}`, // copy-ok, export text
       ),
     );
   }

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { type Owner, ownerOf } from "@/lib/owner";
 import { getRevision, listRevisions } from "@/lib/revisions-db";
 import { landscapeFor } from "@/lib/competitors/landscape";
+import { latestCheckRuns } from "@/lib/checks/db";
 import { DRAFT_KIND_FIELDS, draftPromptName, openRequests } from "@/lib/draft/requests";
 import { DRAFT_AGENT_PROMPTS } from "@/lib/agent-prompts-draft";
 import type { DraftKind } from "@/lib/draft/limits";
@@ -1403,8 +1404,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       if (!loaded.ok) return errorResult(loaded.message);
       const view = buildReviewView(loaded.value.project.draft_doc);
       if (!view) return errorResult(NO_SHAPE_HINT);
-      return jsonResult({ ...stateOf(loaded.value),
-        source: "draft", ...view });
+      // The newest automated run per tool (M121), proof beside the team's verdicts.
+      const checks = await latestCheckRuns(loaded.value.project.id);
+      return jsonResult({ ...stateOf(loaded.value), source: "draft", ...view, checks });
     },
     scope,
   );

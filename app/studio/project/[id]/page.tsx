@@ -17,6 +17,7 @@ import { hasCommitment } from "@/lib/journey";
 import { projectChainLocked } from "@/lib/launch-project";
 import { type MyLaunch, getMyLaunches } from "@/lib/my-launches";
 import { countPrivateProjects, getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
+import { latestCheckRuns } from "@/lib/checks/db";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -44,7 +45,7 @@ export default async function ProjectEditorPage({
   const row = await getProject(id, user.owner);
   if (!row) notFound();
 
-  const privateUsed = await countPrivateProjects(user.owner, row.id);
+  const [privateUsed, checks] = await Promise.all([countPrivateProjects(user.owner, row.id), latestCheckRuns(row.id)]);
   const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
     getMyTokenDesigns(user.owner),
@@ -124,6 +125,7 @@ export default async function ProjectEditorPage({
         initialStatus={row.status}
         initialSlug={row.slug}
         createdAt={new Date(row.created_at).toISOString()}
+        checks={checks}
         initialVisibility={row.visibility ?? "public"}
         initialShareToken={row.share_token ?? null}
         privateUsed={privateUsed}

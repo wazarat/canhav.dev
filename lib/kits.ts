@@ -300,6 +300,8 @@ export interface ProjectKit {
   checklist?: Record<string, true>;
   /** Pre-launch review pass id to verdict. Only set verdicts are stored. */
   review?: Record<string, ReviewVerdict>;
+  /** Review pass id to the evidence behind the verdict, a run link or a line (M121, every account). */
+  reviewEvidence?: Record<string, string>;
   /** Build steps the team (or its agent) added to a shape's section (M50). */
   customSteps?: CustomStep[];
   /** Catalog build step ids the team removed from its sections (M50). A shared step stores every member id. */
@@ -456,6 +458,17 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
       }
     }
     if (n > 0) kit.review = verdicts;
+  }
+  if (r.reviewEvidence && typeof r.reviewEvidence === "object" && !Array.isArray(r.reviewEvidence)) {
+    const out: Record<string, string> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.reviewEvidence as Record<string, unknown>)) {
+      if (k && typeof v === "string" && v.trim() && n < KIT_LIMITS.review.max) {
+        out[k] = v.trim().slice(0, KIT_LIMITS.evidence.textMax);
+        n++;
+      }
+    }
+    if (n > 0) kit.reviewEvidence = out;
   }
   if (Array.isArray(r.customSteps)) {
     const L = KIT_LIMITS.customSteps;
@@ -688,6 +701,15 @@ export function setReviewVerdict(
   if (verdict) next[id] = verdict;
   else delete next[id];
   return Object.keys(next).length ? { review: next } : { review: undefined };
+}
+
+/** Record or clear the evidence behind a review pass (M121). */
+export function setReviewEvidence(kit: Pick<ProjectKit, "reviewEvidence">, id: string, text: string | null): Pick<ProjectKit, "reviewEvidence"> {
+  const next: Record<string, string> = { ...(kit.reviewEvidence ?? {}) };
+  const t = text?.trim().slice(0, KIT_LIMITS.evidence.textMax);
+  if (t) next[id] = t;
+  else delete next[id];
+  return Object.keys(next).length ? { reviewEvidence: next } : { reviewEvidence: undefined };
 }
 
 export function assertReviewPasses(

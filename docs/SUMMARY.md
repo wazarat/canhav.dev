@@ -58,6 +58,7 @@
 
 * [Markdown export and MCP](ai/export-and-mcp.md)
 * [GitHub sync](ai/github-sync.md)
+* [Automated checks](ai/checks.md)
 
 ## Accounts
 

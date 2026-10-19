@@ -473,6 +473,25 @@ await sql`
   )
 `;
 
+// Check runs (M121): one row per tool run the checks workflow posts, so
+// Review reads as proof. Rows go with their project.
+await sql`
+  create table if not exists launchpad.check_runs (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    tool text not null check (tool in ('slither','aderyn','sourcify')),
+    commit_sha text,
+    run_url text,
+    summary jsonb not null,
+    result text not null check (result in ('pass','fail','error')),
+    created_at timestamptz not null default now()
+  )
+`;
+await sql`
+  create index if not exists check_runs_project_idx
+    on launchpad.check_runs (project_id, tool, created_at desc)
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

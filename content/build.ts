@@ -264,6 +264,20 @@ export const BUILD_COPY = {
     publicPage: "Public page",
     history: "History",
   },
+  /** Automated checks (M121). The run line is plain text, the evidence field is for every account. */
+  checks: {
+    run: (tool: string, result: string, date: string) => `${result} ${tool}, run ${date}.`,
+    results: { pass: "Passed", fail: "Failed", error: "Could not run" },
+    tools: { slither: "Slither", aderyn: "Aderyn", sourcify: "Sourcify" },
+    counts: (high: number, medium: number, low: number) => `${high} high, ${medium} medium, ${low} low.`,
+    open: "Open the run",
+    evidenceLabel: "Evidence",
+    evidencePlaceholder: "A run link, a test name, a commit",
+    evidenceHint: "Where the proof lives. Any account can record it; Studio+ teams get it filled by the checks workflow.",
+    selfReported: "Self reported",
+    sourcify: (verified: number, total: number, date: string) => `Source verified on Sourcify for ${verified} of ${total} recorded contracts, run ${date}.`,
+    none: "Studio+ teams can add the CanHav checks workflow to their repository so Slither or Aderyn and Sourcify post their results here. See the docs for the workflow file.",
+  },
   /** Project keys (M111). */
   keys: {
     title: "Project keys",

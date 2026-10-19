@@ -10,6 +10,7 @@ import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
 import { HistoryDialog } from "@/components/build/HistoryDialog";
+import type { CheckRunView } from "@/lib/checks/schema";
 import { PublishBlockedDialog } from "@/components/build/PublishBlockedDialog";
 import { PublishTab } from "@/components/build/PublishTab";
 import { AutosaveIndicator } from "@/components/ideation/AutosaveIndicator";
@@ -49,6 +50,7 @@ export function ProjectBuildPage({
   initialStatus,
   initialSlug,
   createdAt = new Date().toISOString(),
+  checks = [],
   initialVisibility = "public",
   initialShareToken = null,
   privateUsed = 0,
@@ -66,6 +68,8 @@ export function ProjectBuildPage({
   initialSlug: string | null;
   /** ISO time the project was started (M115). */
   createdAt?: string;
+  /** The newest automated check run per tool (M121). */
+  checks?: CheckRunView[];
   /** Private keeps the published page off the listings (M109). */
   initialVisibility?: "public" | "private";
   initialShareToken?: string | null;
@@ -205,12 +209,13 @@ export function ProjectBuildPage({
         onMilestone={setMilestone}
         onPatchKit={patchKit}
         onGoTab={setTab}
+        checks={checks}
       />
     ),
     decisions: (
       <DecisionsTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
-    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} />,
+    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} checks={checks} />,
     publish: (
       <PublishTab
         id={id}

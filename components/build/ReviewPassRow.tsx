@@ -6,7 +6,9 @@ import { Segmented } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { REVIEW_COPY, REVIEW_VERDICT_OPTIONS } from "@/content/kits/copy";
-import { type ProjectKit, type ReviewPass, type ReviewVerdict, setReviewVerdict } from "@/lib/kits";
+import { type ProjectKit, type ReviewPass, type ReviewVerdict, setReviewEvidence, setReviewVerdict } from "@/lib/kits";
+import type { CheckRunView } from "@/lib/checks/schema";
+import { Input } from "@/components/ui/Input";
 
 /**
  * One pre-launch review pass as a row under the Review milestone (M95).
@@ -16,12 +18,18 @@ export function ReviewPassRow({
   pass,
   kit,
   onPatchKit,
+  run = null,
 }: {
   pass: ReviewPass;
   kit: ProjectKit;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  /** The newest automated run behind this pass (M121), null when none. */
+  run?: CheckRunView | null;
 }) {
   const verdict = kit.review?.[pass.id] ?? "";
+  const C = BUILD_COPY.checks;
+  const evidence = kit.reviewEvidence?.[pass.id] ?? "";
+  const counts = run?.summary.counts as { high: number; medium: number; low: number } | undefined;
   return (
     <li className="flex flex-wrap items-start gap-3 border-t border-ink-800/60 py-3 first:border-t-0">
       <div className="min-w-0 flex-1 space-y-1.5">
@@ -34,6 +42,29 @@ export function ReviewPassRow({
             {REVIEW_COPY.title}
           </StatusChip>
           <ReadMenu ids={pass.resources} />
+        </div>
+        {run ? (
+          <p className={`text-xs ${run.result === "fail" ? "text-rose-400" : "text-ink-400"}`}>
+            {C.run(C.tools[run.tool], C.results[run.result], new Date(run.createdAt).toLocaleDateString("en-US"))}
+            {counts ? ` ${C.counts(counts.high, counts.medium, counts.low)}` : ""}{" "}
+            {run.runUrl ? (
+              <a href={run.runUrl} target="_blank" rel="noreferrer" className="text-ink-200 hover:underline">
+                {C.open}
+              </a>
+            ) : null}
+          </p>
+        ) : null}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-ink-500">{C.evidenceLabel}</span>
+          <Input
+            defaultValue={evidence}
+            placeholder={C.evidencePlaceholder}
+            title={C.evidenceHint}
+            className="h-7 max-w-md text-xs"
+            onBlur={(e) => {
+              if (e.target.value.trim() !== evidence) onPatchKit(setReviewEvidence(kit, pass.id, e.target.value));
+            }}
+          />
         </div>
       </div>
       <div className="flex items-center gap-2">

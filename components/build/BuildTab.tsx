@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Plus } from "lucide-react";
 
 import { ReviewPassRow } from "@/components/build/ReviewPassRow";
+import { type CheckRunView, latestFor } from "@/lib/checks/schema";
 import { StepRow } from "@/components/build/StepRow";
 import { FeaturesBlock } from "@/components/ideation/kit/FeaturesBlock";
 import { Button } from "@/components/ui/Button";
@@ -58,6 +59,7 @@ export function BuildTab({
   onMilestone,
   onPatchKit,
   onGoTab,
+  checks = [],
 }: {
   kit: ProjectKit | undefined;
   chain: ProjectChain;
@@ -66,6 +68,8 @@ export function BuildTab({
   milestone: Milestone | "";
   onMilestone: (m: Milestone | "") => void;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  /** The newest automated check run per tool (M121). */
+  checks?: CheckRunView[];
   onGoTab: (tab: BuildTabName) => void;
 }) {
   const F = BUILD_COPY.filters;
@@ -181,6 +185,7 @@ export function BuildTab({
             facts={m === "launch" ? facts : null}
             onPatchKit={onPatchKit}
             onGoTab={onGoTab}
+            checks={checks}
           />
         ))
       )}
@@ -219,6 +224,7 @@ function MilestoneSection({
   facts,
   onPatchKit,
   onGoTab,
+  checks = [],
 }: {
   milestone: Milestone;
   groups: StepGroup[];
@@ -227,6 +233,8 @@ function MilestoneSection({
   chain: ProjectChain;
   facts: LaunchFacts | null;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  /** The newest automated check run per tool (M121). */
+  checks?: CheckRunView[];
   onGoTab: (tab: BuildTabName) => void;
 }) {
   const M = BUILD_COPY.milestones[milestone];
@@ -273,7 +281,7 @@ function MilestoneSection({
         ) : (
           <ul>
             {passes.map((p) => (
-              <ReviewPassRow key={p.id} pass={p} kit={kit} onPatchKit={onPatchKit} />
+              <ReviewPassRow key={p.id} pass={p} kit={kit} onPatchKit={onPatchKit} run={latestFor(p.id, checks)} />
             ))}
             {groups.map((g) => (
               <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} />

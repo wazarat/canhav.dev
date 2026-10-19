@@ -62,6 +62,7 @@ import {
   toggleChecklistItem,
   toggleIdea,
   toggleResource,
+  setReviewEvidence,
 } from "@/lib/kits";
 import {
   SECTOR_SUBSECTORS,
@@ -338,6 +339,8 @@ export const projectPatchSchema = z
               pass: z.string().max(120),
               // "open" clears a recorded verdict.
               verdict: z.enum(["pass", "fail", "na", "open"]),
+              // The evidence behind it (M121), a run link or a line; empty clears it.
+              evidence: z.string().max(KIT_LIMITS.evidence.textMax).optional(),
             }),
           )
           .max(KIT_LIMITS.review.max),
@@ -724,8 +727,10 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
           if (r && ticked !== on) kit = { ...kit, ...toggleResource(kit, r, ticked) };
         }
     }
-    for (const v of kitPatch.review ?? [])
+    for (const v of kitPatch.review ?? []) {
       kit = { ...kit, ...setReviewVerdict(kit, v.pass, v.verdict === "open" ? null : v.verdict) };
+      if (v.evidence !== undefined) kit = { ...kit, ...setReviewEvidence(kit, v.pass, v.evidence) };
+    }
     for (const [id, d] of Object.entries(kitPatch.templates ?? {}))
       kit = { ...kit, ...setTemplateDecision(kit, id, d === "open" ? null : d) };
     for (const [id, on] of Object.entries(kitPatch.features ?? {}))

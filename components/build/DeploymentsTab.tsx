@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 
 import { DeployerSection } from "@/components/build/DeployerSection";
 import { KeysSection } from "@/components/build/KeysSection";
+import { type CheckRunView, verifiedOn } from "@/lib/checks/schema";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import { MainnetEditor } from "@/components/ideation/MainnetEditor";
@@ -47,8 +48,11 @@ export function DeploymentsTab({
   setDoc,
   tokens,
   funding,
+  checks = [],
 }: {
   id: string;
+  /** The newest automated check run per tool (M121). */
+  checks?: CheckRunView[];
   doc: ProjectDoc;
   /** The deployer key's balances, polled by the page (M103). */
   funding: DeployerFunding;
@@ -57,6 +61,8 @@ export function DeploymentsTab({
   tokens: DeployedToken[];
 }) {
   const D = BUILD_COPY.deployments;
+  const sourcify = checks.find((c) => c.tool === "sourcify") ?? null;
+  const verifiedCount = testnetContractRows(doc).filter((r) => verifiedOn(r.address, checks) === "full" || verifiedOn(r.address, checks) === "partial").length;
   const chainKey = projectChainOf(doc);
   const chain = chainInfo(chainKey);
   const companionOptions = templatesForShapes(TEMPLATE_CATALOG, kitShapes(doc.kit), chainKey)
@@ -102,6 +108,16 @@ export function DeploymentsTab({
           ) : (
             <p className="text-xs text-ink-500">{D.sync.none}</p>
           )}
+          {sourcify ? (
+            <p className="text-xs text-ink-400">
+              {BUILD_COPY.checks.sourcify(verifiedCount, testnetContractRows(doc).length, new Date(sourcify.createdAt).toLocaleDateString("en-US"))}{" "}
+              {sourcify.runUrl ? (
+                <a href={sourcify.runUrl} target="_blank" rel="noreferrer" className="text-ink-200 hover:underline">
+                  {BUILD_COPY.checks.open}
+                </a>
+              ) : null}
+            </p>
+          ) : null}
           <Field label={TESTNET_COPY.contractsLabel} info={TESTNET_COPY.contractsHint}>
             <ContractRowsEditor
               rows={testnetContractRows(doc)}

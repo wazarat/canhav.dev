@@ -1,0 +1,98 @@
+# CanHav checks (Studio+). Copy to .github/workflows/canhav-checks.yml. On
+# every push it runs Slither on the Foundry project, asks Sourcify whether
+# the deployed addresses in the broadcast files are verified, and posts one
+# run per tool to CanHav, where the Review milestone shows the result as
+# proof beside the team's own verdict. Needs the secret CANHAV_PROJECT_KEY
+# (a write key) and the variable CANHAV_CHAIN_ID. Set CANHAV_ADERYN to 1 to
+# run Aderyn instead of Slither.
+name: CanHav checks
+on:
+  push:
+    branches: ["**"]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CANHAV_PROJECT_KEY: ${{ secrets.CANHAV_PROJECT_KEY }}
+      CANHAV_CHAIN_ID: ${{ vars.CANHAV_CHAIN_ID }}
+      CANHAV_URL: ${{ vars.CANHAV_URL || 'https://www.canhav.com' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Slither
+        if: ${{ vars.CANHAV_ADERYN != '1' }}
+        uses: crytic/slither-action@v0.4.1
+        continue-on-error: true
+        with:
+          target: .
+          slither-args: --json slither.json --exclude-dependencies
+          fail-on: none
+      - name: Aderyn
+        if: ${{ vars.CANHAV_ADERYN == '1' }}
+        continue-on-error: true
+        run: |
+          curl -L https://raw.githubusercontent.com/Cyfrin/aderyn/dev/cyfrinup/install | bash
+          export PATH="$HOME/.cyfrin/bin:$PATH"
+          cyfrinup && aderyn . -o aderyn.json
+      - name: Post the runs to CanHav
+        run: |
+          node - <<'JS'
+          const fs = require("fs");
+          const path = require("path");
+          const chainId = Number(process.env.CANHAV_CHAIN_ID);
+          if (!process.env.CANHAV_PROJECT_KEY || !chainId) { console.log("CANHAV_PROJECT_KEY or CANHAV_CHAIN_ID missing, skipping."); process.exit(0); }
+          const sha = process.env.GITHUB_SHA;
+          const post = async (body) => {
+            const r = await fetch(`${process.env.CANHAV_URL}/api/checks`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.CANHAV_PROJECT_KEY}` }, body: JSON.stringify(body) });
+            console.log(body.tool, r.status, await r.text());
+          };
+          const sev = (s) => ({ high: "high", medium: "medium", low: "low" }[String(s || "").toLowerCase()] || "informational");
+          const count = (findings) => findings.reduce((c, f) => { c[f.severity] += 1; return c; }, { high: 0, medium: 0, low: 0, informational: 0 });
+          (async () => {
+            if (fs.existsSync("slither.json")) {
+              const j = JSON.parse(fs.readFileSync("slither.json", "utf8"));
+              const dets = (j.results && j.results.detectors) || [];
+              const findings = dets.map((d) => ({ title: String(d.check || d.description || "").slice(0, 160), severity: sev(d.impact), file: (d.elements && d.elements[0] && d.elements[0].source_mapping && d.elements[0].source_mapping.filename_short || "").slice(0, 200) })).slice(0, 20);
+              const counts = count(dets.map((d) => ({ severity: sev(d.impact) })));
+              await post({ tool: "slither", commitSha: sha, runUrl: process.env.RUN_URL, result: counts.high > 0 ? "fail" : "pass", summary: { counts, findings } });
+            } else if (fs.existsSync("aderyn.json")) {
+              const j = JSON.parse(fs.readFileSync("aderyn.json", "utf8"));
+              const high = (j.high_issues && j.high_issues.issues) || [];
+              const low = (j.low_issues && j.low_issues.issues) || [];
+              const findings = [...high.map((i) => ({ title: String(i.title || "").slice(0, 160), severity: "high" })), ...low.map((i) => ({ title: String(i.title || "").slice(0, 160), severity: "low" }))].slice(0, 20);
+              await post({ tool: "aderyn", commitSha: sha, runUrl: process.env.RUN_URL, result: high.length > 0 ? "fail" : "pass", summary: { counts: { high: high.length, medium: 0, low: low.length, informational: 0 }, findings } });
+            } else {
+              await post({ tool: process.env.CANHAV_ADERYN === "1" ? "aderyn" : "slither", commitSha: sha, runUrl: process.env.RUN_URL, result: "error", summary: { counts: { high: 0, medium: 0, low: 0, informational: 0 }, findings: [] } });
+            }
+            const addresses = new Set();
+            const walk = (dir) => {
+              if (!fs.existsSync(dir)) return;
+              for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const p = path.join(dir, e.name);
+                if (e.isDirectory()) { if (e.name === "node_modules" || e.name.startsWith(".")) continue; walk(p); }
+                else if (e.name === "run-latest.json" && p.includes(`${path.sep}${chainId}${path.sep}`)) {
+                  try { for (const t of JSON.parse(fs.readFileSync(p, "utf8")).transactions || []) if (t.transactionType === "CREATE" && t.contractAddress) addresses.add(String(t.contractAddress).toLowerCase()); } catch {}
+                }
+              }
+            };
+            walk(process.cwd());
+            if (addresses.size) {
+              const list = [...addresses].slice(0, 100);
+              const r = await fetch(`https://sourcify.dev/server/check-all-by-addresses?addresses=${list.join(",")}&chainIds=${chainId}`);
+              const rows = r.ok ? await r.json() : [];
+              const verified = {};
+              for (const a of list) verified[a] = "none";
+              for (const row of rows) { const m = (row.chainIds || []).find((c) => String(c.chainId) === String(chainId)); if (m) verified[String(row.address).toLowerCase()] = m.status === "perfect" ? "full" : m.status ? "partial" : "none"; }
+              const all = list.every((a) => verified[a] !== "none");
+              await post({ tool: "sourcify", commitSha: sha, runUrl: process.env.RUN_URL, result: all ? "pass" : "fail", summary: { chainId, verified } });
+            }
+          })();
+          JS
