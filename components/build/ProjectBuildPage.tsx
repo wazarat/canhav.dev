@@ -9,6 +9,7 @@ import { BuildTabs } from "@/components/build/BuildTabs";
 import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
+import { TesterKitSection } from "@/components/build/TesterKitSection";
 import { HistoryDialog } from "@/components/build/HistoryDialog";
 import type { CheckRunView } from "@/lib/checks/schema";
 import { PublishBlockedDialog } from "@/components/build/PublishBlockedDialog";
@@ -211,6 +212,7 @@ export function ProjectBuildPage({
         onPatchKit={patchKit}
         onGoTab={setTab}
         checks={checks}
+        testerKit={<TesterKitSection projectId={id} />}
       />
     ),
     decisions: (

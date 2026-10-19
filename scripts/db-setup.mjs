@@ -492,6 +492,43 @@ await sql`
     on launchpad.check_runs (project_id, tool, created_at desc)
 `;
 
+// Tester kit (M125, Studio+). An invite link per project with the steps
+// testers walk, capped and dated; feedback per step from the public page.
+await sql`
+  create table if not exists launchpad.tester_invites (
+    token text primary key,
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    label text not null,
+    steps jsonb not null,
+    max_uses int not null,
+    uses int not null default 0,
+    expires_at timestamptz not null,
+    created_by text not null,
+    created_at timestamptz not null default now(),
+    revoked_at timestamptz
+  )
+`;
+await sql`
+  create index if not exists tester_invites_project_idx
+    on launchpad.tester_invites (project_id, created_at desc)
+`;
+await sql`
+  create table if not exists launchpad.tester_feedback (
+    id uuid primary key default gen_random_uuid(),
+    invite_token text not null references launchpad.tester_invites(token) on delete cascade,
+    project_id uuid not null,
+    wallet text,
+    step_index int not null,
+    rating int not null check (rating between 1 and 5),
+    note text not null default '' check (char_length(note) <= 1000),
+    created_at timestamptz not null default now()
+  )
+`;
+await sql`
+  create index if not exists tester_feedback_project_idx
+    on launchpad.tester_feedback (project_id, created_at desc)
+`;
+
 // Weekly updates (M124, Studio+). One row per project and week, written
 // by the team or its agent, published to the public page. Distinct from
 // the wallet signed milestone updates anchored on chain.

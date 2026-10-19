@@ -38,7 +38,9 @@ import {
 import { type IndexedCurve, getCurve, getTokenAnalytics } from "@/lib/indexer";
 import { listAlerts } from "@/lib/alerts/db";
 import { UPDATE_LIMITS, updateInputSchema } from "@/lib/updates";
+import { inviteState } from "@/lib/tester";
 import { listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
+import { listFeedback, listInvites } from "@/lib/tester-db";
 import { type LaunchRow, getLaunchesByProject } from "@/lib/launches-db";
 import {
   type View,
@@ -1385,6 +1387,24 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       return jsonResult({ updates: await listUpdates(loaded.value.project.id) });
     },
     { ...scope, plus: "weekly_update" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_tester_feedback",
+    {
+      title: "This project's tester invites and feedback",
+      description:
+        "Studio+. The tester invite links the owner made under Build, Testnet (label, steps, uses against the cap, expiry, state) and the feedback testers left on the public invite page, newest first, each with the step, the rating out of 5, the note and the wallet when given. Read it before deciding what to fix next.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const [invites, feedback] = await Promise.all([listInvites(loaded.value.project.id), listFeedback(loaded.value.project.id)]);
+      return jsonResult({ invites: invites.map((i) => ({ ...i, state: inviteState(i) })), feedback });
+    },
+    { ...scope, plus: "tester_kit" },
   );
 
   registerMeteredTool(

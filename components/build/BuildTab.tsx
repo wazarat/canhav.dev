@@ -60,7 +60,10 @@ export function BuildTab({
   onPatchKit,
   onGoTab,
   checks = [],
+  testerKit,
 }: {
+  /** The tester kit block under the Testnet milestone (M125). */
+  testerKit?: React.ReactNode;
   kit: ProjectKit | undefined;
   chain: ProjectChain;
   facts: LaunchFacts;
@@ -186,6 +189,7 @@ export function BuildTab({
             onPatchKit={onPatchKit}
             onGoTab={onGoTab}
             checks={checks}
+            testerKit={m === "testnet" ? testerKit : undefined}
           />
         ))
       )}
@@ -225,7 +229,9 @@ function MilestoneSection({
   onPatchKit,
   onGoTab,
   checks = [],
+  testerKit,
 }: {
+  testerKit?: React.ReactNode;
   milestone: Milestone;
   groups: StepGroup[];
   passes: ReturnType<typeof reviewPassesFor>;
@@ -303,6 +309,12 @@ function MilestoneSection({
           </ul>
         )}
       </CardSection>
+      {testerKit ? (
+        <CardSection className="space-y-3">
+          <h3 className="font-display text-sm font-semibold text-ink-50">{BUILD_COPY.tester.title}</h3>
+          {testerKit}
+        </CardSection>
+      ) : null}
     </Card>
   );
 }

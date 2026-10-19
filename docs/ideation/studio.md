@@ -110,6 +110,8 @@ Build lists every step of every chosen shape as one list under four milestones. 
 
 Under Review the pre-launch review passes sit as rows with a verdict each, Pass, Fail or Not applicable. Under Launch four rows are derived from the record, the deployer key funded on the project's chain, testnet contracts recorded, token linked and project published, each opening the section that settles it. **What this product includes** folds out per shape: a ticked feature adds the steps it gates and ranks the templates it suggests first. **Add a step** adds your own under a shape, ticked and counted like the rest, up to forty per project.
 
+With Studio+, the Testnet milestone ends with the **Tester kit**: invite links testers open without an account (the faucet, your recorded testnet contracts, the steps you list one per line, a rating and a note per step), each with a name, a cap on replies and an expiry, revocable; the feedback lands under the kit and on `get_tester_feedback`. CanHav holds no keys and pays no gas.
+
 Build steps never block publishing. An agent connected to the project's server ticks, adds, removes and restores them through the same proposal flow as every other change, and reads the milestone of each step as `milestone` on `get_build_steps`.
 
 ### Decisions
