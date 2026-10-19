@@ -38,6 +38,10 @@ A Draft button queues a request on the project. A connected agent sees open requ
 
 With agent writes off, or from Draft with CanHav now, CanHav drafts on its side: the project record (the same markdown the export produces), a short kit summary and the fields named for that draft go to Anthropic's API, on Claude Haiku 5.5 for the canvas, the profiles, the competitor line, the brand kit and the weekly update, and on Claude Sonnet 5.5 for the investor pack. Nothing from your repository and no keys are sent. The answer lands in the draft as an edit you can change, the field reads "Drafted by CanHav", and a team has 60 server drafts a month across every kind; the button shows what is left. A draft that is refused, cut off or malformed fails plainly and counts against nothing.
 
+## Partner perks and priority help
+
+The pricing page lists partners CanHav routes to for audits, KYC, simulation and monitoring, and RPC, with the referral terms once agreed (until then the row says so and the contact form carries the request), and a booking link for the monthly office hour. Replies within one working day for Studio+ teams.
+
 ## Cancelling and downgrading
 
 Cancel from the Team page. The plan runs to the end of the paid period, then the team reads Studio again. Records stay where they are; a private project beyond the free allowance stays private and cannot be republished until it is made public, and the Studio+ sections of a project stay stored but closed until the team is back on the plan.
