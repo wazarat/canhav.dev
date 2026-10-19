@@ -32,6 +32,10 @@ The features ship one by one and are listed on the pricing page, with Soon on th
 
 Drafting features call a model on CanHav's side from the record you already have, within a monthly allowance per team; your own IDE agent can fill the same fields over MCP at no cost to the allowance.
 
+### Drafting
+
+A Draft button sends the project record (the same markdown the export produces), a short kit summary and the fields named for that draft to Anthropic's API from CanHav's side, and the answer lands in the draft as an edit you can change, so autosave and the agent revision guard work as usual. Nothing from your repository and no keys are sent. A team has 60 drafts a month across every kind; the button shows what is left, and Or ask your agent gives the prompt that makes your own IDE agent write the same field through `update_project`, outside the allowance.
+
 ## Cancelling and downgrading
 
 Cancel from the Team page. The plan runs to the end of the paid period, then the team reads Studio again. Records stay where they are; a private project beyond the free allowance stays private and cannot be republished until it is made public, and the Studio+ sections of a project stay stored but closed until the team is back on the plan.

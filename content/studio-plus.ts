@@ -66,6 +66,20 @@ export const STUDIO_PLUS_COPY = {
     /** The token may lag the webhook by a moment. */
     refresh: "If the studio still reads Studio, reload once.",
   },
+  /** Server side drafting (M112). */
+  draft: {
+    draft: "Draft",
+    redraft: "Redraft",
+    working: "Drafting",
+    remaining: (n: number) => (n === 1 ? "1 draft left this month" : `${n} drafts left this month`),
+    capReached: "Your team has used its 60 drafts for this month. Your own agent can write the same fields over MCP, or wait for the first of the month.",
+    failed: "The draft failed. Try again.",
+    askAgent: "Or ask your agent",
+    askAgentLabel: "Paste into your IDE",
+    askAgentHint: "Your agent writes the same fields through update_project, outside the monthly allowance.",
+    /** What is sent, for the docs and the first use note. */
+    sends: "Drafting sends the project record, the kit summary and the fields named for the draft to Anthropic's API from CanHav's side. Nothing from your repository and no keys.",
+  },
   /** Project keys (M111). */
   keys: {
     readOnly: "This key has read scope. Writes need a write key; the owner makes one on the project page under Deployments.",

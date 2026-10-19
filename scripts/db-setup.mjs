@@ -435,6 +435,25 @@ await sql`
     on launchpad.project_keys (project_id, created_at desc)
 `;
 
+// Draft runs (M112): one row per server side draft, the monthly allowance
+// ledger per team (org_id is the allowance key, the account id under the
+// dev override).
+await sql`
+  create table if not exists launchpad.draft_runs (
+    id uuid primary key default gen_random_uuid(),
+    org_id text not null,
+    project_id uuid references launchpad.projects(id) on delete set null,
+    kind text not null,
+    input_tokens int not null,
+    output_tokens int not null,
+    created_at timestamptz not null default now()
+  )
+`;
+await sql`
+  create index if not exists draft_runs_org_month_idx
+    on launchpad.draft_runs (org_id, created_at desc)
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for
