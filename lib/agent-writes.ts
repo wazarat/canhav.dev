@@ -247,6 +247,13 @@ export const projectPatchSchema = z
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The deployer key's address (M102), never the key; null clears it.
     deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
+    // The agent's summary (M104): both lists replace the stored ones; null clears it.
+    summary: z
+      .strictObject({
+        built: z.array(z.string().min(L.summary.textMin).max(L.summary.textMax)).max(L.summary.lines),
+        building: z.array(z.string().min(L.summary.textMin).max(L.summary.textMax)).max(L.summary.lines),
+      })
+      .nullable(),
     // The mainnet deployment and the Pons pairing (M70). Merged into the stored
     // record; contracts replace the stored list; null clears the whole record.
     // The chain id is always the mainnet the project's chain stands in for.
@@ -648,6 +655,8 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.summary === null) next = dropKey(next, "summary");
+  else if (patch.summary) next = { ...next, summary: { ...patch.summary, updatedAt: new Date().toISOString() } };
   const a = { ...next.architecture };
   // The two dependency answers exclude each other. The one the agent sent wins.
   if (patch.architecture?.externalDepsNone === true) a.externalDeps = [];
@@ -994,6 +1003,9 @@ const PATH_LABELS: Record<string, string> = {
   testnetContracts: "Testnet contracts",
   addressBook: "Address book",
   deployer: "Deployer address",
+  summary: "Summary",
+  "summary.built": "Summary, built",
+  "summary.building": "Summary, being built",
   "mainnet.contracts": "Mainnet contracts",
   "mainnet.companionTemplate": "Companion contract",
   "mainnet.pons": "Pons pairing",

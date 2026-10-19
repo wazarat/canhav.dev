@@ -473,14 +473,13 @@ export async function publishEntity(
   const { checklist: ticks, ...draftBody } = row.draft_doc as TokenDesignDoc & { checklist?: unknown };
   // A project's own files (M53) stay on the draft too. They may be paths on
   // the team's machine, which have no place on a public page.
-  const { references: refs, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown };
+  // The agent's summary (M104) stays on the draft as well.
+  const { references: refs, summary: sum, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown };
   const base = table === "projects" ? (projectBody as IdeationDoc) : (draftBody as IdeationDoc);
   const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
   const draftOut =
     table === "projects"
-      ? refs === undefined
-        ? stamped
-        : { ...stamped, references: refs }
+      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }) }
       : ticks === undefined
         ? stamped
         : { ...stamped, checklist: ticks };

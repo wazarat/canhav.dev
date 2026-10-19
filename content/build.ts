@@ -125,6 +125,34 @@ export const BUILD_COPY = {
   },
   overview: {
     progress: (done: number, total: number) => `Build ${done} of ${total}`,
+    /** The summary pop up (M104). */
+    summary: {
+      button: "Summary",
+      title: "What your agent says is built",
+      intro: "Written by your agent over MCP and kept current as work lands. Tick the points you do not agree with, say what you want instead, and copy the prompt into your IDE.",
+      built: "Built",
+      building: "Being built",
+      none: "No summary yet. Paste this into your IDE and your agent writes one from the repository.",
+      askLabel: "Ask your agent for a summary",
+      updated: (when: string) => `Last written ${when}`,
+      noteLabel: "What you want instead",
+      notePlaceholder: "Optional. One or two sentences on what should be different.",
+      promptLabel: "Paste this into your IDE",
+      promptHint: "Carries the points you ticked and your note. The agent checks each one against the repository and fixes the code or the summary.",
+      picked: (n: number) => (n === 1 ? "1 point picked" : `${n} points picked`),
+      close: "Close",
+    },
+    /** The progress pop up on the Build chip (M104). */
+    progressDialog: {
+      title: "Build progress",
+      intro: "Where the build steps stand, by milestone. Open a milestone to work on it, or hand the open steps to your agent.",
+      openSteps: "Open steps",
+      allDone: "Every step is done or marked not applicable.",
+      more: (n: number) => `and ${n} more`,
+      open: (label: string) => `Open ${label}`,
+      promptLabel: "Paste this into your IDE to carry on",
+      promptHint: "Lists the open steps. The agent works through them in the repository and ticks each one with evidence.",
+    },
     noShape: "Pick what you are building under Decisions to get build steps.",
   },
   decisions: {

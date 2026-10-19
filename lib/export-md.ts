@@ -759,6 +759,13 @@ export function buildAgentsMd(input: {
       "flows deserve scrutiny proportional to it.",
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
+    // The agent's summary (M104), when one has been written.
+    if (project.summary) {
+      lines.push("", "## Summary, by the agent", "", `Last written ${project.summary.updatedAt.slice(0, 10)}. Keep it current with set_summary.`, "", "**Built**", "");
+      lines.push(...(project.summary.built.length ? project.summary.built.map((l) => `- ${l}`) : ["- Nothing recorded yet."]));
+      lines.push("", "**Being built**", "");
+      lines.push(...(project.summary.building.length ? project.summary.building.map((l) => `- ${l}`) : ["- Nothing recorded yet."]));
+    }
     // The throwaway deployer key (M102): where it lives and where it is funded. The key itself is never exported.
     const deployer = deployerView(project, projectChainOf(project));
     lines.push("", "## Deployer key", "");

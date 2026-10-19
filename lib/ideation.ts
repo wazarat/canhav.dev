@@ -212,6 +212,19 @@ export function referenceIsLink(r: Pick<ProjectReference, "location">): boolean 
   return /^https?:\/\/\S+$/.test(r.location.trim());
 }
 
+/**
+ * The agent's account of the project (M104): what is built and what is
+ * being built, a few lines each, written over MCP with set_summary and
+ * read on the Overview. Stays on the draft and out of the published
+ * snapshot, like references.
+ */
+export interface ProjectSummary {
+  built: string[];
+  building: string[];
+  /** ISO time of the last write. */
+  updatedAt: string;
+}
+
 export interface ProjectDoc {
   kind: "project";
   version: 1;
@@ -319,6 +332,8 @@ export interface ProjectDoc {
   addressBook?: string;
   /** The project's logo on CanHav's image store (M90). Optional, never injected. */
   logo?: string;
+  /** The agent's summary (M104). Optional, never injected, never published. */
+  summary?: ProjectSummary;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -343,6 +358,26 @@ export interface TestnetContract {
 }
 
 /** The testnet contracts as rows, whether the doc stores strings or rows. */
+/** The summary's lines as stored, each trimmed and capped, or null when nothing survives. */
+export function normalizeProjectSummary(raw: unknown): ProjectSummary | null {
+  if (!raw || typeof raw !== "object") return null;
+  const L = PROJECT_LIMITS.summary;
+  const lines = (v: unknown): string[] =>
+    Array.isArray(v)
+      ? v
+          .filter((x): x is string => typeof x === "string")
+          .map((x) => x.trim().slice(0, L.textMax))
+          .filter((x) => x.length >= L.textMin)
+          .slice(0, L.lines)
+      : [];
+  const r = raw as { built?: unknown; building?: unknown; updatedAt?: unknown };
+  const built = lines(r.built);
+  const building = lines(r.building);
+  if (!built.length && !building.length) return null;
+  const updatedAt = typeof r.updatedAt === "string" && !Number.isNaN(Date.parse(r.updatedAt)) ? r.updatedAt : new Date().toISOString();
+  return { built, building, updatedAt };
+}
+
 export function testnetContractRows(doc: Pick<ProjectDoc, "testnetContracts">): TestnetContract[] {
   return (doc.testnetContracts ?? []).map((c) =>
     typeof c === "string" ? { address: c } : c.label?.trim() ? { address: c.address, label: c.label.trim() } : { address: c.address },
@@ -410,6 +445,8 @@ export const PROJECT_LIMITS = {
   website: { max: 200 },
   testnetContracts: { max: 100 },
   addressBook: { max: 200 },
+  /** The agent's summary (M104), lines per list and characters per line. */
+  summary: { lines: 12, textMin: 3, textMax: 160 },
   pairQuoteAsset: { min: 1, max: 12 },
   pairUrl: { max: 200 },
   mainnetContracts: { max: 20 },
@@ -602,6 +639,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const v = (rest as { addressBook?: unknown }).addressBook;
     if (typeof v === "string" && v.trim()) (rest as { addressBook?: string }).addressBook = v.trim().slice(0, PROJECT_LIMITS.addressBook.max);
     else delete (rest as { addressBook?: unknown }).addressBook;
+  }
+  // Summary (M104): lines cleaned and capped, dropped when nothing is left, never invented.
+  if ("summary" in rest) {
+    const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
+    if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
+    else delete (rest as { summary?: unknown }).summary;
   }
   // Deployer address (M102): lowercased when it is an address, dropped otherwise, never invented.
   if ("deployer" in rest) {
@@ -1062,6 +1105,13 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
   if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
+  if (doc.summary) {
+    const S = PROJECT_LIMITS.summary;
+    for (const list of [doc.summary.built, doc.summary.building]) {
+      if (list.length > S.lines) return `At most ${S.lines} summary lines per list.`;
+      if (list.some((l) => l.length > S.textMax)) return `A summary line is at most ${S.textMax} characters.`;
+    }
+  }
   if (doc.mainnet) {
     p = validateMainnetRecord(doc, doc.mainnet);
     if (p) return p;

@@ -172,6 +172,7 @@ export function ProjectBuildPage({
         deployer={deployer}
         funding={funding}
         onGoDeployments={() => setTab("deployments")}
+        onGoMilestone={setMilestone}
         linkPanel={linkPanel}
       />
     ),

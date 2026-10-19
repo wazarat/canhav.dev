@@ -1,11 +1,17 @@
 "use client";
 
+import { useState } from "react";
+import { ListChecks } from "lucide-react";
+
 import { AgentFeed } from "@/components/build/AgentFeed";
+import { ProgressDialog } from "@/components/build/ProgressDialog";
+import { SummaryDialog } from "@/components/build/SummaryDialog";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
@@ -80,6 +86,7 @@ export function OverviewTab({
   deployer,
   funding,
   onGoDeployments,
+  onGoMilestone,
   linkPanel,
 }: {
   id: string;
@@ -95,11 +102,15 @@ export function OverviewTab({
   deployer: DeployerView | null;
   funding: DeployerFunding;
   onGoDeployments: () => void;
+  /** Opens the Build section on one milestone (the progress pop up, M104). */
+  onGoMilestone: (m: import("@/lib/build-milestones").Milestone) => void;
   /** The token design link, the launch panel and the MCP card, rendered by the server page. */
   linkPanel?: React.ReactNode;
 }) {
   const chain = chainInfo(projectChainOf(doc));
   const progress = buildProgress(kit);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
   const shapes = shapeLabels(kit);
   const line = oneLine(doc.whatItDoes);
   return (
@@ -116,13 +127,18 @@ export function OverviewTab({
             <Badge>{chain.short}</Badge>
             {doc.stage ? <Badge>{optionLabel(STAGE_OPTIONS, doc.stage)}</Badge> : null}
             {progress.total ? (
-              <StatusChip tone={progress.done === progress.total ? "success" : "neutral"}>
+              <StatusChip tone={progress.done === progress.total ? "success" : "neutral"} onClick={() => setProgressOpen(true)}>
                 {BUILD_COPY.overview.progress(progress.done, progress.total)}
               </StatusChip>
             ) : null}
             <DeployerChip deployer={deployer} funding={funding} onClick={onGoDeployments} />
           </div>
           {!kit?.shape ? <p className="text-xs text-ink-500">{BUILD_COPY.overview.noShape}</p> : null}
+          <div>
+            <Button size="sm" variant="outline" onClick={() => setSummaryOpen(true)}>
+              <ListChecks aria-hidden className="h-3.5 w-3.5" /> {BUILD_COPY.overview.summary.button}
+            </Button>
+          </div>
         </CardSection>
         {kit?.shape ? (
           <CardSection>
@@ -140,6 +156,8 @@ export function OverviewTab({
       <McpConnectCard compact target={{ kind: "project", id, name: doc.name, hasKit }} />
 
       {linkPanel}
+      <SummaryDialog open={summaryOpen} onClose={() => setSummaryOpen(false)} name={doc.name} projectId={id} summary={doc.summary ?? null} />
+      <ProgressDialog open={progressOpen} onClose={() => setProgressOpen(false)} name={doc.name} projectId={id} kit={kit} onMilestone={onGoMilestone} />
     </div>
   );
 }
