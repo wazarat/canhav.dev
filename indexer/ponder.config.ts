@@ -213,7 +213,8 @@ function arbitrum() {
   const at = { chain: "arbitrumSepolia" as const, startBlock: d.startBlock };
   return createConfig({
     chains: {
-      arbitrumSepolia: { id: 421614, rpc: rpcUrl("PONDER_RPC_URL_421614", ARBITRUM_SEPOLIA_RPC) },
+      // The public RPC answers wide log queries very slowly; smaller ranges finish (M122 resync).
+      arbitrumSepolia: { id: 421614, rpc: rpcUrl("PONDER_RPC_URL_421614", ARBITRUM_SEPOLIA_RPC), ethGetLogsBlockRange: 10_000 },
     },
     contracts: {
       TokenFactory: { ...at, abi: TokenFactoryAbi, address: NO_LOGS },
