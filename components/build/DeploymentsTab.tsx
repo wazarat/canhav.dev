@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 import { DeployerSection } from "@/components/build/DeployerSection";
+import { AlertsSection } from "@/components/build/AlertsSection";
 import { AnalyticsSection } from "@/components/build/AnalyticsSection";
 import { KeysSection } from "@/components/build/KeysSection";
 import { type CheckRunView, verifiedOn } from "@/lib/checks/schema";
@@ -201,6 +202,11 @@ export function DeploymentsTab({
         <CardSection className="space-y-4">
           <Heading>{BUILD_COPY.analytics.title}</Heading>
           <AnalyticsSection projectId={id} tokens={tokens} />
+        </CardSection>
+
+        <CardSection className="space-y-4">
+          <Heading>{BUILD_COPY.alerts.title}</Heading>
+          <AlertsSection projectId={id} contracts={testnetContractRows(doc)} tokens={tokens} />
         </CardSection>
 
         <CardSection className="space-y-4">

@@ -225,7 +225,7 @@ export const STUDIO_PLUS_COPY = {
     },
     monitoring: {
       title: "Monitoring and alerts",
-      teaser: "Admin calls, ownership changes, pauses, large transfers and graduation, alerted by email, Telegram or Discord.",
+      teaser: "Ownership changes, pauses, large transfers and curve graduation on your contracts, sent by email, Telegram or Discord within a minute.",
     },
     analytics: {
       title: "Token analytics",
@@ -258,4 +258,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring"];

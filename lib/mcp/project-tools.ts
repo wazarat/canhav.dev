@@ -36,6 +36,7 @@ import {
   designWarnings,
 } from "@/lib/mcp/design-views";
 import { type IndexedCurve, getCurve, getTokenAnalytics } from "@/lib/indexer";
+import { listAlerts } from "@/lib/alerts/db";
 import { type LaunchRow, getLaunchesByProject } from "@/lib/launches-db";
 import {
   type View,
@@ -1333,6 +1334,23 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       return jsonResult({ address, analytics });
     },
     { ...scope, plus: "analytics" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_alerts",
+    {
+      title: "This project's alert rules and events",
+      description:
+        "Studio+. The addresses the alerts worker watches for this project with the kinds (ownership, pause, large_transfer with a threshold in wei, graduation), the channels with their masked targets, and the last ten events, each with the line sent, the transaction and what was delivered. Rules and channels are managed by the owner in the studio under Deployments.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      return jsonResult(await listAlerts(loaded.value.project.id));
+    },
+    { ...scope, plus: "monitoring" },
   );
 
   registerMeteredTool(

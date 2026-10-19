@@ -26,7 +26,7 @@ The features ship one by one and are listed on the pricing page, with Soon on th
 
 - Business Model Canvas, ICP, Competitor landscape and Brand identity in Decisions
 - Private projects (unlisted publish with a share link), version history and project keys
-- GitHub sync, automated checks, monitoring and alerts, token analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
+- GitHub sync, automated checks, monitoring and alerts (a worker watches your contracts and sends to email, Telegram or Discord, see [Alerts](../token-launch/alerts.md)), token analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
 - Investor and grant pack, weekly update, tester kit, custom domain
 - Partner perks and priority help
 

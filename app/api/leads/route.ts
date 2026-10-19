@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { SOLUTION_KEYS, solutionLabel } from "@/content/studio-pro";
 import { getDb } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -125,11 +126,10 @@ async function storeLead(lead: Lead, userAgent: string | null): Promise<boolean>
   }
 }
 
-/** Plain HTTP call — one POST does not justify the resend SDK dependency. */
+/** Operator email through lib/email.ts (M123), best effort. */
 async function sendLeadEmail(lead: Lead): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.LEADS_NOTIFY_EMAIL;
-  if (!apiKey || !to) return false;
+  if (!to) return false;
 
   const from = process.env.LEADS_FROM_EMAIL || "CanHav Leads <onboarding@resend.dev>";
   const who = lead.fullName ?? lead.email;
@@ -149,28 +149,5 @@ async function sendLeadEmail(lead: Lead): Promise<boolean> {
     lead.comments || "(none)",
   ];
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        reply_to: lead.email,
-        subject,
-        text: lines.join("\n"),
-      }),
-    });
-    if (!res.ok) {
-      console.error("[leads] resend rejected email", res.status, await res.text());
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error("[leads] resend request failed", err);
-    return false;
-  }
+  return sendEmail({ to, from, replyTo: lead.email, subject, text: lines.join("\n") });
 }

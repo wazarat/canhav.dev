@@ -492,6 +492,65 @@ await sql`
     on launchpad.check_runs (project_id, tool, created_at desc)
 `;
 
+// Monitoring and alerts (M123, Studio+). Rules name an address on the
+// project's chain and the kinds to watch; channels hold the encrypted
+// target (ALERTS_SECRET); events are one row per rule and log, delivered
+// per channel; cursors keep the worker's place per chain.
+await sql`
+  create table if not exists launchpad.alert_rules (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    chain_id int not null,
+    address text not null,
+    label text,
+    kinds text[] not null,
+    threshold_wei numeric(78, 0),
+    enabled boolean not null default true,
+    created_by text not null,
+    created_at timestamptz not null default now(),
+    unique (project_id, chain_id, address)
+  )
+`;
+await sql`
+  create table if not exists launchpad.alert_channels (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    kind text not null check (kind in ('email','telegram','discord')),
+    config_enc text not null,
+    masked text not null,
+    enabled boolean not null default true,
+    created_by text not null,
+    created_at timestamptz not null default now()
+  )
+`;
+await sql`
+  create table if not exists launchpad.alert_events (
+    id uuid primary key default gen_random_uuid(),
+    rule_id uuid not null references launchpad.alert_rules(id) on delete cascade,
+    project_id uuid not null,
+    chain_id int not null,
+    tx_hash text not null,
+    log_index int not null,
+    block_number bigint,
+    kind text not null,
+    summary jsonb not null,
+    delivered jsonb,
+    created_at timestamptz not null default now(),
+    unique (tx_hash, log_index, rule_id)
+  )
+`;
+await sql`
+  create index if not exists alert_events_project_idx
+    on launchpad.alert_events (project_id, created_at desc)
+`;
+await sql`
+  create table if not exists launchpad.alert_cursors (
+    chain_id int primary key,
+    last_block bigint not null,
+    updated_at timestamptz not null default now()
+  )
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

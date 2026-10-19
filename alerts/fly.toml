@@ -1,0 +1,20 @@
+# Fly.io deploy for the alerts worker (M123). See README.md.
+#
+# Secrets: fly secrets set DATABASE_URL=... ALERTS_SECRET=... RESEND_API_KEY=... -a canhav-alerts
+# Optional: ALERTS_FROM_EMAIL="CanHav Alerts <alerts@canhav.com>"
+
+app = "canhav-alerts"
+primary_region = "iad"
+
+[build]
+
+# No http service: the worker polls and sends, nothing calls it. The
+# process group keeps one machine running; auto stop would end polling.
+[processes]
+  worker = "npm start"
+
+[[vm]]
+  processes = ["worker"]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

@@ -31,6 +31,7 @@
 * [Fees and economics](token-launch/fees-and-economics.md)
 * [Contract guarantees](token-launch/contract-guarantees.md)
 * [Governance](token-launch/governance.md)
+* [Alerts](token-launch/alerts.md)
 * [Contract addresses](token-launch/contract-addresses.md)
 * [Risks](token-launch/risks.md)
 * [FAQ](token-launch/faq.md)

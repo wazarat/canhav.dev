@@ -34,7 +34,7 @@ const RATES = {
 const BUDGET = Number(process.env.FLY_BUDGET ?? 20);
 
 /** The size each app is meant to run at, read from its fly config. */
-const CONFIGS = ["indexer/fly.toml", "indexer/fly.arbitrum.toml"];
+const CONFIGS = ["indexer/fly.toml", "indexer/fly.arbitrum.toml", "alerts/fly.toml"];
 
 function fly(args) {
   try {
