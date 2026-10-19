@@ -8,6 +8,7 @@ import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import { PlusGate } from "@/components/studio/PlusGate";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
+import type { AgentWriteMode } from "@/lib/agent-writes";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
@@ -52,6 +53,7 @@ function Heading({ children }: { children: React.ReactNode }) {
 export function DecisionsTab({
   id,
   createdAt,
+  agentMode,
   doc,
   patch,
   patchSection,
@@ -61,6 +63,8 @@ export function DecisionsTab({
   id: string;
   /** ISO time the project was started, for the project's age on the competitor map (M115). */
   createdAt: string;
+  /** The project's agent write mode, which decides whether Draft asks the agent first (M117). */
+  agentMode: AgentWriteMode;
   doc: ProjectDoc;
   patch: (p: Partial<ProjectDoc>) => void;
   patchSection: <K extends keyof ProjectDoc>(key: K, p: Partial<ProjectDoc[K]>) => void;
@@ -106,7 +110,7 @@ export function DecisionsTab({
           <div id="decisions-icp" className="space-y-2 border-t border-ink-700/40 pt-5">
             <Heading>{D.icp}</Heading>
             <PlusGate feature="icp">
-              <IcpEditor projectId={id} name={doc.name} profiles={doc.icp} onChange={(icp) => patch({ icp })} />
+              <IcpEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} onChange={(icp) => patch({ icp })} />
             </PlusGate>
           </div>
         </CardSection>
@@ -114,14 +118,14 @@ export function DecisionsTab({
         <CardSection id="decisions-canvas" className="space-y-4">
           <Heading>{D.canvas}</Heading>
           <PlusGate feature="bmc">
-            <CanvasEditor projectId={id} name={doc.name} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} />
+            <CanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} />
           </PlusGate>
         </CardSection>
 
         <CardSection id="decisions-competitors" className="space-y-4">
           <Heading>{D.competitors}</Heading>
           <PlusGate feature="competitors">
-            <CompetitorsSection projectId={id} name={doc.name} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
+            <CompetitorsSection projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
           </PlusGate>
         </CardSection>
 

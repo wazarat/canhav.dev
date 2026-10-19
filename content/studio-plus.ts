@@ -138,6 +138,13 @@ export const STUDIO_PLUS_COPY = {
     remaining: (n: number) => (n === 1 ? "1 draft left this month" : `${n} drafts left this month`),
     capReached: "Your team has used its 60 drafts for this month. Your own agent can write the same fields over MCP, or wait for the first of the month.",
     failed: "The draft failed. Try again.",
+    /** Agent-first (M117). */
+    queue: "Ask your agent",
+    queued: (when: string) => `Waiting for your agent since ${when}. It picks this up on its next call.`,
+    cancel: "Cancel",
+    serverNow: "Draft with CanHav now",
+    serverFirst: "No agent is connected to this project, so CanHav drafts it; connect one to draft without the allowance.",
+    by: { agent: (when: string) => `Drafted by your agent, ${when}`, canhav: (when: string) => `Drafted by CanHav, ${when}` },
     askAgent: "Or ask your agent",
     askAgentLabel: "Paste into your IDE",
     askAgentHint: "Your agent writes the same fields through update_project, outside the monthly allowance.",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { canvasPatchSchema } from "@/lib/canvas";
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
+import { kindsForFields, withDrafted, withoutRequest } from "@/lib/draft/requests";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -659,6 +660,22 @@ function deepMerge<D>(base: D, patch: unknown): D {
 }
 
 export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): ProjectDoc {
+  const written = Object.keys(patch).filter((k) => (patch as Record<string, unknown>)[k] !== undefined);
+  return markDraftedFields(applyProjectPatchInner(doc, patch), written);
+}
+
+/** A field an agent writes clears its draft request and reads as drafted by the agent (M117). */
+function markDraftedFields(doc: ProjectDoc, fields: string[]): ProjectDoc {
+  let next = doc;
+  for (const kind of kindsForFields(fields)) {
+    const requests = withoutRequest(next, kind);
+    next = { ...next, drafted: withDrafted(next, kind, "agent"), ...(requests ? { draftRequests: requests } : {}) };
+    if (!requests) next = dropKey(next, "draftRequests");
+  }
+  return next;
+}
+
+function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDoc {
   const { sectors, subsectors, kit: kitPatch, ...fields } = patch;
   let next = deepMerge(doc, fields);
   // Testnet contracts arrive as rows or plain addresses and are stored as rows (M83).

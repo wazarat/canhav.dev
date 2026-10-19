@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
 
-import { DRAFT_LIMITS } from "@/lib/draft/limits";
+import { DRAFT_LIMITS, DRAFT_MODELS, DRAFT_MODEL_FALLBACK, type DraftKind } from "@/lib/draft/limits";
 
 /**
  * The one call to the model (M112). Structured output through
@@ -13,12 +13,16 @@ import { DRAFT_LIMITS } from "@/lib/draft/limits";
  * system prompt with a cache breakpoint, so Draft then Redraft on the
  * same record read it from the cache. Outside production without an API
  * key a kind's fixture answers, so the surfaces can be built and smoke
- * tested; on production a missing key is a configuration error.
+ * tested; on production a missing key is a configuration error. The model
+ * is set per kind (M117), the agent-first path leaves this as the fallback.
  */
-export const DRAFT_MODEL = "claude-opus-5-5";
+/** The model a kind runs on (M117); an unknown kind runs on the fallback. */
+export function draftModel(kind: string): string {
+  return DRAFT_MODELS[kind as DraftKind] ?? DRAFT_MODEL_FALLBACK;
+}
 
 export class DraftError extends Error {
-  readonly code: "not_configured" | "refusal" | "unparsed" | "api";
+  readonly code: "not_configured" | "refusal" | "unparsed" | "truncated" | "api";
   constructor(code: DraftError["code"], message: string) {
     super(message);
     this.name = "DraftError";
@@ -68,7 +72,7 @@ export async function draft<T>(input: {
   }
   try {
     const response = await anthropic().messages.parse({
-      model: DRAFT_MODEL,
+      model: draftModel(input.kind),
       max_tokens: input.maxTokens ?? DRAFT_LIMITS.maxTokens,
       system: [
         { type: "text", text: input.context, cache_control: { type: "ephemeral" } },
@@ -79,6 +83,8 @@ export async function draft<T>(input: {
     });
     if (response.stop_reason === "refusal")
       throw new DraftError("refusal", `The model declined this draft${response.stop_details?.category ? ` (${response.stop_details.category})` : ""}.`);
+    // A cut off answer is a failed draft, not a short one (M116 review fix).
+    if (response.stop_reason === "max_tokens") throw new DraftError("truncated", "The draft ran past its length and was cut off. Try again.");
     if (!response.parsed_output) throw new DraftError("unparsed", "The model's answer did not match the expected shape. Try again.");
     const u = response.usage;
     return {

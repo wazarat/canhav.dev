@@ -1,4 +1,5 @@
 import { mcpAlias } from "@/content/launch";
+import type { DraftKind } from "@/lib/draft/limits";
 
 /**
  * Paste prompts that ask the owner's own agent to write a Studio+ field
@@ -44,3 +45,11 @@ export function draftCompetitorsPrompt(name: string, projectId: string): string 
     "Call get_competitors first for the landscape (the protocols in the subsector on the chain, with TVL and age). Then one line of at most 300 characters on how this project differs from the one or two it will be compared with, as { differentiator }.",
   );
 }
+
+/** The prompt per kind, for the MCP prompts (M117) and the paste blocks. Grows with the run. */
+export const DRAFT_AGENT_PROMPTS: Partial<Record<DraftKind, (name: string, projectId: string) => string>> = {
+  canvas: draftCanvasPrompt,
+  canvas_block: draftCanvasPrompt,
+  icp: draftIcpPrompt,
+  competitors: draftCompetitorsPrompt,
+};

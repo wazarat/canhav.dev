@@ -31,6 +31,24 @@ export const DRAFT_KIND_FEATURES = {
 
 export type DraftKind = keyof typeof DRAFT_KIND_FEATURES;
 
+/**
+ * The server model per kind (M117, the owner's choice): Haiku 5.5 for the
+ * short kinds, Sonnet 5.5 for the investor pack. Opus 5.5 is the constant
+ * to move a kind up to if the side by side test finds quality short.
+ */
+export const DRAFT_MODEL_FALLBACK = "claude-opus-5-5";
+export const DRAFT_MODELS: Record<DraftKind, string> = {
+  canvas: "claude-haiku-5-5",
+  canvas_block: "claude-haiku-5-5",
+  icp: "claude-haiku-5-5",
+  competitors: "claude-haiku-5-5",
+  brand: "claude-haiku-5-5",
+  onepager: "claude-sonnet-5-5",
+  deck: "claude-sonnet-5-5",
+  grants: "claude-sonnet-5-5",
+  weekly: "claude-haiku-5-5",
+};
+
 export function isDraftKind(value: unknown): value is DraftKind {
   return typeof value === "string" && value in DRAFT_KIND_FEATURES;
 }

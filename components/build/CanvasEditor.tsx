@@ -1,6 +1,8 @@
 "use client";
 
-import { DraftButton } from "@/components/build/DraftButton";
+import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import type { AgentWriteMode } from "@/lib/agent-writes";
+import type { ProjectDoc } from "@/lib/ideation";
 import { TextField } from "@/components/ideation/TextField";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { draftCanvasPrompt } from "@/lib/agent-prompts-draft";
@@ -16,11 +18,18 @@ import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, type CanvasBlock, canvasFill
 export function CanvasEditor({
   projectId,
   name,
+  meta,
+  patch,
+  agentMode,
   canvas,
   onChange,
 }: {
   projectId: string;
   name: string;
+  /** The record's draft requests and marks, the patch that writes them, and the agent mode (M117). */
+  meta: DraftMeta;
+  patch: (p: Partial<ProjectDoc>) => void;
+  agentMode: AgentWriteMode;
   canvas: Canvas | undefined;
   onChange: (next: Canvas) => void;
 }) {
@@ -33,6 +42,9 @@ export function CanvasEditor({
       <div className="flex flex-wrap items-center gap-3">
         <DraftButton<Record<CanvasBlock, string>>
           projectId={projectId}
+          doc={meta}
+          patch={patch}
+          agentMode={agentMode}
           kind="canvas"
           label={C.draft}
           onResult={(value) => onChange({ ...current, ...value })}
@@ -53,6 +65,9 @@ export function CanvasEditor({
             />
             <DraftButton<{ text: string }>
               projectId={projectId}
+              doc={meta}
+              patch={patch}
+              agentMode={agentMode}
               kind="canvas_block"
               body={{ block }}
               label={C.redraft}

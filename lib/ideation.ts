@@ -1,6 +1,7 @@
 import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/lib/canvas";
 import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
+import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
@@ -343,6 +344,10 @@ export interface ProjectDoc {
   icp?: Icp[];
   /** The competitor line and the map's state (M115, Studio+). Optional, never injected; only the line is published. */
   competitors?: Competitors;
+  /** Draft requests waiting for the agent (M117). Optional, never injected, never published. */
+  draftRequests?: DraftRequest[];
+  /** Who drafted each Studio+ field (M117). Optional, never injected, never published. */
+  drafted?: Drafted;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -654,6 +659,17 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
     if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
     else delete (rest as { summary?: unknown }).summary;
+  }
+  // Draft requests and drafted marks (M117): cleaned, dropped when empty, never invented.
+  if ("draftRequests" in rest) {
+    const clean = normalizeDraftRequests((rest as { draftRequests?: unknown }).draftRequests);
+    if (clean) (rest as { draftRequests?: DraftRequest[] }).draftRequests = clean;
+    else delete (rest as { draftRequests?: unknown }).draftRequests;
+  }
+  if ("drafted" in rest) {
+    const clean = normalizeDrafted((rest as { drafted?: unknown }).drafted);
+    if (clean) (rest as { drafted?: Drafted }).drafted = clean;
+    else delete (rest as { drafted?: unknown }).drafted;
   }
   // Competitors (M115): the line capped, the map state checked, dropped when empty.
   if ("competitors" in rest) {

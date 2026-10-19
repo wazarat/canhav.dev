@@ -1,6 +1,7 @@
 import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
 import type { Icp } from "@/lib/icp";
 import type { Competitors } from "@/lib/competitors/record";
+import { DRAFT_KIND_FIELDS, draftPromptName, openRequests } from "@/lib/draft/requests";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
@@ -802,6 +803,12 @@ export function buildAgentsMd(input: {
       "flows deserve scrutiny proportional to it.",
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
+    // Open draft requests (M117): the owner clicked Draft and waits on the agent.
+    const requests = openRequests(project);
+    if (requests.length) {
+      lines.push("", "## Open draft requests", "", "The owner asked for these drafts. Write each field through update_project; that clears the request.", "");
+      for (const r of requests) lines.push(`- ${DRAFT_KIND_FIELDS[r.kind] ?? r.kind} (${r.kind}), asked ${r.requestedAt.slice(0, 10)}, prompt ${draftPromptName(r.kind)}`);
+    }
     // The agent's summary (M104), when one has been written.
     if (project.summary) {
       lines.push("", "## Summary, by the agent", "", `Last written ${project.summary.updatedAt.slice(0, 10)}. Keep it current with set_summary.`, "", "**Built**", "");

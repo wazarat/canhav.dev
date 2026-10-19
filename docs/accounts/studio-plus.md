@@ -30,11 +30,13 @@ The features ship one by one and are listed on the pricing page, with Soon on th
 - Investor and grant pack, weekly update, tester kit, custom domain
 - Partner perks and priority help
 
-Drafting features call a model on CanHav's side from the record you already have, within a monthly allowance per team; your own IDE agent can fill the same fields over MCP at no cost to the allowance.
+Drafting is agent first: your own IDE agent writes every Studio+ field, and CanHav's server draft is the fallback for a team with no agent connected, within a monthly allowance.
 
 ### Drafting
 
-A Draft button sends the project record (the same markdown the export produces), a short kit summary and the fields named for that draft to Anthropic's API from CanHav's side, and the answer lands in the draft as an edit you can change, so autosave and the agent revision guard work as usual. Nothing from your repository and no keys are sent. A team has 60 drafts a month across every kind; the button shows what is left, and Or ask your agent gives the prompt that makes your own IDE agent write the same field through `update_project`, outside the allowance.
+A Draft button queues a request on the project. A connected agent sees open requests first on `get_project_status` (and in AGENTS.md), writes the field through `update_project`, and that clears the request; the field then reads "Drafted by your agent" with the time. Claude Code lists one slash command per kind (`draft_canvas`, `draft_icp`, `draft_competitors`, and the later kinds), and Or ask your agent gives the same prompt to paste into another editor.
+
+With agent writes off, or from Draft with CanHav now, CanHav drafts on its side: the project record (the same markdown the export produces), a short kit summary and the fields named for that draft go to Anthropic's API, on Claude Haiku 5.5 for the canvas, the profiles, the competitor line, the brand kit and the weekly update, and on Claude Sonnet 5.5 for the investor pack. Nothing from your repository and no keys are sent. The answer lands in the draft as an edit you can change, the field reads "Drafted by CanHav", and a team has 60 server drafts a month across every kind; the button shows what is left. A draft that is refused, cut off or malformed fails plainly and counts against nothing.
 
 ## Cancelling and downgrading
 

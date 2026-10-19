@@ -1,6 +1,8 @@
 "use client";
 
-import { DraftButton } from "@/components/build/DraftButton";
+import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import type { AgentWriteMode } from "@/lib/agent-writes";
+import type { ProjectDoc } from "@/lib/ideation";
 import { TextField } from "@/components/ideation/TextField";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
@@ -17,11 +19,18 @@ import { ICP_LIMITS, type Icp, emptyIcp, listFromText } from "@/lib/icp";
 export function IcpEditor({
   projectId,
   name,
+  meta,
+  patch,
+  agentMode,
   profiles,
   onChange,
 }: {
   projectId: string;
   name: string;
+  /** The record's draft requests and marks, the patch that writes them, and the agent mode (M117). */
+  meta: DraftMeta;
+  patch: (p: Partial<ProjectDoc>) => void;
+  agentMode: AgentWriteMode;
   profiles: Icp[] | undefined;
   onChange: (next: Icp[]) => void;
 }) {
@@ -33,6 +42,9 @@ export function IcpEditor({
       <p className="text-xs leading-relaxed text-ink-400">{C.intro}</p>
       <DraftButton<{ profiles: Icp[] }>
         projectId={projectId}
+        doc={meta}
+        patch={patch}
+        agentMode={agentMode}
         kind="icp"
         label={C.draft}
         onResult={(value) => onChange(value.profiles.slice(0, ICP_LIMITS.profiles.max))}

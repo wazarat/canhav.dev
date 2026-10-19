@@ -56,7 +56,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ value: result.value, usage: result.usage, remaining: Math.max(0, DRAFT_LIMITS.perOrgMonth - used - 1) });
   } catch (err) {
     if (err instanceof DraftError) {
-      const status = err.code === "not_configured" ? 503 : err.code === "refusal" ? 422 : 502;
+      const status = err.code === "not_configured" ? 503 : err.code === "refusal" || err.code === "truncated" ? 422 : 502;
       return NextResponse.json({ error: err.message, code: err.code }, { status });
     }
     console.error("[draft] failed", err);

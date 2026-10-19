@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { DraftButton } from "@/components/build/DraftButton";
+import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import type { AgentWriteMode } from "@/lib/agent-writes";
+import type { ProjectDoc } from "@/lib/ideation";
 import { PositioningMap } from "@/components/build/PositioningMap";
 import { TextField } from "@/components/ideation/TextField";
 import { Segmented } from "@/components/ui/Segmented";
@@ -22,12 +24,19 @@ import { COMPETITOR_AXES, COMPETITOR_LIMITS, type CompetitorAxis, type Competito
 export function CompetitorsSection({
   projectId,
   name,
+  meta,
+  patch,
+  agentMode,
   createdAt,
   value,
   onChange,
 }: {
   projectId: string;
   name: string;
+  /** The record's draft requests and marks, the patch that writes them, and the agent mode (M117). */
+  meta: DraftMeta;
+  patch: (p: Partial<ProjectDoc>) => void;
+  agentMode: AgentWriteMode;
   /** ISO time the project was started, for the project's age on the map. */
   createdAt: string;
   value: Competitors | undefined;
@@ -66,7 +75,7 @@ export function CompetitorsSection({
   const rows = landscape?.rows ?? [];
   const mapRows = [...rows.filter((r) => pinned.has(r.slug)), ...rows.filter((r) => !pinned.has(r.slug))].slice(0, Math.max(COMPETITOR_LIMITS.mapRows, pinned.size));
   const projectAge = Math.max(0, Math.round((Date.now() - new Date(createdAt).getTime()) / (30 * 86_400_000)));
-  const meta = landscape
+  const facts = landscape
     ? [
         C.categories(landscape.categories.join(", ") || "none"),
         landscape.onChain ? C.onChain(chainInfo(landscape.chain).name) : C.anyChain,
@@ -86,7 +95,7 @@ export function CompetitorsSection({
         <p className="text-xs text-ink-400">{C.none}</p>
       ) : (
         <>
-          <p className="text-xs text-ink-400">{meta.join(" · ")}</p>
+          <p className="text-xs text-ink-400">{facts.join(" · ")}</p>
           <div className="overflow-x-auto rounded-lg border border-ink-700/60">
             <table className="w-full text-left text-xs">
               <thead className="text-ink-500">
@@ -147,6 +156,9 @@ export function CompetitorsSection({
         <TextField label={C.differentiator} hint={C.differentiatorHint} value={current.differentiator} onChange={(v) => onChange({ ...current, differentiator: v })} max={COMPETITOR_LIMITS.differentiator.max} rows={2} />
         <DraftButton<{ differentiator: string }>
           projectId={projectId}
+          doc={meta}
+          patch={patch}
+          agentMode={agentMode}
           kind="competitors"
           label={C.draft}
           onResult={(v) => onChange({ ...current, differentiator: v.differentiator })}
