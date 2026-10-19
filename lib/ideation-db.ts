@@ -4,6 +4,7 @@ import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } f
 import { getDb } from "@/lib/db";
 import type { JourneyDoc } from "@/lib/journey";
 import { type Owner, ownedBy } from "@/lib/owner";
+import { publishedCompetitors } from "@/lib/competitors/record";
 import { recordRevision } from "@/lib/revisions-db";
 import { revisionAuthor } from "@/lib/revisions";
 import {
@@ -581,6 +582,12 @@ export async function publishEntity(
   // the team's machine, which have no place on a public page.
   // The agent's summary (M104) stays on the draft as well.
   const { references: refs, summary: sum, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown };
+  // Competitors (M115): the public record keeps the line, not the map's state.
+  const pc = publishedCompetitors((projectBody as ProjectDoc).competitors);
+  if (table === "projects") {
+    if (pc) (projectBody as ProjectDoc).competitors = pc;
+    else delete (projectBody as { competitors?: unknown }).competitors;
+  }
   const base = table === "projects" ? (projectBody as IdeationDoc) : (draftBody as IdeationDoc);
   const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
   const draftOut =

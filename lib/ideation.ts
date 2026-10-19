@@ -1,5 +1,6 @@
 import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/lib/canvas";
 import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
+import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
@@ -340,6 +341,8 @@ export interface ProjectDoc {
   canvas?: Canvas;
   /** Ideal customer profiles (M114, Studio+), one or two. Optional, never injected, published with the record. */
   icp?: Icp[];
+  /** The competitor line and the map's state (M115, Studio+). Optional, never injected; only the line is published. */
+  competitors?: Competitors;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -651,6 +654,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
     if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
     else delete (rest as { summary?: unknown }).summary;
+  }
+  // Competitors (M115): the line capped, the map state checked, dropped when empty.
+  if ("competitors" in rest) {
+    const clean = normalizeCompetitors((rest as { competitors?: unknown }).competitors);
+    if (clean) (rest as { competitors?: Competitors }).competitors = clean;
+    else delete (rest as { competitors?: unknown }).competitors;
   }
   // ICP (M114): profiles cleaned and capped, dropped when empty, never invented.
   if ("icp" in rest) {

@@ -48,6 +48,7 @@ export function ProjectBuildPage({
   initialDoc,
   initialStatus,
   initialSlug,
+  createdAt = new Date().toISOString(),
   initialVisibility = "public",
   initialShareToken = null,
   privateUsed = 0,
@@ -63,6 +64,8 @@ export function ProjectBuildPage({
   initialDoc: ProjectDoc;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
+  /** ISO time the project was started (M115). */
+  createdAt?: string;
   /** Private keeps the published page off the listings (M109). */
   initialVisibility?: "public" | "private";
   initialShareToken?: string | null;
@@ -205,7 +208,7 @@ export function ProjectBuildPage({
       />
     ),
     decisions: (
-      <DecisionsTab id={id} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
+      <DecisionsTab id={id} createdAt={createdAt} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
     deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} />,
     publish: (

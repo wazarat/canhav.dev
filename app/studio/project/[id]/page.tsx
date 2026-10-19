@@ -123,6 +123,7 @@ export default async function ProjectEditorPage({
         initialDoc={row.draft_doc}
         initialStatus={row.status}
         initialSlug={row.slug}
+        createdAt={new Date(row.created_at).toISOString()}
         initialVisibility={row.visibility ?? "public"}
         initialShareToken={row.share_token ?? null}
         privateUsed={privateUsed}

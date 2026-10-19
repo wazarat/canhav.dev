@@ -34,3 +34,13 @@ export function draftIcpPrompt(name: string, projectId: string): string {
     "One or two profiles, each with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection (lists of up to eight short items), built on the persona table and on protocols in the same subsector.",
   );
 }
+
+export function draftCompetitorsPrompt(name: string, projectId: string): string {
+  return draftFieldPrompt(
+    name,
+    projectId,
+    "competitors",
+    "differentiator line",
+    "Call get_competitors first for the landscape (the protocols in the subsector on the chain, with TVL and age). Then one line of at most 300 characters on how this project differs from the one or two it will be compared with, as { differentiator }.",
+  );
+}

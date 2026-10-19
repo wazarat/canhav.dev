@@ -1,5 +1,6 @@
 import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
 import type { Icp } from "@/lib/icp";
+import type { Competitors } from "@/lib/competitors/record";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
@@ -405,6 +406,12 @@ function icpLines(icp: Icp[] | undefined): string[] {
   return lines;
 }
 
+/** "## Positioning", the differentiator line (M115), or nothing. The landscape itself is read live with get_competitors. */
+function positioningLines(c: Competitors | undefined): string[] {
+  if (!c?.differentiator) return [];
+  return ["## Positioning", "", c.differentiator, ""];
+}
+
 /** "## Business model", the nine canvas blocks (M113), or nothing. */
 function canvasLines(canvas: Canvas | undefined): string[] {
   if (!canvas || canvasFilled(canvas) === 0) return [];
@@ -435,6 +442,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...customerLines(doc),
     ...icpLines(doc.icp),
     ...canvasLines(doc.canvas),
+    ...positioningLines(doc.competitors),
     "## Distribution reality",
     "",
     // The acknowledgement is about Robinhood Chain, so only a project there carries it (M52).
@@ -780,6 +788,7 @@ export function buildAgentsMd(input: {
       "",
       ...icpLines(project.icp),
       ...canvasLines(project.canvas),
+      ...positioningLines(project.competitors),
       "## Contract architecture",
       "",
       `- **Contracts:** ${orNotSet(a.contracts)}`,

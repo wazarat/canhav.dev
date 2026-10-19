@@ -1,6 +1,7 @@
 "use client";
 
 import { CanvasEditor } from "@/components/build/CanvasEditor";
+import { CompetitorsSection } from "@/components/build/CompetitorsSection";
 import { IcpEditor } from "@/components/build/IcpEditor";
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
@@ -50,6 +51,7 @@ function Heading({ children }: { children: React.ReactNode }) {
  */
 export function DecisionsTab({
   id,
+  createdAt,
   doc,
   patch,
   patchSection,
@@ -57,6 +59,8 @@ export function DecisionsTab({
   earlier,
 }: {
   id: string;
+  /** ISO time the project was started, for the project's age on the competitor map (M115). */
+  createdAt: string;
   doc: ProjectDoc;
   patch: (p: Partial<ProjectDoc>) => void;
   patchSection: <K extends keyof ProjectDoc>(key: K, p: Partial<ProjectDoc[K]>) => void;
@@ -111,6 +115,13 @@ export function DecisionsTab({
           <Heading>{D.canvas}</Heading>
           <PlusGate feature="bmc">
             <CanvasEditor projectId={id} name={doc.name} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} />
+          </PlusGate>
+        </CardSection>
+
+        <CardSection id="decisions-competitors" className="space-y-4">
+          <Heading>{D.competitors}</Heading>
+          <PlusGate feature="competitors">
+            <CompetitorsSection projectId={id} name={doc.name} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
           </PlusGate>
         </CardSection>
 

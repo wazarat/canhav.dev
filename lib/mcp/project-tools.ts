@@ -5,6 +5,8 @@ import { z } from "zod";
 
 import { type Owner, ownerOf } from "@/lib/owner";
 import { getRevision, listRevisions } from "@/lib/revisions-db";
+import { landscapeFor } from "@/lib/competitors/landscape";
+import { ageMonths } from "@/lib/competitors/record";
 
 import {
   PROJECT_LIMITS,
@@ -657,7 +659,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear), logo (a URL on CanHav's image store from set_logo, or null to clear), and summary (built and building lists, see set_summary, null to clear), and canvas, the Business Model Canvas (Studio+), any of customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners and costStructure as one paragraph of up to 600 characters each, merged over the stored blocks, null to clear, and icp (Studio+), one or two ideal customer profiles with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection, the list replaces the stored one, null to clear. What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear), logo (a URL on CanHav's image store from set_logo, or null to clear), and summary (built and building lists, see set_summary, null to clear), and canvas, the Business Model Canvas (Studio+), any of customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners and costStructure as one paragraph of up to 600 characters each, merged over the stored blocks, null to clear, competitors (Studio+) with differentiator, one line of up to 300 characters on how the project differs, read the landscape with get_competitors first, and icp (Studio+), one or two ideal customer profiles with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection, the list replaces the stored one, null to clear. What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -1270,6 +1272,33 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       });
     },
     scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_competitors",
+    {
+      title: "Competitor landscape",
+      description:
+        "Studio+. The protocols in this project's subsectors on its chain from DefiLlama (this month's snapshot, or any chain when the chain has too few), each with category, TVL, chains and months since listing, the families the resource pack already names, and the project's differentiator line. Write the line with update_project competitors.differentiator.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      const l = await landscapeFor(project.draft_doc);
+      return jsonResult({
+        categories: l.categories,
+        chain: l.chain,
+        onChain: l.onChain,
+        month: l.month,
+        kitFamilies: l.kitFamilies,
+        rows: l.rows.map((r) => ({ name: r.name, slug: r.slug, category: r.category, tvl: Math.round(r.tvl), chains: r.chains, url: r.url, ageMonths: ageMonths(r.listedAt) })),
+        differentiator: project.draft_doc.competitors?.differentiator ?? null,
+      });
+    },
+    { ...scope, plus: "competitors" },
   );
 
   registerMeteredTool(

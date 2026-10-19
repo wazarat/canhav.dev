@@ -289,6 +289,12 @@ export default async function ProjectPublicPage({
           </div>
         </Section>
 
+        {doc.competitors?.differentiator ? (
+          <Section title={STUDIO_PLUS_COPY.competitors.title}>
+            <Prose label={STUDIO_PLUS_COPY.competitors.differentiator} text={doc.competitors.differentiator} />
+          </Section>
+        ) : null}
+
         {doc.canvas && canvasFilled(doc.canvas) > 0 ? (
           <Section title={STUDIO_PLUS_COPY.canvas.title}>
             <div className="grid gap-3 md:grid-cols-2">

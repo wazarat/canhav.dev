@@ -42,6 +42,16 @@ Projects saved under a retired sector (underwriting and risk, oracles and data, 
 
 One or two ideal customer profiles: name (a role), summary, wallets they use, channels, protocols they use, buying trigger, objection. Drafted by CanHav from the persona table plus the protocols in the same DefiLlama category on the project's chain (and, when a Dune query is configured, active wallet counts of similar protocols), or by the team's agent over `update_project` (`icp`, the list replaces the stored one). Published with the record. Who you sell to and the persona table now live in the same Customers section of Decisions.
 
+## Competitors (Decisions, Studio+)
+
+### Asked
+
+One line on how the project differs (up to 300 characters), published with the record. Drafted by CanHav against the landscape, or by the team's agent (`get_competitors` for the landscape, then `update_project` with `competitors.differentiator`). The map's axes and pins are the team's own and stay on the draft.
+
+### Computed
+
+The landscape: DefiLlama protocols in the categories the project's subsectors map to (`content/competitors/llama-categories.ts`), on the project's chain when at least three are there, else any chain, from a monthly snapshot taken on the first of the month (Vercel cron) or inline once for a new category. Shown as a table and a positioning map (TVL on a log scale, age in months since listing).
+
 ## Business model (Decisions, Studio+)
 
 ### Asked

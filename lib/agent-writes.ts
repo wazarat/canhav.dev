@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { canvasPatchSchema } from "@/lib/canvas";
 import { icpListSchema } from "@/lib/icp";
+import { competitorsPatchSchema } from "@/lib/competitors/record";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -250,6 +251,8 @@ export const projectPatchSchema = z
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The deployer key's address (M102), never the key; null clears it.
     deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
+    // Competitors (M115): the line and the map state merge over the stored ones; null clears them.
+    competitors: competitorsPatchSchema.nullable(),
     // Ideal customer profiles (M114): the list replaces the stored one; null clears it.
     icp: icpListSchema.nullable(),
     // The Business Model Canvas (M113): blocks merge over the stored ones; null clears it.
@@ -662,6 +665,8 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.competitors === null) next = dropKey(next, "competitors");
+  else if (patch.competitors) next = { ...next, competitors: { differentiator: "", ...(next.competitors ?? {}), ...patch.competitors } };
   if (patch.icp === null) next = dropKey(next, "icp");
   else if (patch.icp) next = { ...next, icp: patch.icp };
   if (patch.canvas === null) next = dropKey(next, "canvas");
@@ -1015,6 +1020,8 @@ const PATH_LABELS: Record<string, string> = {
   addressBook: "Address book",
   deployer: "Deployer address",
   icp: "Ideal customers",
+  competitors: "Competitors",
+  "competitors.differentiator": "How you differ",
   canvas: "Business model",
   "canvas.customerSegments": "Canvas, customer segments",
   "canvas.valueProposition": "Canvas, value proposition",

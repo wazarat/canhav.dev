@@ -454,6 +454,21 @@ await sql`
     on launchpad.draft_runs (org_id, created_at desc)
 `;
 
+// Competitor snapshots (M115): the DefiLlama protocols of one category on
+// one chain, taken monthly by the cron (or inline on a cold miss), shared
+// by every project in that subsector.
+await sql`
+  create table if not exists launchpad.competitor_snapshots (
+    id uuid primary key default gen_random_uuid(),
+    category text not null,
+    chain text not null,
+    month date not null,
+    rows jsonb not null,
+    fetched_at timestamptz not null default now(),
+    unique (category, chain, month)
+  )
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

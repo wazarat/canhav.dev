@@ -66,6 +66,30 @@ export const STUDIO_PLUS_COPY = {
     /** The token may lag the webhook by a moment. */
     refresh: "If the studio still reads Studio, reload once.",
   },
+  /** Competitor landscape (M115). */
+  competitors: {
+    title: "Competitors",
+    intro: "The protocols in your subsector on your chain, from DefiLlama, refreshed monthly, and where you sit among them. Hours of research, and finding out after launch that three teams built the same thing.",
+    loading: "Loading the landscape",
+    failed: "Could not load the landscape. Reload and try again.",
+    none: "No category on DefiLlama maps to this project's subsectors yet. Pick a subsector under What you are building.",
+    onChain: (chain: string) => `On ${chain}`,
+    anyChain: "Any chain, too few on yours",
+    month: (month: string) => `Snapshot ${month}`,
+    categories: (list: string) => `DefiLlama ${list}`,
+    kit: (list: string) => `In your kit ${list}`,
+    table: { name: "Protocol", category: "Category", tvl: "TVL", chains: "Chains", listed: "Listed", pin: "Pin" },
+    mapTitle: "Positioning map",
+    mapHint: "The largest protocols and the pinned ones. TVL on a log scale, age in months since DefiLlama listed them. You are the bright dot, at the age of this project and no TVL yet.",
+    axisX: "Across",
+    axisY: "Up",
+    axes: { tvl: "TVL", age: "Age" },
+    you: "You",
+    differentiator: "How you differ",
+    differentiatorHint: "One line a reviewer remembers. Drafted from the record against the landscape.",
+    draft: "Draft the line",
+    pinned: (n: number) => (n === 1 ? "1 pinned" : `${n} pinned`),
+  },
   /** Ideal customer profiles (M114). */
   icp: {
     title: "Ideal customers",
@@ -202,4 +226,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors"];
