@@ -83,6 +83,11 @@ export const BUILD_COPY = {
   },
   /** The derived rows under the Launch milestone, each opening its tab. */
   launchRows: {
+    fund: {
+      title: "Fund the deployer key",
+      detail: "Make the key under Deployments and send it testnet ETH from the faucet. Ticks itself once the balance shows.",
+      tab: "deployments",
+    },
     testnet: {
       title: "Deploy on the testnet",
       detail: "Record every deployed contract under Deployments.",
@@ -164,6 +169,11 @@ export const BUILD_COPY = {
       replace: "Replace the key",
       replaceHint: "Clears the address here. Make a new key and paste it over the old line in packages/contracts/.env.",
       whereLine: "The private key lives in packages/contracts/.env on your machine, never here.",
+      /** The chip on the Overview strip (M103). */
+      chipNone: "No deployer key",
+      chipFunded: (chains: readonly string[]) => `Deployer funded on ${chains.join(" and ")}`,
+      chipEmpty: "Deployer not funded",
+      chipChecking: "Checking the deployer",
       agentLine: "Your agent reads the address, the balances and the faucets on get_project_status and in AGENTS.md.",
     },
     testnet: "Testnet",

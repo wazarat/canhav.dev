@@ -3,6 +3,7 @@
 import { AgentFeed } from "@/components/build/AgentFeed";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
+import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardSection } from "@/components/ui/Card";
@@ -12,10 +13,48 @@ import { STAGE_OPTIONS, optionLabel } from "@/content/ideation";
 import { shapeLabels } from "@/content/kits/copy";
 import { buildProgress } from "@/content/kits/checklists";
 import { chainInfo, projectChainOf } from "@/lib/chains";
+import type { DeployerView } from "@/lib/deployer";
 import type { ProjectDoc } from "@/lib/ideation";
 import type { ProjectKit } from "@/lib/kits";
 
 const ONE_LINE = 140;
+
+/** Whether the deployer key is funded, in one chip that opens Deployments (M103). */
+function DeployerChip({
+  deployer,
+  funding,
+  onClick,
+}: {
+  deployer: DeployerView | null;
+  funding: DeployerFunding;
+  onClick: () => void;
+}) {
+  const C = BUILD_COPY.deployments.deployer;
+  if (!deployer) {
+    return (
+      <StatusChip tone="neutral" onClick={onClick}>
+        {C.chipNone}
+      </StatusChip>
+    );
+  }
+  if (funding.balances === null) {
+    return (
+      <StatusChip tone="neutral" onClick={onClick}>
+        {funding.loading ? C.chipChecking : C.chipEmpty}
+      </StatusChip>
+    );
+  }
+  const names = deployer.chains.filter((c) => funding.fundedOn(c.chain)).map((c) => c.name);
+  return names.length ? (
+    <StatusChip tone="success" onClick={onClick}>
+      {C.chipFunded(names)}
+    </StatusChip>
+  ) : (
+    <StatusChip tone="warning" onClick={onClick}>
+      {C.chipEmpty}
+    </StatusChip>
+  );
+}
 
 function oneLine(text: string): string {
   const t = text.trim().replace(/\s+/g, " ");
@@ -38,6 +77,9 @@ export function OverviewTab({
   paused,
   onPatchKit,
   onOpenResources,
+  deployer,
+  funding,
+  onGoDeployments,
   linkPanel,
 }: {
   id: string;
@@ -49,6 +91,10 @@ export function OverviewTab({
   onPatchKit: (partial: Partial<ProjectKit>) => void;
   /** Opens the resources drawer on the pack. */
   onOpenResources: () => void;
+  /** The deployer key and its balances (M103). */
+  deployer: DeployerView | null;
+  funding: DeployerFunding;
+  onGoDeployments: () => void;
   /** The token design link, the launch panel and the MCP card, rendered by the server page. */
   linkPanel?: React.ReactNode;
 }) {
@@ -74,6 +120,7 @@ export function OverviewTab({
                 {BUILD_COPY.overview.progress(progress.done, progress.total)}
               </StatusChip>
             ) : null}
+            <DeployerChip deployer={deployer} funding={funding} onClick={onGoDeployments} />
           </div>
           {!kit?.shape ? <p className="text-xs text-ink-500">{BUILD_COPY.overview.noShape}</p> : null}
         </CardSection>

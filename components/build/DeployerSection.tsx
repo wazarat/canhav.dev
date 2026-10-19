@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { ExternalLink, KeyRound, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -8,14 +8,8 @@ import { CopyBlock } from "@/components/ui/CopyBlock";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
-import type { ProjectChain } from "@/lib/chains";
+import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { DEPLOYER_ADDRESS, type DeployerView, deployerEnvLine } from "@/lib/deployer";
-
-interface Balance {
-  chain: ProjectChain;
-  eth: string | null;
-  funded: boolean;
-}
 
 /**
  * The throwaway deployer key (M102). The key is generated in the browser
@@ -24,12 +18,13 @@ interface Balance {
  * link beside each.
  */
 export function DeployerSection({
-  projectId,
   deployer,
+  funding,
   onAddress,
 }: {
-  projectId: string;
   deployer: DeployerView | null;
+  /** The balances the page polls (M103). */
+  funding: DeployerFunding;
   /** Stores a lowercase address on the draft, or clears it with null. */
   onAddress: (address: string | null) => void;
 }) {
@@ -38,29 +33,9 @@ export function DeployerSection({
   /** The key just made, kept only in this component until the owner says it is saved. */
   const [freshKey, setFreshKey] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
-  const [balances, setBalances] = useState<Balance[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { balances, loading, reload: load } = funding;
 
   const address = deployer?.address ?? null;
-
-  const load = useCallback(async () => {
-    if (!address) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/ideation/projects/${projectId}/deployer?address=${address}`, { cache: "no-store" });
-      if (!res.ok) throw new Error();
-      const json = (await res.json()) as { balances: Balance[] };
-      setBalances(json.balances);
-    } catch {
-      setBalances(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, address]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   async function create() {
     setWorking(true);
@@ -172,7 +147,6 @@ export function DeployerSection({
           title={C.replaceHint}
           onClick={() => {
             setFreshKey(null);
-            setBalances(null);
             onAddress(null);
           }}
         >

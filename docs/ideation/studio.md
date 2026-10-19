@@ -77,7 +77,7 @@ Edits save on their own a moment after you stop typing. If an agent writes to th
 
 | Block | What it shows |
 |-------|---------------|
-| The strip | The short description, the product shapes, the chain, the stage and the build progress |
+| The strip | The short description, the product shapes, the chain, the stage, the build progress and the deployer key's state, No deployer key, Deployer not funded, or Deployer funded on the chains it holds ETH on. The chip opens Deployments |
 | Resource pack | One line with how many core resources your agent holds, and **Read** opens the same drawer as the sidebar's Resource pack, where you can tick and untick what the agent is given. The pack itself lives with the agent, through `get_resource_pack`, `RESOURCES.md` and `AGENTS.md` |
 | Agent session | What the connected agent says it is doing: its state, a title, a message, its plan as a checklist and when it last reported |
 | How agents write | Propose changes (the default), Write directly, or Off |
@@ -100,7 +100,7 @@ Build lists every step of every chosen shape as one list under four milestones. 
 | Template | The first contract template that fits the step, with **Using** and **Not using**. The rest sit behind **+N more** with their full cards. A decision travels to every step that lists the template and to Decisions |
 | Remove | Takes the step out of the list. Removed catalog steps sit under **Removed steps** and can be restored with their tick |
 
-Under Review the pre-launch review passes sit as rows with a verdict each, Pass, Fail or Not applicable. Under Launch three rows are derived from the record, testnet contracts recorded, token linked and project published, each opening the section that settles it. **What this product includes** folds out per shape: a ticked feature adds the steps it gates and ranks the templates it suggests first. **Add a step** adds your own under a shape, ticked and counted like the rest, up to forty per project.
+Under Review the pre-launch review passes sit as rows with a verdict each, Pass, Fail or Not applicable. Under Launch four rows are derived from the record, the deployer key funded on the project's chain, testnet contracts recorded, token linked and project published, each opening the section that settles it. **What this product includes** folds out per shape: a ticked feature adds the steps it gates and ranks the templates it suggests first. **Add a step** adds your own under a shape, ticked and counted like the rest, up to forty per project.
 
 Build steps never block publishing. An agent connected to the project's server ticks, adds, removes and restores them through the same proposal flow as every other change, and reads the milestone of each step as `milestone` on `get_build_steps`.
 
@@ -110,7 +110,7 @@ The choices with a reason behind them, each editable in place: what you are buil
 
 ### Deployments
 
-One card for the project's chain. It opens with the **Deployer key**, a throwaway key your agent deploys from on both testnets. **Create a deployer key** makes it in your browser and shows it once as the line to paste into `packages/contracts/.env` (`DEPLOYER_PRIVATE_KEY=0x…`); CanHav never sees or stores the key, only its address. You can also record an address your agent made itself. With an address recorded, each testnet shows the balance, **Fund from the faucet** and the explorer link; **Replace the key** clears the address. Then the testnet contracts as label and address rows, each with an explorer link, the address book link and the team wallet; the tokens launched from or linked to the project with their token page and explorer links; and the mainnet record, the contracts, the companion template, the Pons pairing and the external trading pair. See [Projects and launches](../token-launch/projects-and-launches.md).
+One card for the project's chain. It opens with the **Deployer key**, a throwaway key your agent deploys from on both testnets. **Create a deployer key** makes it in your browser and shows it once as the line to paste into `packages/contracts/.env` (`DEPLOYER_PRIVATE_KEY=0x…`); CanHav never sees or stores the key, only its address. You can also record an address your agent made itself. With an address recorded, each testnet shows the balance, **Fund from the faucet** and the explorer link; **Replace the key** clears the address. The balances are read again every thirty seconds while the page is open and whenever you come back to the tab, so the Overview chip and the Launch row turn green on their own once the faucet has paid. Then the testnet contracts as label and address rows, each with an explorer link, the address book link and the team wallet; the tokens launched from or linked to the project with their token page and explorer links; and the mainnet record, the contracts, the companion template, the Pons pairing and the external trading pair. See [Projects and launches](../token-launch/projects-and-launches.md).
 
 ### Publish
 

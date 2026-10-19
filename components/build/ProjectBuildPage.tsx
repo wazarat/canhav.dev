@@ -11,6 +11,7 @@ import { type DeployedToken, DeploymentsTab } from "@/components/build/Deploymen
 import { OverviewTab } from "@/components/build/OverviewTab";
 import { PublishTab } from "@/components/build/PublishTab";
 import { type ResourceView, ResourcesDrawer } from "@/components/build/ResourcesDrawer";
+import { useDeployerBalances } from "@/components/build/useDeployerBalances";
 import { useAgentChanges } from "@/components/build/useAgentChanges";
 import { useTabParam } from "@/components/build/useTabParam";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
@@ -27,6 +28,7 @@ import { sessionView } from "@/lib/agent-sessions";
 import { projectProblems, tabProblems } from "@/lib/build-readiness";
 import { projectChainOf } from "@/lib/chains";
 import { registerCommands } from "@/lib/command-menu";
+import { deployerView } from "@/lib/deployer";
 import { type ProjectDoc, testnetContractRows } from "@/lib/ideation";
 import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectKit, emptyProjectKit } from "@/lib/kits";
@@ -145,7 +147,11 @@ export function ProjectBuildPage({
 
   const published =
     publishStatus.kind === "published" || (initialStatus === "published" && publishStatus.kind !== "unpublished");
+  // The deployer key's balances, polled while the page is open (M103).
+  const deployer = deployerView(doc, projectChainOf(doc));
+  const funding = useDeployerBalances(id, deployer?.address ?? null);
   const facts = {
+    deployerFunded: funding.fundedOn(projectChainOf(doc)),
     published,
     hasTestnetContracts: testnetContractRows(doc).some((c) => c.address.trim().length > 0),
     hasToken,
@@ -163,6 +169,9 @@ export function ProjectBuildPage({
         paused={stale}
         onPatchKit={patchKit}
         onOpenResources={() => setResourceView("pack")}
+        deployer={deployer}
+        funding={funding}
+        onGoDeployments={() => setTab("deployments")}
         linkPanel={linkPanel}
       />
     ),
@@ -180,7 +189,7 @@ export function ProjectBuildPage({
     decisions: (
       <DecisionsTab doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
-    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} />,
+    deployments: <DeploymentsTab doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} />,
     publish: (
       <PublishTab id={id} doc={doc} patch={patch} problems={problems} linkedLaunchTarget={linkedLaunchTarget} onGoTab={setTab} />
     ),
