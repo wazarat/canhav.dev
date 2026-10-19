@@ -27,7 +27,6 @@ export interface MirrorInput {
   periodEnd: string | null;
 }
 
-const ENDED = new Set(["canceled", "ended", "expired", "abandoned"]);
 
 function secondsToIso(value: number | null | undefined): string | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
@@ -61,10 +60,13 @@ export function mirrorFromBillingEvent(type: string, data: unknown): MirrorInput
     const item = data as ItemLike;
     const orgId = item.payer?.organization_id;
     if (!orgId) return null;
-    // An item event for another plan (the free default) must not erase a paid row;
-    // only our plan's items, or an ending state, rewrite it.
+    // Only our plan's items rewrite the row. The free default item ends
+    // when a team upgrades, and that ending event used to overwrite the
+    // paid row (seen on production 2026-10-19), so other plans are ignored
+    // whatever their state; a cancelled paid plan arrives as its own
+    // item's ended event and as subscription.updated.
     const slug = item.plan?.slug ?? "free";
-    if (slug !== PLAN_SLUG && !ENDED.has(item.status ?? "")) return "ignored";
+    if (slug !== PLAN_SLUG) return "ignored";
     return {
       orgId,
       plan: slug,

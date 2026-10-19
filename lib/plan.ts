@@ -90,10 +90,9 @@ export async function planForOrgs(orgIds: string[]): Promise<PlanInfo> {
   const rows = await getSubscriptions(orgIds);
   for (const orgId of orgIds) {
     const row = rows.find((r) => r.org_id === orgId);
-    if (row) {
-      if (subscriptionGrants(row, PLAN_SLUG)) return { plan: "studio_plus", orgId, forced: false };
-      continue;
-    }
+    if (row && subscriptionGrants(row, PLAN_SLUG)) return { plan: "studio_plus", orgId, forced: false };
+    // No row, or a row that does not grant: ask Clerk, cached a minute, so a
+    // stale mirror never locks a paying team out of MCP and the API.
     if (await orgHasPlanFromClerk(orgId)) return { plan: "studio_plus", orgId, forced: false };
   }
   return FREE_PLAN;
