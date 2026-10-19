@@ -12,7 +12,7 @@ import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { draftCompetitorsPrompt } from "@/lib/agent-prompts-draft";
 import { chainInfo } from "@/lib/chains";
 import type { Landscape } from "@/lib/competitors/landscape";
-import { formatTvl } from "@/lib/competitors/llama";
+import { formatTvl } from "@/lib/competitors/tvl";
 import { COMPETITOR_AXES, COMPETITOR_LIMITS, type CompetitorAxis, type Competitors, ageMonths } from "@/lib/competitors/record";
 
 /**
