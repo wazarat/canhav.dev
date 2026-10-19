@@ -158,6 +158,8 @@ export const BUILD_COPY = {
   decisions: {
     title: "Decisions",
     building: "What you are building",
+    customers: "Customers",
+    icp: "Ideal customers",
     canvas: "Business model",
     chain: "Chain",
     templates: "Templates",

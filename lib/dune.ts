@@ -57,6 +57,11 @@ export interface AnalyticsData {
 // Upstream fetchers
 // ---------------------------------------------------------------------------
 
+/** Rows of a saved Dune query (M114), for the optional onchain hints. Throws on a missing key or an upstream error. */
+export async function fetchDuneQueryRows(queryId: number, limit = 100): Promise<Array<Record<string, unknown>>> {
+  return (await fetchDuneRows(queryId, limit)).rows;
+}
+
 async function fetchDuneRows(queryId: number, limit: number) {
   const apiKey = process.env.DUNE_API_KEY;
   if (!apiKey) throw new Error("DUNE_API_KEY is not set");

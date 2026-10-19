@@ -1,6 +1,9 @@
 "use client";
 
 import { CanvasEditor } from "@/components/build/CanvasEditor";
+import { IcpEditor } from "@/components/build/IcpEditor";
+import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
+import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import { PlusGate } from "@/components/studio/PlusGate";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
@@ -15,8 +18,11 @@ import { SelectField } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import {
+  AUDIENCE_OPTIONS,
   CHAIN_COPY,
   ORACLE_USE_OPTIONS,
+  PERSONA_COPY,
+  personaRows,
   PROJECT_SECURITY_FIELDS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
@@ -26,7 +32,7 @@ import { WORST_CASE_WHY } from "@/content/ideation";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { type ProjectChain, projectChainOf } from "@/lib/chains";
-import { PROJECT_LIMITS, type ProjectDoc } from "@/lib/ideation";
+import { PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona } from "@/lib/ideation";
 import { type ProjectKit, emptyProjectKit, setTemplateDecision } from "@/lib/kits";
 import { kitsForDoc } from "@/content/kits";
 
@@ -69,6 +75,7 @@ export function DecisionsTab({
   const agentNote = (id: string) =>
     earlier.find((c) => c.note && c.lines.some((l) => l.path.includes("templates") && l.path.includes(id)));
   const a = doc.architecture;
+  const audience = docAudience(doc);
 
   return (
     <div className="max-w-2xl">
@@ -76,6 +83,28 @@ export function DecisionsTab({
         <CardSection id="decisions-building" className="space-y-4">
           <Heading>{D.building}</Heading>
           <ShapeChooser doc={doc} patch={patch} />
+        </CardSection>
+
+        <CardSection id="decisions-customers" className="space-y-5">
+          <Heading>{D.customers}</Heading>
+          <ChipRadioGroup
+            label={PERSONA_COPY.audienceLabel}
+            info={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
+            value={audience}
+            onChange={(v) => patch({ audience: v })}
+            options={AUDIENCE_OPTIONS}
+          />
+          {audience === "b2b" ? (
+            <PersonaTableEditor rows={personaRows("b2b")} personas={doc.personas} onChange={(personas) => patch({ personas })} empty={emptyPersona} note={PERSONA_COPY.note} />
+          ) : audience === "b2c" ? (
+            <PersonaTableEditor rows={personaRows("b2c")} personas={doc.consumerPersonas} onChange={(consumerPersonas) => patch({ consumerPersonas })} empty={emptyConsumerPersona} note={PERSONA_COPY.note} />
+          ) : null}
+          <div id="decisions-icp" className="space-y-2 border-t border-ink-700/40 pt-5">
+            <Heading>{D.icp}</Heading>
+            <PlusGate feature="icp">
+              <IcpEditor projectId={id} name={doc.name} profiles={doc.icp} onChange={(icp) => patch({ icp })} />
+            </PlusGate>
+          </div>
         </CardSection>
 
         <CardSection id="decisions-canvas" className="space-y-4">

@@ -36,6 +36,12 @@ Projects saved under a retired sector (underwriting and risk, oracles and data, 
 
 ---
 
+## Ideal customers (Decisions, Studio+)
+
+### Asked
+
+One or two ideal customer profiles: name (a role), summary, wallets they use, channels, protocols they use, buying trigger, objection. Drafted by CanHav from the persona table plus the protocols in the same DefiLlama category on the project's chain (and, when a Dune query is configured, active wallet counts of similar protocols), or by the team's agent over `update_project` (`icp`, the list replaces the stored one). Published with the record. Who you sell to and the persona table now live in the same Customers section of Decisions.
+
 ## Business model (Decisions, Studio+)
 
 ### Asked

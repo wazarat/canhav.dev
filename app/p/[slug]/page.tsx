@@ -226,6 +226,39 @@ export default async function ProjectPublicPage({
                 </div>
               </div>
             ) : null}
+            {doc.icp?.length ? (
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-ink-500">{STUDIO_PLUS_COPY.icp.title}</p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  {doc.icp.map((p, i) => (
+                    <Card key={i} className="p-4">
+                      <p className="text-sm font-medium text-ink-50">{p.name || STUDIO_PLUS_COPY.icp.profile(i + 1)}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink-200">{p.summary}</p>
+                      <dl className="mt-2 space-y-1.5">
+                        {(["walletsTheyUse", "channels", "protocolsTheyUse"] as const).filter((k) => p[k].length).map((k) => (
+                          <div key={k}>
+                            <dt className="text-[11px] text-ink-500">{STUDIO_PLUS_COPY.icp.fields[k].label}</dt>
+                            <dd className="text-sm text-ink-200">{p[k].join(", ")}</dd>
+                          </div>
+                        ))}
+                        {p.buyingTrigger ? (
+                          <div>
+                            <dt className="text-[11px] text-ink-500">{STUDIO_PLUS_COPY.icp.fields.buyingTrigger.label}</dt>
+                            <dd className="text-sm text-ink-200">{p.buyingTrigger}</dd>
+                          </div>
+                        ) : null}
+                        {p.objection ? (
+                          <div>
+                            <dt className="text-[11px] text-ink-500">{STUDIO_PLUS_COPY.icp.fields.objection.label}</dt>
+                            <dd className="text-sm text-ink-200">{p.objection}</dd>
+                          </div>
+                        ) : null}
+                      </dl>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {doc.userIs.trim() || doc.payer ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 {doc.userIs.trim() ? (

@@ -4,11 +4,9 @@ import { ArrowRight } from "lucide-react";
 
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
-import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { TextField } from "@/components/ideation/TextField";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
-import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { SegmentedField } from "@/components/ui/Segmented";
@@ -18,7 +16,6 @@ import { usePlan } from "@/components/studio/PlanContext";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import {
-  AUDIENCE_OPTIONS,
   LOGO_COPY,
   PAYER_OPTIONS,
   PERSONA_COPY,
@@ -29,7 +26,6 @@ import {
   WORST_CASE_OPTIONS,
   audiencePersonaCards,
   optionLabel,
-  personaRows,
   sectorLabel,
   subsectorLabels,
 } from "@/content/ideation";
@@ -38,7 +34,7 @@ import { buildProgress } from "@/content/kits/checklists";
 import { launchTargetHandoffLine } from "@/content/launch-targets";
 import { projectChainOf } from "@/lib/chains";
 import { type ProblemArea, type ProjectProblems, tabOfArea } from "@/lib/build-readiness";
-import { PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona } from "@/lib/ideation";
+import { PROJECT_LIMITS, type ProjectDoc } from "@/lib/ideation";
 import { type LaunchTarget, launchTargetFit } from "@/lib/launch-targets";
 import { PRIVATE_FREE_ALLOWANCE } from "@/lib/plan-shared";
 
@@ -131,7 +127,6 @@ export function PublishTab({
 }) {
   const P = BUILD_COPY.publish;
   const chainKey = projectChainOf(doc);
-  const audience = docAudience(doc);
   const kit = doc.kit;
   const build = buildProgress(kit);
   const open = AREAS.filter((area) => problems[area] !== null);
@@ -161,30 +156,6 @@ export function PublishTab({
             rows={5}
             placeholder="One paragraph. What does it actually do?"
           />
-          <ChipRadioGroup
-            label={PERSONA_COPY.audienceLabel}
-            info={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
-            value={audience}
-            onChange={(v) => patch({ audience: v })}
-            options={AUDIENCE_OPTIONS}
-          />
-          {audience === "b2b" ? (
-            <PersonaTableEditor
-              rows={personaRows("b2b")}
-              personas={doc.personas}
-              onChange={(personas) => patch({ personas })}
-              empty={emptyPersona}
-              note={PERSONA_COPY.note}
-            />
-          ) : audience === "b2c" ? (
-            <PersonaTableEditor
-              rows={personaRows("b2c")}
-              personas={doc.consumerPersonas}
-              onChange={(consumerPersonas) => patch({ consumerPersonas })}
-              empty={emptyConsumerPersona}
-              note={PERSONA_COPY.note}
-            />
-          ) : null}
           <SelectField
             label="Who pays"
             info="Often not the same answer as who the user is."

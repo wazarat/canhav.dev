@@ -1,4 +1,5 @@
 import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
+import type { Icp } from "@/lib/icp";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
@@ -385,6 +386,25 @@ export function buildResourcesMd(doc: ProjectDoc, draft = true): string {
 // ---------------------------------------------------------------------------
 // canhav-[slug].md — project
 
+/** "## Ideal customers", the profiles (M114), or nothing. */
+function icpLines(icp: Icp[] | undefined): string[] {
+  if (!icp?.length) return [];
+  const F = STUDIO_PLUS_COPY.icp.fields;
+  const lines = ["## Ideal customers", ""];
+  icp.forEach((p, i) => {
+    lines.push(`**${p.name || `Profile ${i + 1}`}.** ${p.summary}`, "");
+    const facts = [
+      p.walletsTheyUse.length ? `- **${F.walletsTheyUse.label}:** ${p.walletsTheyUse.join(", ")}` : null,
+      p.channels.length ? `- **${F.channels.label}:** ${p.channels.join(", ")}` : null,
+      p.protocolsTheyUse.length ? `- **${F.protocolsTheyUse.label}:** ${p.protocolsTheyUse.join(", ")}` : null,
+      p.buyingTrigger ? `- **${F.buyingTrigger.label}:** ${p.buyingTrigger}` : null,
+      p.objection ? `- **${F.objection.label}:** ${p.objection}` : null,
+    ].filter((l): l is string => Boolean(l));
+    if (facts.length) lines.push(...facts, "");
+  });
+  return lines;
+}
+
 /** "## Business model", the nine canvas blocks (M113), or nothing. */
 function canvasLines(canvas: Canvas | undefined): string[] {
   if (!canvas || canvasFilled(canvas) === 0) return [];
@@ -413,6 +433,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     doc.whatItDoes,
     "",
     ...customerLines(doc),
+    ...icpLines(doc.icp),
     ...canvasLines(doc.canvas),
     "## Distribution reality",
     "",
@@ -757,6 +778,7 @@ export function buildAgentsMd(input: {
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
       `- **What it does:** ${orNotSet(project.whatItDoes)}`,
       "",
+      ...icpLines(project.icp),
       ...canvasLines(project.canvas),
       "## Contract architecture",
       "",

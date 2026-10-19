@@ -28,6 +28,7 @@ const RESOURCE_ICONS: Record<ResourceView, React.ComponentType<{ className?: str
 /** The Decisions sections the sidebar scrolls to (M113). */
 const DECISION_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: "building", label: BUILD_COPY.decisions.building },
+  { id: "customers", label: BUILD_COPY.decisions.customers },
   { id: "canvas", label: BUILD_COPY.decisions.canvas },
   { id: "chain", label: BUILD_COPY.decisions.chain },
   { id: "templates", label: BUILD_COPY.decisions.templates },

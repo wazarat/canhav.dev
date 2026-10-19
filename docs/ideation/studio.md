@@ -112,7 +112,7 @@ Build steps never block publishing. An agent connected to the project's server t
 
 The choices with a reason behind them, each editable in place: what you are building (sectors, subsectors, product shapes, the starting point), the chain (fixed once a token is linked to the project), the contract templates decided on Build with the agent's note where an agent decided one, the contracts, external dependencies, oracles, admin functions and upgradeability, the worst case a bug could cause and the five security declarations, and your project files (a spec, a repository path, a document link, never published, visible to your agent).
 
-With Studio+, a **Business model** section sits under What you are building: the nine blocks of a Business Model Canvas, drafted from the record (Draft the canvas, Redraft on each block, or the prompt for your own agent) and edited in place. The sidebar lists the Decisions sections and scrolls to each.
+A **Customers** section holds who you sell to and the persona table (moved here from Publish) and, with Studio+, **Ideal customers**, one or two profiles with the wallets, channels and protocols they use, drafted from the personas and the protocols in your subsector on DefiLlama. With Studio+, a **Business model** section sits under Customers: the nine blocks of a Business Model Canvas, drafted from the record (Draft the canvas, Redraft on each block, or the prompt for your own agent) and edited in place. The sidebar lists the Decisions sections and scrolls to each.
 
 ### Deployments
 

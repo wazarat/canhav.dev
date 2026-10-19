@@ -6,3 +6,4 @@ import "server-only";
  */
 
 import "@/lib/draft/kinds-canvas";
+import "@/lib/draft/kinds-icp";

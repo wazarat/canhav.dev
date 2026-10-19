@@ -66,6 +66,27 @@ export const STUDIO_PLUS_COPY = {
     /** The token may lag the webhook by a moment. */
     refresh: "If the studio still reads Studio, reload once.",
   },
+  /** Ideal customer profiles (M114). */
+  icp: {
+    title: "Ideal customers",
+    intro: "One or two ideal customer profiles with the wallets, channels and protocols they use, built on the persona table and on the protocols in your subsector on DefiLlama. Testers who are not the target user give useless feedback.",
+    draft: "Draft the profiles",
+    add: "Add a profile",
+    remove: (n: number) => `Remove profile ${n}`,
+    profile: (n: number) => `Profile ${n}`,
+    hintsOn: "Onchain hints from the protocols in your subsector are part of the draft.",
+    hintsOff: "Onchain wallet counts need a Dune query. The draft uses the record and DefiLlama's protocol list.",
+    fields: {
+      name: { label: "Name", placeholder: "Treasury lead at a mid size fund" },
+      summary: { label: "Who they are", placeholder: "One paragraph." },
+      walletsTheyUse: { label: "Wallets they use", placeholder: "Safe, Rabby, Ledger" },
+      channels: { label: "Channels", placeholder: "Telegram groups, X, conferences" },
+      protocolsTheyUse: { label: "Protocols they use", placeholder: "Aave, Morpho, Pendle" },
+      buyingTrigger: { label: "Buying trigger", placeholder: "What makes them move now." },
+      objection: { label: "Objection", placeholder: "What stops them." },
+    },
+    listHint: "Comma separated.",
+  },
   /** The Business Model Canvas (M113). */
   canvas: {
     title: "Business model",
@@ -181,4 +202,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp"];

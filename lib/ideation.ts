@@ -1,4 +1,5 @@
 import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/lib/canvas";
+import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
@@ -337,6 +338,8 @@ export interface ProjectDoc {
   summary?: ProjectSummary;
   /** The Business Model Canvas (M113, Studio+). Optional, never injected, published with the record. */
   canvas?: Canvas;
+  /** Ideal customer profiles (M114, Studio+), one or two. Optional, never injected, published with the record. */
+  icp?: Icp[];
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -648,6 +651,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
     if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
     else delete (rest as { summary?: unknown }).summary;
+  }
+  // ICP (M114): profiles cleaned and capped, dropped when empty, never invented.
+  if ("icp" in rest) {
+    const clean = normalizeIcp((rest as { icp?: unknown }).icp);
+    if (clean) (rest as { icp?: Icp[] }).icp = clean;
+    else delete (rest as { icp?: unknown }).icp;
   }
   // Canvas (M113): blocks trimmed and capped, dropped when empty, never invented.
   if ("canvas" in rest) {
@@ -1114,6 +1123,7 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
   if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
+  if (doc.icp && !icpListSchema.safeParse(doc.icp).success) return "An ideal customer profile is over its limits.";
   if (doc.canvas) {
     for (const b of CANVAS_BLOCKS) {
       const v = doc.canvas[b];
