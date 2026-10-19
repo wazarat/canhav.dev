@@ -3,6 +3,7 @@ import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
+import { type GithubSync, normalizeGithubSync } from "@/lib/sync/github";
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
@@ -347,6 +348,8 @@ export interface ProjectDoc {
   competitors?: Competitors;
   /** The brand kit (M118, Studio+). Optional, never injected, published with the record. */
   brand?: Brand;
+  /** The last GitHub sync (M120). Optional, never injected, never published. */
+  githubSync?: GithubSync;
   /** Draft requests waiting for the agent (M117). Optional, never injected, never published. */
   draftRequests?: DraftRequest[];
   /** Who drafted each Studio+ field (M117). Optional, never injected, never published. */
@@ -662,6 +665,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
     if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
     else delete (rest as { summary?: unknown }).summary;
+  }
+  // GitHub sync (M120): the last run, cleaned, dropped when malformed.
+  if ("githubSync" in rest) {
+    const clean = normalizeGithubSync((rest as { githubSync?: unknown }).githubSync);
+    if (clean) (rest as { githubSync?: GithubSync }).githubSync = clean;
+    else delete (rest as { githubSync?: unknown }).githubSync;
   }
   // Brand (M118): hexes checked, fonts and tone words capped, dropped when empty.
   if ("brand" in rest) {

@@ -57,6 +57,7 @@
 ## AI and IDE
 
 * [Markdown export and MCP](ai/export-and-mcp.md)
+* [GitHub sync](ai/github-sync.md)
 
 ## Accounts
 

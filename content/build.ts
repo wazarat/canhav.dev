@@ -178,6 +178,13 @@ export const BUILD_COPY = {
   },
   deployments: {
     title: "Deployments",
+    /** GitHub sync (M120, Studio+). */
+    sync: {
+      line: (sha: string, date: string, contracts: number, steps: number) => `Synced from GitHub, commit ${sha}, ${date}, ${contracts} contracts, ${steps} steps.`,
+      proposed: "Waiting for you under Agent changes.",
+      open: "Open the commit",
+      none: "Studio+ teams can add the CanHav sync workflow to their repository so deployed addresses and ticked steps arrive from each commit. See the docs for the workflow file.",
+    },
     /** The throwaway deployer key (M102). */
     deployer: {
       title: "Deployer key",

@@ -91,6 +91,17 @@ export function DeploymentsTab({
             <Heading>{D.testnet}</Heading>
             <StatusChip tone="neutral">{chain.name}</StatusChip>
           </div>
+          {doc.githubSync ? (
+            <p className="text-xs text-ink-400">
+              {D.sync.line(doc.githubSync.sha.slice(0, 7), new Date(doc.githubSync.at).toLocaleDateString("en-US"), doc.githubSync.contracts, doc.githubSync.steps)}
+              {doc.githubSync.outcome === "proposed" ? ` ${D.sync.proposed}` : ""}{" "}
+              <a href={doc.githubSync.url} target="_blank" rel="noreferrer" className="text-ink-200 hover:underline">
+                {D.sync.open}
+              </a>
+            </p>
+          ) : (
+            <p className="text-xs text-ink-500">{D.sync.none}</p>
+          )}
           <Field label={TESTNET_COPY.contractsLabel} info={TESTNET_COPY.contractsHint}>
             <ContractRowsEditor
               rows={testnetContractRows(doc)}

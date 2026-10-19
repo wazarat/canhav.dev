@@ -1,0 +1,77 @@
+# CanHav GitHub sync (Studio+). Copy to .github/workflows/canhav-sync.yml in
+# your repository. On every push and pull request it reads the Foundry
+# broadcast files for your project's chain, sends the deployed contracts
+# to Deployments, and ticks build steps named in commit messages or the PR
+# body as "canhav: <stepId>" lines. Needs one secret, CANHAV_PROJECT_KEY,
+# a write key from the project page (Deployments, Project keys), and one
+# variable, CANHAV_CHAIN_ID (46630 for Robinhood Chain testnet, 421614 for
+# Arbitrum Sepolia). Writes ride the project's agent write mode, so in
+# propose mode they wait for the owner in the studio.
+name: CanHav sync
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Send deployments and steps to CanHav
+        env:
+          CANHAV_PROJECT_KEY: ${{ secrets.CANHAV_PROJECT_KEY }}
+          CANHAV_CHAIN_ID: ${{ vars.CANHAV_CHAIN_ID }}
+          CANHAV_URL: ${{ vars.CANHAV_URL || 'https://www.canhav.com' }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          node - <<'JS'
+          const fs = require("fs");
+          const path = require("path");
+          const chainId = Number(process.env.CANHAV_CHAIN_ID);
+          if (!process.env.CANHAV_PROJECT_KEY || !chainId) { console.log("CANHAV_PROJECT_KEY or CANHAV_CHAIN_ID missing, skipping."); process.exit(0); }
+          const broadcasts = [];
+          const walk = (dir) => {
+            if (!fs.existsSync(dir)) return;
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+              const p = path.join(dir, e.name);
+              if (e.isDirectory()) { if (e.name === "node_modules" || e.name.startsWith(".")) continue; walk(p); }
+              else if (e.name === "run-latest.json" && p.includes(`${path.sep}${chainId}${path.sep}`)) {
+                try {
+                  const j = JSON.parse(fs.readFileSync(p, "utf8"));
+                  const script = path.basename(path.dirname(path.dirname(p)));
+                  const contracts = (j.transactions || []).filter((t) => t.transactionType === "CREATE" && t.contractAddress).map((t) => ({ name: t.contractName || "Contract", address: String(t.contractAddress).toLowerCase() }));
+                  if (contracts.length) broadcasts.push({ script, chainId, contracts });
+                } catch (err) { console.log("skip", p, String(err)); }
+              }
+            }
+          };
+          walk(process.cwd());
+          const text = `${process.env.COMMIT_MESSAGE || ""}\n${process.env.PR_BODY || ""}`;
+          const steps = [...new Set([...text.matchAll(/^\s*canhav:\s*([a-z0-9_.-]+)\s*$/gim)].map((m) => m[1]))].map((id) => ({ id }));
+          const payload = {
+            commit: { sha: process.env.COMMIT_SHA, url: process.env.COMMIT_URL, message: (process.env.COMMIT_MESSAGE || "").slice(0, 400) },
+            pr: process.env.PR_NUMBER ? { number: Number(process.env.PR_NUMBER), url: process.env.PR_URL, title: (process.env.PR_TITLE || "").slice(0, 200) } : null,
+            broadcasts,
+            steps,
+          };
+          if (!broadcasts.length && !steps.length) { console.log("Nothing to sync."); process.exit(0); }
+          fetch(`${process.env.CANHAV_URL}/api/sync/github`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.CANHAV_PROJECT_KEY}` },
+            body: JSON.stringify(payload),
+          }).then(async (r) => { console.log(r.status, await r.text()); if (!r.ok) process.exit(1); });
+          JS
