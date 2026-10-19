@@ -208,7 +208,7 @@ export const STUDIO_PLUS_COPY = {
     yearlyMonthly: 29.99,
     seatsIncluded: 3,
     extraSeat: 9.99,
-    seatLimit: 20,
+    seatLimit: 5,
     monthlyLine: "$39.99 a month",
     yearlyLine: "$29.99 a month billed yearly",
     seatsLine: "3 seats included, each additional seat $9.99 a month",

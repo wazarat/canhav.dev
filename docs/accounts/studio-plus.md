@@ -8,7 +8,7 @@
 |------|-------|
 | Monthly | $39.99 a month |
 | Yearly | $29.99 a month, billed yearly |
-| Seats | 3 included, each additional seat $9.99 a month, up to 20 |
+| Seats | 3 included, each additional seat $9.99 a month, up to 5 members per team on the current Clerk plan |
 
 Payment is by card in USD through Clerk Billing and Stripe. Tax is not added and refunds are not automatic; write to us for either. Billing is not available in Brazil, India, Malaysia, Mexico, Singapore or Thailand.
 
