@@ -35,6 +35,7 @@ import { BUILD_COPY } from "@/content/build";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { Card } from "@/components/ui/Card";
 import { CANVAS_BLOCKS, canvasFilled } from "@/lib/canvas";
+import { brandVars } from "@/lib/brand/record";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
   getBlockscoutVerification,
@@ -150,7 +151,7 @@ export default async function ProjectPublicPage({
     : 0;
 
   return (
-    <div className="container max-w-4xl py-14 md:py-20">
+    <div className="container max-w-4xl py-14 md:py-20" style={brandVars(doc.brand) as React.CSSProperties}>
       <div>
         <p className="kicker">Project</p>
         <h1 className="mt-3 flex items-center gap-4 font-display text-4xl font-semibold tracking-tight text-ink-50">
@@ -187,6 +188,8 @@ export default async function ProjectPublicPage({
           </StatusChip>
           {isPrivate ? <StatusChip tone="warning">{BUILD_COPY.publish.visibility.pageChip}</StatusChip> : null}
         </div>
+        {doc.brand ? <div aria-hidden className="mt-6 h-0.5 w-24 rounded-full bg-brand-primary" /> : null}
+        {doc.brand?.tagline ? <p className="mt-3 text-sm text-ink-300">{doc.brand.tagline}</p> : null}
         <div className="mt-4">
           <ExportButtons kind="p" slug={slug} share={isPrivate && share ? share : undefined} />
         </div>

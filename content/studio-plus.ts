@@ -66,6 +66,31 @@ export const STUDIO_PLUS_COPY = {
     /** The token may lag the webhook by a moment. */
     refresh: "If the studio still reads Studio, reload once.",
   },
+  /** Brand identity kit (M118). */
+  brand: {
+    title: "Brand",
+    intro: "Name, ticker, logo, palette, fonts, tone and social banners as one kit. The agent reads it in AGENTS.md and brand.json, and the public page uses the palette. No designer before launch, and a token page that looks like every clone.",
+    palette: "Palette",
+    swatches: { primary: "Primary", secondary: "Secondary", accent: "Accent", surface: "Surface" },
+    pick: "Pick from the logo",
+    picking: "Reading the logo",
+    pickHint: "Reads the dominant colours of the logo uploaded on Publish (png or jpeg).",
+    found: "Colours found in the logo. Click one to use it as the primary.",
+    fonts: "Fonts",
+    display: "Display",
+    body: "Body",
+    tone: "Tone words",
+    toneHint: "Two to five, comma separated.",
+    tagline: "Tagline",
+    draft: "Draft the kit",
+    contrast: (what: string, ratio: string) => `${what} reads at ${ratio} to 1 on the surface. Below 4.5 is hard to read.`,
+    banners: "Banners",
+    bannersHint: "SVG downloads from the kit. The share image of the public page uses the palette too.",
+    banner: { x: "X header", og: "Link card", square: "Avatar" },
+    file: "brand.json",
+    fileHint: "The kit as one file on the project export, for the agent and for any site you build.",
+    none: "No kit yet. Draft one, pick colours from the logo, or fill it by hand.",
+  },
   /** Competitor landscape (M115). */
   competitors: {
     title: "Competitors",
@@ -233,4 +258,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand"];

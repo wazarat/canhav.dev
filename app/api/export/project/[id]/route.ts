@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getCurve } from "@/lib/indexer";
 
-import { buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
+import { brandFile, buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
 import { exportOwner, markdownResponse } from "@/lib/export-route";
 import { getLinkedTokenDesign, getProject, designDeployChain } from "@/lib/ideation-db";
 
@@ -29,6 +29,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const file = new URL(req.url).searchParams.get("file");
   if (file === "resources") return markdownResponse("RESOURCES.md", buildResourcesMd(row.draft_doc, true));
+  // The brand kit as one file (M118) that the agent and the public page both read.
+  if (file === "brand") {
+    const linked = await getLinkedTokenDesign(row.id);
+    return new NextResponse(JSON.stringify(brandFile(row.draft_doc, linked?.draft_doc.ticker ?? null), null, 2), {
+      headers: { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": 'attachment; filename="brand.json"', "Cache-Control": "no-store" },
+    });
+  }
   if (file === "agents") {
     const linked = await getLinkedTokenDesign(row.id);
     return markdownResponse(

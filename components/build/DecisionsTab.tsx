@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandEditor } from "@/components/build/BrandEditor";
 import { CanvasEditor } from "@/components/build/CanvasEditor";
 import { CompetitorsSection } from "@/components/build/CompetitorsSection";
 import { IcpEditor } from "@/components/build/IcpEditor";
@@ -126,6 +127,13 @@ export function DecisionsTab({
           <Heading>{D.competitors}</Heading>
           <PlusGate feature="competitors">
             <CompetitorsSection projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
+          </PlusGate>
+        </CardSection>
+
+        <CardSection id="decisions-brand" className="space-y-4">
+          <Heading>{D.brand}</Heading>
+          <PlusGate feature="brand">
+            <BrandEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} brand={doc.brand} hasLogo={Boolean(doc.logo)} onChange={(brand) => patch({ brand })} />
           </PlusGate>
         </CardSection>
 

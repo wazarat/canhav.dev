@@ -21,7 +21,11 @@ export interface LlamaProtocol {
 }
 
 const PROTOCOLS_URL = "https://api.llama.fi/protocols";
-const REVALIDATE_SECONDS = 86_400;
+const TTL_MS = 86_400_000;
+// The protocol list is over 12 MB, past Next's fetch cache limit, so it is
+// kept in module memory for a day instead; listing dates the same way.
+let protocolsCache: { at: number; rows: LlamaProtocol[] } | null = null;
+const listedAtCache = new Map<string, { at: number; value: number | null }>();
 
 interface RawProtocol {
   name?: string;
@@ -34,11 +38,12 @@ interface RawProtocol {
 }
 
 export async function fetchLlamaProtocols(): Promise<LlamaProtocol[]> {
+  if (protocolsCache && Date.now() - protocolsCache.at < TTL_MS) return protocolsCache.rows;
   try {
-    const res = await fetch(PROTOCOLS_URL, { next: { revalidate: REVALIDATE_SECONDS } });
-    if (!res.ok) return [];
+    const res = await fetch(PROTOCOLS_URL, { cache: "no-store" });
+    if (!res.ok) return protocolsCache?.rows ?? [];
     const json = (await res.json()) as RawProtocol[];
-    return json
+    const rows = json
       .filter((p) => p.name && p.slug && typeof p.tvl === "number")
       .map((p) => ({
         name: p.name as string,
@@ -49,9 +54,11 @@ export async function fetchLlamaProtocols(): Promise<LlamaProtocol[]> {
         url: p.url ?? null,
         listedAt: typeof p.listedAt === "number" ? p.listedAt : null,
       }));
+    protocolsCache = { at: Date.now(), rows };
+    return rows;
   } catch (err) {
     console.warn("[llama] protocols failed", err);
-    return [];
+    return protocolsCache?.rows ?? [];
   }
 }
 
@@ -77,14 +84,20 @@ export function pickProtocols(all: LlamaProtocol[], categories: readonly string[
 
 /** The listing date of one protocol, for the positioning map's age axis. */
 export async function fetchLlamaListedAt(slug: string): Promise<number | null> {
+  const hit = listedAtCache.get(slug);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
+  let value: number | null = null;
   try {
-    const res = await fetch(`https://api.llama.fi/protocol/${encodeURIComponent(slug)}`, { next: { revalidate: REVALIDATE_SECONDS } });
-    if (!res.ok) return null;
-    const json = (await res.json()) as { listedAt?: number };
-    return typeof json.listedAt === "number" ? json.listedAt : null;
+    const res = await fetch(`https://api.llama.fi/protocol/${encodeURIComponent(slug)}`, { cache: "no-store" });
+    if (res.ok) {
+      const json = (await res.json()) as { listedAt?: number };
+      value = typeof json.listedAt === "number" ? json.listedAt : null;
+    }
   } catch {
-    return null;
+    value = null;
   }
+  listedAtCache.set(slug, { at: Date.now(), value });
+  return value;
 }
 
 export function formatTvl(tvl: number): string {

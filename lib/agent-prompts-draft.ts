@@ -47,9 +47,20 @@ export function draftCompetitorsPrompt(name: string, projectId: string): string 
 }
 
 /** The prompt per kind, for the MCP prompts (M117) and the paste blocks. Grows with the run. */
+export function draftBrandPrompt(name: string, projectId: string): string {
+  return draftFieldPrompt(
+    name,
+    projectId,
+    "brand",
+    "brand kit",
+    "palette (primary, secondary, accent, surface as lowercase hex, starting from the logo's colours), fonts (display and body, Google Fonts names), tone (two to five words) and tagline (at most 90 characters), consistent with the product and its customers.",
+  );
+}
+
 export const DRAFT_AGENT_PROMPTS: Partial<Record<DraftKind, (name: string, projectId: string) => string>> = {
   canvas: draftCanvasPrompt,
   canvas_block: draftCanvasPrompt,
   icp: draftIcpPrompt,
   competitors: draftCompetitorsPrompt,
+  brand: draftBrandPrompt,
 };

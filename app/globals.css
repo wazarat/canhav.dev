@@ -30,6 +30,9 @@
     --electric-300: 143 179 255;
     --electric-400: 92 146 255;
     --electric-500: 61 123 255;
+    /* The brand kit's defaults (M118), overridden per public page. */
+    --brand-primary: 61 123 255;
+    --brand-accent: 34 211 238;
     --electric-600: 37 99 235;
     --electric-700: 29 78 216;
     --neon-200: 221 214 254;
@@ -60,6 +63,8 @@
     --electric-300: 37 99 235;
     --electric-400: 61 123 255;
     --electric-500: 37 99 235;
+    --brand-primary: 37 99 235;
+    --brand-accent: 14 116 144;
     --electric-600: 29 78 216;
     --electric-700: 30 64 175;
     --neon-200: 91 33 182;

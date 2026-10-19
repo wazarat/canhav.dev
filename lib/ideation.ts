@@ -2,6 +2,7 @@ import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/li
 import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
+import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
@@ -344,6 +345,8 @@ export interface ProjectDoc {
   icp?: Icp[];
   /** The competitor line and the map's state (M115, Studio+). Optional, never injected; only the line is published. */
   competitors?: Competitors;
+  /** The brand kit (M118, Studio+). Optional, never injected, published with the record. */
+  brand?: Brand;
   /** Draft requests waiting for the agent (M117). Optional, never injected, never published. */
   draftRequests?: DraftRequest[];
   /** Who drafted each Studio+ field (M117). Optional, never injected, never published. */
@@ -659,6 +662,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
     if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
     else delete (rest as { summary?: unknown }).summary;
+  }
+  // Brand (M118): hexes checked, fonts and tone words capped, dropped when empty.
+  if ("brand" in rest) {
+    const clean = normalizeBrand((rest as { brand?: unknown }).brand);
+    if (clean) (rest as { brand?: Brand }).brand = clean;
+    else delete (rest as { brand?: unknown }).brand;
   }
   // Draft requests and drafted marks (M117): cleaned, dropped when empty, never invented.
   if ("draftRequests" in rest) {

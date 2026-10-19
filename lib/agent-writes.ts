@@ -3,6 +3,7 @@ import { z } from "zod";
 import { canvasPatchSchema } from "@/lib/canvas";
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
+import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
 import { kindsForFields, withDrafted, withoutRequest } from "@/lib/draft/requests";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
@@ -252,6 +253,8 @@ export const projectPatchSchema = z
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The deployer key's address (M102), never the key; null clears it.
     deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
+    // The brand kit (M118): palette, fonts, tone and tagline merge over the stored kit; null clears it.
+    brand: brandPatchSchema.nullable(),
     // Competitors (M115): the line and the map state merge over the stored ones; null clears them.
     competitors: competitorsPatchSchema.nullable(),
     // Ideal customer profiles (M114): the list replaces the stored one; null clears it.
@@ -682,6 +685,11 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.brand === null) next = dropKey(next, "brand");
+  else if (patch.brand) {
+    const cur = next.brand ?? DEFAULT_BRAND;
+    next = { ...next, brand: { ...cur, palette: { ...cur.palette, ...(patch.brand.palette ?? {}) }, fonts: { ...cur.fonts, ...(patch.brand.fonts ?? {}) }, tone: patch.brand.tone ?? cur.tone, ...(patch.brand.tagline !== undefined ? { tagline: patch.brand.tagline } : cur.tagline ? { tagline: cur.tagline } : {}) } };
+  }
   if (patch.competitors === null) next = dropKey(next, "competitors");
   else if (patch.competitors) next = { ...next, competitors: { differentiator: "", ...(next.competitors ?? {}), ...patch.competitors } };
   if (patch.icp === null) next = dropKey(next, "icp");
@@ -1037,6 +1045,11 @@ const PATH_LABELS: Record<string, string> = {
   addressBook: "Address book",
   deployer: "Deployer address",
   icp: "Ideal customers",
+  brand: "Brand",
+  "brand.palette": "Brand palette",
+  "brand.fonts": "Brand fonts",
+  "brand.tone": "Brand tone",
+  "brand.tagline": "Tagline",
   competitors: "Competitors",
   "competitors.differentiator": "How you differ",
   canvas: "Business model",

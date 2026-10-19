@@ -162,6 +162,7 @@ export const BUILD_COPY = {
     icp: "Ideal customers",
     canvas: "Business model",
     competitors: "Competitors",
+    brand: "Brand",
     chain: "Chain",
     templates: "Templates",
     templatesEmpty: "No template decided yet. Decide them from the Build tab or let your agent.",

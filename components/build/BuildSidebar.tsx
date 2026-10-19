@@ -31,6 +31,7 @@ const DECISION_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: "customers", label: BUILD_COPY.decisions.customers },
   { id: "canvas", label: BUILD_COPY.decisions.canvas },
   { id: "competitors", label: BUILD_COPY.decisions.competitors },
+  { id: "brand", label: BUILD_COPY.decisions.brand },
   { id: "chain", label: BUILD_COPY.decisions.chain },
   { id: "templates", label: BUILD_COPY.decisions.templates },
   { id: "contracts", label: BUILD_COPY.decisions.contracts },

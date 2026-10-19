@@ -69,6 +69,11 @@ const config: Config = {
           400: v("signal-400"),
           500: v("signal-500"),
         },
+        // The brand kit (M118): the public page sets --brand-* from the project's palette; the defaults equal electric-500 and signal-400.
+        brand: {
+          primary: v("brand-primary"),
+          accent: v("brand-accent"),
+        },
         // Field errors and inline error text (33 uses) read on both canvases.
         rose: {
           400: v("rose-400"),

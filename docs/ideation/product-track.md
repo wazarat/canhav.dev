@@ -42,6 +42,16 @@ Projects saved under a retired sector (underwriting and risk, oracles and data, 
 
 One or two ideal customer profiles: name (a role), summary, wallets they use, channels, protocols they use, buying trigger, objection. Drafted by CanHav from the persona table plus the protocols in the same DefiLlama category on the project's chain (and, when a Dune query is configured, active wallet counts of similar protocols), or by the team's agent over `update_project` (`icp`, the list replaces the stored one). Published with the record. Who you sell to and the persona table now live in the same Customers section of Decisions.
 
+## Brand (Decisions, Studio+)
+
+### Asked
+
+A palette of four hex colours (primary, secondary, accent, surface), a display and a body font from the list the studio offers, two to five tone words and a tagline. Picked from the logo's dominant colours (png or jpeg), drafted by CanHav or the team's agent (`update_project` with `brand`, merged over the stored kit), or filled by hand. Published with the record; the public page sets the palette and its link preview image carries it. The kit is one file, `brand.json`, on the project export, and a Brand section in AGENTS.md.
+
+### Computed
+
+Contrast of each colour against the surface (WCAG), shown as a line and flagged under 4.5 to 1. Three SVG banners from the kit, the X header (1500 by 500), the link card (1200 by 630) and the avatar (1024 by 1024).
+
 ## Competitors (Decisions, Studio+)
 
 ### Asked

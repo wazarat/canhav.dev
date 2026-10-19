@@ -1,6 +1,7 @@
 import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
 import type { Icp } from "@/lib/icp";
 import type { Competitors } from "@/lib/competitors/record";
+import { googleFontsUrl } from "@/content/brand-fonts";
 import { DRAFT_KIND_FIELDS, draftPromptName, openRequests } from "@/lib/draft/requests";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
@@ -407,6 +408,41 @@ function icpLines(icp: Icp[] | undefined): string[] {
   return lines;
 }
 
+/** The brand kit as one JSON file (M118), the same object the agent reads in AGENTS.md. */
+export function brandFile(doc: ProjectDoc, ticker: string | null) {
+  const b = doc.brand ?? null;
+  return {
+    name: doc.name,
+    ticker,
+    logo: doc.logo ?? null,
+    tagline: b?.tagline ?? null,
+    palette: b?.palette ?? null,
+    fonts: b?.fonts ?? null,
+    fontsUrl: b ? googleFontsUrl(b.fonts.display, b.fonts.body) : null,
+    tone: b?.tone ?? [],
+    banners: b ? { x: "/api/ideation/projects/<id>/brand/banner?kind=x", og: "/api/ideation/projects/<id>/brand/banner?kind=og", square: "/api/ideation/projects/<id>/brand/banner?kind=square" } : null,
+  };
+}
+
+/** "## Brand" in AGENTS.md (M118), or nothing. */
+function brandLines(doc: ProjectDoc, ticker: string | null): string[] {
+  const b = doc.brand;
+  if (!b) return [];
+  return [
+    "",
+    "## Brand",
+    "",
+    `- **Palette:** primary ${b.palette.primary}, secondary ${b.palette.secondary}, accent ${b.palette.accent}, surface ${b.palette.surface}`,
+    `- **Fonts:** ${b.fonts.display} for display, ${b.fonts.body} for body (${googleFontsUrl(b.fonts.display, b.fonts.body)})`,
+    ...(b.tone.length ? [`- **Tone:** ${b.tone.join(", ")}`] : []),
+    ...(b.tagline ? [`- **Tagline:** ${b.tagline}`] : []),
+    ...(ticker ? [`- **Ticker:** ${ticker}`] : []),
+    ...(doc.logo ? [`- **Logo:** ${doc.logo}`] : []),
+    "",
+    "The same kit is one file, brand.json, on the project export (?file=brand). Use these colours and fonts in anything you build for the product.",
+  ];
+}
+
 /** "## Positioning", the differentiator line (M115), or nothing. The landscape itself is read live with get_competitors. */
 function positioningLines(c: Competitors | undefined): string[] {
   if (!c?.differentiator) return [];
@@ -803,6 +839,8 @@ export function buildAgentsMd(input: {
       "flows deserve scrutiny proportional to it.",
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
+    // The brand kit (M118), when one is set.
+    lines.push(...brandLines(project, token?.ticker ?? null));
     // Open draft requests (M117): the owner clicked Draft and waits on the agent.
     const requests = openRequests(project);
     if (requests.length) {
