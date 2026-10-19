@@ -223,6 +223,26 @@ export const BUILD_COPY = {
     explorer: "Explorer",
     tokenPage: "Token page",
   },
+  /** The custom domain on Publish (M127, Studio+). */
+  domain: {
+    title: "Custom domain",
+    intro: "Serve the public page at a host you own. Point the DNS at CanHav, and the root of the host shows this project; the canhav.com page stays and links to it.",
+    loading: "Reading the domain.",
+    loadFailed: "Could not read the domain. Reload to try again.",
+    failed: "Could not change the domain. Try again.",
+    none: "No custom domain yet.",
+    notConfigured: "Custom domains are not configured on this deployment yet.",
+    waiting: (host: string) => `${host} is connected and waits for its DNS. Records can take up to an hour to show.`,
+    live: (host: string) => `${host} is live and serves this project's page.`,
+    records: "Set these records at your DNS host",
+    recordsHint: "An apex domain takes the A record, a subdomain the CNAME. The TXT record proves you own the name and can be removed once verified.",
+    unpublished: "The page shows once the project is published public.",
+    check: "Check again",
+    disconnect: "Disconnect",
+    hostLabel: "Host",
+    hostHint: "A subdomain or an apex domain you control. Private projects stay on their share link.",
+    connect: "Connect",
+  },
   /** The tester kit under Testnet (M125, Studio+) and its public page. */
   tester: {
     title: "Tester kit",

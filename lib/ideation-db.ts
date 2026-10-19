@@ -39,6 +39,8 @@ export interface ProjectRow {
   visibility?: "public" | "private";
   /** The share link token of a private project, minted at its first private publish (M109). */
   share_token?: string | null;
+  /** The custom host that serves the public page (M127, Studio+). */
+  custom_domain?: string | null;
   slug: string | null;
   status: "draft" | "published";
   draft_doc: ProjectDoc;
@@ -228,7 +230,24 @@ export async function getProjectBySlug(slug: string): Promise<ProjectRow | null>
 }
 
 /** Store or clear the custom domain of a project the owner holds (M127). */
-export async function setCtDb();
+export async function setCustomDomain(id: string, owner: Owner, domain: string | null): Promise<boolean> {
+  const sql = getDb();
+  if (!sql) return false;
+  try {
+    const rows = await sql`
+      update launchpad.projects set custom_domain = ${domain}, updated_at = now()
+      where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
+      returning id
+    `;
+    return rows.length > 0;
+  } catch (err) {
+    console.error("[ideation] custom domain failed", err);
+    return false;
+  }
+}
+
+export async function getPublishedProjects(limit = 60): Promise<ProjectRow[] | null> {
+  const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
     select * from launchpad.projects

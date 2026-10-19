@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 
+import { DomainSection } from "@/components/build/DomainSection";
 import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
@@ -248,6 +249,11 @@ export function PublishTab({
         <CardSection className="space-y-4">
           <Heading>{P.visibility.title}</Heading>
           <VisibilityChoice value={visibility} onChange={onVisibility} privateUsed={privateUsed} isPrivatePublished={isPrivatePublished} chainLocked={chainLocked} />
+        </CardSection>
+
+        <CardSection className="space-y-4">
+          <Heading>{BUILD_COPY.domain.title}</Heading>
+          <DomainSection projectId={id} />
         </CardSection>
 
         <CardSection className="space-y-4">

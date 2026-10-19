@@ -57,6 +57,8 @@ export async function generateMetadata({
   if (row.visibility === "private") return { robots: { index: false, follow: false } };
   return {
     description: row.draft_doc.whatItDoes.slice(0, 160),
+    // A custom domain (M127) is the canonical address once set.
+    ...(row.custom_domain ? { alternates: { canonical: `https://${row.custom_domain}/` } } : {}),
   };
 }
 

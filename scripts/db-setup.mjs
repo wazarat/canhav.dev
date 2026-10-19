@@ -390,6 +390,12 @@ await sql`
     add column if not exists share_token text unique
 `;
 
+// Custom domain (M127, Studio+): the host that serves the public page.
+await sql`
+  alter table launchpad.projects
+    add column if not exists custom_domain text unique
+`;
+
 // Draft revisions (M110): one row per draft save, by the owner, a teammate
 // or an agent, trimmed to the newest 200 per record. Recorded for every
 // account; reading and restoring is Studio+.
