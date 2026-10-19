@@ -27,6 +27,8 @@ export interface ProjectChainInfo {
   short: string;
   /** The environment row and catalog family that describes the chain itself. */
   family: "robinhood" | "arbitrum";
+  /** Where a deployer key gets testnet ETH (M102). */
+  faucetUrl: string;
 }
 
 export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
@@ -39,6 +41,7 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     name: "Robinhood Chain Testnet",
     short: "Robinhood testnet",
     family: "robinhood",
+    faucetUrl: "https://faucet.testnet.chain.robinhood.com",
   },
   arbitrum_sepolia: {
     key: "arbitrum_sepolia",
@@ -49,6 +52,7 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     name: "Arbitrum Sepolia",
     short: "Arbitrum Sepolia",
     family: "arbitrum",
+    faucetUrl: "https://www.alchemy.com/faucets/arbitrum-sepolia",
   },
 };
 

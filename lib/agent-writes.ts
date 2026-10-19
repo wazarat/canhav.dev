@@ -245,6 +245,8 @@ export const projectPatchSchema = z
     // The logo (M90), a URL on CanHav's image store from set_logo; null clears it.
     logo: z.string().max(LOGO_LIMITS.max).refine(isStoredImageUrl, "Logo must be an image uploaded to CanHav through set_logo").nullable(),
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
+    // The deployer key's address (M102), never the key; null clears it.
+    deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
     // The mainnet deployment and the Pons pairing (M70). Merged into the stored
     // record; contracts replace the stored list; null clears the whole record.
     // The chain id is always the mainnet the project's chain stands in for.
@@ -645,6 +647,7 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
   // Testnet contracts arrive as rows or plain addresses and are stored as rows (M83).
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
+  if (patch.deployer === null) next = dropKey(next, "deployer");
   const a = { ...next.architecture };
   // The two dependency answers exclude each other. The one the agent sent wins.
   if (patch.architecture?.externalDepsNone === true) a.externalDeps = [];
@@ -990,6 +993,7 @@ const PATH_LABELS: Record<string, string> = {
   mainnet: "Mainnet record",
   testnetContracts: "Testnet contracts",
   addressBook: "Address book",
+  deployer: "Deployer address",
   "mainnet.contracts": "Mainnet contracts",
   "mainnet.companionTemplate": "Companion contract",
   "mainnet.pons": "Pons pairing",

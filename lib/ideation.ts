@@ -322,6 +322,12 @@ export interface ProjectDoc {
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
+   * The throwaway deployer key's address, lowercase hex (M102). The private
+   * key never reaches CanHav; it lives in the repository's env file. Optional
+   * and never injected. One address serves both testnets.
+   */
+  deployer?: string;
+  /**
    * The mainnet deployment beside the testnet launch and the Pons pairing
    * (M70). Optional and never injected; a project without one hashes as
    * before. Published with the record, unlike `references`.
@@ -596,6 +602,13 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const v = (rest as { addressBook?: unknown }).addressBook;
     if (typeof v === "string" && v.trim()) (rest as { addressBook?: string }).addressBook = v.trim().slice(0, PROJECT_LIMITS.addressBook.max);
     else delete (rest as { addressBook?: unknown }).addressBook;
+  }
+  // Deployer address (M102): lowercased when it is an address, dropped otherwise, never invented.
+  if ("deployer" in rest) {
+    const v = (rest as { deployer?: unknown }).deployer;
+    const clean = typeof v === "string" ? v.trim().toLowerCase() : "";
+    if (ADDRESS.test(clean)) (rest as { deployer?: string }).deployer = clean;
+    else delete (rest as { deployer?: unknown }).deployer;
   }
   // Chain (M52): kept when it is a known chain, dropped when it is garbage, never invented.
   if ("chain" in rest && !isProjectChain((rest as { chain?: unknown }).chain))
@@ -1048,6 +1061,7 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.logo && !isStoredImageUrl(doc.logo)) return "Logo must be an image uploaded to CanHav.";
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
+  if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
   if (doc.mainnet) {
     p = validateMainnetRecord(doc, doc.mainnet);
     if (p) return p;

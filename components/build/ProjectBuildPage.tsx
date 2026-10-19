@@ -180,7 +180,7 @@ export function ProjectBuildPage({
     decisions: (
       <DecisionsTab doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
-    deployments: <DeploymentsTab doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} />,
+    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} />,
     publish: (
       <PublishTab id={id} doc={doc} patch={patch} problems={problems} linkedLaunchTarget={linkedLaunchTarget} onGoTab={setTab} />
     ),

@@ -110,7 +110,7 @@ The choices with a reason behind them, each editable in place: what you are buil
 
 ### Deployments
 
-One card for the project's chain. Testnet contracts as label and address rows, each with an explorer link, the address book link and the team wallet; the tokens launched from or linked to the project with their token page and explorer links; and the mainnet record, the contracts, the companion template, the Pons pairing and the external trading pair. See [Projects and launches](../token-launch/projects-and-launches.md).
+One card for the project's chain. It opens with the **Deployer key**, a throwaway key your agent deploys from on both testnets. **Create a deployer key** makes it in your browser and shows it once as the line to paste into `packages/contracts/.env` (`DEPLOYER_PRIVATE_KEY=0x…`); CanHav never sees or stores the key, only its address. You can also record an address your agent made itself. With an address recorded, each testnet shows the balance, **Fund from the faucet** and the explorer link; **Replace the key** clears the address. Then the testnet contracts as label and address rows, each with an explorer link, the address book link and the team wallet; the tokens launched from or linked to the project with their token page and explorer links; and the mainnet record, the contracts, the companion template, the Pons pairing and the external trading pair. See [Projects and launches](../token-launch/projects-and-launches.md).
 
 ### Publish
 

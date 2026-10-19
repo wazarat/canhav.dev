@@ -58,6 +58,7 @@ import {
   KIT_COPY,
 } from "@/content/kits/copy";
 import { launchChain } from "@/content/launch";
+import { DEPLOYER_ENV, DEPLOYER_ENV_FILE, DEPLOYER_HINT, deployerView } from "@/lib/deployer";
 import { TOKEN_STEPS_COPY, TOKEN_STEP_LABELS } from "@/content/token-steps";
 import type { TokenBuildRow } from "@/lib/token-steps";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
@@ -426,12 +427,13 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => decl(label, doc.security[key])),
   ];
   lines.push(...resourcePackSections(doc, "##"));
-  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.addressBook || doc.verifyWallet) {
+  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.addressBook || doc.verifyWallet || doc.deployer) {
     lines.push("", "## Declared pointers", "");
     if (doc.githubRepo) lines.push(`- **GitHub:** https://github.com/${doc.githubRepo}`);
     if (doc.website) lines.push(`- **Website:** ${doc.website}`);
     if (doc.verifyWallet)
       lines.push(`- **Team wallet (declared, unproven):** ${doc.verifyWallet}`);
+    if (doc.deployer) lines.push(`- **Deployer address (testnets only):** ${doc.deployer}`);
     for (const c of testnetContractRows(doc))
       lines.push(`- **Testnet contract${c.label ? `, ${c.label}` : ""}:** ${c.address} (${launchChain(projectChainOf(doc)).explorerUrl}/address/${c.address})`);
     if (doc.addressBook) lines.push(`- **${TESTNET_COPY.exportAddressBook}:** ${doc.addressBook}`);
@@ -757,6 +759,18 @@ export function buildAgentsMd(input: {
       "flows deserve scrutiny proportional to it.",
     );
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
+    // The throwaway deployer key (M102): where it lives and where it is funded. The key itself is never exported.
+    const deployer = deployerView(project, projectChainOf(project));
+    lines.push("", "## Deployer key", "");
+    if (deployer) {
+      lines.push(
+        `- Address: ${deployer.address}`,
+        `- The private key is in ${DEPLOYER_ENV_FILE} as ${DEPLOYER_ENV}. Never paste it anywhere else and never commit it.`,
+        ...deployer.chains.map((c) => `- ${c.name} (chain id ${c.chainId}): faucet ${c.faucetUrl}, balance at ${c.explorerUrl}${deployer.address}`),
+      );
+    } else {
+      lines.push(DEPLOYER_HINT);
+    }
     lines.push(...resourcePackSections(project, "##", token ? launchTargetOf(token) : null));
     lines.push(...mainnetSections(project, "##"));
     lines.push(...referenceSections(project));

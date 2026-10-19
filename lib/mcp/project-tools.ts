@@ -70,6 +70,8 @@ import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, PACK_SECTIONS, buildResourcePack, buildReviewView, packSections, packSummary, templatesRead } from "@/lib/kit-pack";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { DEPLOYER_HINT, deployerView } from "@/lib/deployer";
+import { getDeployerBalances } from "@/lib/deployer-server";
 import { launchTargetLabel } from "@/content/launch-targets";
 import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
 import { mainnetView } from "@/lib/mainnet-view";
@@ -315,7 +317,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's status",
       description:
-        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked with its float, FDV to float, treasury share and warning codes, whether each side is published, whether a token is deployed or launched with the curve state of either, the research kit's build progress when the project has a product shape, and the next action." + PREVIEW_NOTE,
+        "What is left before this project can publish and launch. Validation problem if any, whether a token design is linked with its float, FDV to float, treasury share and warning codes, whether each side is published, whether a token is deployed or launched with the curve state of either, the research kit's build progress when the project has a product shape, the deployer key's address with its balance and faucet on each testnet (or the hint on how to make one), and the next action." + PREVIEW_NOTE,
       inputSchema: PREVIEW,
     },
     async (args, ctx) => {
@@ -360,8 +362,23 @@ export function registerProjectTools(server: McpServer, projectId: string): void
                   : launchHint;
       const kit = project.draft_doc.kit;
       const now = Math.floor(Date.now() / 1000);
+      // The throwaway deployer key (M102): the address, never the key, with one balance read per chain.
+      const deployerAddress = deployerView(project.draft_doc, projectChainOf(project.draft_doc));
+      const deployer = deployerAddress
+        ? await (async () => {
+            const balances = await getDeployerBalances(deployerAddress.address);
+            return {
+              ...deployerAddress,
+              chains: deployerAddress.chains.map((c) => {
+                const b = balances.find((x) => x.chain === c.chain);
+                return { ...c, explorerUrl: `${c.explorerUrl}${deployerAddress.address}`, balanceEth: b?.eth ?? null, funded: b?.funded ?? false };
+              }),
+            };
+          })()
+        : { address: null, hint: DEPLOYER_HINT };
       return jsonResult({
         ...stateOf(loaded.value),
+        deployer,
         project: {
           id: project.id,
           name: project.draft_doc.name,
@@ -629,7 +646,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet), and logo (a URL on CanHav's image store from set_logo, or null to clear). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear), and logo (a URL on CanHav's image store from set_logo, or null to clear). What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {

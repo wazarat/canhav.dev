@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
+import { DeployerSection } from "@/components/build/DeployerSection";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import { MainnetEditor } from "@/components/ideation/MainnetEditor";
 import { Card, CardSection } from "@/components/ui/Card";
@@ -12,6 +13,7 @@ import { BUILD_COPY } from "@/content/build";
 import { TESTNET_COPY } from "@/content/ideation";
 import { TEMPLATE_CATALOG } from "@/content/templates";
 import { chainInfo, projectChainOf } from "@/lib/chains";
+import { deployerView } from "@/lib/deployer";
 import { explorerAddressUrl, explorerTokenUrl } from "@/lib/explorer";
 import { type ProjectDoc, PROJECT_LIMITS, testnetContractRows } from "@/lib/ideation";
 import { kitShapes } from "@/lib/kits";
@@ -37,11 +39,13 @@ function Heading({ children }: { children: React.ReactNode }) {
  * pairing and the external pair.
  */
 export function DeploymentsTab({
+  id,
   doc,
   patch,
   setDoc,
   tokens,
 }: {
+  id: string;
   doc: ProjectDoc;
   patch: (p: Partial<ProjectDoc>) => void;
   setDoc: (next: ProjectDoc) => void;
@@ -55,9 +59,23 @@ export function DeploymentsTab({
     .map((t) => ({ value: t.id, label: t.name }));
   const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
+  const deployer = deployerView(doc, chainKey);
+  const setDeployer = (address: string | null) => {
+    if (address) patch({ deployer: address });
+    else {
+      const { deployer: _old, ...rest } = doc;
+      setDoc(rest as ProjectDoc);
+    }
+  };
+
   return (
     <div className="max-w-2xl">
       <Card>
+        <CardSection className="space-y-4">
+          <Heading>{D.deployer.title}</Heading>
+          <DeployerSection projectId={id} deployer={deployer} onAddress={setDeployer} />
+        </CardSection>
+
         <CardSection className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Heading>{D.testnet}</Heading>
