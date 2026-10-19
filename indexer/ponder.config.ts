@@ -55,6 +55,10 @@ const robinhood = createConfig({
     robinhoodTestnet: {
       id: 46630,
       rpc: rpcUrl(),
+      // The public RPC refuses eth_getLogs over 100,000 blocks with an
+      // error Ponder cannot parse, so the range is pinned under it (M122
+      // resync, 2026-10-19).
+      ethGetLogsBlockRange: 50_000,
     },
   },
   contracts: {
