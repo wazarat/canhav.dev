@@ -42,7 +42,7 @@ Unpublishing flips status back to draft for editors. Snapshots are not deleted.
 
 ### Private projects
 
-A project can be published **private** (Publish section, Who can see it). A private project stays off Explore and the listings and is never indexed. Its page, its exports and the shared MCP server's `get_project` open for the project's team and for anyone with the **share link**, which carries a token (`/p/<slug>?s=<token>`) minted at the first private publish; the slug alone is not enough. Copy the link from the project header. Free accounts keep one private project; [Studio+](../accounts/studio-plus.md) has no cap. Token designs are always public, because a launch commits their snapshot hash on chain.
+A project can be published **private** (Publish section, Who can see it). A private project stays off Explore and the listings and is never indexed. Its page, its exports and the shared MCP server's `get_project` open for the project's team and for anyone with the **share link**, which carries a token (`/p/<slug>?s=<token>`) minted at the first private publish; the slug alone is not enough. Copy the link from the project header. Free accounts keep one private project; [Studio+](../accounts/studio-plus.md) has no cap. A project with a launched token stays public; unlink the launch first. Token designs are always public, because a launch commits their snapshot hash on chain.
 
 A Credit project's research kit (its product shape, starting point and resource pack ticks) is part of the draft, so it is inside the snapshot too. Changing a tick after publishing means the next Republish produces a new version.
 

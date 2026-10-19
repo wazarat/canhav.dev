@@ -7,7 +7,6 @@ import { PlusGate } from "@/components/studio/PlusGate";
 import { usePlan } from "@/components/studio/PlanContext";
 import { Button } from "@/components/ui/Button";
 import { CopyBlock } from "@/components/ui/CopyBlock";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { DRAFT_KIND_FEATURES, type DraftKind } from "@/lib/draft/limits";
 
@@ -81,7 +80,7 @@ export function DraftButton<T>({
         <Button size={size} variant={variant} onClick={() => void run()} disabled={working} aria-busy={working}>
           <Sparkles aria-hidden className="h-3.5 w-3.5" /> {working ? C.working : (label ?? C.draft)}
         </Button>
-        {remaining !== null ? <StatusChip tone="neutral">{C.remaining(remaining)}</StatusChip> : null}
+        {remaining !== null ? <span className="text-xs text-ink-400">{C.remaining(remaining)}</span> : null}
         {agentPrompt ? (
           <Button size={size} variant="ghost" onClick={() => setAskOpen((o) => !o)}>
             {C.askAgent}

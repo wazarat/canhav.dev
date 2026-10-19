@@ -70,6 +70,7 @@ Across from the project's name, on every section:
 | History | The version history pop up. Every save of the draft, by you, a teammate or your agent, newest first with what changed, and Restore on each (Studio+). The published versions are listed for everyone |
 | Move to team | On a personal project, for the account that made it, while a Studio+ team is active. Moves the project, its linked design and its launches to the team, see [Accounts](../accounts/clerk-accounts.md) |
 | Link a token (Token launch once one is linked) | Jumps to the Token launch panel on Overview |
+| Name check | Under the project name on Publish, in the new project pop up and on the launch form, a plain line when a coin of that name or ticker is listed on CoinGecko or DexScreener. A warning only, nothing blocks |
 | Agent prompt | Opens the guide for connecting an agent to this project |
 | Published | The public link, once published. An unpublished record carries no chip; it is a draft |
 | Publish, Republish, Unpublish | Publishes a snapshot to `/p/<slug>`. While the record still has open fields, Publish opens a pop up naming each one with a button into the section that holds it |

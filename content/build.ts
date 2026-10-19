@@ -228,6 +228,7 @@ export const BUILD_COPY = {
       privateHint: "Off Explore and the listings. Your team and anyone with the share link can open it, read the export and reach it over MCP.",
       freeLeft: "One private project is included.",
       freeUsed: "Your one private project is in use.",
+      launched: "A project with a launched token stays public. Unlink the launch first.",
       capReached: "Free accounts keep one private project. Make the other one public, or upgrade to Studio+ for unlimited private projects.",
       shareLink: "Copy share link",
       copied: "Link copied",

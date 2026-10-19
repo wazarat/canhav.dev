@@ -1,5 +1,7 @@
 "use client";
 
+import { NameWarning } from "@/components/ideation/NameWarning";
+
 import Link from "next/link";
 import { LOGO_COPY } from "@/content/ideation";
 import { useEffect, useRef, useState } from "react";
@@ -686,6 +688,7 @@ export function LaunchForm({
                 />
               </Field>
             </div>
+            <NameWarning name={name} ticker={ticker} />
 
             <Field
               label="Description"

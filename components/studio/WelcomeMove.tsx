@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 
 /**
@@ -43,7 +42,7 @@ export function WelcomeMove({ projects }: { projects: Array<{ id: string; name: 
         {projects.length === 0 ? (
           <p className="text-sm text-ink-400">{W.moveNone}</p>
         ) : state === "done" ? (
-          <StatusChip tone="success">{W.moved(moved)}</StatusChip>
+          <p className="text-sm text-ink-200">{W.moved(moved)}</p>
         ) : (
           <>
             <ul className="space-y-2">

@@ -226,6 +226,9 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
           // no body is fine, the row's visibility stands
         }
       }
+      // A project with a launched token cannot be private (M116).
+      if (kind === "project" && visibility === "private" && (await projectChainLocked(id)))
+        return NextResponse.json({ error: BUILD_COPY.publish.visibility.launched, code: "launched" }, { status: 403 });
       // Free accounts keep one private project; Studio+ has no cap (M109).
       const plan = await getPlan();
       const result = await publishEntity(table, id, gate.owner, {

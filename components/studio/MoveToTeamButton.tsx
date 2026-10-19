@@ -6,7 +6,6 @@ import { Users } from "lucide-react";
 
 import { usePlan } from "@/components/studio/PlanContext";
 import { Button } from "@/components/ui/Button";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_COPY } from "@/content/ideation";
 
 /**
@@ -39,7 +38,7 @@ export function MoveToTeamButton({ projectId, name, orgId, creator }: {
     }
     window.location.reload();
   };
-  if (state === "failed") return <StatusChip tone="error">{C.failed}</StatusChip>;
+  if (state === "failed") return <span className="text-xs text-rose-400">{C.failed}</span>;
   if (state === "confirm" || state === "busy") {
     return (
       <span className="flex flex-wrap items-center gap-2 text-xs text-ink-300">

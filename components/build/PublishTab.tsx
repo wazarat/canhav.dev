@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
+import { NameWarning } from "@/components/ideation/NameWarning";
 import { TextField } from "@/components/ideation/TextField";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
@@ -48,16 +49,21 @@ function VisibilityChoice({
   onChange,
   privateUsed,
   isPrivatePublished,
+  chainLocked,
 }: {
   value: "public" | "private";
   onChange: (v: "public" | "private") => void;
   privateUsed: number;
   isPrivatePublished: boolean;
+  chainLocked: boolean;
 }) {
   const V = BUILD_COPY.publish.visibility;
   const plan = usePlan();
   const plus = plan.plan === "studio_plus" && plan.hasFeature("private_projects");
-  const closed = !plus && privateUsed >= PRIVATE_FREE_ALLOWANCE && !isPrivatePublished;
+  const capped = !plus && privateUsed >= PRIVATE_FREE_ALLOWANCE && !isPrivatePublished;
+  // A project with a launched token stays public (M116).
+  const closed = capped || chainLocked;
+  const why = chainLocked ? V.launched : capped ? V.capReached : undefined;
   return (
     <div className="space-y-3">
       <SegmentedField
@@ -67,13 +73,14 @@ function VisibilityChoice({
         onChange={onChange}
         options={[
           { value: "public", label: V.public },
-          { value: "private", label: V.private, disabled: closed, title: closed ? V.capReached : undefined },
+          { value: "private", label: V.private, disabled: closed, title: why },
         ]}
       />
-      {plus ? null : closed ? (
+      {chainLocked ? <p className="text-xs text-ink-400">{V.launched}</p> : null}
+      {plus ? null : capped ? (
         <PlusGate feature="private_projects" />
       ) : (
-        <StatusChip tone="neutral">{privateUsed >= PRIVATE_FREE_ALLOWANCE || isPrivatePublished ? V.freeUsed : V.freeLeft}</StatusChip>
+        <p className="text-xs text-ink-400">{privateUsed >= PRIVATE_FREE_ALLOWANCE || isPrivatePublished ? V.freeUsed : V.freeLeft}</p>
       )}
     </div>
   );
@@ -110,6 +117,7 @@ export function PublishTab({
   onVisibility,
   privateUsed,
   isPrivatePublished,
+  chainLocked,
 }: {
   id: string;
   doc: ProjectDoc;
@@ -124,6 +132,8 @@ export function PublishTab({
   privateUsed: number;
   /** True when this project is already published private, which keeps its slot. */
   isPrivatePublished: boolean;
+  /** True once a token launched from the project, which rules private out (M116). */
+  chainLocked: boolean;
 }) {
   const P = BUILD_COPY.publish;
   const chainKey = projectChainOf(doc);
@@ -145,6 +155,7 @@ export function PublishTab({
             max={PROJECT_LIMITS.name.max}
             placeholder="What is this called?"
           />
+          <NameWarning name={doc.name} />
           <LogoField value={doc.logo} onChange={(logo) => patch({ logo })} hint={LOGO_COPY.projectHint} />
           <TextField
             label="What it does"
@@ -230,7 +241,7 @@ export function PublishTab({
 
         <CardSection className="space-y-4">
           <Heading>{P.visibility.title}</Heading>
-          <VisibilityChoice value={visibility} onChange={onVisibility} privateUsed={privateUsed} isPrivatePublished={isPrivatePublished} />
+          <VisibilityChoice value={visibility} onChange={onVisibility} privateUsed={privateUsed} isPrivatePublished={isPrivatePublished} chainLocked={chainLocked} />
         </CardSection>
 
         <CardSection className="space-y-4">

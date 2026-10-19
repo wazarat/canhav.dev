@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePlan } from "@/components/studio/PlanContext";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import type { PlusFeature } from "@/lib/plan-shared";
 import { cn } from "@/lib/utils";
@@ -32,10 +31,9 @@ export function PlusGate({
   return (
     <Card className={cn("max-w-2xl", className)}>
       <CardSection className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusChip tone="info">{STUDIO_PLUS_COPY.pill}</StatusChip>
-          <span className="text-xs text-ink-500">{STUDIO_PLUS_COPY.gate.title}</span>
-        </div>
+        <p className="text-xs text-ink-400">
+          <span className="font-medium text-ink-200">{STUDIO_PLUS_COPY.pill}</span> · {STUDIO_PLUS_COPY.gate.title}
+        </p>
         <h3 className="font-display text-base font-semibold text-ink-50">{F.title}</h3>
         <p className="text-sm leading-relaxed text-ink-300">{F.teaser}</p>
         <div className="flex flex-wrap items-center gap-3">

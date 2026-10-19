@@ -7,7 +7,6 @@ import { SignInCard } from "@/components/studio/SignInCard";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { SoonBadge } from "@/components/ui/SoonBadge";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_PLUS_COPY, STUDIO_PLUS_SHIPPED } from "@/content/studio-plus";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { getPlan } from "@/lib/plan";
@@ -59,9 +58,7 @@ export default async function StudioPlusPage() {
   let action: React.ReactNode;
   if (!isAuthConfigured()) {
     action = (
-      <StatusChip tone="warning" variant="block">
-        Sign-in is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY, then reload.
-      </StatusChip>
+      <p className="text-sm text-ink-300">Sign-in is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY, then reload.</p>
     );
   } else if (!user) {
     action = (
@@ -73,7 +70,7 @@ export default async function StudioPlusPage() {
   } else if (plan.plan === "studio_plus") {
     action = (
       <div className="flex flex-wrap items-center gap-3">
-        <StatusChip tone="success">{P.onPlan}</StatusChip>
+        <span className="text-sm text-ink-200">{P.onPlan}</span>
         <ManageTeamButton size="sm" />
         <Button asChild size="sm" variant="ghost">
           <Link href="/studio">{P.toStudio}</Link>

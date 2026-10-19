@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { CopyBlock } from "@/components/ui/CopyBlock";
 import { Field, Input } from "@/components/ui/Input";
 import { Segmented } from "@/components/ui/Segmented";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import type { KeyScope, ProjectKeyRow } from "@/lib/project-keys";
 
@@ -95,9 +94,7 @@ function KeysInner({ projectId }: { projectId: string }) {
       <p className="text-xs leading-relaxed text-ink-400">{C.intro}</p>
       {fresh ? (
         <div className="space-y-3">
-          <StatusChip tone="warning" variant="block">
-            {C.shownOnce}
-          </StatusChip>
+          <p className="text-xs text-ink-200">{C.shownOnce}</p>
           <CopyBlock label={C.headerLabel} text={`Authorization: Bearer ${fresh}`} hint={C.headerHint} /> {/* copy-ok, an HTTP header */}
           <Button size="sm" variant="outline" onClick={() => setFresh(null)}>
             {C.saved}
@@ -117,9 +114,7 @@ function KeysInner({ projectId }: { projectId: string }) {
                 <p className="mt-0.5 text-xs text-ink-500">{k.revoked_at ? C.revoked : when(k.last_used_at)}</p>
               </div>
               <div className="flex items-center gap-2">
-                <StatusChip tone={k.revoked_at ? "neutral" : k.scope === "write" ? "warning" : "info"}>
-                  {k.scope === "write" ? C.write : C.read}
-                </StatusChip>
+                <span className="text-xs text-ink-400">{k.scope === "write" ? C.write : C.read}</span>
                 {k.revoked_at ? null : confirm === k.id ? (
                   <span className="flex items-center gap-2 text-xs text-ink-300">
                     <span>{C.revokeConfirm(k.name)}</span>

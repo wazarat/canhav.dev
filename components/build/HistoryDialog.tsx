@@ -6,7 +6,6 @@ import { X } from "lucide-react";
 
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { BUILD_COPY } from "@/content/build";
 import { pathLabel } from "@/lib/agent-writes";
@@ -91,13 +90,13 @@ export function HistoryDialog({ open, onClose, projectId }: { open: boolean; onC
         </div>
         <div className="space-y-5 px-5 py-5 md:px-6">
           {failed ? (
-            <StatusChip tone="error">{C.failed}</StatusChip>
+            <p className="text-xs text-rose-400">{C.failed}</p>
           ) : !data ? (
             <p className="text-sm text-ink-500">{C.loading}</p>
           ) : (
             <>
-              {state === "done" ? <StatusChip tone="success">{C.restored}</StatusChip> : null}
-              {state === "failed" ? <StatusChip tone="error">{C.failed}</StatusChip> : null}
+              {state === "done" ? <p className="text-xs text-ink-200">{C.restored}</p> : null}
+              {state === "failed" ? <p className="text-xs text-rose-400">{C.failed}</p> : null}
               {data.plus ? (
                 data.revisions.length === 0 ? (
                   <p className="text-sm text-ink-500">{C.empty}</p>

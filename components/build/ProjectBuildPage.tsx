@@ -223,6 +223,7 @@ export function ProjectBuildPage({
         onVisibility={setVisibility}
         privateUsed={privateUsed}
         isPrivatePublished={initialVisibility === "private" && initialStatus === "published"}
+        chainLocked={chainLocked}
       />
     ),
   };

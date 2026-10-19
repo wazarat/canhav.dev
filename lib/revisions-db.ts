@@ -2,12 +2,14 @@ import "server-only";
 
 import { getDb } from "@/lib/db";
 import { type IdeationDoc, canonicalizeIdeationDoc, hashIdeationDoc } from "@/lib/ideation";
-import { REVISION_LIMITS, type RevisionSummary, changedKeys } from "@/lib/revisions";
+import { REVISION_LIMITS, type RevisionSummary, changedKeys, mergeableAuthor } from "@/lib/revisions";
 
 /**
  * Draft revisions (M110). Every save records a row unless the document is
- * byte identical to the newest row; the table keeps the newest 200 per
- * record. Nothing here throws: a failed record never fails the save.
+ * byte identical to the newest row; a person's saves within five minutes
+ * merge into the newest row (M116), while agent writes, restores and
+ * publishes always add one. The table keeps the newest 200 per record.
+ * Nothing here throws: a failed record never fails the save.
  */
 export type RevisionEntity = "project" | "token_design";
 
@@ -32,12 +34,23 @@ export async function recordRevision(
   try {
     const hash = hashIdeationDoc(doc);
     const newest = await sql`
-      select rev, doc_hash from launchpad.draft_revisions
+      select rev, doc_hash, author, created_at, updated_at from launchpad.draft_revisions
       where entity_type = ${entityType} and entity_id = ${entityId}
       order by rev desc limit 1
     `;
-    const top = newest[0] as { rev: number; doc_hash: string } | undefined;
+    const top = newest[0] as { rev: number; doc_hash: string; author: string; created_at: string | Date; updated_at: string | Date | null } | undefined;
     if (top && top.doc_hash === hash) return top.rev;
+    // A person's edits within the window merge into their newest revision (M116).
+    if (top && mergeableAuthor(author) && top.author === author) {
+      const last = new Date(top.updated_at ?? top.created_at).getTime();
+      if (Date.now() - last < REVISION_LIMITS.mergeMs) {
+        await sql`
+          update launchpad.draft_revisions set doc = ${JSON.stringify(doc)}, doc_hash = ${hash}, updated_at = now()
+          where entity_type = ${entityType} and entity_id = ${entityId} and rev = ${top.rev}
+        `;
+        return top.rev;
+      }
+    }
     const rows = await sql`
       insert into launchpad.draft_revisions (entity_type, entity_id, rev, doc, doc_hash, author, change_id)
       values (${entityType}, ${entityId}, ${(top?.rev ?? 0) + 1}, ${JSON.stringify(doc)}, ${hash}, ${author}, ${changeId})

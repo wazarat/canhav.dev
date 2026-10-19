@@ -6,7 +6,6 @@ import { ManageTeamButton } from "@/components/studio/PlusCheckout";
 import { WelcomeMove } from "@/components/studio/WelcomeMove";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { getSessionUser } from "@/lib/auth";
 import { getMyProjects } from "@/lib/ideation-db";
@@ -39,11 +38,7 @@ export default async function StudioPlusWelcome() {
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">{W.title}</h1>
         <p className="mt-4 text-sm leading-relaxed text-ink-400">{W.lead}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          {plan.plan === "studio_plus" ? (
-            <StatusChip tone="success">{W.chip}</StatusChip>
-          ) : (
-            <StatusChip tone="info">{W.refresh}</StatusChip>
-          )}
+          <p className="text-sm text-ink-300">{plan.plan === "studio_plus" ? W.chip : W.refresh}</p>
         </div>
       </div>
       <div className="mt-10 space-y-6">

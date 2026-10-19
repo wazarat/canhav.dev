@@ -849,6 +849,14 @@ export const MARKET_FACTS = [
 // ---------------------------------------------------------------------------
 // Page copy
 
+/** The market name check (M116), plain text under a name or ticker field. */
+export const NAME_CHECK_COPY = {
+  listed: (name: string, symbol: string, source: string) => `A coin named ${name} (${symbol}) is listed on ${source}.`,
+  sources: { coingecko: "CoinGecko", dexscreener: "DexScreener" },
+  open: "Open",
+  note: "Names are not unique, so this never blocks. Buyers will have to tell them apart.",
+} as const;
+
 export const STUDIO_COPY = {
   kicker: "Studio",
   title: "Launch projects",

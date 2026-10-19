@@ -2,7 +2,6 @@
 
 import { DraftButton } from "@/components/build/DraftButton";
 import { TextField } from "@/components/ideation/TextField";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { draftCanvasPrompt } from "@/lib/agent-prompts-draft";
 import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, type CanvasBlock, canvasFilled } from "@/lib/canvas";
@@ -39,7 +38,7 @@ export function CanvasEditor({
           onResult={(value) => onChange({ ...current, ...value })}
           agentPrompt={draftCanvasPrompt(name, projectId)}
         />
-        <StatusChip tone={canvasFilled(current) === CANVAS_BLOCKS.length ? "success" : "neutral"}>{C.filled(canvasFilled(current))}</StatusChip>
+        <span className="text-xs text-ink-400">{C.filled(canvasFilled(current))}</span>
       </div>
       <div className="grid gap-5 md:grid-cols-2">
         {CANVAS_BLOCKS.map((block) => (

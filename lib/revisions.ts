@@ -4,12 +4,14 @@ export const REVISION_LIMITS = {
   keep: 200,
   /** Rows a list returns. */
   list: 50,
+  /** Edits by the same person within this window merge into one revision (M116). */
+  mergeMs: 5 * 60_000,
 } as const;
 
 /** What a revision row reads as, without its document. */
 export interface RevisionSummary {
   rev: number;
-  /** owner, agent, member:<userId> or restore:<rev>. */
+  /** owner, agent, publish, member:<userId> or restore:<rev>. */
   author: string;
   changeId: string | null;
   createdAt: string;
@@ -28,8 +30,14 @@ export function changedKeys(before: unknown, after: unknown): string[] {
 }
 
 /** The author label a row carries, from who saved. */
-export function revisionAuthor(kind: "owner" | "agent" | "restore", detail?: string | number): string {
+export function revisionAuthor(kind: "owner" | "agent" | "restore" | "publish", detail?: string | number): string {
   if (kind === "owner") return detail ? `member:${detail}` : "owner";
   if (kind === "restore") return `restore:${detail}`;
+  if (kind === "publish") return "publish";
   return "agent";
+}
+
+/** True for a person's own saves, the ones that merge within the window. */
+export function mergeableAuthor(author: string): boolean {
+  return author === "owner" || author.startsWith("member:"); // copy-ok, code join
 }

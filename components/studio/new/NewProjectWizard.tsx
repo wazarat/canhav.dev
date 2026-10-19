@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
 import { LogoField } from "@/components/ideation/LogoField";
+import { NameWarning } from "@/components/ideation/NameWarning";
 import { StepNav } from "@/components/ideation/StepNav";
 import { TextField } from "@/components/ideation/TextField";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
@@ -137,6 +138,7 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
             placeholder={C.name.placeholder}
           />
         )}
+        {current === "name" ? <NameWarning name={draft.name} /> : null}
 
         {current === "sector" && (
           <div className="space-y-3">

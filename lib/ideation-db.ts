@@ -638,6 +638,8 @@ export async function publishEntity(
           draft_doc = ${JSON.stringify(draftOut)}, updated_at = now()
       where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     `;
+    // One revision per publish (M116).
+    await recordRevision("project", id, draftOut, revisionAuthor("publish"));
   } else {
     await sql`
       update launchpad.token_designs

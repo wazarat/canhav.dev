@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 import { StatusChip } from "@/components/ui/StatusChip";
+import { NAME_CHECK_COPY } from "@/content/ideation";
 
 interface CheckResult {
   indexerOk: boolean;
   chainMatches: Array<{ address: string; name: string; symbol: string }>;
   canhavMatches: Array<{ slug: string | null; name: string; ticker: string }>;
+  /** The wider market (M116). */
+  external?: Array<{ source: "coingecko" | "dexscreener"; name: string; symbol: string; url: string }>;
 }
 
 /**
@@ -66,11 +69,14 @@ export function NameTickerCheck({
 
   if (result.chainMatches.length === 0 && result.canhavMatches.length === 0) {
     return (
-      <StatusChip tone="neutral" variant="block">
-        {result.indexerOk
-          ? `${label} not found on Robinhood Chain or CanHav.`
-          : `${label} not found on CanHav. The Robinhood Chain check is unavailable right now.`}
-      </StatusChip>
+      <div className="space-y-2">
+        <StatusChip tone="neutral" variant="block">
+          {result.indexerOk
+            ? `${label} not found on Robinhood Chain or CanHav.`
+            : `${label} not found on CanHav. The Robinhood Chain check is unavailable right now.`}
+        </StatusChip>
+        {external(result)}
+      </div>
     );
   }
 
@@ -110,6 +116,25 @@ export function NameTickerCheck({
           The Robinhood Chain check is unavailable right now.
         </StatusChip>
       )}
+      {external(result)}
     </div>
+  );
+}
+
+/** Exact matches on CoinGecko and DexScreener, plain text, never blocking (M116). */
+function external(result: CheckResult) {
+  const list = result.external ?? [];
+  if (list.length === 0) return null;
+  return (
+    <ul className="space-y-1 text-xs text-ink-400">
+      {list.map((m) => (
+        <li key={`${m.source}-${m.url}`}>
+          {NAME_CHECK_COPY.listed(m.name, m.symbol, NAME_CHECK_COPY.sources[m.source])}{" "}
+          <a href={m.url} target="_blank" rel="noreferrer" className="text-ink-200 hover:underline">
+            {NAME_CHECK_COPY.open}
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }

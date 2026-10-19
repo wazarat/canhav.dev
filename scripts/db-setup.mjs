@@ -407,6 +407,10 @@ await sql`
     unique (entity_type, entity_id, rev)
   )
 `;
+// M116: edits within five minutes merge into the newest row, which keeps its
+// first created_at and carries the time of the last merge.
+await sql`alter table launchpad.draft_revisions add column if not exists updated_at timestamptz`;
+
 await sql`
   create index if not exists draft_revisions_entity_idx
     on launchpad.draft_revisions (entity_type, entity_id, rev desc)
