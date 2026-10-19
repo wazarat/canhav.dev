@@ -4,18 +4,21 @@ import { getVerifiedWallets } from "@/lib/auth";
 import { DEFAULT_PROJECT_CHAIN } from "@/lib/chains";
 import { findToken, getCreatorTokens } from "@/lib/indexer";
 import { type LaunchRow, claimLaunch, getLaunchByToken } from "@/lib/launches-db";
+import { type Owner, ownedBy } from "@/lib/owner";
 
 /**
- * Who owns a launch (M57). The account on the launches row, or any account
- * that holds the token's creator wallet as a verified wallet. The second
+ * Who owns a launch (M57). The account on the launches row, a member of the
+ * team it belongs to (M107), or any account that holds the token's creator
+ * wallet as a verified wallet. The second
  * case has no time limit and is recorded the moment it is seen, so a launch
  * whose link was missed is picked up once its wallet is on an account.
  */
 
 /** The launch row when the account owns the token, claiming it by wallet if needed. Null otherwise. */
-export async function ownedLaunch(tokenAddress: string, userId: string): Promise<LaunchRow | null> {
+export async function ownedLaunch(tokenAddress: string, owner: Owner): Promise<LaunchRow | null> {
   const row = await getLaunchByToken(tokenAddress);
-  if (row?.owner_id === userId) return row;
+  if (row && ownedBy(row, owner)) return row;
+  const userId = owner.userId;
   const wallets = await getVerifiedWallets(userId);
   if (wallets.length === 0) return null;
   const token = await findToken(tokenAddress);

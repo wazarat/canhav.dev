@@ -25,12 +25,12 @@ export default async function TokenDesignEditorPage({
   if (!user) redirect("/studio");
 
   const { id } = await params;
-  const row = await getTokenDesign(id, user.id);
+  const row = await getTokenDesign(id, user.owner);
   if (!row) notFound();
 
   const [linked, myProjects, curve, snapshot] = await Promise.all([
     getLinkedProject(row.id),
-    getMyProjects(user.id),
+    getMyProjects(user.owner),
     // The deployed token's curve feeds the computed build steps (M46).
     row.deployed_token_address ? getCurve(row.deployed_token_address, designDeployChain(row)) : null,
     // The published snapshot, for the milestone hint on Review (M48).

@@ -361,6 +361,24 @@ await sql`
     on launchpad.agent_sessions (project_id, updated_at desc)
 `;
 
+// Teams (M107). A record moved to a Clerk organization carries its id, and
+// every member of that organization may open it. Null means personal.
+await sql`alter table launchpad.projects add column if not exists org_id text`;
+await sql`alter table launchpad.token_designs add column if not exists org_id text`;
+await sql`alter table launchpad.launches add column if not exists org_id text`;
+await sql`
+  create index if not exists projects_org_idx
+    on launchpad.projects (org_id, updated_at desc) where org_id is not null
+`;
+await sql`
+  create index if not exists token_designs_org_idx
+    on launchpad.token_designs (org_id, updated_at desc) where org_id is not null
+`;
+await sql`
+  create index if not exists launches_org_idx
+    on launchpad.launches (org_id, created_at desc) where org_id is not null
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

@@ -39,6 +39,7 @@ import {
   getProject,
 } from "@/lib/ideation-db";
 import { emptyTokenDesignDoc } from "@/lib/ideation";
+import { type Owner, ownedBy, ownerOf } from "@/lib/owner";
 
 /**
  * The one path an agent change takes, whatever tool sent it. Reads the
@@ -119,13 +120,13 @@ export function nextTokenDesignDoc(
  */
 export async function writeChange(
   projectId: string,
-  ownerId: string,
+  owner: Owner,
   target: AgentChangeTarget,
   kind: AgentChangeKind,
   patch: unknown,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const project = await getProject(projectId, ownerId);
+    const project = await getProject(projectId, owner);
     if (!project) return { ok: false, message: "Project not found." };
     if (target === "project") {
       const rev = agentStateOf(project).rev;
@@ -133,16 +134,16 @@ export async function writeChange(
       const next = nextProjectDoc(project, kind, patch);
       if (!next.ok) return next;
       if (kind === "fields" && (await chainChangeRefused(project, patch))) return { ok: false, message: CHAIN_LOCKED };
-      if (await writeProjectDraftAsAgent(project.id, ownerId, next.doc, rev)) return { ok: true };
+      if (await writeProjectDraftAsAgent(project.id, owner, next.doc, rev)) return { ok: true };
       continue;
     }
     const design = await getLinkedTokenDesign(project.id);
-    if (!design || design.owner_id !== ownerId) return { ok: false, message: NO_DESIGN };
+    if (!design || !ownedBy(design, owner)) return { ok: false, message: NO_DESIGN };
     const rev = typeof design.agent_rev === "number" ? design.agent_rev : null;
     if (rev === null) return { ok: false, message: NOT_READY };
     const next = nextTokenDesignDoc(design, kind, patch);
     if (!next.ok) return next;
-    if (await writeTokenDesignDraftAsAgent(design.id, ownerId, next.doc, rev)) return { ok: true };
+    if (await writeTokenDesignDraftAsAgent(design.id, owner, next.doc, rev)) return { ok: true };
   }
   return { ok: false, message: BUSY };
 }
@@ -213,7 +214,7 @@ const ALREADY_LINKED = "A token design is already linked to this project. Change
  */
 export async function createLinkedDesign(
   project: ProjectRow,
-  ownerId: string,
+  owner: Owner,
   input: { name: string; ticker?: string },
 ): Promise<{ ok: true; design: TokenDesignRow; changeId: string | null } | { ok: false; message: string }> {
   const { mode, rev } = agentStateOf(project);
@@ -222,17 +223,18 @@ export async function createLinkedDesign(
   if (await getLinkedTokenDesign(project.id)) return { ok: false, message: ALREADY_LINKED };
   const doc = emptyTokenDesignDoc(input.name);
   if (input.ticker) doc.ticker = input.ticker;
-  const design = await createTokenDesign(ownerId, doc);
+  // The design is keyed like its project, so the whole team sees it (M107).
+  const design = await createTokenDesign(project.owner_id, doc, project.org_id ?? null);
   if (!design) return { ok: false, message: NOT_READY };
-  const linked = await createProjectTokenLink(project.id, design.id, ownerId);
+  const linked = await createProjectTokenLink(project.id, design.id, owner.userId);
   if (!linked.ok) {
     // Lost a race with the studio. The design just made is an orphan draft; the link that won stands.
-    await deleteTokenDesignDraft(design.id, ownerId);
+    await deleteTokenDesignDraft(design.id, ownerOf(project));
     return { ok: false, message: ALREADY_LINKED };
   }
   const changeId = await recordAgentChange({
     projectId: project.id,
-    ownerId,
+    ownerId: project.owner_id,
     target: "token_design",
     targetId: design.id,
     kind: "create",
@@ -246,7 +248,7 @@ export async function createLinkedDesign(
 export async function submitAgentChange(
   project: ProjectRow,
   design: TokenDesignRow | null,
-  ownerId: string,
+  owner: Owner,
   input: Input,
   note: string | undefined,
 ): Promise<SubmitResult> {
@@ -256,7 +258,7 @@ export async function submitAgentChange(
 
   let targetId = project.id;
   if (input.target === "token_design") {
-    if (!design || design.owner_id !== ownerId) return { ok: false, message: NO_DESIGN };
+    if (!design || !ownedBy(design, owner)) return { ok: false, message: NO_DESIGN };
     targetId = design.id;
     if (input.kind === "build_steps") {
       const problem = tokenBuildStepsProblem(input.patch);
@@ -275,7 +277,7 @@ export async function submitAgentChange(
 
   const record = {
     projectId: project.id,
-    ownerId,
+    ownerId: project.owner_id,
     target: input.target,
     targetId,
     kind: input.kind,
@@ -291,7 +293,7 @@ export async function submitAgentChange(
     return { ok: true, outcome: "proposed", changeId, message: PROPOSED };
   }
 
-  const written = await writeChange(project.id, ownerId, input.target, input.kind, input.patch);
+  const written = await writeChange(project.id, owner, input.target, input.kind, input.patch);
   if (!written.ok) return written;
   const changeId = await recordAgentChange({ ...record, status: "applied" });
   return { ok: true, outcome: "applied", changeId, message: APPLIED };

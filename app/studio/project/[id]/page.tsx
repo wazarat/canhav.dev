@@ -5,6 +5,7 @@ import { ProjectBuildPage } from "@/components/build/ProjectBuildPage";
 import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { ProjectEditor } from "@/components/ideation/ProjectEditor";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
+import { MoveToTeamButton } from "@/components/studio/MoveToTeamButton";
 import { ProjectHeaderActions } from "@/components/studio/ProjectHeaderActions";
 import { type PanelLaunch, ProjectLaunchPanel } from "@/components/studio/ProjectLaunchPanel";
 import { getSessionUser } from "@/lib/auth";
@@ -40,14 +41,14 @@ export default async function ProjectEditorPage({
   const { id } = await params;
   const { v } = await searchParams;
   const build = v !== "classic";
-  const row = await getProject(id, user.id);
+  const row = await getProject(id, user.owner);
   if (!row) notFound();
 
   const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
-    getMyTokenDesigns(user.id),
+    getMyTokenDesigns(user.owner),
     projectChainLocked(row.id),
-    getMyLaunches(user.id),
+    getMyLaunches(user.owner),
   ]);
   // The launches side of the project (M56). Design-only launches link through the design.
   const chain = projectChainOf(row.draft_doc);
@@ -64,12 +65,15 @@ export default async function ProjectEditorPage({
   const venueLine = launchTarget ? launchTargetHandoffLine(launchTarget, launchTargetFit(launchTarget, chain)) : null;
 
   const headerActions = (
-    <ProjectHeaderActions
-      projectId={row.id}
-      name={row.draft_doc.name}
-      hasKit={hasKit}
-      hasLaunch={recorded.some((l) => l.project?.id === row.id)}
-    />
+    <>
+      <MoveToTeamButton projectId={row.id} name={row.draft_doc.name} orgId={row.org_id ?? null} creator={row.owner_id === user.id} />
+      <ProjectHeaderActions
+        projectId={row.id}
+        name={row.draft_doc.name}
+        hasKit={hasKit}
+        hasLaunch={recorded.some((l) => l.project?.id === row.id)}
+      />
+    </>
   );
   // On the BUILD page the panels sit inside Overview as flat cards and the
   // MCP card is the compact one the tab renders itself.

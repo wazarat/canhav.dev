@@ -959,6 +959,18 @@ export const STUDIO_COPY = {
   pro: {
     join: "Join Studio Pro",
   },
+  /** Move a personal project to the active team (M107). */
+  moveToTeam: {
+    action: "Move to team",
+    confirm: (name: string, team: string) => `Move ${name} to ${team}? Every member of the team can then open and edit it, its token design and its launches. The record keeps you as its creator.`,
+    yes: "Move",
+    no: "Keep personal",
+    busy: "Moving",
+    done: "Moved to the team.",
+    failed: "Could not move this project. Reload and try again.",
+    /** The button is hidden until the session has a team; this hint sits in the account menu. */
+    hint: "Switch to a team to move projects into it.",
+  },
 } as const;
 
 /** Agent changes panel on a project's studio page, and the stale draft notice (M39). */

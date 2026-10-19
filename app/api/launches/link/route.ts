@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  const result = await linkLaunch(ref, gate.id, projectId);
+  const result = await linkLaunch(ref, gate.owner, projectId);
   if (!result.ok) {
     const status = result.code === "storage" ? 503 : result.code === "not_yours" ? 403 : result.code === "chain_mismatch" ? 409 : 400;
     return NextResponse.json({ error: result.message, code: result.code }, { status });

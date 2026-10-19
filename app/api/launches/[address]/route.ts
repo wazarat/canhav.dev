@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
-import { authGate } from "@/lib/ideation-api";
+import { authGate, teamFor } from "@/lib/ideation-api";
 import { getMyProjects, getProject } from "@/lib/ideation-db";
 import { projectChainOf } from "@/lib/chains";
 import { findToken } from "@/lib/indexer";
@@ -25,11 +25,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ address: strin
   if (!/^0x[0-9a-f]{40}$/.test(address))
     return NextResponse.json({ error: "Invalid token address." }, { status: 400 });
   // The row owner, or the account holding the creator wallet (M57).
-  const launch = await ownedLaunch(address, gate.id);
+  const launch = await ownedLaunch(address, gate.owner);
   if (!launch) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const chain = launchRowChain(launch);
-  const projects = ((await getMyProjects(gate.id)) ?? []).map((row) => ({
+  const projects = ((await getMyProjects(gate.owner)) ?? []).map((row) => ({
     id: row.id,
     name: row.draft_doc.name,
     hasKit: Boolean(row.draft_doc.kit?.shape),
@@ -72,20 +72,23 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ address: stri
   }
 
   // The row owner, or the account holding the creator wallet (M57).
-  const launch = await ownedLaunch(address, gate.id);
+  const launch = await ownedLaunch(address, gate.owner);
   if (!launch) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const chain = launchRowChain(launch);
 
   let linked: { id: string; name: string } | null = null;
+  // The launch follows its project's team (M107).
+  let orgId: string | null = null;
   if (create) {
     const token = await findToken(address);
-    const row = await createProjectForToken(gate.id, { name: token?.name ?? "", chain });
+    const row = await createProjectForToken(gate.id, { name: token?.name ?? "", chain }, await teamFor(gate));
     if (!row) return NextResponse.json({ error: "Storage not configured." }, { status: 503 });
     projectId = row.id;
+    orgId = row.org_id ?? null;
     linked = { id: row.id, name: row.draft_doc.name };
   } else if (projectId) {
-    // A launch may only be attached to a project the same account owns.
-    const project = await getProject(projectId, gate.id);
+    // A launch may only be attached to a project the account or its team owns.
+    const project = await getProject(projectId, gate.owner);
     if (!project)
       return NextResponse.json({ error: "That project is not yours." }, { status: 403 });
     // A token is linked to a project on the chain it launched on (M54).
@@ -95,9 +98,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ address: stri
         { status: 409 },
       );
     linked = { id: project.id, name: project.draft_doc.name };
+    orgId = project.org_id ?? null;
   }
 
-  const ok = await setLaunchProject(address, gate.id, projectId);
+  const ok = await setLaunchProject(address, gate.owner, projectId, orgId);
   if (ok === null) return NextResponse.json({ error: "Storage not configured." }, { status: 503 });
   if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
 

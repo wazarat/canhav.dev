@@ -12,10 +12,13 @@ import {
 } from "@/lib/agent-writes";
 import { getDb } from "@/lib/db";
 import type { ProjectDoc, TokenDesignDoc } from "@/lib/ideation";
+import type { Owner } from "@/lib/owner";
 
 /**
  * Storage for agent writes. Like lib/ideation-db.ts, nothing here throws on
- * missing config, and every mutation filters on owner_id. The columns and the
+ * missing config. Change rows are keyed to the record's own owner_id (the
+ * account that made the project), whoever on its team wrote them (M107);
+ * the draft writes admit the team. The columns and the
  * table arrive with scripts/db-setup.mjs; until that has run, reads fall back
  * to the defaults and writes report failure.
  */
@@ -57,7 +60,7 @@ export function agentStateOf(row: object): { mode: AgentWriteMode; rev: number |
 
 export async function setAgentWriteMode(
   projectId: string,
-  ownerId: string,
+  owner: Owner,
   mode: AgentWriteMode,
 ): Promise<boolean> {
   const sql = getDb();
@@ -65,7 +68,7 @@ export async function setAgentWriteMode(
   try {
     const rows = await sql`
       update launchpad.projects set agent_write_mode = ${mode}
-      where id = ${projectId} and owner_id = ${ownerId}
+      where id = ${projectId} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
       returning id
     `;
     return rows.length > 0;
@@ -233,7 +236,7 @@ export async function withdrawAgentChange(changeId: string, projectId: string, o
  */
 export async function writeProjectDraftAsAgent(
   id: string,
-  ownerId: string,
+  owner: Owner,
   doc: ProjectDoc,
   readRev: number,
 ): Promise<boolean> {
@@ -247,7 +250,7 @@ export async function writeProjectDraftAsAgent(
           verify_wallet = ${doc.verifyWallet ?? null},
           agent_rev = agent_rev + 1,
           updated_at = now()
-      where id = ${id} and owner_id = ${ownerId} and agent_rev = ${readRev}
+      where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${readRev}
       returning id
     `;
     return rows.length > 0;
@@ -259,7 +262,7 @@ export async function writeProjectDraftAsAgent(
 
 export async function writeTokenDesignDraftAsAgent(
   id: string,
-  ownerId: string,
+  owner: Owner,
   doc: TokenDesignDoc,
   readRev: number,
 ): Promise<boolean> {
@@ -271,7 +274,7 @@ export async function writeTokenDesignDraftAsAgent(
       set draft_doc = ${JSON.stringify(doc)},
           agent_rev = agent_rev + 1,
           updated_at = now()
-      where id = ${id} and owner_id = ${ownerId} and agent_rev = ${readRev}
+      where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${readRev}
       returning id
     `;
     return rows.length > 0;
@@ -281,24 +284,24 @@ export async function writeTokenDesignDraftAsAgent(
   }
 }
 
-/** Agent activity per project for the studio home rows (M79). */
+/** Agent activity per project for the studio home rows (M79). By project since M107, so a team sees it. */
 export interface ProjectAgentActivity {
   proposed: number;
   /** ISO time of the newest direct write, null when none. */
   lastWritten: string | null;
 }
 
-export async function agentActivityByOwner(ownerId: string): Promise<Map<string, ProjectAgentActivity>> {
+export async function agentActivityByProjects(projectIds: string[]): Promise<Map<string, ProjectAgentActivity>> {
   const out = new Map<string, ProjectAgentActivity>();
   const sql = getDb();
-  if (!sql) return out;
+  if (!sql || projectIds.length === 0) return out;
   try {
     const rows = await sql`
       select project_id,
              count(*) filter (where status = 'proposed')::int as proposed,
              max(created_at) filter (where status = 'applied') as last_written
       from launchpad.agent_changes
-      where owner_id = ${ownerId}
+      where project_id = any(${projectIds}::uuid[])
       group by project_id
     `;
     for (const r of rows as Array<{ project_id: string; proposed: number; last_written: string | Date | null }>) {

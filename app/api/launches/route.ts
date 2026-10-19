@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { authGate } from "@/lib/ideation-api";
+import { authGate, teamFor } from "@/lib/ideation-api";
+import { ownedBy } from "@/lib/owner";
 import { getProject } from "@/lib/ideation-db";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain, projectChainOf } from "@/lib/chains";
 import { findTokenRead } from "@/lib/indexer";
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid token address." }, { status: 400 });
 
   // A launch may only be attached to a project the same account owns.
-  const project = projectId ? await getProject(projectId, gate.id) : null;
+  const project = projectId ? await getProject(projectId, gate.owner) : null;
   if (projectId && !project)
     return NextResponse.json({ error: "That project is not yours." }, { status: 403 });
 
@@ -103,20 +104,23 @@ export async function POST(req: Request) {
     );
 
   let linked = project ? { id: project.id, name: project.draft_doc.name } : null;
+  // The launch belongs to its project's team (M107).
+  let orgId: string | null = project?.org_id ?? null;
   if (createFor) {
     // A retry must not start a second project for the same token.
     const existing = await getLaunchByToken(tokenAddress);
-    if (existing && existing.owner_id !== gate.id)
+    if (existing && !ownedBy(existing, gate.owner))
       return NextResponse.json({ error: "Already recorded.", code: "exists" }, { status: 409 });
     const row = existing?.project_id
-      ? await getProject(existing.project_id, gate.id)
+      ? await getProject(existing.project_id, gate.owner)
       : await createProjectForToken(gate.id, {
           name: token.name,
           description: createFor.description,
           chain: token.chain ?? DEFAULT_PROJECT_CHAIN,
-        });
+        }, await teamFor(gate));
     if (row) {
       projectId = row.id;
+      orgId = row.org_id ?? null;
       linked = { id: row.id, name: row.draft_doc.name };
     }
   }
@@ -124,6 +128,7 @@ export async function POST(req: Request) {
   const result = await recordLaunch({
     tokenAddress,
     ownerId: gate.id,
+    orgId,
     creatorAddress: token.creator,
     txHash,
     projectId,

@@ -3,6 +3,8 @@ import "server-only";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
+import { type Owner, ownerOf } from "@/lib/owner";
+
 import {
   PROJECT_LIMITS,
   type ProjectDoc,
@@ -43,7 +45,7 @@ import {
 import {
   errorResult,
   jsonResult,
-  mcpUserId,
+  mcpOwner,
   promptResult,
   registerMeteredPrompt,
   registerMeteredTool,
@@ -99,7 +101,8 @@ import { deriveTokenomics } from "@/lib/tokenDesign";
  * project id the route carries, so none of them takes a slug or an address —
  * an agent added against this server sees that project and nothing else.
  *
- * Ownership is enforced per call by getProject(id, userId), not by the URL.
+ * Ownership is enforced per call by getProject(id, owner), not by the URL; a
+ * member of the project's team passes (M107).
  * The URL is a tool surface, not a secret: Clerk issues tokens for the origin,
  * so a token minted at /mcp is accepted here too.
  *
@@ -127,17 +130,17 @@ interface ProjectCtx {
 
 async function loadProjectContext(
   projectId: string,
-  userId: string,
+  owner: Owner,
   preview: boolean | undefined,
 ): Promise<ProjectCtx | null> {
-  const project = await getProject(projectId, userId);
+  const project = await getProject(projectId, owner);
   if (!project) return null;
   const design = await getLinkedTokenDesign(project.id);
   // In propose mode the agent reads what the draft becomes once the owner
   // accepts, so a run can build on its own proposals. preview false reads
   // the stored draft. Direct and off have nothing waiting (M81).
   if (agentStateOf(project).mode === "propose" && preview !== false) {
-    const projected = await projectedContext(project, design, userId);
+    const projected = await projectedContext(project, design, project.owner_id);
     return { ...projected, source: "projected" };
   }
   return { project, design, source: "draft", pending: { count: 0, changeIds: [], skipped: [] } };
@@ -149,9 +152,9 @@ async function withProject(
   ctx: unknown,
   preview?: boolean,
 ): Promise<{ ok: true; value: ProjectCtx } | { ok: false; message: string }> {
-  const userId = mcpUserId(ctx);
-  if (!userId) return { ok: false, message: AUTH_HINT };
-  const loaded = await loadProjectContext(projectId, userId, preview);
+  const owner = mcpOwner(ctx);
+  if (!owner) return { ok: false, message: AUTH_HINT };
+  const loaded = await loadProjectContext(projectId, owner, preview);
   if (!loaded) return { ok: false, message: NOT_YOURS };
   return { ok: true, value: loaded };
 }
@@ -543,7 +546,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "token_design", kind: "build_steps", patch: { done: args.done, undone: args.undone, evidence: args.evidence } },
         args.note,
       );
@@ -659,7 +662,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "project", kind: "fields", patch: args.changes },
         args.note,
       );
@@ -778,7 +781,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "project", kind: "fields", patch: { kit: { features } } },
         args.note,
       );
@@ -840,7 +843,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "project", kind: "fields", patch: { kit } },
         args.note,
       );
@@ -865,7 +868,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         {
           target: "project",
           kind: "build_steps",
@@ -940,7 +943,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "project", kind: "fields", patch: { kit: { templates: args.decisions } } },
         args.note,
       );
@@ -967,7 +970,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const loaded = await withProject(projectId, ctx, false);
       if (!loaded.ok) return errorResult(loaded.message);
       const { project } = loaded.value;
-      const created = await createLinkedDesign(project, project.owner_id, {
+      const created = await createLinkedDesign(project, ownerOf(project), {
         name: args.name ?? project.draft_doc.name,
         ticker: args.ticker,
       });
@@ -982,7 +985,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         created.design,
-        project.owner_id,
+        ownerOf(project),
         { target: "token_design", kind: "fields", patch: args.changes },
         args.note,
       );
@@ -1011,7 +1014,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "token_design", kind: "fields", patch: args.changes },
         args.note,
       );
@@ -1092,7 +1095,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         { target: "project", kind: "fields", patch: { summary: { built: args.built, building: args.building } } },
         args.note,
       );
@@ -1130,7 +1133,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const result = await submitAgentChange(
         project,
         design,
-        project.owner_id,
+        ownerOf(project),
         args.target === "project"
           ? { target: "project", kind: "fields", patch: { logo: stored.url } }
           : { target: "token_design", kind: "fields", patch: { logo: stored.url } },
@@ -1160,7 +1163,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project } = loaded.value;
       if (agentStateOf(project).mode === "off")
         return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
-      const result = await linkLaunch(args.token, project.owner_id, project.id);
+      const result = await linkLaunch(args.token, mcpOwner(ctx) ?? ownerOf(project), project.id);
       if (!result.ok) return errorResult(result.message);
       const changeId = await recordLink(project, result.address, true, args.note);
       return jsonResult({
@@ -1191,7 +1194,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project } = loaded.value;
       if (agentStateOf(project).mode === "off")
         return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
-      const result = await linkLaunch(args.token, project.owner_id, null, { onlyFrom: project.id });
+      const result = await linkLaunch(args.token, mcpOwner(ctx) ?? ownerOf(project), null, { onlyFrom: project.id });
       if (!result.ok) return errorResult(result.message);
       const changeId = await recordLink(project, result.address, false, args.note);
       return jsonResult({ linked: false, address: result.address, name: result.name, changeId, message: "Unlinked." });

@@ -46,7 +46,7 @@ import {
 import {
   errorResult,
   jsonResult,
-  mcpUserId,
+  mcpOwner,
   registerMeteredTool,
 } from "@/lib/mcp/register";
 
@@ -292,9 +292,9 @@ export function registerLaunchTools(server: McpServer): void {
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
-      const userId = mcpUserId(ctx);
-      if (!userId) return errorResult(AUTH_HINT);
-      const mine = await getMyLaunches(userId);
+      const owner = mcpOwner(ctx);
+      if (!owner) return errorResult(AUTH_HINT);
+      const mine = await getMyLaunches(owner);
       if (mine === null) return errorResult(DB_HINT);
       const launches = mine.map((entry) => ({
         address: entry.address,

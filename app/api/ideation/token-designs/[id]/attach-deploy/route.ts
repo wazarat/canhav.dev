@@ -41,7 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!/^0x[0-9a-f]{40}$/.test(tokenAddress))
     return NextResponse.json({ error: "Invalid token address." }, { status: 400 });
 
-  const row = await getTokenDesign(id, gate.id);
+  const row = await getTokenDesign(id, gate.owner);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (row.deployed_token_address)
     return NextResponse.json({ error: "A deploy is already attached." }, { status: 409 });
@@ -96,7 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (problem) return NextResponse.json({ error: problem }, { status: 403 });
   }
 
-  const ok = await attachDeploy(id, gate.id, tokenAddress, token.creator, token.journeyHash, token.chain);
+  const ok = await attachDeploy(id, gate.owner, tokenAddress, token.creator, token.journeyHash, token.chain);
   if (!ok) return NextResponse.json({ error: "Attach failed." }, { status: 409 });
   return NextResponse.json({ ok: true });
 }

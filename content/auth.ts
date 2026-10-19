@@ -17,6 +17,12 @@ export const AUTH_COPY = {
   account: "Account",
   signOut: "Sign out",
   wallets: "Wallets",
+  /** Teams (M107). A Studio+ team is a Clerk organization; its members share the records moved to it. */
+  team: "Team",
+  teams: "Teams",
+  createTeam: "Create a team",
+  personal: "Personal",
+  switching: "Switching",
   walletsHint: "Add the wallet you launch with and its launches show up here.",
   claim: "Claim with this wallet",
   claiming: "Check your wallet…",

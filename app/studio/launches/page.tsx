@@ -44,10 +44,10 @@ export default async function StudioLaunchesPage({
   const chain = chainParam(rawChain);
 
   const [projects, designs, launches, links] = await Promise.all([
-    getMyProjects(user.id),
-    getMyTokenDesigns(user.id),
-    getMyLaunches(user.id),
-    getEntityLinks(user.id),
+    getMyProjects(user.owner),
+    getMyTokenDesigns(user.owner),
+    getMyLaunches(user.owner),
+    getEntityLinks(user.owner),
   ]);
   const launched = launchedSets({
     launches: launches ?? [],

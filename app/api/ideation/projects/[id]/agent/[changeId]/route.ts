@@ -45,7 +45,10 @@ export async function POST(req: Request, { params }: Ctx) {
   if (body.action !== "accept" && body.action !== "reject")
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });
 
-  const change = await getAgentChange(changeId, id, gate.id);
+  // The team may decide (M107); change rows are keyed to the project's own owner.
+  const held = await getProject(id, gate.owner);
+  if (!held) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  const change = await getAgentChange(changeId, id, held.owner_id);
   if (!change) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (change.status !== "proposed")
     return NextResponse.json({ error: "This change was already decided." }, { status: 409 });
@@ -71,12 +74,12 @@ export async function POST(req: Request, { params }: Ctx) {
     }
     const inEditor = change.target === "project" && body.appliedInEditor === true;
     if (!inEditor) {
-      const written = await writeChange(id, gate.id, change.target, change.kind, applied);
+      const written = await writeChange(id, gate.owner, change.target, change.kind, applied);
       if (!written.ok) {
         // The change may depend on proposals filed before it (M81).
-        const project = await getProject(id, gate.id);
+        const project = await getProject(id, gate.owner);
         const design = project ? await getLinkedTokenDesign(project.id) : null;
-        const projected = project ? await projectedContext(project, design, gate.id) : null;
+        const projected = project ? await projectedContext(project, design, project.owner_id) : null;
         const applies =
           projected && change.target === "project"
             ? nextProjectDoc(projected.project, change.kind, applied).ok
@@ -94,7 +97,7 @@ export async function POST(req: Request, { params }: Ctx) {
   const ok = await resolveAgentChange(
     changeId,
     id,
-    gate.id,
+    held.owner_id,
     body.action === "accept" ? "accepted" : "rejected",
     body.action === "accept" ? applied : null,
   );

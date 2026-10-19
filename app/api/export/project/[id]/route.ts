@@ -26,7 +26,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   if (!UUID.test(id)) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  const row = await getProject(id, user.id);
+  const row = await getProject(id, user.owner);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const file = new URL(req.url).searchParams.get("file");

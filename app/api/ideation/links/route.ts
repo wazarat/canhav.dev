@@ -29,8 +29,8 @@ async function parseAndAuthorize(req: Request) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
   const [project, design] = await Promise.all([
-    getProject(projectId, gate.id),
-    getTokenDesign(tokenDesignId, gate.id),
+    getProject(projectId, gate.owner),
+    getTokenDesign(tokenDesignId, gate.owner),
   ]);
   if (!project || !design)
     return NextResponse.json(

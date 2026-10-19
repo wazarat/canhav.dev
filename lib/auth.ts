@@ -2,10 +2,14 @@ import "server-only";
 
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 
+import { type Owner } from "@/lib/owner";
+
 export interface SessionUser {
   /** Clerk user id (`user_…` string) — the `owner_id` on ideation records. */
   id: string;
   email: string | null;
+  /** The account plus its active organization, the scope every record read uses (M107). */
+  owner: Owner;
 }
 
 /** True when Clerk is configured at all (distinguishes 401 from 503). */
@@ -27,12 +31,13 @@ export function isAuthConfigured(): boolean {
  */
 export async function getSessionUser(): Promise<SessionUser | null> {
   if (!isAuthConfigured()) return null;
-  const { userId, sessionClaims } = await auth();
+  const { userId, orgId, sessionClaims } = await auth();
   if (!userId) return null;
+  const owner: Owner = { userId, orgIds: orgId ? [orgId] : [] };
   const claimed = (sessionClaims as { email?: string } | null)?.email;
-  if (claimed) return { id: userId, email: claimed };
+  if (claimed) return { id: userId, email: claimed, owner };
   const user = await currentUser();
-  return { id: userId, email: user?.primaryEmailAddress?.emailAddress ?? null };
+  return { id: userId, email: user?.primaryEmailAddress?.emailAddress ?? null, owner };
 }
 
 /**

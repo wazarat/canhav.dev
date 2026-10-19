@@ -15,6 +15,7 @@ import { type LaunchRow, getLaunchByToken, getLaunchesByOwner, getLaunchesByProj
 import { ownedLaunch } from "@/lib/launch-ownership";
 import { findToken } from "@/lib/indexer";
 import { LAUNCH_REF_HINT, type LaunchRef, matchLaunchRef, parseLaunchRef, shortAddress } from "@/lib/launch-ref";
+import { type Owner, ownedBy } from "@/lib/owner";
 import { docSectors } from "@/lib/sectors";
 
 /**
@@ -65,11 +66,13 @@ export async function getLaunchProjectSummary(
 export async function createProjectForToken(
   ownerId: string,
   input: { name: string; description?: string | null; chain: ProjectChain },
+  /** The team the project belongs to (M107), when the session is on one. */
+  orgId: string | null = null,
 ): Promise<ProjectRow | null> {
   const doc = emptyProjectDoc(input.name.trim().slice(0, PROJECT_LIMITS.name.max));
   doc.chain = input.chain;
   doc.whatItDoes = (input.description ?? "").trim().slice(0, PROJECT_LIMITS.whatItDoes.max);
-  return createProject(ownerId, doc);
+  return createProject(ownerId, doc, orgId);
 }
 
 /** Shown when a launch and a project sit on different chains. */
@@ -108,16 +111,16 @@ export type LinkLaunchResult =
 /** The launch a reference names, among what the account owns. */
 export async function resolveOwnedLaunch(
   raw: string,
-  ownerId: string,
+  owner: Owner,
 ): Promise<{ ok: true; launch: LaunchRow } | { ok: false; message: string; code: "bad_ref" | "not_owned" | "ambiguous" }> {
   const ref: LaunchRef | null = parseLaunchRef(raw);
   if (!ref) return { ok: false, code: "bad_ref", message: `${raw.trim() || "Nothing"} is not a token reference. Send ${LAUNCH_REF_HINT}.` };
   if (ref.kind === "address") {
-    const launch = await ownedLaunch(ref.address, ownerId);
+    const launch = await ownedLaunch(ref.address, owner);
     if (!launch) return { ok: false, code: "not_owned", message: `${shortAddress(ref.address)} is not a launch this account owns. It has to be recorded to the account, or created by a wallet verified on it.` };
     return { ok: true, launch };
   }
-  const mine = (await getLaunchesByOwner(ownerId)) ?? [];
+  const mine = (await getLaunchesByOwner(owner)) ?? [];
   const match = matchLaunchRef(ref, mine);
   if (match.status === "one") return { ok: true, launch: match.launch };
   if (match.status === "many")
@@ -132,19 +135,21 @@ export async function resolveOwnedLaunch(
  */
 export async function linkLaunch(
   raw: string,
-  ownerId: string,
+  owner: Owner,
   projectId: string | null,
   opts: { onlyFrom?: string } = {},
 ): Promise<LinkLaunchResult> {
-  const resolved = await resolveOwnedLaunch(raw, ownerId);
+  const resolved = await resolveOwnedLaunch(raw, owner);
   if (!resolved.ok) return resolved;
   const launch = resolved.launch;
   const address = launch.token_address.toLowerCase();
   const chain = launchRowChain(launch);
   let project: { id: string; name: string } | null = null;
+  let orgId: string | null = null;
   if (projectId) {
     const row = await getProjectById(projectId);
-    if (!row || row.owner_id !== ownerId) return { ok: false, code: "not_yours", message: "That project is not yours." };
+    if (!row || !ownedBy(row, owner)) return { ok: false, code: "not_yours", message: "That project is not yours." };
+    orgId = row.org_id ?? null;
     if (projectChainOf(row.draft_doc) !== chain)
       return { ok: false, code: "chain_mismatch", message: chainMismatch(projectChainOf(row.draft_doc), chain) };
     project = { id: row.id, name: row.draft_doc.name };
@@ -157,7 +162,7 @@ export async function linkLaunch(
         : `${shortAddress(address)} is not linked to any project.`,
     };
   }
-  const ok = await setLaunchProject(address, ownerId, projectId);
+  const ok = await setLaunchProject(address, owner, projectId, orgId);
   if (ok === null) return { ok: false, code: "storage", message: "Storage not configured." };
   if (!ok) return { ok: false, code: "not_owned", message: `${shortAddress(address)} is not a launch this account owns.` };
   const token = await findToken(address);

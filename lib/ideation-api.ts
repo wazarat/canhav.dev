@@ -8,7 +8,7 @@ import type { ProjectDoc } from "@/lib/ideation";
 import { projectDocFromCreate } from "@/lib/project-create";
 import { STUDIO_COPY } from "@/content/ideation";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
-import { type PlusFeature, PlusRequired, requirePlus } from "@/lib/plan";
+import { type PlusFeature, PlusRequired, getPlan, requirePlus } from "@/lib/plan";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   emptyProjectDoc,
@@ -62,6 +62,16 @@ export async function plusGate(feature?: PlusFeature): Promise<SessionUser | Nex
   return gate;
 }
 
+/**
+ * The team a new record belongs to (M107): the session's active organization
+ * when it is on Studio+, else none. Personal records stay personal.
+ */
+export async function teamFor(user: SessionUser): Promise<string | null> {
+  const orgId = user.owner.orgIds[0];
+  if (!orgId) return null;
+  return (await getPlan()).plan === "studio_plus" ? orgId : null;
+}
+
 export async function authGate(): Promise<SessionUser | NextResponse> {
   if (!isAuthConfigured())
     return NextResponse.json({ error: "Auth not configured." }, { status: 503 });
@@ -99,21 +109,22 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
           body && typeof body === "object" && typeof (body as { name?: unknown }).name === "string"
             ? (body as { name: string }).name.slice(0, 60)
             : "";
-        const row = await createTokenDesign(gate.id, emptyTokenDesignDoc(name));
+        const row = await createTokenDesign(gate.id, emptyTokenDesignDoc(name), await teamFor(gate));
         if (!row) return db503();
         return NextResponse.json({ id: row.id });
       }
       const { doc, withTokenDesign } = projectDocFromCreate(body);
-      const row = await createProject(gate.id, doc);
+      const org = await teamFor(gate);
+      const row = await createProject(gate.id, doc, org);
       if (!row) return db503();
       if (!withTokenDesign) return NextResponse.json({ id: row.id });
       // The design is optional. If it cannot be made or linked, the project
       // still answers and the wizard says the design was skipped.
-      const design = await createTokenDesign(gate.id, emptyTokenDesignDoc(doc.name));
+      const design = await createTokenDesign(gate.id, emptyTokenDesignDoc(doc.name), org);
       if (!design) return NextResponse.json({ id: row.id, tokenDesignId: null });
       const linked = await createProjectTokenLink(row.id, design.id, gate.id);
       if (!linked.ok) {
-        await deleteTokenDesignDraft(design.id, gate.id);
+        await deleteTokenDesignDraft(design.id, gate.owner);
         return NextResponse.json({ id: row.id, tokenDesignId: null });
       }
       return NextResponse.json({ id: row.id, tokenDesignId: design.id });
@@ -124,7 +135,7 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
       const rows =
-        kind === "project" ? await getMyProjects(gate.id) : await getMyTokenDesigns(gate.id);
+        kind === "project" ? await getMyProjects(gate.owner) : await getMyTokenDesigns(gate.owner);
       if (rows === null) return db503();
       return NextResponse.json({ rows });
     },
@@ -134,7 +145,7 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
       const row =
-        kind === "project" ? await getProject(id, gate.id) : await getTokenDesign(id, gate.id);
+        kind === "project" ? await getProject(id, gate.owner) : await getTokenDesign(id, gate.owner);
       if (!row) return notFound();
       return NextResponse.json({ row });
     },
@@ -161,14 +172,14 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
         return NextResponse.json({ error: "Wrong document type." }, { status: 400 });
       // A project's chain is fixed once a token has launched from it (M52).
       if (kind === "project") {
-        const held = await getProject(id, gate.id);
+        const held = await getProject(id, gate.owner);
         if (held && projectChainOf(held.draft_doc) !== projectChainOf(doc as ProjectDoc) && (await projectChainLocked(id)))
           return NextResponse.json({ error: CHAIN_LOCKED }, { status: 409 });
       }
       const result =
         kind === "project"
-          ? await updateProjectDraft(id, gate.id, doc as never, rev)
-          : await updateTokenDesignDraft(id, gate.id, doc as never, rev);
+          ? await updateProjectDraft(id, gate.owner, doc as never, rev)
+          : await updateTokenDesignDraft(id, gate.owner, doc as never, rev);
       if (result === "missing") return notFound();
       // An agent write landed after this editor loaded. Refuse, so the
       // editor's older copy does not overwrite it.
@@ -184,13 +195,13 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       const launched =
         kind === "project"
           ? await projectChainLocked(id)
-          : Boolean((await getTokenDesign(id, gate.id))?.deployed_token_address);
+          : Boolean((await getTokenDesign(id, gate.owner))?.deployed_token_address);
       if (launched)
         return NextResponse.json({ error: STUDIO_COPY.delete.launched }, { status: 409 });
       const ok =
         kind === "project"
-          ? await deleteProjectDraft(id, gate.id)
-          : await deleteTokenDesignDraft(id, gate.id);
+          ? await deleteProjectDraft(id, gate.owner)
+          : await deleteTokenDesignDraft(id, gate.owner);
       if (!ok)
         return NextResponse.json(
           { error: "Not found, or already published (unpublish first)." },
@@ -203,7 +214,7 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
     async publish(id: string) {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
-      const result = await publishEntity(table, id, gate.id);
+      const result = await publishEntity(table, id, gate.owner);
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
       return NextResponse.json(result);
     },
@@ -212,7 +223,7 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
     async unpublish(id: string) {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
-      const ok = await unpublishEntity(table, id, gate.id);
+      const ok = await unpublishEntity(table, id, gate.owner);
       if (!ok) return notFound();
       return NextResponse.json({ ok: true });
     },

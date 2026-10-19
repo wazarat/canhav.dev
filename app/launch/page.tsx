@@ -85,7 +85,7 @@ async function loadProject(projectId: string | undefined): Promise<{
   if (!projectId || !/^[0-9a-f-]{36}$/.test(projectId) || !isAuthConfigured()) return {};
   const user = await getSessionUser();
   if (!user) return {};
-  const row = await getProject(projectId, user.id);
+  const row = await getProject(projectId, user.owner);
   if (!row) return {};
   const linked = await getLinkedTokenDesign(row.id);
   const designId =
@@ -100,7 +100,7 @@ async function loadMyProjects(): Promise<LaunchProjectOption[] | null> {
   if (!isAuthConfigured()) return null;
   const user = await getSessionUser();
   if (!user) return null;
-  return ((await getMyProjects(user.id)) ?? []).map((row) => ({
+  return ((await getMyProjects(user.owner)) ?? []).map((row) => ({
     id: row.id,
     name: row.draft_doc.name,
     chain: projectChainOf(row.draft_doc),

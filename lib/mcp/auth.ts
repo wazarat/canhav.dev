@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { verifyClerkToken } from "@clerk/mcp-tools/next";
 
 import { isAuthConfigured } from "@/lib/auth";
+import { orgIdsForUser } from "@/lib/mcp/membership";
 
 /**
  * Shared OAuth wiring for every MCP mount. Clerk reports the protected
@@ -16,7 +17,13 @@ export async function verifyMcpToken(_req: Request, token?: string) {
   if (!isAuthConfigured() || !token) return undefined;
   try {
     const clerkAuth = await auth({ acceptsToken: "oauth_token" });
-    return verifyClerkToken(clerkAuth, token);
+    const info = await verifyClerkToken(clerkAuth, token);
+    if (!info) return info;
+    // The caller's teams ride along (M107), so a project moved to a team
+    // opens for every member's agent.
+    const userId = (info.extra as { userId?: unknown } | undefined)?.userId;
+    const orgIds = typeof userId === "string" ? await orgIdsForUser(userId) : [];
+    return { ...info, extra: { ...(info.extra ?? {}), orgIds } };
   } catch {
     return undefined;
   }

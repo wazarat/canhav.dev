@@ -6,6 +6,7 @@ import type { z } from "zod";
 import { describeIssues } from "@/lib/agent-writes";
 import { mcpAllowsPlus } from "@/lib/mcp/plan";
 import type { PlusFeature } from "@/lib/plan-shared";
+import type { Owner } from "@/lib/owner";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 
 /**
@@ -35,6 +36,17 @@ export function mcpUserId(ctx: unknown): string | null {
     ?.authInfo;
   const userId = info?.extra?.userId;
   return typeof userId === "string" ? userId : null;
+}
+
+/** The caller as an Owner, the account plus every team it belongs to (M107). Null when anonymous. */
+export function mcpOwner(ctx: unknown): Owner | null {
+  const info = (ctx as { http?: { authInfo?: { extra?: Record<string, unknown> } } })?.http
+    ?.authInfo;
+  const userId = info?.extra?.userId;
+  if (typeof userId !== "string") return null;
+  const raw = info?.extra?.orgIds;
+  const orgIds = Array.isArray(raw) ? raw.filter((o): o is string => typeof o === "string") : [];
+  return { userId, orgIds };
 }
 
 /** MCP tool annotations (the spec's ToolAnnotations), hints a client may use for its approval flow. */

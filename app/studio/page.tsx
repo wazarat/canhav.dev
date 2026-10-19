@@ -14,8 +14,8 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import { signInRedirectTarget } from "@/lib/sign-in-redirect";
-import { agentActivityByOwner } from "@/lib/agent-writes-db";
-import { latestSessionsByOwner } from "@/lib/agent-sessions-db";
+import { agentActivityByProjects } from "@/lib/agent-writes-db";
+import { latestSessionsByProjects } from "@/lib/agent-sessions-db";
 import { getEntityLinks, getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
 import { launchedSets } from "@/lib/launch-status";
 import { getMyLaunches } from "@/lib/my-launches";
@@ -88,14 +88,15 @@ export default async function StudioPage({
     if (target) redirect(target);
   }
 
-  const [projects, designs, launches, links, agent, sessions] = await Promise.all([
-    getMyProjects(user.id),
-    getMyTokenDesigns(user.id),
-    getMyLaunches(user.id),
-    getEntityLinks(user.id),
-    agentActivityByOwner(user.id),
-    latestSessionsByOwner(user.id),
+  const [projects, designs, launches, links] = await Promise.all([
+    getMyProjects(user.owner),
+    getMyTokenDesigns(user.owner),
+    getMyLaunches(user.owner),
+    getEntityLinks(user.owner),
   ]);
+  // Agent activity and sessions are keyed by project, so a team sees them (M107).
+  const projectIds = (projects ?? []).map((p) => p.id);
+  const [agent, sessions] = await Promise.all([agentActivityByProjects(projectIds), latestSessionsByProjects(projectIds)]);
   const launched = launchedSets({
     launches: launches ?? [],
     designs: designs ?? [],

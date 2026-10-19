@@ -2,6 +2,7 @@ import "server-only";
 
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } from "@/lib/chains";
 import { getDb } from "@/lib/db";
+import type { Owner } from "@/lib/owner";
 
 /**
  * Ownership records for quick launches. A row links a deployed token to the
@@ -13,6 +14,8 @@ import { getDb } from "@/lib/db";
 export interface LaunchRow {
   token_address: string;
   owner_id: string;
+  /** The team the launch belongs to (M107), copied from its project. Null or absent means personal. */
+  org_id?: string | null;
   creator_address: string;
   tx_hash: string | null;
   /** The studio project the launch was started from, when there was one. */
@@ -40,6 +43,8 @@ export async function recordLaunch(input: {
   creatorAddress: string;
   txHash: string | null;
   projectId: string | null;
+  /** The team of the project it was started from (M107), so members see the launch. */
+  orgId?: string | null;
   /** The chain the token was indexed on. Robinhood when left out. */
   chain?: ProjectChain;
 }): Promise<RecordLaunchResult> {
@@ -51,10 +56,11 @@ export async function recordLaunch(input: {
   const insert = async () => {
     if (chain === DEFAULT_PROJECT_CHAIN) {
       return sql`
-        insert into launchpad.launches (token_address, owner_id, creator_address, tx_hash, project_id)
+        insert into launchpad.launches (token_address, owner_id, org_id, creator_address, tx_hash, project_id)
         values (
           ${input.tokenAddress.toLowerCase()},
           ${input.ownerId},
+          ${input.orgId ?? null},
           ${input.creatorAddress.toLowerCase()},
           ${input.txHash},
           ${input.projectId}
@@ -66,10 +72,11 @@ export async function recordLaunch(input: {
       `;
     }
     return sql`
-      insert into launchpad.launches (token_address, owner_id, creator_address, tx_hash, project_id, chain_id)
+      insert into launchpad.launches (token_address, owner_id, org_id, creator_address, tx_hash, project_id, chain_id)
       values (
         ${input.tokenAddress.toLowerCase()},
         ${input.ownerId},
+        ${input.orgId ?? null},
         ${input.creatorAddress.toLowerCase()},
         ${input.txHash},
         ${input.projectId},
@@ -126,29 +133,32 @@ export async function claimLaunch(input: {
  */
 export async function setLaunchProject(
   tokenAddress: string,
-  ownerId: string,
+  owner: Owner,
   projectId: string | null,
+  /** The team of the project linked to, so the launch follows it (M107). */
+  orgId: string | null = null,
 ): Promise<boolean | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
     update launchpad.launches
-    set project_id = ${projectId}
-    where token_address = ${tokenAddress.toLowerCase()} and owner_id = ${ownerId}
+    set project_id = ${projectId}, org_id = ${projectId ? orgId : null}
+    where token_address = ${tokenAddress.toLowerCase()}
+      and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     returning token_address
   `;
   return rows.length > 0;
 }
 
-/** Launches recorded for one account, newest first. */
-export async function getLaunchesByOwner(ownerId: string): Promise<LaunchRow[] | null> {
+/** Launches recorded for one account or its team, newest first. */
+export async function getLaunchesByOwner(owner: Owner): Promise<LaunchRow[] | null> {
   const sql = getDb();
   if (!sql) return null;
   try {
     const rows = await sql`
       select *
       from launchpad.launches
-      where owner_id = ${ownerId}
+      where (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
       order by created_at desc
     `;
     return rows as LaunchRow[];

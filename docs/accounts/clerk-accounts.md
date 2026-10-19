@@ -35,11 +35,21 @@ A launch is recorded to your account the moment its transaction confirms, so it 
 - Reading public token, project and token design pages (`/launch/t/...`, `/p/...`, `/t/...`)
 - Reading public data over the shared MCP server
 
+## Teams
+
+**Available now.** A team is a Clerk organization. Create one from the account menu in the studio (Create a team), invite people from the Team page, and switch between your personal account and your teams from the same menu. The nav reads the active one.
+
+A record you make while a team is active, on Studio+, belongs to that team, and a personal project can be moved to the active team from its page (Move to team). Moving takes the project, its linked token design and the launches started from it. Every member of the team can then open and edit them, in the studio and through the project's MCP server. The record keeps the account that made it as its creator, and only that account can move it. A record on a team stays there.
+
+Agent proposals, sessions and the summary on a team project are shared the same way, so a teammate can accept a change the agent proposed to you. Launches recorded by the team's members for a team project are listed for everyone on it.
+
+Seats on a team are counted by Studio+, see [Studio+](studio-plus.md).
+
 ## What data is stored
 
 | Data | Purpose |
 |------|---------|
-| Account identity (via Clerk) | Authenticate studio owners (`owner_id` on drafts) |
+| Account identity (via Clerk) | Authenticate studio owners (`owner_id` on drafts) and, for a team record, the organization it belongs to (`org_id`) |
 | Draft project / token design documents | Autosave and edit |
 | Publish snapshots and slugs | Public pages (insert-only snapshots) |
 | Optional link rows between project and token design | Cross-links |

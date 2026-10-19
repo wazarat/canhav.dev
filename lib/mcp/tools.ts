@@ -3,6 +3,8 @@ import "server-only";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
+import { ownedBy } from "@/lib/owner";
+
 import { type TokenDesignDoc, validateTokenDesignDoc } from "@/lib/ideation";
 import {
   getMyProjects,
@@ -54,7 +56,7 @@ import { deriveTokenomics } from "@/lib/tokenDesign";
 import {
   errorResult,
   jsonResult,
-  mcpUserId,
+  mcpOwner,
   registerMeteredTool,
 } from "@/lib/mcp/register";
 
@@ -80,9 +82,9 @@ export function registerAllTools(server: McpServer): void {
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
-      const userId = mcpUserId(ctx);
-      if (!userId) return errorResult(AUTH_HINT);
-      const rows = await getMyProjects(userId);
+      const owner = mcpOwner(ctx);
+      if (!owner) return errorResult(AUTH_HINT);
+      const rows = await getMyProjects(owner);
       if (rows === null) return errorResult(DB_HINT);
       return jsonResult(
         rows.map((r) => ({
@@ -110,9 +112,9 @@ export function registerAllTools(server: McpServer): void {
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
-      const userId = mcpUserId(ctx);
-      if (!userId) return errorResult(AUTH_HINT);
-      const rows = await getMyTokenDesigns(userId);
+      const owner = mcpOwner(ctx);
+      if (!owner) return errorResult(AUTH_HINT);
+      const rows = await getMyTokenDesigns(owner);
       if (rows === null) return errorResult(DB_HINT);
       return jsonResult(
         rows.map((r) => ({
@@ -142,7 +144,7 @@ export function registerAllTools(server: McpServer): void {
       if (!row?.published_hash) return errorResult(`No published project at /p/${slug}.`);
       const snapshot = await getSnapshot(row.published_hash);
       if (!snapshot) return errorResult(DB_HINT);
-      const isOwner = mcpUserId(ctx) === row.owner_id;
+      const isOwner = ownedBy(row, mcpOwner(ctx));
       return jsonResult({
         slug,
         publishedVersion: snapshot.version,
@@ -168,7 +170,7 @@ export function registerAllTools(server: McpServer): void {
       if (!row?.published_hash) return errorResult(`No published token design at /t/${slug}.`);
       const snapshot = await getSnapshot(row.published_hash);
       if (!snapshot || snapshot.doc.kind !== "token_design") return errorResult(DB_HINT);
-      const isOwner = mcpUserId(ctx) === row.owner_id;
+      const isOwner = ownedBy(row, mcpOwner(ctx));
       return jsonResult({
         slug,
         publishedVersion: snapshot.version,

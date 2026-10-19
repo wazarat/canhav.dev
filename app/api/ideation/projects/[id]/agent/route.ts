@@ -33,14 +33,14 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function GET(_req: Request, { params }: Ctx) {
   const gate = await authGate();
   if (gate instanceof NextResponse) return gate;
-  const project = await getProject((await params).id, gate.id);
+  const project = await getProject((await params).id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const design = await getLinkedTokenDesign(project.id);
   const { mode, rev } = agentStateOf(project);
   const [changes, session] = await Promise.all([
-    listAgentChanges(project.id, gate.id),
-    latestAgentSession(project.id, gate.id),
+    listAgentChanges(project.id, project.owner_id),
+    latestAgentSession(project.id, project.owner_id),
   ]);
   // One title can sit under several shapes since M43, so the shape label follows it.
   const titles = new Map([
@@ -129,7 +129,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
   if (!isAgentWriteMode(mode))
     return NextResponse.json({ error: "Unknown mode." }, { status: 400 });
-  const ok = await setAgentWriteMode((await params).id, gate.id, mode);
+  const ok = await setAgentWriteMode((await params).id, gate.owner, mode);
   if (!ok) return NextResponse.json({ error: "Could not save the setting." }, { status: 404 });
   return NextResponse.json({ ok: true, mode });
 }

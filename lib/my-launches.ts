@@ -7,6 +7,7 @@ import { findToken, type IndexedToken } from "@/lib/indexer";
 import { claimWalletLaunches } from "@/lib/launch-ownership";
 import { projectContext } from "@/lib/launch-project";
 import { getLaunchesByOwner, launchRowChain } from "@/lib/launches-db";
+import type { Owner } from "@/lib/owner";
 
 /**
  * One account's launches, from two sources: tokens launched while signed in
@@ -41,20 +42,20 @@ function isoTime(value: unknown): string | null {
 }
 
 /** Null only when storage is unconfigured. Indexer outages leave `launch` null per row. */
-export async function getMyLaunches(userId: string): Promise<MyLaunch[] | null> {
+export async function getMyLaunches(owner: Owner): Promise<MyLaunch[] | null> {
   const [designs, firstRead, projects] = await Promise.all([
-    getMyTokenDesigns(userId),
-    getLaunchesByOwner(userId),
-    getMyProjects(userId),
+    getMyTokenDesigns(owner),
+    getLaunchesByOwner(owner),
+    getMyProjects(owner),
   ]);
   if (designs === null || firstRead === null) return null;
   // Tokens launched by the account's verified wallets are its own, whenever
   // they were launched and whether or not it was signed in then (M57).
   const claimed = await claimWalletLaunches(
-    userId,
+    owner.userId,
     new Set(firstRead.map((r) => r.token_address)),
   ).catch(() => false);
-  const recorded = claimed ? ((await getLaunchesByOwner(userId)) ?? firstRead) : firstRead;
+  const recorded = claimed ? ((await getLaunchesByOwner(owner)) ?? firstRead) : firstRead;
   // Joined in memory: the studio already lists every project of the account.
   const projectsById = new Map((projects ?? []).map((p) => [p.id, p]));
 

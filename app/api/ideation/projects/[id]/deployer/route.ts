@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: Ctx) {
   const gate = await authGate();
   if (gate instanceof NextResponse) return gate;
   const { id } = await params;
-  const project = await getProject(id, gate.id);
+  const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const asked = new URL(req.url).searchParams.get("address")?.trim().toLowerCase();
   const address = asked || project.draft_doc.deployer?.toLowerCase() || "";

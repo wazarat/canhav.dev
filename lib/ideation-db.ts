@@ -3,6 +3,7 @@ import "server-only";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } from "@/lib/chains";
 import { getDb } from "@/lib/db";
 import type { JourneyDoc } from "@/lib/journey";
+import type { Owner } from "@/lib/owner";
 import {
   type IdeationDoc,
   type ProjectDoc,
@@ -17,12 +18,20 @@ import {
 /**
  * Neon queries for the ideation tracks. Every function returns null (or an
  * error result) instead of throwing on missing config, matching lib/db.ts.
- * Ownership is enforced here — every mutation filters on owner_id.
+ * Ownership is enforced here — every scoped query admits the account that
+ * made the record or a member of the team it was moved to (M107).
  */
+
+// The ownership predicate is written out in every query because the neon
+// tagged template does not compose fragments:
+//   (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
+// An empty orgIds array matches nothing, so a personal session reads as before.
 
 export interface ProjectRow {
   id: string;
   owner_id: string;
+  /** The team the record was moved to (M107). Null or absent means personal. */
+  org_id?: string | null;
   slug: string | null;
   status: "draft" | "published";
   draft_doc: ProjectDoc;
@@ -39,6 +48,8 @@ export interface ProjectRow {
 export interface TokenDesignRow {
   id: string;
   owner_id: string;
+  /** The team the record was moved to (M107). Null or absent means personal. */
+  org_id?: string | null;
   slug: string | null;
   status: "draft" | "published";
   draft_doc: TokenDesignDoc;
@@ -81,23 +92,23 @@ function mapTokenDesignRow(row: TokenDesignRow | undefined): TokenDesignRow | nu
   return { ...row, draft_doc: normalizeTokenDesignDoc(row.draft_doc) };
 }
 
-export async function createProject(ownerId: string, doc: ProjectDoc): Promise<ProjectRow | null> {
+export async function createProject(ownerId: string, doc: ProjectDoc, orgId: string | null = null): Promise<ProjectRow | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
-    insert into launchpad.projects (owner_id, draft_doc)
-    values (${ownerId}, ${JSON.stringify(doc)})
+    insert into launchpad.projects (owner_id, org_id, draft_doc)
+    values (${ownerId}, ${orgId}, ${JSON.stringify(doc)})
     returning *
   `;
   return (rows[0] as ProjectRow) ?? null;
 }
 
-export async function getMyProjects(ownerId: string): Promise<ProjectRow[] | null> {
+export async function getMyProjects(owner: Owner): Promise<ProjectRow[] | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
     select * from launchpad.projects
-    where owner_id = ${ownerId}
+    where (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     order by updated_at desc
   `;
   return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
@@ -115,11 +126,11 @@ export async function getProjectById(id: string): Promise<ProjectRow | null> {
   return mapProjectRow(rows[0] as ProjectRow | undefined);
 }
 
-export async function getProject(id: string, ownerId: string): Promise<ProjectRow | null> {
+export async function getProject(id: string, owner: Owner): Promise<ProjectRow | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
-    select * from launchpad.projects where id = ${id} and owner_id = ${ownerId}
+    select * from launchpad.projects where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
   `;
   return mapProjectRow(rows[0] as ProjectRow | undefined);
 }
@@ -135,7 +146,7 @@ export type DraftSaveResult = "saved" | "stale" | "missing";
  */
 export async function updateProjectDraft(
   id: string,
-  ownerId: string,
+  owner: Owner,
   doc: ProjectDoc,
   rev?: number,
 ): Promise<DraftSaveResult> {
@@ -149,7 +160,7 @@ export async function updateProjectDraft(
               github_repo = ${doc.githubRepo ?? null},
               verify_wallet = ${doc.verifyWallet ?? null},
               updated_at = now()
-          where id = ${id} and owner_id = ${ownerId}
+          where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
           returning id
         `
       : await sql`
@@ -158,20 +169,20 @@ export async function updateProjectDraft(
               github_repo = ${doc.githubRepo ?? null},
               verify_wallet = ${doc.verifyWallet ?? null},
               updated_at = now()
-          where id = ${id} and owner_id = ${ownerId} and agent_rev = ${rev}
+          where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${rev}
           returning id
         `;
   if (rows.length > 0) return "saved";
   if (rev === undefined) return "missing";
-  return (await getProject(id, ownerId)) ? "stale" : "missing";
+  return (await getProject(id, owner)) ? "stale" : "missing";
 }
 
-export async function deleteProjectDraft(id: string, ownerId: string): Promise<boolean> {
+export async function deleteProjectDraft(id: string, owner: Owner): Promise<boolean> {
   const sql = getDb();
   if (!sql) return false;
   const rows = await sql`
     delete from launchpad.projects
-    where id = ${id} and owner_id = ${ownerId} and status = 'draft'
+    where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and status = 'draft'
     returning id
   `;
   if (rows.length === 0) return false;
@@ -216,46 +227,73 @@ export async function getPublishedProjects(limit = 60): Promise<ProjectRow[] | n
   return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
 }
 
+/**
+ * Move a personal project to a team (M107): the project, its linked token
+ * design and the launches started from it take the organization id, so
+ * every member sees the whole set. Only the account that made the project
+ * may move it, and only once; a record on a team stays there.
+ */
+export async function moveProjectToTeam(projectId: string, userId: string, orgId: string): Promise<boolean> {
+  const sql = getDb();
+  if (!sql) return false;
+  const rows = await sql`
+    update launchpad.projects set org_id = ${orgId}, updated_at = now()
+    where id = ${projectId} and owner_id = ${userId} and org_id is null
+    returning id
+  `;
+  if (rows.length === 0) return false;
+  await sql`
+    update launchpad.token_designs set org_id = ${orgId}, updated_at = now()
+    where org_id is null and id in (
+      select b_id from launchpad.entity_links
+      where a_type = 'project' and a_id = ${projectId} and b_type = 'token_design'
+    )
+  `;
+  await sql`update launchpad.launches set org_id = ${orgId} where project_id = ${projectId}`;
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // Token designs
 
 export async function createTokenDesign(
   ownerId: string,
   doc: TokenDesignDoc,
+  orgId: string | null = null,
 ): Promise<TokenDesignRow | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
-    insert into launchpad.token_designs (owner_id, draft_doc)
-    values (${ownerId}, ${JSON.stringify(doc)})
+    insert into launchpad.token_designs (owner_id, org_id, draft_doc)
+    values (${ownerId}, ${orgId}, ${JSON.stringify(doc)})
     returning *
   `;
   return (rows[0] as TokenDesignRow) ?? null;
 }
 
-export async function getMyTokenDesigns(ownerId: string): Promise<TokenDesignRow[] | null> {
+export async function getMyTokenDesigns(owner: Owner): Promise<TokenDesignRow[] | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
     select * from launchpad.token_designs
-    where owner_id = ${ownerId}
+    where (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     order by updated_at desc
   `;
   return (rows as TokenDesignRow[]).map((r) => mapTokenDesignRow(r) as TokenDesignRow);
 }
 
-export async function getTokenDesign(id: string, ownerId: string): Promise<TokenDesignRow | null> {
+export async function getTokenDesign(id: string, owner: Owner): Promise<TokenDesignRow | null> {
   const sql = getDb();
   if (!sql) return null;
   const rows = await sql`
-    select * from launchpad.token_designs where id = ${id} and owner_id = ${ownerId}
+    select * from launchpad.token_designs where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
   `;
   return mapTokenDesignRow(rows[0] as TokenDesignRow | undefined);
 }
 
 export async function updateTokenDesignDraft(
   id: string,
-  ownerId: string,
+  owner: Owner,
   doc: TokenDesignDoc,
   rev?: number,
 ): Promise<DraftSaveResult> {
@@ -266,26 +304,26 @@ export async function updateTokenDesignDraft(
       ? await sql`
           update launchpad.token_designs
           set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
-          where id = ${id} and owner_id = ${ownerId}
+          where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
           returning id
         `
       : await sql`
           update launchpad.token_designs
           set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
-          where id = ${id} and owner_id = ${ownerId} and agent_rev = ${rev}
+          where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${rev}
           returning id
         `;
   if (rows.length > 0) return "saved";
   if (rev === undefined) return "missing";
-  return (await getTokenDesign(id, ownerId)) ? "stale" : "missing";
+  return (await getTokenDesign(id, owner)) ? "stale" : "missing";
 }
 
-export async function deleteTokenDesignDraft(id: string, ownerId: string): Promise<boolean> {
+export async function deleteTokenDesignDraft(id: string, owner: Owner): Promise<boolean> {
   const sql = getDb();
   if (!sql) return false;
   const rows = await sql`
     delete from launchpad.token_designs
-    where id = ${id} and owner_id = ${ownerId} and status = 'draft'
+    where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and status = 'draft'
       and deployed_token_address is null
     returning id
   `;
@@ -368,7 +406,7 @@ export async function findPublishedDesignsByNameOrTicker(
 
 export async function attachDeploy(
   id: string,
-  ownerId: string,
+  owner: Owner,
   tokenAddress: string,
   deployedBy: string,
   snapshotHash: string,
@@ -387,7 +425,7 @@ export async function attachDeploy(
           deployed_chain_id = ${chainInfo(chain).chainId},
           deployed_at = now(),
           updated_at = now()
-      where id = ${id} and owner_id = ${ownerId} and deployed_token_address is null
+      where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and deployed_token_address is null
       returning id
     `;
     return rows.length > 0;
@@ -399,7 +437,7 @@ export async function attachDeploy(
         deployed_snapshot_hash = ${snapshotHash},
         deployed_at = now(),
         updated_at = now()
-    where id = ${id} and owner_id = ${ownerId} and deployed_token_address is null
+    where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and deployed_token_address is null
     returning id
   `;
   return rows.length > 0;
@@ -448,13 +486,13 @@ function sameContent(a: IdeationDoc, b: IdeationDoc): boolean {
 export async function publishEntity(
   table: EntityTable,
   id: string,
-  ownerId: string,
+  owner: Owner,
 ): Promise<PublishResult> {
   const sql = getDb();
   if (!sql) return { ok: false, error: "Storage not configured.", status: 503 };
 
   const row =
-    table === "projects" ? await getProject(id, ownerId) : await getTokenDesign(id, ownerId);
+    table === "projects" ? await getProject(id, owner) : await getTokenDesign(id, owner);
   if (!row) return { ok: false, error: "Not found.", status: 404 };
 
   const entityType = table === "projects" ? "project" : "token_design";
@@ -512,14 +550,14 @@ export async function publishEntity(
       update launchpad.projects
       set slug = ${slug}, status = 'published', published_hash = ${hash},
           draft_doc = ${JSON.stringify(stamped)}, updated_at = now()
-      where id = ${id} and owner_id = ${ownerId}
+      where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     `;
   } else {
     await sql`
       update launchpad.token_designs
       set slug = ${slug}, status = 'published', published_hash = ${hash},
           draft_doc = ${JSON.stringify(draftOut)}, updated_at = now()
-      where id = ${id} and owner_id = ${ownerId}
+      where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     `;
   }
   return { ok: true, slug, hash, version, unchanged: false };
@@ -528,7 +566,7 @@ export async function publishEntity(
 export async function unpublishEntity(
   table: EntityTable,
   id: string,
-  ownerId: string,
+  owner: Owner,
 ): Promise<boolean> {
   const sql = getDb();
   if (!sql) return false;
@@ -536,11 +574,11 @@ export async function unpublishEntity(
     table === "projects"
       ? await sql`
           update launchpad.projects set status = 'draft', updated_at = now()
-          where id = ${id} and owner_id = ${ownerId} returning id
+          where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) returning id
         `
       : await sql`
           update launchpad.token_designs set status = 'draft', updated_at = now()
-          where id = ${id} and owner_id = ${ownerId} returning id
+          where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) returning id
         `;
   return rows.length > 0;
 }
@@ -659,7 +697,7 @@ export interface EntityLinkSummary {
   deployedTokenAddress: string | null;
 }
 
-export async function getEntityLinks(ownerId: string): Promise<{
+export async function getEntityLinks(owner: Owner): Promise<{
   byProject: Map<string, EntityLinkSummary>;
   byDesign: Map<string, EntityLinkSummary>;
 }> {
@@ -677,7 +715,7 @@ export async function getEntityLinks(ownerId: string): Promise<{
     join launchpad.projects p on p.id = l.a_id
     join launchpad.token_designs t on t.id = l.b_id
     where l.a_type = 'project' and l.b_type = 'token_design'
-      and p.owner_id = ${ownerId}
+      and (p.owner_id = ${owner.userId} or p.org_id = any(${owner.orgIds}))
   `) as Array<{
     project_id: string;
     design_id: string;

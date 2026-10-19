@@ -10,7 +10,8 @@ import { getDb } from "@/lib/db";
 
 /**
  * Storage for agent sessions (M86). Like lib/agent-writes-db.ts, nothing
- * here throws on missing config and every query filters on owner_id. The
+ * here throws on missing config and every query is keyed to the project's
+ * own owner_id, whoever on its team reports (M107). The
  * table arrives with scripts/db-setup.mjs; until then reads are null and
  * writes report failure.
  */
@@ -106,16 +107,16 @@ export async function reportAgentSession(
   }
 }
 
-/** The newest session per project for one owner, for the studio rows (M86). */
-export async function latestSessionsByOwner(ownerId: string): Promise<Map<string, AgentSession>> {
+/** The newest session per project, for the studio rows (M86). By project since M107, so a team sees them. */
+export async function latestSessionsByProjects(projectIds: string[]): Promise<Map<string, AgentSession>> {
   const out = new Map<string, AgentSession>();
   const sql = getDb();
-  if (!sql) return out;
+  if (!sql || projectIds.length === 0) return out;
   try {
     const rows = await sql`
       select distinct on (project_id) project_id, id, state, title, message, plan, external_url, created_at, updated_at
       from launchpad.agent_sessions
-      where owner_id = ${ownerId}
+      where project_id = any(${projectIds}::uuid[])
       order by project_id, updated_at desc
     `;
     for (const r of rows as Array<SessionRow & { project_id: string }>) out.set(r.project_id, mapSession(r));
