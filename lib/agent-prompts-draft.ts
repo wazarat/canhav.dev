@@ -14,3 +14,13 @@ export function draftFieldPrompt(name: string, projectId: string, field: string,
     `3. Call update_project with the ${field} field holding it, then tell me what you wrote and what you assumed.`,
   ].join("\n\n");
 }
+
+export function draftCanvasPrompt(name: string, projectId: string): string {
+  return draftFieldPrompt(
+    name,
+    projectId,
+    "canvas",
+    "Business Model Canvas",
+    "Nine blocks (customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners, costStructure), one paragraph of at most 600 characters each, no lists, built on the product, the personas and who pays as the record states them.",
+  );
+}

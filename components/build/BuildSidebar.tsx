@@ -25,6 +25,17 @@ const RESOURCE_ICONS: Record<ResourceView, React.ComponentType<{ className?: str
   environment: Map,
 };
 
+/** The Decisions sections the sidebar scrolls to (M113). */
+const DECISION_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
+  { id: "building", label: BUILD_COPY.decisions.building },
+  { id: "canvas", label: BUILD_COPY.decisions.canvas },
+  { id: "chain", label: BUILD_COPY.decisions.chain },
+  { id: "templates", label: BUILD_COPY.decisions.templates },
+  { id: "contracts", label: BUILD_COPY.decisions.contracts },
+  { id: "security", label: BUILD_COPY.decisions.security },
+  { id: "files", label: BUILD_COPY.decisions.files },
+];
+
 const ITEM = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors";
 const IDLE = "text-ink-300 hover:bg-ink-800/60 hover:text-ink-50";
 const ACTIVE = "bg-ink-800/60 text-ink-50";
@@ -100,6 +111,20 @@ export function BuildSidebar({
                 <ChevronDown aria-hidden className={cn("h-3.5 w-3.5 text-ink-500 transition-transform", active && "rotate-180")} />
               ) : null}
             </button>
+            {t === "decisions" && active ? (
+              <div className="ml-4 mt-0.5 space-y-0.5 border-l border-ink-700/40 pl-2">
+                {DECISION_SECTIONS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => document.getElementById(`decisions-${s.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className={cn(ITEM, "py-1.5 text-[13px]", IDLE)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {expandable && active ? (
               <div className="ml-4 mt-0.5 space-y-0.5 border-l border-ink-700/40 pl-2">
                 {MILESTONES.map((m) => (

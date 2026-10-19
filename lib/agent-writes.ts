@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { canvasPatchSchema } from "@/lib/canvas";
+
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { templateById } from "@/content/templates";
@@ -247,6 +249,8 @@ export const projectPatchSchema = z
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The deployer key's address (M102), never the key; null clears it.
     deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
+    // The Business Model Canvas (M113): blocks merge over the stored ones; null clears it.
+    canvas: canvasPatchSchema.nullable(),
     // The agent's summary (M104): both lists replace the stored ones; null clears it.
     summary: z
       .strictObject({
@@ -655,6 +659,8 @@ export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): Project
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.canvas === null) next = dropKey(next, "canvas");
+  else if (patch.canvas) next = { ...next, canvas: { ...(next.canvas ?? {}), ...patch.canvas } };
   if (patch.summary === null) next = dropKey(next, "summary");
   else if (patch.summary) next = { ...next, summary: { ...patch.summary, updatedAt: new Date().toISOString() } };
   const a = { ...next.architecture };
@@ -1003,6 +1009,16 @@ const PATH_LABELS: Record<string, string> = {
   testnetContracts: "Testnet contracts",
   addressBook: "Address book",
   deployer: "Deployer address",
+  canvas: "Business model",
+  "canvas.customerSegments": "Canvas, customer segments",
+  "canvas.valueProposition": "Canvas, value proposition",
+  "canvas.channels": "Canvas, channels",
+  "canvas.customerRelationships": "Canvas, customer relationships",
+  "canvas.revenueStreams": "Canvas, revenue streams",
+  "canvas.keyResources": "Canvas, key resources",
+  "canvas.keyActivities": "Canvas, key activities",
+  "canvas.keyPartners": "Canvas, key partners",
+  "canvas.costStructure": "Canvas, cost structure",
   summary: "Summary",
   "summary.built": "Summary, built",
   "summary.building": "Summary, being built",

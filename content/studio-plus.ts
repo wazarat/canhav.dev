@@ -66,6 +66,25 @@ export const STUDIO_PLUS_COPY = {
     /** The token may lag the webhook by a moment. */
     refresh: "If the studio still reads Studio, reload once.",
   },
+  /** The Business Model Canvas (M113). */
+  canvas: {
+    title: "Business model",
+    intro: "Nine blocks, drafted from what the record already says about the product, the personas and who pays, then yours to edit. Accelerators and grants ask for it.",
+    filled: (n: number) => `${n} of 9 blocks filled`,
+    draft: "Draft the canvas",
+    redraft: "Redraft",
+    blocks: {
+      customerSegments: { label: "Customer segments", hint: "Who the product is for, in order of priority." },
+      valueProposition: { label: "Value proposition", hint: "What they get that they cannot get elsewhere." },
+      channels: { label: "Channels", hint: "How they find and reach the product." },
+      customerRelationships: { label: "Customer relationships", hint: "How the team keeps them, from onboarding to support." },
+      revenueStreams: { label: "Revenue streams", hint: "What is paid, by whom, and when." },
+      keyResources: { label: "Key resources", hint: "What the product cannot run without." },
+      keyActivities: { label: "Key activities", hint: "What the team does every week to deliver it." },
+      keyPartners: { label: "Key partners", hint: "Protocols, providers and people the product leans on." },
+      costStructure: { label: "Cost structure", hint: "The big costs and which are fixed." },
+    },
+  },
   /** Server side drafting (M112). */
   draft: {
     draft: "Draft",
@@ -162,4 +181,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc"];

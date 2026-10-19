@@ -205,7 +205,7 @@ export function ProjectBuildPage({
       />
     ),
     decisions: (
-      <DecisionsTab doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
+      <DecisionsTab id={id} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
     deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} />,
     publish: (

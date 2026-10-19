@@ -26,6 +26,7 @@ export function DraftButton<T>({
   onResult,
   agentPrompt,
   size = "sm",
+  variant = "primary",
   gate = true,
 }: {
   projectId: string;
@@ -36,6 +37,7 @@ export function DraftButton<T>({
   /** The paste prompt for the owner's agent, shown under Or ask your agent. */
   agentPrompt?: string;
   size?: "sm" | "md";
+  variant?: "primary" | "outline" | "ghost";
   /** False to render the button alone, when a parent already gates. */
   gate?: boolean;
 }) {
@@ -76,7 +78,7 @@ export function DraftButton<T>({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Button size={size} onClick={() => void run()} disabled={working} aria-busy={working}>
+        <Button size={size} variant={variant} onClick={() => void run()} disabled={working} aria-busy={working}>
           <Sparkles aria-hidden className="h-3.5 w-3.5" /> {working ? C.working : (label ?? C.draft)}
         </Button>
         {remaining !== null ? <StatusChip tone="neutral">{C.remaining(remaining)}</StatusChip> : null}

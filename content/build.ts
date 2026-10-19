@@ -158,6 +158,7 @@ export const BUILD_COPY = {
   decisions: {
     title: "Decisions",
     building: "What you are building",
+    canvas: "Business model",
     chain: "Chain",
     templates: "Templates",
     templatesEmpty: "No template decided yet. Decide them from the Build tab or let your agent.",

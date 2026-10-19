@@ -32,6 +32,9 @@ import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot, projectVisibleTo } from "@/lib/ideation-db";
 import { getSessionUser } from "@/lib/auth";
 import { BUILD_COPY } from "@/content/build";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
+import { Card } from "@/components/ui/Card";
+import { CANVAS_BLOCKS, canvasFilled } from "@/lib/canvas";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
   getBlockscoutVerification,
@@ -252,6 +255,19 @@ export default async function ProjectPublicPage({
             ) : null}
           </div>
         </Section>
+
+        {doc.canvas && canvasFilled(doc.canvas) > 0 ? (
+          <Section title={STUDIO_PLUS_COPY.canvas.title}>
+            <div className="grid gap-3 md:grid-cols-2">
+              {CANVAS_BLOCKS.filter((b) => doc.canvas?.[b]).map((b) => (
+                <Card key={b} className="p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-ink-500">{STUDIO_PLUS_COPY.canvas.blocks[b].label}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-ink-200">{doc.canvas?.[b]}</p>
+                </Card>
+              ))}
+            </div>
+          </Section>
+        ) : null}
 
         <Section title="Distribution reality">
           {projectChainOf(doc) === "robinhood_testnet" ? (

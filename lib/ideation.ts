@@ -1,3 +1,4 @@
+import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/lib/canvas";
 import { keccak256, stringToBytes } from "viem";
 
 import { PROJECT_CHAIN_INFO, type ProjectChain, isProjectChain, projectChainOf } from "@/lib/chains";
@@ -334,6 +335,8 @@ export interface ProjectDoc {
   logo?: string;
   /** The agent's summary (M104). Optional, never injected, never published. */
   summary?: ProjectSummary;
+  /** The Business Model Canvas (M113, Studio+). Optional, never injected, published with the record. */
+  canvas?: Canvas;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -645,6 +648,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeProjectSummary((rest as { summary?: unknown }).summary);
     if (clean) (rest as { summary?: ProjectSummary }).summary = clean;
     else delete (rest as { summary?: unknown }).summary;
+  }
+  // Canvas (M113): blocks trimmed and capped, dropped when empty, never invented.
+  if ("canvas" in rest) {
+    const clean = normalizeCanvas((rest as { canvas?: unknown }).canvas);
+    if (clean) (rest as { canvas?: Canvas }).canvas = clean;
+    else delete (rest as { canvas?: unknown }).canvas;
   }
   // Deployer address (M102): lowercased when it is an address, dropped otherwise, never invented.
   if ("deployer" in rest) {
@@ -1105,6 +1114,13 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
   if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
+  if (doc.canvas) {
+    for (const b of CANVAS_BLOCKS) {
+      const v = doc.canvas[b];
+      if (v !== undefined && (typeof v !== "string" || v.length > CANVAS_LIMITS.block.max))
+        return `A canvas block is at most ${CANVAS_LIMITS.block.max} characters.`;
+    }
+  }
   if (doc.summary) {
     const S = PROJECT_LIMITS.summary;
     for (const list of [doc.summary.built, doc.summary.building]) {

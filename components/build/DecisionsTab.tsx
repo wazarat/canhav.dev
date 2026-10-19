@@ -1,6 +1,8 @@
 "use client";
 
+import { CanvasEditor } from "@/components/build/CanvasEditor";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
+import { PlusGate } from "@/components/studio/PlusGate";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
@@ -36,16 +38,19 @@ function Heading({ children }: { children: React.ReactNode }) {
  * The Decisions tab (M96): the choices with a reason behind them, each
  * editable in place. What is being built, the chain, the templates decided
  * on the Build tab, the architecture facts, the worst case and the five
- * security declarations, and the team's own files. Reads existing data
- * only; nothing new is stored.
+ * security declarations, and the team's own files, plus the Business
+ * Model Canvas (M113, Studio+). Every section carries an id the sidebar
+ * scrolls to.
  */
 export function DecisionsTab({
+  id,
   doc,
   patch,
   patchSection,
   chainLocked,
   earlier,
 }: {
+  id: string;
   doc: ProjectDoc;
   patch: (p: Partial<ProjectDoc>) => void;
   patchSection: <K extends keyof ProjectDoc>(key: K, p: Partial<ProjectDoc[K]>) => void;
@@ -68,12 +73,19 @@ export function DecisionsTab({
   return (
     <div className="max-w-2xl">
       <Card>
-        <CardSection className="space-y-4">
+        <CardSection id="decisions-building" className="space-y-4">
           <Heading>{D.building}</Heading>
           <ShapeChooser doc={doc} patch={patch} />
         </CardSection>
 
-        <CardSection className="space-y-4">
+        <CardSection id="decisions-canvas" className="space-y-4">
+          <Heading>{D.canvas}</Heading>
+          <PlusGate feature="bmc">
+            <CanvasEditor projectId={id} name={doc.name} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} />
+          </PlusGate>
+        </CardSection>
+
+        <CardSection id="decisions-chain" className="space-y-4">
           <Heading>{D.chain}</Heading>
           <SegmentedField
             label={CHAIN_COPY.label}
@@ -87,7 +99,7 @@ export function DecisionsTab({
           />
         </CardSection>
 
-        <CardSection className="space-y-3">
+        <CardSection id="decisions-templates" className="space-y-3">
           <Heading>{D.templates}</Heading>
           {decided.length === 0 ? (
             <p className="text-xs text-ink-500">{D.templatesEmpty}</p>
@@ -122,7 +134,7 @@ export function DecisionsTab({
           )}
         </CardSection>
 
-        <CardSection className="space-y-6">
+        <CardSection id="decisions-contracts" className="space-y-6">
           <Heading>{D.contracts}</Heading>
           <TextField
             label="What contracts exist"
@@ -177,7 +189,7 @@ export function DecisionsTab({
           />
         </CardSection>
 
-        <CardSection className="space-y-5">
+        <CardSection id="decisions-security" className="space-y-5">
           <Heading>{D.security}</Heading>
           <SelectField
             label="What's the worst thing a bug could do?"
@@ -201,7 +213,7 @@ export function DecisionsTab({
           ))}
         </CardSection>
 
-        <CardSection className="space-y-4">
+        <CardSection id="decisions-files" className="space-y-4">
           <Heading>{D.files}</Heading>
           <ReferencesEditor references={doc.references ?? []} onChange={(references) => patch({ references })} />
         </CardSection>

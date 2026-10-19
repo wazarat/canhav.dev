@@ -1,3 +1,5 @@
+import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
 import { type LaunchTarget, launchTargetOf } from "@/lib/launch-targets";
@@ -383,6 +385,14 @@ export function buildResourcesMd(doc: ProjectDoc, draft = true): string {
 // ---------------------------------------------------------------------------
 // canhav-[slug].md — project
 
+/** "## Business model", the nine canvas blocks (M113), or nothing. */
+function canvasLines(canvas: Canvas | undefined): string[] {
+  if (!canvas || canvasFilled(canvas) === 0) return [];
+  const lines = ["## Business model", ""];
+  for (const b of CANVAS_BLOCKS) if (canvas[b]) lines.push(`**${STUDIO_PLUS_COPY.canvas.blocks[b].label}.** ${canvas[b]}`, "");
+  return lines;
+}
+
 export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): string {
   const a = doc.architecture;
   const subsectors = subsectorLabels(doc);
@@ -403,6 +413,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     doc.whatItDoes,
     "",
     ...customerLines(doc),
+    ...canvasLines(doc.canvas),
     "## Distribution reality",
     "",
     // The acknowledgement is about Robinhood Chain, so only a project there carries it (M52).
@@ -746,6 +757,7 @@ export function buildAgentsMd(input: {
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
       `- **What it does:** ${orNotSet(project.whatItDoes)}`,
       "",
+      ...canvasLines(project.canvas),
       "## Contract architecture",
       "",
       `- **Contracts:** ${orNotSet(a.contracts)}`,

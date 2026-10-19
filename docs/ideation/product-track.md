@@ -36,6 +36,12 @@ Projects saved under a retired sector (underwriting and risk, oracles and data, 
 
 ---
 
+## Business model (Decisions, Studio+)
+
+### Asked
+
+Nine free text blocks, the Business Model Canvas: customer segments, value proposition, channels, customer relationships, revenue streams, key resources, key activities, key partners, cost structure. Each up to 600 characters. Drafted by CanHav from the product, the personas and who pays, or by the team's agent over `update_project` (`canvas`, blocks merged over the stored ones), then edited. Published with the record and shown on the public page.
+
 ## Contract architecture and external dependencies (Decisions)
 
 ### Asked
