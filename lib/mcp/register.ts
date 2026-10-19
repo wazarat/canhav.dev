@@ -38,6 +38,15 @@ export function mcpUserId(ctx: unknown): string | null {
   return typeof userId === "string" ? userId : null;
 }
 
+/** The project key behind the call (M111), or null for an OAuth session. */
+export function mcpKey(ctx: unknown): { scope: "read" | "write"; projectId: string } | null {
+  const info = (ctx as { http?: { authInfo?: { extra?: Record<string, unknown> } } })?.http?.authInfo;
+  const scope = info?.extra?.keyScope;
+  const projectId = info?.extra?.keyProjectId;
+  if ((scope !== "read" && scope !== "write") || typeof projectId !== "string") return null;
+  return { scope, projectId };
+}
+
 /** The caller as an Owner, the account plus every team it belongs to (M107). Null when anonymous. */
 export function mcpOwner(ctx: unknown): Owner | null {
   const info = (ctx as { http?: { authInfo?: { extra?: Record<string, unknown> } } })?.http
@@ -131,6 +140,13 @@ export function registerMeteredTool<Schema extends z.ZodType>(
           return result;
         }
         args = parsed.data as z.infer<Schema>;
+      }
+      // A read key opens read tools only (M111).
+      const key = mcpKey(ctx);
+      if (key?.scope === "read" && toolAnnotations(name, config.annotations).readOnlyHint === false) {
+        result = errorResult(STUDIO_PLUS_COPY.keys.readOnly);
+        console.info(JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: 0, isError: true, readKey: true, ...(opts?.scope ? { scope: opts.scope } : {}) }));
+        return result;
       }
       if (opts?.plus && !(await mcpAllowsPlus(ctx, opts.plus))) {
         result = errorResult(STUDIO_PLUS_COPY.gate.mcp);

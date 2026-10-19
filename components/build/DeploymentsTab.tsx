@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 import { DeployerSection } from "@/components/build/DeployerSection";
+import { KeysSection } from "@/components/build/KeysSection";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
 import { MainnetEditor } from "@/components/ideation/MainnetEditor";
@@ -40,12 +41,14 @@ function Heading({ children }: { children: React.ReactNode }) {
  * pairing and the external pair.
  */
 export function DeploymentsTab({
+  id,
   doc,
   patch,
   setDoc,
   tokens,
   funding,
 }: {
+  id: string;
   doc: ProjectDoc;
   /** The deployer key's balances, polled by the page (M103). */
   funding: DeployerFunding;
@@ -76,6 +79,11 @@ export function DeploymentsTab({
         <CardSection className="space-y-4">
           <Heading>{D.deployer.title}</Heading>
           <DeployerSection deployer={deployer} funding={funding} onAddress={setDeployer} />
+        </CardSection>
+
+        <CardSection className="space-y-4">
+          <Heading>{BUILD_COPY.keys.title}</Heading>
+          <KeysSection projectId={id} />
         </CardSection>
 
         <CardSection className="space-y-6">

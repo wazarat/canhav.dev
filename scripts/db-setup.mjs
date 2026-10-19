@@ -412,6 +412,29 @@ await sql`
     on launchpad.draft_revisions (entity_type, entity_id, rev desc)
 `;
 
+// Project keys (M111): chk_ bearer keys with read or write scope that stand
+// in for OAuth on a project's MCP server and its draft export, for cloud
+// agents and CI. Only the sha256 of a key is stored; the prefix is for
+// display. Rows go with their project.
+await sql`
+  create table if not exists launchpad.project_keys (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    name text not null check (char_length(name) between 1 and 60),
+    scope text not null check (scope in ('read','write')),
+    key_hash text not null unique,
+    prefix text not null,
+    created_by text not null,
+    created_at timestamptz not null default now(),
+    last_used_at timestamptz,
+    revoked_at timestamptz
+  )
+`;
+await sql`
+  create index if not exists project_keys_project_idx
+    on launchpad.project_keys (project_id, created_at desc)
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

@@ -69,6 +69,17 @@ These read the same launch indexer and journey tables as the launch pages, so an
 
 Every launch tool returns an error result with a retry hint when the indexer is unreachable, and a validation error for a malformed address.
 
+## Project keys
+
+**Studio+.** A project can mint keys (project page, Deployments, Project keys) that stand in for the OAuth sign in on that project's server and on its draft export, for cloud agents and CI. A key is `chk_` followed by random characters, shown once; CanHav keeps only a fingerprint. It speaks for the account that made it and for the project's team, so revoke it when someone leaves.
+
+| Scope | Opens |
+|-------|-------|
+| read | Every read tool of the project server and the draft export (`/api/export/project/<id>`, `?file=agents`, `?file=resources`) |
+| write | The read tools and the write tools, under the project's agent write mode like any agent |
+
+Send it as a bearer. For Claude Code, `claude mcp add --transport http <name> https://www.canhav.com/mcp/p/<id> --header "Authorization: Bearer chk_..."`. A key used on another project's server reads as not yours; a read key answers a write tool with a note to use a write key. The shared server ignores keys.
+
 ## Connecting
 
 You do not have to assemble commands yourself. The site gives you one prompt to paste into Claude Code, the Claude desktop app or another AI IDE that speaks MCP. The prompt tells the agent to add the server, sign in where needed, read, and report back.

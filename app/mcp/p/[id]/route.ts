@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 
 import { isAuthConfigured } from "@/lib/auth";
-import { MCP_RESOURCE_METADATA_PATH, verifyMcpToken } from "@/lib/mcp/auth";
+import { MCP_RESOURCE_METADATA_PATH, verifyProjectMcpToken } from "@/lib/mcp/auth";
 import { registerProjectTools } from "@/lib/mcp/project-tools";
 
 export const runtime = "nodejs";
@@ -11,7 +11,9 @@ export const runtime = "nodejs";
  * A project-scoped MCP server. Each project in the studio has its own URL,
  * /mcp/p/<project id>, whose tools are bound to that project and take no slug
  * or address. Owner-only, so auth is required at the transport: the 401 with
- * WWW-Authenticate is what makes `claude mcp add` open the browser flow.
+ * WWW-Authenticate is what makes `claude mcp add` open the browser flow. A
+ * project key (M111) in the Authorization header stands in for the OAuth
+ * token, for cloud agents and CI.
  *
  * The handler is built per request rather than memoized. mcp-handler serves
  * the MCP SDK statelessly and calls the server factory on every request, so a
@@ -24,7 +26,7 @@ function scopedHandler(projectId: string) {
   const handler = createMcpHandler((server) => registerProjectTools(server, projectId), {
     serverInfo: { name: `canhav-project-${projectId.slice(0, 8)}`, version: "1.0.0" },
   });
-  return withMcpAuth(handler, verifyMcpToken, {
+  return withMcpAuth(handler, verifyProjectMcpToken, {
     required: true,
     resourceMetadataPath: MCP_RESOURCE_METADATA_PATH,
   });

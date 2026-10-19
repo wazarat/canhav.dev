@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getCurve } from "@/lib/indexer";
 
-import { getSessionUser } from "@/lib/auth";
 import { buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
-import { gateExport, markdownResponse } from "@/lib/export-route";
+import { exportOwner, markdownResponse } from "@/lib/export-route";
 import { getLinkedTokenDesign, getProject, designDeployChain } from "@/lib/ideation-db";
 
 export const runtime = "nodejs";
@@ -17,16 +16,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * a publish. `?file=resources` returns RESOURCES.md, `?file=agents` returns
  * AGENTS.md built from the draft plus the linked design's draft. Anything
  * else is 404. Not the owner is 404 too, never 403, so ids stay unguessable.
+ * A project key (M111) in the Authorization header stands in for the session.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await gateExport(req);
-  if (gate) return gate;
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Not found." }, { status: 404 });
-
   const { id } = await params;
   if (!UUID.test(id)) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  const row = await getProject(id, user.owner);
+  // A project key or the session (M111).
+  const owner = await exportOwner(req, id);
+  if (owner instanceof NextResponse) return owner;
+  const row = await getProject(id, owner);
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const file = new URL(req.url).searchParams.get("file");

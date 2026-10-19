@@ -46,6 +46,7 @@ import {
 import {
   errorResult,
   jsonResult,
+  mcpKey,
   mcpOwner,
   promptResult,
   registerMeteredPrompt,
@@ -155,6 +156,9 @@ async function withProject(
 ): Promise<{ ok: true; value: ProjectCtx } | { ok: false; message: string }> {
   const owner = mcpOwner(ctx);
   if (!owner) return { ok: false, message: AUTH_HINT };
+  // A project key opens its own project only (M111).
+  const key = mcpKey(ctx);
+  if (key && key.projectId !== projectId) return { ok: false, message: NOT_YOURS };
   const loaded = await loadProjectContext(projectId, owner, preview);
   if (!loaded) return { ok: false, message: NOT_YOURS };
   return { ok: true, value: loaded };

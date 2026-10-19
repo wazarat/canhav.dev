@@ -66,6 +66,10 @@ export const STUDIO_PLUS_COPY = {
     /** The token may lag the webhook by a moment. */
     refresh: "If the studio still reads Studio, reload once.",
   },
+  /** Project keys (M111). */
+  keys: {
+    readOnly: "This key has read scope. Writes need a write key; the owner makes one on the project page under Deployments.",
+  },
   pricing: {
     monthly: 39.99,
     yearlyMonthly: 29.99,
@@ -144,4 +148,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys"];
