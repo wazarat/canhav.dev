@@ -7,6 +7,8 @@ import { projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import { projectDocFromCreate } from "@/lib/project-create";
 import { STUDIO_COPY } from "@/content/ideation";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
+import { type PlusFeature, PlusRequired, requirePlus } from "@/lib/plan";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   emptyProjectDoc,
@@ -39,6 +41,26 @@ const MAX_DOC_BYTES = 200_000;
 /** A create body is a handful of short fields; anything bigger is not from the studio. */
 const MAX_CREATE_BYTES = 20_000;
 const STALE_DRAFT = "This draft changed outside this editor. Reload to see the latest.";
+
+/**
+ * authGate plus the Studio+ check (M106). Answers 403 with code plus_required
+ * and the upgrade path, which the studio turns into the PlusGate card.
+ */
+export async function plusGate(feature?: PlusFeature): Promise<SessionUser | NextResponse> {
+  const gate = await authGate();
+  if (gate instanceof NextResponse) return gate;
+  try {
+    await requirePlus(feature);
+  } catch (err) {
+    if (err instanceof PlusRequired)
+      return NextResponse.json(
+        { error: STUDIO_PLUS_COPY.gate.api, code: "plus_required", feature: err.feature, upgrade: STUDIO_PLUS_COPY.path },
+        { status: 403 },
+      );
+    throw err;
+  }
+  return gate;
+}
 
 export async function authGate(): Promise<SessionUser | NextResponse> {
   if (!isAuthConfigured())

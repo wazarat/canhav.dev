@@ -9,6 +9,7 @@ import { LogoField } from "@/components/ideation/LogoField";
 import { StepNav } from "@/components/ideation/StepNav";
 import { TextField } from "@/components/ideation/TextField";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
+import { PlanWord } from "@/components/studio/PlanWord";
 import { Button } from "@/components/ui/Button";
 import { SegmentedField } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -105,7 +106,7 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
     >
       <div className="flex items-start justify-between gap-4 px-5 pt-5 md:px-6">
         <div>
-          <p className="kicker">{C.kicker}</p>
+          <p className="kicker"><PlanWord /></p>
           <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-ink-50">{C.title}</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">{C.lead}</p>
         </div>

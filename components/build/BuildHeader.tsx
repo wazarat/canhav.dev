@@ -7,6 +7,7 @@ import type { PublishStatus } from "@/components/ideation/usePublish";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
+import { PlanWord } from "@/components/studio/PlanWord";
 import { setStudioEntity } from "@/lib/studio-entity";
 
 /**
@@ -62,7 +63,7 @@ export function BuildHeader({
         <div>
           <p className="kicker">
             <Link href="/studio" className="transition-colors hover:text-ink-200">
-              {BUILD_COPY.kicker}
+              <PlanWord />
             </Link>
           </p>
           <h1 className="mt-2 flex items-center gap-3 font-display text-3xl font-semibold tracking-tight text-ink-50">

@@ -8,6 +8,7 @@ import { LaunchesSummary } from "@/components/studio/LaunchesSummary";
 import { StudioTrackCards } from "@/components/studio/StudioTrackCards";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { CommandMenuHint } from "@/components/studio/CommandMenuHint";
+import { PlanWord } from "@/components/studio/PlanWord";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
@@ -47,7 +48,7 @@ export default async function StudioPage({
 }) {
   const header = (
     <div className="max-w-2xl">
-      <p className="kicker">{STUDIO_COPY.kicker}</p>
+      <p className="kicker"><PlanWord /></p>
       <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
         {STUDIO_COPY.title}
       </h1>

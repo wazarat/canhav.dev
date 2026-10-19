@@ -16,15 +16,15 @@ import {
   subscribeStudioEntity,
 } from "@/lib/studio-entity";
 import { openNewProject } from "@/lib/new-project";
+import type { StudioPlan } from "@/lib/plan-shared";
 import { cn } from "@/lib/utils";
 
 /**
- * The plan the account is on. Only "studio" exists today; "studio_plus"
- * renders the plus in the brand gradient once a paid tier ships. The
- * three tiers are the free Studio, Studio+ (monthly) and Studio Pro
- * (contact), and nothing stores a plan yet.
+ * The plan the account is on (M106): "studio_plus" renders the plus in the
+ * brand gradient. The caller reads it from usePlan; the type lives in
+ * lib/plan-shared.ts with the rest of the plan model.
  */
-export type StudioPlan = "studio" | "studio_plus";
+export type { StudioPlan };
 
 const serverSnapshot = (): StudioEntity | null => null;
 

@@ -1,0 +1,102 @@
+import type { PlusFeature, StudioPlan } from "@/lib/plan-shared";
+
+/**
+ * Copy for Studio+ (M106), the paid tier of the studio. The plan word is
+ * the product name, Studio or Studio+, and it reads Studio+ everywhere in
+ * the studio for an account on the plan. No colons before whitespace and
+ * no em dashes in any string (npm run check:copy).
+ */
+export const STUDIO_PLUS_COPY = {
+  name: "Studio+",
+  free: "Studio",
+  /** The plan word for a kicker, a title or the nav. */
+  planName: (plan: StudioPlan) => (plan === "studio_plus" ? "Studio+" : "Studio"),
+  path: "/studio/plus",
+  upgrade: "Upgrade to Studio+",
+  manage: "Manage team",
+  /** The pill on every gated surface. */
+  pill: "Studio+",
+  gate: {
+    /** Above the teaser on a gated surface. */
+    title: "Part of Studio+",
+    teaser: (feature: PlusFeature) => STUDIO_PLUS_COPY.features[feature].teaser,
+    /** The 403 an API route answers. */
+    api: "This needs Studio+. Upgrade from the studio.",
+    /** The MCP tool answer for a free account. */
+    mcp: "This tool needs Studio+. The project owner can upgrade at canhav.com/studio/plus.",
+    /** After checkout, before the session token has caught up. */
+    refresh: "Just upgraded? Reload once and the page catches up.",
+  },
+  pricing: {
+    monthly: 39.99,
+    yearlyMonthly: 29.99,
+    seatsIncluded: 3,
+    extraSeat: 9.99,
+    seatLimit: 20,
+    monthlyLine: "$39.99 a month",
+    yearlyLine: "$29.99 a month billed yearly",
+    seatsLine: "3 seats included, each additional seat $9.99 a month",
+  },
+  features: {
+    bmc: {
+      title: "Business Model Canvas",
+      teaser: "A nine block canvas inside Decisions, drafted from the pitch, the personas and who pays, then edited by you.",
+    },
+    icp: {
+      title: "ICP",
+      teaser: "One or two ideal customer profiles with the wallets and channels they use, built on the persona table and onchain hints.",
+    },
+    competitors: {
+      title: "Competitor landscape",
+      teaser: "A live table and positioning map for the same subsector and chain, refreshed monthly, with one line on how you differ.",
+    },
+    brand: {
+      title: "Brand identity",
+      teaser: "Name, ticker, logo, palette, fonts and social banners as one kit that the agent and the public page both use.",
+    },
+    private_projects: {
+      title: "Private projects",
+      teaser: "Stealth mode before announcing. Free gets public projects plus one private.",
+    },
+    project_keys: {
+      title: "Secret keys",
+      teaser: "Project keys with read or write scope, so cloud agents and CI work without a browser sign in.",
+    },
+    github_sync: {
+      title: "GitHub sync",
+      teaser: "Fills Deployments from broadcast files and ticks steps from commits and PRs, so no retyping addresses.",
+    },
+    checks: {
+      title: "Automated checks",
+      teaser: "A GitHub Action runs Slither or Aderyn, Sourcify verification and Tenderly links, so Review becomes proof.",
+    },
+    monitoring: {
+      title: "Monitoring and alerts",
+      teaser: "Admin calls, ownership changes, pauses, large transfers and graduation, alerted by email, Telegram or Discord.",
+    },
+    analytics: {
+      title: "Token analytics",
+      teaser: "Holders, curve progress, volume and wallet growth over 90 days.",
+    },
+    investor_pack: {
+      title: "Investor and grant pack",
+      teaser: "A one pager, a short deck and draft grant answers generated from the record, canvas, ICP and competitors.",
+    },
+    weekly_update: {
+      title: "Weekly update",
+      teaser: "The agent drafts a status post from the activity feed, the team approves it, and it posts to the public page.",
+    },
+    tester_kit: {
+      title: "Tester kit",
+      teaser: "An invite link gives testers the faucet and collects feedback per step.",
+    },
+    custom_domain: {
+      title: "Custom domain",
+      teaser: "The public page on your own domain, keeping the CanHav record link as the credibility signal.",
+    },
+    version_history: {
+      title: "Version history",
+      teaser: "Restore earlier drafts and decisions after an agent or teammate overwrites something.",
+    },
+  } satisfies Record<PlusFeature, { title: string; teaser: string }>,
+} as const;

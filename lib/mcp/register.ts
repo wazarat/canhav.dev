@@ -4,12 +4,15 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import type { z } from "zod";
 
 import { describeIssues } from "@/lib/agent-writes";
+import { mcpAllowsPlus } from "@/lib/mcp/plan";
+import type { PlusFeature } from "@/lib/plan-shared";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 
 /**
  * The metering seam: every MCP tool registers through registerMeteredTool,
  * so per-tool call counting can be added later in exactly one place without
- * touching any tool. Today it only logs one line per call. Access is free,
- * gated only by a Clerk account.
+ * touching any tool. Today it logs one line per call and, for a tool registered with
+ * `plus`, refuses a free account (M106).
  */
 
 export interface ToolResult {
@@ -84,8 +87,8 @@ export function registerMeteredTool<Schema extends z.ZodType>(
   name: string,
   config: { title: string; description: string; inputSchema?: Schema; annotations?: ToolAnnotations },
   cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
-  /** scope names the mount, so a project-scoped server's calls are countable. */
-  opts?: { scope?: string },
+  /** scope names the mount, so a project-scoped server's calls are countable. plus gates the tool on Studio+ (M106), on one feature when named. */
+  opts?: { scope?: string; plus?: PlusFeature | true },
 ): void {
   const schema = config.inputSchema;
   // The SDK's registerTool generics are stricter than we need; the runtime
@@ -116,6 +119,11 @@ export function registerMeteredTool<Schema extends z.ZodType>(
           return result;
         }
         args = parsed.data as z.infer<Schema>;
+      }
+      if (opts?.plus && !(await mcpAllowsPlus(ctx, opts.plus))) {
+        result = errorResult(STUDIO_PLUS_COPY.gate.mcp);
+        console.info(JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: 0, isError: true, plusRequired: true, ...(opts?.scope ? { scope: opts.scope } : {}) }));
+        return result;
       }
       result = await cb(args, ctx);
     } catch (err) {

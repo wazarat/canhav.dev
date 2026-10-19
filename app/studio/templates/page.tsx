@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { TemplateCard } from "@/components/ideation/kit/TemplateCard";
+import { PlanWord } from "@/components/studio/PlanWord";
 import { TemplateFilters, type TemplateQuery } from "@/components/studio/TemplateFilters";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { TEMPLATE_CATALOG, TEMPLATE_CATALOG_GENERATED } from "@/content/templates";
@@ -74,7 +75,7 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
   return (
     <div className="container py-14 md:py-20">
       <div className="max-w-3xl">
-        <p className="kicker">{T.kicker}</p>
+        <p className="kicker"><PlanWord /></p>
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">{T.title}</h1>
         <p className="mt-4 text-lg leading-relaxed text-ink-200">{T.lede}</p>
         <p className="mt-2 text-sm leading-relaxed text-ink-400">{T.generated(TEMPLATE_CATALOG_GENERATED)}</p>

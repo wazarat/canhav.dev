@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { EntityList, type TokenChipFacts } from "@/components/studio/EntityList";
 import { LaunchList } from "@/components/studio/LaunchList";
+import { PlanWord } from "@/components/studio/PlanWord";
 import { Segmented } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { STUDIO_COPY } from "@/content/ideation";
@@ -73,7 +74,7 @@ export default async function StudioLaunchesPage({
     <div className="container py-14 md:py-20">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
-          <p className="kicker">{STUDIO_COPY.kicker}</p>
+          <p className="kicker"><PlanWord /></p>
           <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
             {C.pageTitle}
           </h1>

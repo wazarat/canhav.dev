@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 
 import { AppClerkProvider } from "@/components/layout/AppClerkProvider";
+import { PlanProvider } from "@/components/studio/PlanProvider";
 import { Background } from "@/components/layout/Background";
 import { Footer } from "@/components/layout/Footer";
 import { Nav } from "@/components/layout/Nav";
@@ -88,12 +89,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen antialiased">
         <ThemeScript />
         <AppClerkProvider>
-          <Background />
-          <div className="relative flex min-h-screen flex-col">
-            <Nav />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <PlanProvider>
+            <Background />
+            <div className="relative flex min-h-screen flex-col">
+              <Nav />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </PlanProvider>
         </AppClerkProvider>
         <Analytics />
       </body>
