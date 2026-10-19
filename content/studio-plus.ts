@@ -43,6 +43,7 @@ export const STUDIO_PLUS_COPY = {
     /** When the session's team already pays. */
     onPlan: "This team is on Studio+.",
     pickYearly: "Yearly billing saves 25 percent.",
+    plans: "Plans",
     checkoutNote: "Checkout opens in this page. Card payments in USD through Clerk and Stripe. Cancel any time from the Team page; the plan runs to the end of the paid period.",
     manage: "Manage team",
     toStudio: "Back to the studio",

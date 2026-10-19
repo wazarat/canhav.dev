@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PlusCheckout, ManageTeamButton } from "@/components/studio/PlusCheckout";
+import {
+  PlusCheckout,
+  ManageTeamButton,
+} from "@/components/studio/PlusCheckout";
 import { PlusCreateTeam } from "@/components/studio/PlusCreateTeam";
 import { SignInCard } from "@/components/studio/SignInCard";
 import { Button } from "@/components/ui/Button";
@@ -23,7 +26,12 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const FIRST_WAVE: readonly PlusFeature[] = ["bmc", "icp", "competitors", "brand"];
+const FIRST_WAVE: readonly PlusFeature[] = [
+  "bmc",
+  "icp",
+  "competitors",
+  "brand",
+];
 
 function FeatureRows({ keys }: { keys: readonly PlusFeature[] }) {
   return (
@@ -32,10 +40,17 @@ function FeatureRows({ keys }: { keys: readonly PlusFeature[] }) {
         const F = STUDIO_PLUS_COPY.features[k];
         const shipped = STUDIO_PLUS_SHIPPED.includes(k);
         return (
-          <CardSection key={k} className="flex flex-wrap items-start justify-between gap-3">
+          <CardSection
+            key={k}
+            className="flex flex-wrap items-start justify-between gap-3"
+          >
             <div className="min-w-0 max-w-xl">
-              <h3 className="font-display text-sm font-semibold text-ink-50">{F.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-ink-300">{F.teaser}</p>
+              <h3 className="font-display text-sm font-semibold text-ink-50">
+                {F.title}
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-ink-300">
+                {F.teaser}
+              </p>
             </div>
             {shipped ? null : <SoonBadge label="Soon" accent="neon" />}
           </CardSection>
@@ -53,7 +68,6 @@ function FeatureRows({ keys }: { keys: readonly PlusFeature[] }) {
  */
 export default async function StudioPlusPage() {
   const P = STUDIO_PLUS_COPY.page;
-  const pricing = STUDIO_PLUS_COPY.pricing;
   const user = isAuthConfigured() ? await getSessionUser() : null;
   const plan = await getPlan();
   const more = PLUS_FEATURES.filter((f) => !FIRST_WAVE.includes(f));
@@ -61,7 +75,10 @@ export default async function StudioPlusPage() {
   let action: React.ReactNode;
   if (!isAuthConfigured()) {
     action = (
-      <p className="text-sm text-ink-300">Sign-in is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY, then reload.</p>
+      <p className="text-sm text-ink-300">
+        Sign-in is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and
+        CLERK_SECRET_KEY, then reload.
+      </p>
     );
   } else if (!user) {
     action = (
@@ -95,80 +112,107 @@ export default async function StudioPlusPage() {
     <div className="container py-14 md:py-20">
       <div className="max-w-2xl">
         <p className="kicker">{P.kicker}</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">{P.title}</h1>
+        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
+          {P.title}
+        </h1>
         <p className="mt-4 text-sm leading-relaxed text-ink-400">{P.lead}</p>
       </div>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <div className="space-y-8">
-          <section>
-            <h2 className="font-display text-lg font-semibold text-ink-50">{P.firstWave}</h2>
+      {/* The plans first (owner feedback, 2026-10-19): Clerk's table is the one price card, checkout opens over the page. */}
+      <section className="mt-10 max-w-3xl">
+        <h2 className="font-display text-lg font-semibold text-ink-50">
+          {P.plans}
+        </h2>
+        <div className="mt-3">{action}</div>
+      </section>
+
+      <div className="mt-12 max-w-3xl space-y-8">
+        <section>
+          <h2 className="font-display text-lg font-semibold text-ink-50">
+            {P.firstWave}
+          </h2>
+          <div className="mt-3">
+            <FeatureRows keys={FIRST_WAVE} />
+          </div>
+        </section>
+        <section>
+          <h2 className="font-display text-lg font-semibold text-ink-50">
+            {P.moreWave}
+          </h2>
+          <div className="mt-3">
+            <FeatureRows keys={more} />
+          </div>
+        </section>
+        <section>
+          <h2 className="font-display text-lg font-semibold text-ink-50">
+            {PERKS_COPY.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-400">
+            {PERKS_COPY.lead}
+          </p>
+          <div className="mt-3">
+            <Card>
+              {PERKS.map((perk) => (
+                <CardSection
+                  key={perk.partner}
+                  className="flex flex-wrap items-start justify-between gap-3"
+                >
+                  <div className="min-w-0 max-w-xl">
+                    <h3 className="font-display text-sm font-semibold text-ink-50">
+                      {perk.partner}{" "}
+                      <span className="font-normal text-ink-400">
+                        · {perk.what}
+                      </span>
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-300">
+                      {perk.blurb}
+                    </p>
+                    <p className="mt-1 text-xs text-ink-500">
+                      {perk.referralUrl
+                        ? PERKS_COPY.agreed
+                        : PERKS_COPY.pending}
+                      {perk.code ? ` · ${PERKS_COPY.code(perk.code)}` : ""}
+                    </p>
+                  </div>
+                  <a
+                    href={perk.referralUrl ?? perk.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-ink-200 hover:underline"
+                  >
+                    {PERKS_COPY.open}
+                  </a>
+                </CardSection>
+              ))}
+            </Card>
             <div className="mt-3">
-              <FeatureRows keys={FIRST_WAVE} />
+              <ContactCta
+                label={PERKS_COPY.ask}
+                sourcePage="studio-plus-perks"
+              />
             </div>
-          </section>
-          <section>
-            <h2 className="font-display text-lg font-semibold text-ink-50">{P.moreWave}</h2>
-            <div className="mt-3">
-              <FeatureRows keys={more} />
-            </div>
-          </section>
-          <section>
-            <h2 className="font-display text-lg font-semibold text-ink-50">{PERKS_COPY.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-ink-400">{PERKS_COPY.lead}</p>
-            <div className="mt-3">
-              <Card>
-                {PERKS.map((perk) => (
-                  <CardSection key={perk.partner} className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 max-w-xl">
-                      <h3 className="font-display text-sm font-semibold text-ink-50">
-                        {perk.partner} <span className="font-normal text-ink-400">· {perk.what}</span>
-                      </h3>
-                      <p className="mt-1 text-sm leading-relaxed text-ink-300">{perk.blurb}</p>
-                      <p className="mt-1 text-xs text-ink-500">
-                        {perk.referralUrl ? PERKS_COPY.agreed : PERKS_COPY.pending}
-                        {perk.code ? ` · ${PERKS_COPY.code(perk.code)}` : ""}
-                      </p>
-                    </div>
-                    <a href={perk.referralUrl ?? perk.url} target="_blank" rel="noreferrer" className="text-xs text-ink-200 hover:underline">
-                      {PERKS_COPY.open}
-                    </a>
-                  </CardSection>
-                ))}
-              </Card>
-              <div className="mt-3">
-                <ContactCta label={PERKS_COPY.ask} sourcePage="studio-plus-perks" />
-              </div>
-            </div>
-          </section>
-          <section>
-            <h2 className="font-display text-lg font-semibold text-ink-50">{HELP_COPY.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-ink-400">{HELP_COPY.lead}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button asChild size="sm" variant="outline">
-                <a href={CONTACT_COPY.bookingUrl} target="_blank" rel="noreferrer">
-                  {HELP_COPY.book}
-                </a>
-              </Button>
-              <span className="text-xs text-ink-500">{HELP_COPY.reply}</span>
-            </div>
-          </section>
-        </div>
-        <aside className="space-y-4">
-          <Card>
-            <CardSection className="space-y-2">
-              <p className="font-display text-2xl font-semibold text-ink-50">{pricing.monthlyLine}</p>
-              <p className="text-sm text-ink-300">{pricing.yearlyLine}</p>
-              <p className="text-xs text-ink-500">{P.pickYearly}</p>
-            </CardSection>
-            <CardSection className="space-y-1">
-              <h3 className="font-display text-sm font-semibold text-ink-50">{P.seats}</h3>
-              <p className="text-sm text-ink-300">{pricing.seatsLine}</p>
-              <p className="text-xs text-ink-500">{P.seatsLead}</p>
-            </CardSection>
-          </Card>
-          {action}
-        </aside>
+          </div>
+        </section>
+        <section>
+          <h2 className="font-display text-lg font-semibold text-ink-50">
+            {HELP_COPY.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-400">
+            {HELP_COPY.lead}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button asChild size="sm" variant="outline">
+              <a
+                href={CONTACT_COPY.bookingUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {HELP_COPY.book}
+              </a>
+            </Button>
+            <span className="text-xs text-ink-500">{HELP_COPY.reply}</span>
+          </div>
+        </section>
       </div>
     </div>
   );
