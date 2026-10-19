@@ -6,7 +6,9 @@ import { type SessionUser, getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import { projectDocFromCreate } from "@/lib/project-create";
+import { BUILD_COPY } from "@/content/build";
 import { STUDIO_COPY } from "@/content/ideation";
+import { PRIVATE_FREE_ALLOWANCE } from "@/lib/plan-shared";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type PlusFeature, PlusRequired, getPlan, requirePlus } from "@/lib/plan";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
@@ -210,11 +212,27 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
       return NextResponse.json({ ok: true });
     },
 
-    /** POST /api/ideation/<entity>/[id]/publish */
-    async publish(id: string) {
+    /** POST /api/ideation/<entity>/[id]/publish, with `{ visibility }` for a project (M109). */
+    async publish(id: string, req?: Request) {
       const gate = await authGate();
       if (gate instanceof NextResponse) return gate;
-      const result = await publishEntity(table, id, gate.owner);
+      let visibility: "public" | "private" | undefined;
+      if (req) {
+        try {
+          const raw = await req.text();
+          const body = raw.trim() ? (JSON.parse(raw) as { visibility?: unknown }) : {};
+          if (body.visibility === "public" || body.visibility === "private") visibility = body.visibility;
+        } catch {
+          // no body is fine, the row's visibility stands
+        }
+      }
+      // Free accounts keep one private project; Studio+ has no cap (M109).
+      const plan = await getPlan();
+      const result = await publishEntity(table, id, gate.owner, {
+        visibility,
+        privateCap: plan.plan === "studio_plus" ? null : PRIVATE_FREE_ALLOWANCE,
+        privateCapMessage: BUILD_COPY.publish.visibility.capReached,
+      });
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
       return NextResponse.json(result);
     },

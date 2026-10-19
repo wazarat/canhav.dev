@@ -11,7 +11,10 @@ import { Card, CardSection } from "@/components/ui/Card";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Field, Input } from "@/components/ui/Input";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { SegmentedField } from "@/components/ui/Segmented";
 import { SelectField } from "@/components/ui/Select";
+import { PlusGate } from "@/components/studio/PlusGate";
+import { usePlan } from "@/components/studio/PlanContext";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import {
@@ -37,6 +40,48 @@ import { projectChainOf } from "@/lib/chains";
 import { type ProblemArea, type ProjectProblems, tabOfArea } from "@/lib/build-readiness";
 import { PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona } from "@/lib/ideation";
 import { type LaunchTarget, launchTargetFit } from "@/lib/launch-targets";
+import { PRIVATE_FREE_ALLOWANCE } from "@/lib/plan-shared";
+
+/**
+ * Public or private (M109). A free account has one private project; once
+ * it is in use elsewhere the private option is closed and the Studio+ gate
+ * says why. A project already published private keeps its slot.
+ */
+function VisibilityChoice({
+  value,
+  onChange,
+  privateUsed,
+  isPrivatePublished,
+}: {
+  value: "public" | "private";
+  onChange: (v: "public" | "private") => void;
+  privateUsed: number;
+  isPrivatePublished: boolean;
+}) {
+  const V = BUILD_COPY.publish.visibility;
+  const plan = usePlan();
+  const plus = plan.plan === "studio_plus" && plan.hasFeature("private_projects");
+  const closed = !plus && privateUsed >= PRIVATE_FREE_ALLOWANCE && !isPrivatePublished;
+  return (
+    <div className="space-y-3">
+      <SegmentedField
+        label={V.label}
+        hint={value === "private" ? V.privateHint : V.publicHint}
+        value={value}
+        onChange={onChange}
+        options={[
+          { value: "public", label: V.public },
+          { value: "private", label: V.private, disabled: closed, title: closed ? V.capReached : undefined },
+        ]}
+      />
+      {plus ? null : closed ? (
+        <PlusGate feature="private_projects" />
+      ) : (
+        <StatusChip tone="neutral">{privateUsed >= PRIVATE_FREE_ALLOWANCE || isPrivatePublished ? V.freeUsed : V.freeLeft}</StatusChip>
+      )}
+    </div>
+  );
+}
 
 function Heading({ children }: { children: React.ReactNode }) {
   return <h2 className="font-display text-base font-semibold text-ink-50">{children}</h2>;
@@ -65,6 +110,10 @@ export function PublishTab({
   problems,
   linkedLaunchTarget,
   onGoTab,
+  visibility,
+  onVisibility,
+  privateUsed,
+  isPrivatePublished,
 }: {
   id: string;
   doc: ProjectDoc;
@@ -72,6 +121,13 @@ export function PublishTab({
   problems: ProjectProblems;
   linkedLaunchTarget: LaunchTarget | null;
   onGoTab: (tab: BuildTab) => void;
+  /** Public or private publish (M109). */
+  visibility: "public" | "private";
+  onVisibility: (v: "public" | "private") => void;
+  /** The owner's other published private projects. */
+  privateUsed: number;
+  /** True when this project is already published private, which keeps its slot. */
+  isPrivatePublished: boolean;
 }) {
   const P = BUILD_COPY.publish;
   const chainKey = projectChainOf(doc);
@@ -199,6 +255,11 @@ export function PublishTab({
               </label>
             </>
           ) : null}
+        </CardSection>
+
+        <CardSection className="space-y-4">
+          <Heading>{P.visibility.title}</Heading>
+          <VisibilityChoice value={visibility} onChange={onVisibility} privateUsed={privateUsed} isPrivatePublished={isPrivatePublished} />
         </CardSection>
 
         <CardSection className="space-y-4">

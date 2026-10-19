@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { PublishStatus } from "@/components/ideation/usePublish";
@@ -17,6 +17,25 @@ import { setStudioEntity } from "@/lib/studio-entity";
  * is a draft), no autosave chip (the section being edited shows it) and no
  * blocked line (Publish opens a pop up naming what is open instead).
  */
+/** Copies the absolute share link of a private project (M109). */
+function CopyShareLink({ href }: { href: string }) {
+  const [copied, setCopied] = useState(false);
+  const V = BUILD_COPY.publish.visibility;
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => {
+        void navigator.clipboard.writeText(`${window.location.origin}${href}`);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      }}
+    >
+      {copied ? V.copied : V.shareLink}
+    </Button>
+  );
+}
+
 export function BuildHeader({
   id,
   name,
@@ -24,6 +43,8 @@ export function BuildHeader({
   agentLine,
   initialStatus,
   initialSlug,
+  publicHref,
+  privatePublished = false,
   publishStatus,
   canPublish,
   onPublish,
@@ -38,6 +59,9 @@ export function BuildHeader({
   agentLine: string;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
+  /** The public page path, with the share token when private (M109). */
+  publicHref?: string | null;
+  privatePublished?: boolean;
   publishStatus: PublishStatus;
   canPublish: boolean;
   onPublish: () => void;
@@ -78,13 +102,14 @@ export function BuildHeader({
         <div className="flex flex-wrap items-center gap-2">
           {headerActions}
           {isPublished && slug ? (
-            <StatusChip tone="success">
-              Published ·{" "}
-              <Link href={`/p/${slug}`} className="text-electric-300 transition-colors hover:text-electric-200">
+            <StatusChip tone={privatePublished ? "neutral" : "success"}>
+              {privatePublished ? BUILD_COPY.publish.visibility.private : "Published"} ·{" "}
+              <Link href={publicHref ?? `/p/${slug}`} className="text-electric-300 transition-colors hover:text-electric-200">
                 /p/{slug}
               </Link>
             </StatusChip>
           ) : null}
+          {isPublished && slug && privatePublished && publicHref ? <CopyShareLink href={publicHref} /> : null}
           <Button size="sm" onClick={canPublish ? onPublish : onBlocked} disabled={publishStatus.kind === "working"}>
             {publishStatus.kind === "working" ? "Working…" : isPublished ? "Republish" : "Publish"}
           </Button>

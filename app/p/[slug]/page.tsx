@@ -29,7 +29,9 @@ import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
-import { getLinkedTokenDesign, getProjectBySlug, getSnapshot } from "@/lib/ideation-db";
+import { getLinkedTokenDesign, getProjectBySlug, getSnapshot, projectVisibleTo } from "@/lib/ideation-db";
+import { getSessionUser } from "@/lib/auth";
+import { BUILD_COPY } from "@/content/build";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
   getBlockscoutVerification,
@@ -45,9 +47,19 @@ export async function generateMetadata({
   const { slug } = await params;
   const row = await getProjectBySlug(slug);
   if (!row) return {};
+  // A private project never reaches a search index, link or not (M109).
+  if (row.visibility === "private") return { robots: { index: false, follow: false } };
   return {
     description: row.draft_doc.whatItDoes.slice(0, 160),
   };
+}
+
+/** Whether this request may open a private project (M109): the share link, or a signed in member. */
+async function mayOpen(row: NonNullable<Awaited<ReturnType<typeof getProjectBySlug>>>, share: string | undefined): Promise<boolean> {
+  if ((row.visibility ?? "public") === "public") return true;
+  if (projectVisibleTo(row, share, null)) return true;
+  const user = await getSessionUser();
+  return projectVisibleTo(row, share, user?.owner);
 }
 
 export const dynamic = "force-dynamic";
@@ -89,12 +101,17 @@ function Prose({ label, text }: { label: string; text: string }) {
 
 export default async function ProjectPublicPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ s?: string }>;
 }) {
   const { slug } = await params;
+  const { s: share } = await searchParams;
   const row = await getProjectBySlug(slug);
   if (!row || !row.published_hash) notFound();
+  if (!(await mayOpen(row, share))) notFound();
+  const isPrivate = row.visibility === "private";
 
   const snapshot = await getSnapshot(row.published_hash);
   if (!snapshot || snapshot.doc.kind !== "project") notFound();
@@ -165,9 +182,10 @@ export default async function ProjectPublicPage({
           <StatusChip tone="neutral">
             v{doc.publishVersion} · {new Date(snapshot.created_at).toLocaleDateString("en-US")}
           </StatusChip>
+          {isPrivate ? <StatusChip tone="warning">{BUILD_COPY.publish.visibility.pageChip}</StatusChip> : null}
         </div>
         <div className="mt-4">
-          <ExportButtons kind="p" slug={slug} />
+          <ExportButtons kind="p" slug={slug} share={isPrivate && share ? share : undefined} />
         </div>
       </div>
 

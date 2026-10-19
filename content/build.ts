@@ -214,6 +214,22 @@ export const BUILD_COPY = {
   publish: {
     title: "Publish",
     record: "The public record",
+    /** Public or private publish (M109). */
+    visibility: {
+      title: "Who can see it",
+      label: "Visibility",
+      public: "Public",
+      private: "Private",
+      publicHint: "Listed on Explore and open to anyone at its link.",
+      privateHint: "Off Explore and the listings. Your team and anyone with the share link can open it, read the export and reach it over MCP.",
+      freeLeft: "One private project is included.",
+      freeUsed: "Your one private project is in use.",
+      capReached: "Free accounts keep one private project. Make the other one public, or upgrade to Studio+ for unlimited private projects.",
+      shareLink: "Copy share link",
+      copied: "Link copied",
+      /** On the public page, for a viewer with the link. */
+      pageChip: "Private. Shared by link",
+    },
     readiness: "Ready to publish",
     readinessLine: "Everything checks out. Publish from the button above.",
     notReady: "Not ready to publish yet.",

@@ -16,7 +16,7 @@ import { mainnetView } from "@/lib/mainnet-view";
 import { hasCommitment } from "@/lib/journey";
 import { projectChainLocked } from "@/lib/launch-project";
 import { type MyLaunch, getMyLaunches } from "@/lib/my-launches";
-import { getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
+import { countPrivateProjects, getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -44,6 +44,7 @@ export default async function ProjectEditorPage({
   const row = await getProject(id, user.owner);
   if (!row) notFound();
 
+  const privateUsed = await countPrivateProjects(user.owner, row.id);
   const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
     getMyTokenDesigns(user.owner),
@@ -122,6 +123,9 @@ export default async function ProjectEditorPage({
         initialDoc={row.draft_doc}
         initialStatus={row.status}
         initialSlug={row.slug}
+        initialVisibility={row.visibility ?? "public"}
+        initialShareToken={row.share_token ?? null}
+        privateUsed={privateUsed}
         initialRev={row.agent_rev}
         chainLocked={chainLocked}
         linkedLaunchTarget={launchTarget}

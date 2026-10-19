@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 /**
  * Clerk session detection, scoped to the routes that actually call auth():
  * the studio, the launch form page, the ideation/export/launches APIs, the
- * launch write APIs, and the MCP endpoint. Marketing, /launch/t, /p, /t,
+ * launch write APIs, the MCP endpoint and the public project pages (M109). Marketing, /launch/t, /t,
  * /agents, /api/leads and /.well-known/* stay untouched. clerkMiddleware throws at request time without keys, so an
  * unconfigured deploy degrades to pass-through (pages show the config chip,
  * APIs return 503) instead of crashing.
@@ -30,5 +30,7 @@ export const config = {
     "/api/journeys",
     "/api/milestone-updates",
     "/mcp/:path*",
+    // Private project pages read the session to admit team members (M109).
+    "/p/:path*",
   ],
 };

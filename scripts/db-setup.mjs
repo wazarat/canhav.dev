@@ -379,6 +379,17 @@ await sql`
     on launchpad.launches (org_id, created_at desc) where org_id is not null
 `;
 
+// Private projects (M109): a published project may be private, off the
+// listings and open only to its team and to anyone with the share link,
+// whose token is minted at the first private publish. Slugs are names, so
+// the token is what makes the link unguessable.
+await sql`
+  alter table launchpad.projects
+    add column if not exists visibility text not null default 'public'
+      check (visibility in ('public','private')),
+    add column if not exists share_token text unique
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

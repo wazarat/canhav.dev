@@ -3,7 +3,7 @@ import "server-only";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } from "@/lib/chains";
 import { getDb } from "@/lib/db";
 import type { JourneyDoc } from "@/lib/journey";
-import type { Owner } from "@/lib/owner";
+import { type Owner, ownedBy } from "@/lib/owner";
 import {
   type IdeationDoc,
   type ProjectDoc,
@@ -32,6 +32,10 @@ export interface ProjectRow {
   owner_id: string;
   /** The team the record was moved to (M107). Null or absent means personal. */
   org_id?: string | null;
+  /** Private keeps a published project off the listings (M109). Absent reads as public. */
+  visibility?: "public" | "private";
+  /** The share link token of a private project, minted at its first private publish (M109). */
+  share_token?: string | null;
   slug: string | null;
   status: "draft" | "published";
   draft_doc: ProjectDoc;
@@ -220,11 +224,36 @@ export async function getPublishedProjects(limit = 60): Promise<ProjectRow[] | n
   if (!sql) return null;
   const rows = await sql`
     select * from launchpad.projects
-    where status = 'published'
+    where status = 'published' and visibility = 'public'
     order by updated_at desc
     limit ${limit}
   `;
   return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
+}
+
+/** The owner's published private projects other than one (M109), for the free allowance. */
+export async function countPrivateProjects(owner: Owner, excludeId: string): Promise<number> {
+  const sql = getDb();
+  if (!sql) return 0;
+  const rows = await sql`
+    select count(*)::int as n from launchpad.projects
+    where status = 'published' and visibility = 'private' and id <> ${excludeId}
+      and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
+  `;
+  return (rows[0] as { n: number } | undefined)?.n ?? 0;
+}
+
+/** Whether a viewer may open a private project's page (M109): the share token, or membership. */
+export function projectVisibleTo(row: ProjectRow, share: string | null | undefined, owner: Owner | null | undefined): boolean {
+  if ((row.visibility ?? "public") === "public") return true;
+  if (share && row.share_token && share === row.share_token) return true;
+  return ownedBy(row, owner);
+}
+
+/** The public page path of a project, with the share token when it is private (M109). */
+export function projectPublicPath(row: Pick<ProjectRow, "slug" | "visibility" | "share_token">): string | null {
+  if (!row.slug) return null;
+  return row.visibility === "private" && row.share_token ? `/p/${row.slug}?s=${row.share_token}` : `/p/${row.slug}`;
 }
 
 /**
@@ -474,8 +503,15 @@ async function uniqueSlug(
 }
 
 export type PublishResult =
-  | { ok: true; slug: string; hash: string; version: number; unchanged: boolean }
+  | { ok: true; slug: string; hash: string; version: number; unchanged: boolean; visibility: "public" | "private"; shareToken: string | null }
   | { ok: false; error: string; status: number };
+
+/** 16 random bytes as base64url, the share link token (M109). */
+function mintShareToken(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("base64url");
+}
 
 /** Doc equality ignoring the publish counter — used for no-op republish. */
 function sameContent(a: IdeationDoc, b: IdeationDoc): boolean {
@@ -487,6 +523,13 @@ export async function publishEntity(
   table: EntityTable,
   id: string,
   owner: Owner,
+  /**
+   * Projects only (M109): the visibility to publish with (the row's current
+   * one when left out) and how many private projects the owner may have
+   * besides this one (null for no cap). A token design is always public,
+   * its snapshot hash is what a launch commits on chain.
+   */
+  opts: { visibility?: "public" | "private"; privateCap?: number | null; privateCapMessage?: string } = {},
 ): Promise<PublishResult> {
   const sql = getDb();
   if (!sql) return { ok: false, error: "Storage not configured.", status: 503 };
@@ -494,6 +537,20 @@ export async function publishEntity(
   const row =
     table === "projects" ? await getProject(id, owner) : await getTokenDesign(id, owner);
   if (!row) return { ok: false, error: "Not found.", status: 404 };
+
+  const current = table === "projects" ? ((row as ProjectRow).visibility ?? "public") : "public";
+  const visibility = table === "projects" ? (opts.visibility ?? current) : "public";
+  if (visibility === "private" && opts.privateCap !== null && opts.privateCap !== undefined) {
+    const used = await countPrivateProjects(owner, id);
+    if (used >= opts.privateCap)
+      return { ok: false, error: opts.privateCapMessage ?? "Private project allowance used.", status: 403 };
+  }
+  const shareToken =
+    table === "projects"
+      ? visibility === "private"
+        ? ((row as ProjectRow).share_token ?? mintShareToken())
+        : ((row as ProjectRow).share_token ?? null)
+      : null;
 
   const entityType = table === "projects" ? "project" : "token_design";
   const slug = row.slug ?? (await uniqueSlug(sql, table, slugify(row.draft_doc.name)));
@@ -525,13 +582,23 @@ export async function publishEntity(
   if (problem) return { ok: false, error: problem, status: 400 };
 
   // Republishing identical content is a no-op — return the existing snapshot.
+  // A change of visibility alone still updates the row (M109).
   if (latestSnap && row.status === "published" && sameContent(stamped, latestSnap.doc)) {
+    if (table === "projects" && visibility !== current) {
+      await sql`
+        update launchpad.projects
+        set visibility = ${visibility}, share_token = ${shareToken}, updated_at = now()
+        where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
+      `;
+    }
     return {
       ok: true,
       slug,
       hash: latestSnap.snapshot_hash,
       version: latestSnap.version,
       unchanged: true,
+      visibility,
+      shareToken,
     };
   }
 
@@ -549,7 +616,8 @@ export async function publishEntity(
     await sql`
       update launchpad.projects
       set slug = ${slug}, status = 'published', published_hash = ${hash},
-          draft_doc = ${JSON.stringify(stamped)}, updated_at = now()
+          visibility = ${visibility}, share_token = ${shareToken},
+          draft_doc = ${JSON.stringify(draftOut)}, updated_at = now()
       where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     `;
   } else {
@@ -560,7 +628,7 @@ export async function publishEntity(
       where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
     `;
   }
-  return { ok: true, slug, hash, version, unchanged: false };
+  return { ok: true, slug, hash, version, unchanged: false, visibility, shareToken };
 }
 
 export async function unpublishEntity(

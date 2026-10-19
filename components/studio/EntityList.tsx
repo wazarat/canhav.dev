@@ -4,6 +4,7 @@ import { DeleteDraftButton } from "@/components/studio/DeleteDraftButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
+import { BUILD_COPY } from "@/content/build";
 import { STUDIO_COPY } from "@/content/ideation";
 import { tokenBuildProgressOf } from "@/content/token-steps";
 import type { ProjectAgentActivity } from "@/lib/agent-writes-db";
@@ -167,11 +168,12 @@ export function EntityList({
                       <>
                         {" · "}
                         <Link
-                          href={`${publicBase}/${row.slug}`}
+                          href={`${publicBase}/${row.slug}${"share_token" in row && row.visibility === "private" && row.share_token ? `?s=${row.share_token}` : ""}`}
                           className="text-electric-300 transition-colors hover:text-electric-200"
                         >
                           {publicBase}/{row.slug}
                         </Link>
+                        {"visibility" in row && row.visibility === "private" ? <span className="text-ink-500"> · {BUILD_COPY.publish.visibility.private}</span> : null}
                       </>
                     )}
                     {link && <LinkLine link={link} side={side} />}

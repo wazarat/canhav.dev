@@ -40,6 +40,9 @@ export function isPlusFeature(value: unknown): value is PlusFeature {
 
 export type StudioPlan = "studio" | "studio_plus";
 
+/** Private projects a free account may publish (M109). */
+export const PRIVATE_FREE_ALLOWANCE = 1;
+
 export interface PlanInfo {
   plan: StudioPlan;
   /** The active Clerk organization, the payer of a Studio+ plan. Null on a personal session. */

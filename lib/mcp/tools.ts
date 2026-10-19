@@ -10,6 +10,7 @@ import {
   getMyProjects,
   getMyTokenDesigns,
   getProjectBySlug,
+  projectVisibleTo,
   getSnapshot,
   getTokenDesignBySlug,
   getLinkedProject,
@@ -136,12 +137,13 @@ export function registerAllTools(server: McpServer): void {
     {
       title: "Get project",
       description:
-        "A published CanHav project by slug (public). Owners additionally get their current draft state.",
-      inputSchema: z.object({ slug: z.string().min(3).max(60) }),
+        "A published CanHav project by slug (public). Owners additionally get their current draft state. A private project needs its share token (the s part of its share link) or a member's token.",
+      inputSchema: z.object({ slug: z.string().min(3).max(60), share: z.string().max(64).optional() }),
     },
-    async ({ slug }, ctx) => {
+    async ({ slug, share }, ctx) => {
       const row = await getProjectBySlug(slug);
       if (!row?.published_hash) return errorResult(`No published project at /p/${slug}.`);
+      if (!projectVisibleTo(row, share, mcpOwner(ctx))) return errorResult(`No published project at /p/${slug}.`);
       const snapshot = await getSnapshot(row.published_hash);
       if (!snapshot) return errorResult(DB_HINT);
       const isOwner = ownedBy(row, mcpOwner(ctx));

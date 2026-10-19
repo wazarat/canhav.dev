@@ -47,6 +47,9 @@ export function ProjectBuildPage({
   initialDoc,
   initialStatus,
   initialSlug,
+  initialVisibility = "public",
+  initialShareToken = null,
+  privateUsed = 0,
   initialRev,
   chainLocked = false,
   linkedLaunchTarget = null,
@@ -59,6 +62,11 @@ export function ProjectBuildPage({
   initialDoc: ProjectDoc;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
+  /** Private keeps the published page off the listings (M109). */
+  initialVisibility?: "public" | "private";
+  initialShareToken?: string | null;
+  /** The owner's other published private projects, for the free allowance (M109). */
+  privateUsed?: number;
   /** The draft's agent revision at load. Undefined before the database update (M39). */
   initialRev?: number;
   /** True once a token has launched from the project, which fixes its chain (M52). */
@@ -77,6 +85,8 @@ export function ProjectBuildPage({
   const saveState = useAutosave(doc, save);
   const [heldRev, setHeldRev] = useState(initialRev);
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
+  /** The visibility the next publish uses (M109). */
+  const [visibility, setVisibility] = useState<"public" | "private">(initialVisibility);
   const { tab, setTab, milestone, setMilestone } = useTabParam();
   const [activity, setActivity] = useState<(AgentActivity & { seq: number }) | null>(null);
   /** The resources drawer's section, null while closed. */
@@ -196,11 +206,26 @@ export function ProjectBuildPage({
     ),
     deployments: <DeploymentsTab doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} />,
     publish: (
-      <PublishTab id={id} doc={doc} patch={patch} problems={problems} linkedLaunchTarget={linkedLaunchTarget} onGoTab={setTab} />
+      <PublishTab
+        id={id}
+        doc={doc}
+        patch={patch}
+        problems={problems}
+        linkedLaunchTarget={linkedLaunchTarget}
+        onGoTab={setTab}
+        visibility={visibility}
+        onVisibility={setVisibility}
+        privateUsed={privateUsed}
+        isPrivatePublished={initialVisibility === "private" && initialStatus === "published"}
+      />
     ),
   };
 
   const slug = publishStatus.kind === "published" ? publishStatus.slug : initialSlug;
+  // The share token and the published visibility follow the last publish (M109).
+  const shareToken = publishStatus.kind === "published" ? (publishStatus.shareToken ?? initialShareToken) : initialShareToken;
+  const publishedVisibility = publishStatus.kind === "published" ? (publishStatus.visibility ?? initialVisibility) : initialVisibility;
+  const publicHref = published && slug ? (publishedVisibility === "private" && shareToken ? `/p/${slug}?s=${shareToken}` : `/p/${slug}`) : null;
 
   return (
     <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -211,7 +236,7 @@ export function ProjectBuildPage({
           tab={tab}
           milestone={milestone}
           problems={tabDots}
-          publicHref={published && slug ? `/p/${slug}` : null}
+          publicHref={publicHref}
           onTab={setTab}
           onMilestone={setMilestone}
           onResource={setResourceView}
@@ -225,9 +250,11 @@ export function ProjectBuildPage({
         agentLine={agentLine}
         initialStatus={initialStatus}
         initialSlug={initialSlug}
+        publicHref={publicHref}
+        privatePublished={publishedVisibility === "private"}
         publishStatus={publishStatus}
         canPublish={problems.overall === null}
-        onPublish={publish}
+        onPublish={() => void publish(visibility)}
         onBlocked={() => setBlockedOpen(true)}
         onUnpublish={unpublish}
         headerActions={headerActions}

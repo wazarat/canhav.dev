@@ -9,7 +9,9 @@ import {
   getProjectBySlug,
   getSnapshot,
   designDeployChain,
+  projectVisibleTo,
 } from "@/lib/ideation-db";
+import { getSessionUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -25,6 +27,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const { slug } = await params;
   const row = await getProjectBySlug(slug);
   if (!row?.published_hash) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  // A private project exports for its team and for the share link (M109).
+  if (row.visibility === "private") {
+    const share = new URL(req.url).searchParams.get("s");
+    const user = await getSessionUser();
+    if (!projectVisibleTo(row, share, user?.owner)) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
   const snapshot = await getSnapshot(row.published_hash);
   if (!snapshot || snapshot.doc.kind !== "project")
     return NextResponse.json({ error: "Not found." }, { status: 404 });
