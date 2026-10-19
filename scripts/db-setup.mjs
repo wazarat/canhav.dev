@@ -379,6 +379,22 @@ await sql`
     on launchpad.launches (org_id, created_at desc) where org_id is not null
 `;
 
+// Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
+// webhooks, one row per paying organization, so the app and the MCP servers
+// know the plan without a Clerk call. raw keeps the last event for
+// reconciliation.
+await sql`
+  create table if not exists launchpad.subscriptions (
+    org_id text primary key,
+    plan text not null,
+    status text not null,
+    seats int,
+    period_end timestamptz,
+    raw jsonb not null,
+    updated_at timestamptz not null default now()
+  )
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

@@ -20,6 +20,9 @@ import { getEntityLinks, getMyProjects, getMyTokenDesigns } from "@/lib/ideation
 import { launchedSets } from "@/lib/launch-status";
 import { getMyLaunches } from "@/lib/my-launches";
 import { STUDIO_COPY } from "@/content/ideation";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
+import { ManageTeamButton } from "@/components/studio/PlusCheckout";
+import { getPlan } from "@/lib/plan";
 
 // Intentionally unlinked from navigation while the ideation tracks are
 // developed incrementally — URL-only, like /launch.
@@ -88,6 +91,7 @@ export default async function StudioPage({
     if (target) redirect(target);
   }
 
+  const plan = await getPlan();
   const [projects, designs, launches, links] = await Promise.all([
     getMyProjects(user.owner),
     getMyTokenDesigns(user.owner),
@@ -115,9 +119,18 @@ export default async function StudioPage({
         {header}
         <div className="flex flex-col items-end gap-3">
           <CommandMenuHint />
-          <Button asChild variant="secondary">
-            <Link href="/studiopro">{STUDIO_COPY.pro.join}</Link>
-          </Button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {plan.plan === "studio_plus" ? (
+              <ManageTeamButton label={STUDIO_PLUS_COPY.manage} size="sm" variant="outline" />
+            ) : (
+              <Button asChild size="sm">
+                <Link href={STUDIO_PLUS_COPY.path}>{STUDIO_PLUS_COPY.upgrade}</Link>
+              </Button>
+            )}
+            <Button asChild size="sm" variant="secondary">
+              <Link href="/studiopro">{STUDIO_COPY.pro.join}</Link>
+            </Button>
+          </div>
         </div>
       </div>
 

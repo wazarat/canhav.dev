@@ -64,7 +64,7 @@ Exact retention and deletion controls will be documented when account management
 
 ## Cost
 
-Accounts and the studio surfaces described here are **free**. There is no paid tier documented for these features.
+Accounts and the studio surfaces described here are **free**. [Studio+](studio-plus.md) is the paid tier for teams; it adds features on top of them and never takes any of them away.
 
 ## Related
 

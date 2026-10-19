@@ -17,7 +17,7 @@ Everything in these docs that describes product surfaces is **testnet only** unl
 - Not affiliated with Robinhood Markets, Inc. Robinhood Chain does not distribute to Robinhood brokerage customers. See [Welcome](welcome-to-canhav.md).
 - Not a mainnet product yet.
 - Not financial, legal, or investment advice.
-- Not a paid tier product today: surfaces described here are free.
+- Not pay to launch: every surface described here is free. [Studio+](../accounts/studio-plus.md) is an optional paid tier for teams, on top.
 - Not a guarantee of token performance, liquidity, or user acquisition.
 - Not custodial: CanHav does not hold your keys.
 - Not an Agent / ERC-8004 product yet (that track is not started).

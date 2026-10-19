@@ -163,7 +163,7 @@ The result is that a team's plan, its research and its live market sit in the sa
 | Protocol fee in pools a creator opens by hand | Optional, 20 bps by default, hard capped at 50 bps, split 70% to the project and 30% to the platform in the contract |
 | Platform cut of allocation sales | None |
 
-Platform fees go to a FeeSplitter contract, never to a personal wallet. A pool's protocol fee is fixed when the pool is created, so a later change to the default never rewrites an existing pool. There is no creator trading fee and no paid tier. Everything described in this paper is free.
+Platform fees go to a FeeSplitter contract, never to a personal wallet. A pool's protocol fee is fixed when the pool is created, so a later change to the default never rewrites an existing pool. There is no creator trading fee. Everything described in this paper is free; Studio+, an optional subscription for teams ($39.99 a month, or $29.99 a month billed yearly, three seats included), adds planning, brand and operations features to the Studio and never gates a launch.
 
 ---
 

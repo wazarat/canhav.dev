@@ -1,16 +1,18 @@
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 import { isAuthConfigured } from "@/lib/auth";
 import {
   FREE_PLAN,
+  PLAN_SLUG,
   type PlanCheck,
   type PlanInfo,
   type PlusFeature,
   featureFromHas,
   planFromHas,
 } from "@/lib/plan-shared";
+import { getSubscriptions, subscriptionGrants } from "@/lib/subscriptions-db";
 
 export type { PlanInfo, PlusFeature, StudioPlan } from "@/lib/plan-shared";
 export { PLAN_SLUG, PLUS_FEATURES } from "@/lib/plan-shared";
@@ -70,4 +72,48 @@ export async function requirePlus(feature?: PlusFeature): Promise<PlanInfo> {
   if (info.plan !== "studio_plus") throw new PlusRequired(feature);
   if (feature && !(await hasPlusFeature(feature))) throw new PlusRequired(feature);
   return info;
+}
+
+/**
+ * The plan behind a set of organizations without a session token (M108):
+ * what an MCP call or a project key has. The subscription mirror answers
+ * first; an organization with no row yet (a checkout the webhook has not
+ * reported, or a webhook not configured) is asked of the Backend API once a
+ * minute. Returns the first organization that grants the plan.
+ */
+const orgPlanCache = new Map<string, { at: number; plus: boolean }>();
+const ORG_PLAN_TTL_MS = 60_000;
+
+export async function planForOrgs(orgIds: string[]): Promise<PlanInfo> {
+  if (devForced()) return FORCED;
+  if (orgIds.length === 0) return FREE_PLAN;
+  const rows = await getSubscriptions(orgIds);
+  for (const orgId of orgIds) {
+    const row = rows.find((r) => r.org_id === orgId);
+    if (row) {
+      if (subscriptionGrants(row, PLAN_SLUG)) return { plan: "studio_plus", orgId, forced: false };
+      continue;
+    }
+    if (await orgHasPlanFromClerk(orgId)) return { plan: "studio_plus", orgId, forced: false };
+  }
+  return FREE_PLAN;
+}
+
+async function orgHasPlanFromClerk(orgId: string): Promise<boolean> {
+  if (!isAuthConfigured()) return false;
+  const hit = orgPlanCache.get(orgId);
+  if (hit && Date.now() - hit.at < ORG_PLAN_TTL_MS) return hit.plus;
+  let plus = false;
+  try {
+    const client = await clerkClient();
+    const sub = await client.billing.getOrganizationBillingSubscription(orgId);
+    plus = sub.subscriptionItems.some(
+      (item) => item.plan?.slug === PLAN_SLUG && (item.status === "active" || item.status === "past_due"),
+    );
+  } catch (err) {
+    console.warn("[plan] subscription lookup failed", err);
+    plus = hit?.plus ?? false;
+  }
+  orgPlanCache.set(orgId, { at: Date.now(), plus });
+  return plus;
 }

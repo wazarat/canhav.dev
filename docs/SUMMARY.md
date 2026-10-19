@@ -61,6 +61,7 @@
 ## Accounts
 
 * [Clerk accounts](accounts/clerk-accounts.md)
+* [Studio+](accounts/studio-plus.md)
 
 ## Reference
 

@@ -1,6 +1,6 @@
 # Markdown export and MCP
 
-**Available now.** Both are free. Exports, the `get_my_` tools and project servers need a CanHav account; public data over the shared MCP server needs none. See [Accounts](../accounts/clerk-accounts.md).
+**Available now.** Both are free; a few project tools belong to [Studio+](../accounts/studio-plus.md) and say so. Exports, the `get_my_` tools and project servers need a CanHav account; public data over the shared MCP server needs none. See [Accounts](../accounts/clerk-accounts.md).
 
 In short: there are two kinds of MCP server. The **shared server** reads every launch and every published design. A **project server** is bound to one studio project, reads that project and its token, and can write to its draft when the owner allows it. The studio hands you a ready prompt for each, so you rarely type any of this by hand. See [Connecting](#connecting).
 

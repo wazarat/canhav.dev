@@ -27,6 +27,45 @@ export const STUDIO_PLUS_COPY = {
     /** After checkout, before the session token has caught up. */
     refresh: "Just upgraded? Reload once and the page catches up.",
   },
+  /** The pricing page (M108). */
+  page: {
+    kicker: "Studio+",
+    title: "Your team, the whole record, and the work the record implies",
+    lead: "Studio+ adds the business model, the ideal customers, the competitor map, the brand kit and the operations around a launch to the studio, for a team of three and more.",
+    firstWave: "Your features",
+    moreWave: "More features",
+    seats: "Seats",
+    seatsLead: "Three seats come with the plan. Add people from the Team page as you need them.",
+    /** When the session is signed out. */
+    signIn: "Sign in to upgrade. The plan belongs to a team, so you will make one first.",
+    /** When the session has no team active. */
+    noTeam: "Studio+ belongs to a team. Make one here, or pick an existing team from the account menu, then come back to this page.",
+    /** When the session's team already pays. */
+    onPlan: "This team is on Studio+.",
+    pickYearly: "Yearly billing saves 25 percent.",
+    checkoutNote: "Checkout opens in this page. Card payments in USD through Clerk and Stripe. Cancel any time from the Team page; the plan runs to the end of the paid period.",
+    manage: "Manage team",
+    toStudio: "Back to the studio",
+  },
+  /** After checkout (M108). */
+  welcome: {
+    kicker: "Studio+",
+    title: "Welcome to Studio+",
+    lead: "The plan is on your team. Your personal projects stay yours until you move them; a moved project, its token design and its launches open for every member.",
+    chip: "Studio+ is active",
+    moveTitle: "Move projects to the team",
+    moveNone: "No personal projects to move.",
+    moveSelected: (n: number) => (n === 1 ? "Move 1 project" : `Move ${n} projects`),
+    moving: "Moving",
+    moved: (n: number) => (n === 1 ? "1 project moved." : `${n} projects moved.`),
+    moveFailed: "Some projects could not be moved. Reload and try again.",
+    invite: "Invite your team",
+    inviteLead: "Add people from the Team page. Three seats are included; more are added as you invite.",
+    team: "Open the Team page",
+    studio: "Go to the studio",
+    /** The token may lag the webhook by a moment. */
+    refresh: "If the studio still reads Studio, reload once.",
+  },
   pricing: {
     monthly: 39.99,
     yearlyMonthly: 29.99,
@@ -100,3 +139,9 @@ export const STUDIO_PLUS_COPY = {
     },
   } satisfies Record<PlusFeature, { title: string; teaser: string }>,
 } as const;
+
+/**
+ * The features that have shipped. Everything else on the pricing page
+ * carries the Soon badge. Grows with the run.
+ */
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = [];
