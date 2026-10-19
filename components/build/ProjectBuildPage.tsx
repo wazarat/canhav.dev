@@ -8,6 +8,8 @@ import { BuildTab as BuildTabView } from "@/components/build/BuildTab";
 import { BuildTabs } from "@/components/build/BuildTabs";
 import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
+import { BrandTab } from "@/components/build/BrandTab";
+import { ModelTab } from "@/components/build/ModelTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
 import { TesterKitSection } from "@/components/build/TesterKitSection";
 import { HistoryDialog } from "@/components/build/HistoryDialog";
@@ -216,8 +218,10 @@ export function ProjectBuildPage({
       />
     ),
     decisions: (
-      <DecisionsTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
+      <DecisionsTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
+    model: <ModelTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
+    brand: <BrandTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
     deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} checks={checks} />,
     publish: (
       <PublishTab

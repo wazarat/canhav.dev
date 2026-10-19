@@ -1,13 +1,8 @@
 "use client";
 
-import { BrandEditor } from "@/components/build/BrandEditor";
-import { CanvasEditor } from "@/components/build/CanvasEditor";
-import { CompetitorsSection } from "@/components/build/CompetitorsSection";
-import { IcpEditor } from "@/components/build/IcpEditor";
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
-import { PlusGate } from "@/components/studio/PlusGate";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
@@ -47,13 +42,12 @@ function Heading({ children }: { children: React.ReactNode }) {
  * The Decisions tab (M96): the choices with a reason behind them, each
  * editable in place. What is being built, the chain, the templates decided
  * on the Build tab, the architecture facts, the worst case and the five
- * security declarations, and the team's own files, plus the Business
- * Model Canvas (M113, Studio+). Every section carries an id the sidebar
- * scrolls to.
+ * security declarations, and the team's own files. The Studio+ market
+ * and brand work sits on the Business model and Brand tabs. Every
+ * section carries an id the sidebar scrolls to.
  */
 export function DecisionsTab({
   id,
-  createdAt,
   agentMode,
   doc,
   patch,
@@ -62,8 +56,6 @@ export function DecisionsTab({
   earlier,
 }: {
   id: string;
-  /** ISO time the project was started, for the project's age on the competitor map (M115). */
-  createdAt: string;
   /** The project's agent write mode, which decides whether Draft asks the agent first (M117). */
   agentMode: AgentWriteMode;
   doc: ProjectDoc;
@@ -108,33 +100,6 @@ export function DecisionsTab({
           ) : audience === "b2c" ? (
             <PersonaTableEditor rows={personaRows("b2c")} personas={doc.consumerPersonas} onChange={(consumerPersonas) => patch({ consumerPersonas })} empty={emptyConsumerPersona} note={PERSONA_COPY.note} />
           ) : null}
-          <div id="decisions-icp" className="space-y-2 border-t border-ink-700/40 pt-5">
-            <Heading>{D.icp}</Heading>
-            <PlusGate feature="icp">
-              <IcpEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} onChange={(icp) => patch({ icp })} />
-            </PlusGate>
-          </div>
-        </CardSection>
-
-        <CardSection id="decisions-canvas" className="space-y-4">
-          <Heading>{D.canvas}</Heading>
-          <PlusGate feature="bmc">
-            <CanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} />
-          </PlusGate>
-        </CardSection>
-
-        <CardSection id="decisions-competitors" className="space-y-4">
-          <Heading>{D.competitors}</Heading>
-          <PlusGate feature="competitors">
-            <CompetitorsSection projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
-          </PlusGate>
-        </CardSection>
-
-        <CardSection id="decisions-brand" className="space-y-4">
-          <Heading>{D.brand}</Heading>
-          <PlusGate feature="brand">
-            <BrandEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} brand={doc.brand} hasLogo={Boolean(doc.logo)} onChange={(brand) => patch({ brand })} />
-          </PlusGate>
         </CardSection>
 
         <CardSection id="decisions-chain" className="space-y-4">

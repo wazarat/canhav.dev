@@ -217,7 +217,7 @@ export const STUDIO_PLUS_COPY = {
   features: {
     bmc: {
       title: "Business Model Canvas",
-      teaser: "A nine block canvas inside Decisions, drafted from the pitch, the personas and who pays, then edited by you.",
+      teaser: "A nine block canvas on the Business model tab, drafted from the pitch, the personas and who pays, then edited by you.",
     },
     icp: {
       title: "ICP",

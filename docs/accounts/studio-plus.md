@@ -24,7 +24,7 @@ Seats are counted by Clerk. Three members and pending invitations fit in the pla
 
 The features ship one by one and are listed on the pricing page, with Soon on the ones still to come. Each one is gated by the plan in the studio, in the API and on the project's MCP server; a free account sees a short description and the upgrade link in its place.
 
-- Business Model Canvas, ICP, Competitor landscape and Brand identity in Decisions
+- Business Model Canvas, ICP and Competitor landscape on the Business model tab, Brand identity on the Brand tab
 - Private projects (unlisted publish with a share link), version history and project keys
 - GitHub sync, automated checks, monitoring and alerts (a worker watches your contracts and sends to email, Telegram or Discord, see [Alerts](../token-launch/alerts.md)), token analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
 - Investor and grant pack (a one pager, a deck and grant answers for three programme styles, drafted on Claude Sonnet 5.5, exported as markdown and printed to PDF), weekly update (a post for the public page drafted from the week's activity, published from the Overview), tester kit (invite links with steps and per step feedback, no accounts, no keys held), custom domain (a host you own serving the public page, DNS records shown in the studio)

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, History, LayoutDashboard, Map, Scale, Server } from "lucide-react";
+import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, History, LayoutDashboard, Map, Palette, PieChart, Scale, Server } from "lucide-react";
 
 import { RESOURCE_VIEWS, type ResourceView } from "@/components/build/ResourcesDrawer";
 
@@ -15,6 +15,8 @@ const ICONS: Record<BuildTab, React.ComponentType<{ className?: string }>> = {
   overview: LayoutDashboard,
   build: Hammer,
   decisions: Scale,
+  model: PieChart,
+  brand: Palette,
   deployments: Server,
   publish: Globe,
 };
@@ -29,9 +31,6 @@ const RESOURCE_ICONS: Record<ResourceView, React.ComponentType<{ className?: str
 const DECISION_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: "building", label: BUILD_COPY.decisions.building },
   { id: "customers", label: BUILD_COPY.decisions.customers },
-  { id: "canvas", label: BUILD_COPY.decisions.canvas },
-  { id: "competitors", label: BUILD_COPY.decisions.competitors },
-  { id: "brand", label: BUILD_COPY.decisions.brand },
   { id: "chain", label: BUILD_COPY.decisions.chain },
   { id: "templates", label: BUILD_COPY.decisions.templates },
   { id: "contracts", label: BUILD_COPY.decisions.contracts },

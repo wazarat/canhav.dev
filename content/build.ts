@@ -6,7 +6,7 @@ import type { ProblemTab } from "@/lib/build-readiness";
  * build milestones, the agent status line and the drawer. Code may say
  * BUILD; product copy says Studio. No em dashes, no colons before a space.
  */
-export const BUILD_TABS = ["overview", "build", "decisions", "deployments", "publish"] as const;
+export const BUILD_TABS = ["overview", "build", "decisions", "model", "brand", "deployments", "publish"] as const;
 
 export type BuildTab = (typeof BUILD_TABS)[number];
 
@@ -16,9 +16,23 @@ export const BUILD_COPY = {
     overview: "Overview",
     build: "Build",
     decisions: "Decisions",
+    model: "Business model",
+    brand: "Brand",
     deployments: "Deployments",
     publish: "Publish",
   } satisfies Record<BuildTab, string>,
+  /** The Business model tab (Studio+, moved out of Decisions 2026-10-19). */
+  model: {
+    canvas: "Business Model Canvas",
+    icp: "Ideal customers",
+    icpLead: "Built on the persona table under Decisions, Customers.",
+    competitors: "Competitors",
+  },
+  /** The Brand tab (Studio+). */
+  brandTab: {
+    title: "Brand kit",
+    lead: "Palette, fonts, tone and banners. The logo lives on Publish with the public record.",
+  },
   /** The one line under the header that says where the agent stands. */
   agent: {
     connect: "Connect agent",
