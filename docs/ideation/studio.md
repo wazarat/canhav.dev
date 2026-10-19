@@ -47,7 +47,7 @@ A launch appears here when it was made while you were signed in. A launch that r
 
 ## The project page
 
-A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's five sections, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
+A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's five sections, the navigation's logo and breadcrumb line up above the project name in it, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
 
 | Section | Holds |
 |---------|-------|
@@ -68,10 +68,10 @@ Across from the project's name, on every section:
 | Agent line | Connect agent, Agent connected, Agent working or Waiting on you, from the connected agent's last report |
 | Link a token (Token launch once one is linked) | Jumps to the Token launch panel on Overview |
 | Agent prompt | Opens the guide for connecting an agent to this project |
-| Draft or Published | The record's state, with the public link once published |
-| Publish, Republish, Unpublish | Publishes a snapshot to `/p/<slug>`. Disabled while the readiness list has open items, with the first one as the tooltip |
+| Published | The public link, once published. An unpublished record carries no chip; it is a draft |
+| Publish, Republish, Unpublish | Publishes a snapshot to `/p/<slug>`. While the record still has open fields, Publish opens a pop up naming each one with a button into the section that holds it |
 
-Edits save on their own a moment after you stop typing. If an agent writes to the draft while the page is open and nothing here is unsaved, the page takes the new draft; with unsaved typing it pauses saving and asks for a reload instead.
+Edits save on their own a moment after you stop typing, and the save state (Saving, Saved, or not saved with a retry) shows above the section you are editing. If an agent writes to the draft while the page is open and nothing here is unsaved, the page takes the new draft; with unsaved typing it pauses saving and asks for a reload instead.
 
 ### Overview
 

@@ -9,7 +9,9 @@ import { BuildTabs } from "@/components/build/BuildTabs";
 import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
+import { PublishBlockedDialog } from "@/components/build/PublishBlockedDialog";
 import { PublishTab } from "@/components/build/PublishTab";
+import { AutosaveIndicator } from "@/components/ideation/AutosaveIndicator";
 import { type ResourceView, ResourcesDrawer } from "@/components/build/ResourcesDrawer";
 import { useDeployerBalances } from "@/components/build/useDeployerBalances";
 import { useAgentChanges } from "@/components/build/useAgentChanges";
@@ -79,6 +81,8 @@ export function ProjectBuildPage({
   const [activity, setActivity] = useState<(AgentActivity & { seq: number }) | null>(null);
   /** The resources drawer's section, null while closed. */
   const [resourceView, setResourceView] = useState<ResourceView | null>(null);
+  /** Publish was pressed with open fields. */
+  const [blockedOpen, setBlockedOpen] = useState(false);
   const dismissActivity = useCallback(() => setActivity(null), []);
 
   /**
@@ -221,11 +225,10 @@ export function ProjectBuildPage({
         agentLine={agentLine}
         initialStatus={initialStatus}
         initialSlug={initialSlug}
-        saveState={saveState}
         publishStatus={publishStatus}
         canPublish={problems.overall === null}
-        publishProblem={problems.overall}
         onPublish={publish}
+        onBlocked={() => setBlockedOpen(true)}
         onUnpublish={unpublish}
         headerActions={headerActions}
       />
@@ -237,7 +240,12 @@ export function ProjectBuildPage({
           <StaleDraftNotice />
         </div>
       ) : null}
-      <div className="mt-8">{body[tab]}</div>
+      {/* The save state sits with the section being edited, not in the header (2026-10-19). */}
+      <div className="mt-6 flex h-7 max-w-3xl items-center justify-end">
+        <AutosaveIndicator state={saveState} />
+      </div>
+      <div className="mt-1">{body[tab]}</div>
+      <PublishBlockedDialog open={blockedOpen} onClose={() => setBlockedOpen(false)} problems={problems} onGoTab={setTab} />
       {activity ? <AgentActivityToast key={activity.seq} activity={activity} onDismiss={dismissActivity} /> : null}
       </div>
       <ResourcesDrawer

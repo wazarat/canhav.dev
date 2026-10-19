@@ -219,6 +219,12 @@ export const BUILD_COPY = {
     notReady: "Not ready to publish yet.",
     openIn: (tab: string) => `Open ${tab}`,
     handoff: "Hand off to your agent",
+    /** Shown only when Publish is pressed with open fields (2026-10-19). */
+    blocked: {
+      title: "Not ready to publish yet",
+      intro: "A few fields of the public record are still open. Each line opens the section that holds it.",
+      close: "Close",
+    },
   },
   /** The dot on a tab and the readiness row name the tab that holds the open fields. */
   tabProblems: {

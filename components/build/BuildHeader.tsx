@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
-import { AutosaveIndicator } from "@/components/ideation/AutosaveIndicator";
 import type { PublishStatus } from "@/components/ideation/usePublish";
-import type { SaveState } from "@/components/ideation/useAutosave";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
@@ -13,9 +11,10 @@ import { setStudioEntity } from "@/lib/studio-entity";
 
 /**
  * The project page header (M94): kicker, logo and name, the agent status
- * as plain text, autosave, the Draft or Published chip and the publish
- * buttons. The same chrome EditorShell gives the token editor, without the
- * step pills, which the tabs replace.
+ * as plain text, the Published chip once published, and the publish
+ * buttons. Since 2026-10-19 there is no Draft chip (an unpublished record
+ * is a draft), no autosave chip (the section being edited shows it) and no
+ * blocked line (Publish opens a pop up naming what is open instead).
  */
 export function BuildHeader({
   id,
@@ -24,11 +23,10 @@ export function BuildHeader({
   agentLine,
   initialStatus,
   initialSlug,
-  saveState,
   publishStatus,
   canPublish,
-  publishProblem,
   onPublish,
+  onBlocked,
   onUnpublish,
   headerActions,
 }: {
@@ -39,11 +37,11 @@ export function BuildHeader({
   agentLine: string;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
-  saveState: SaveState;
   publishStatus: PublishStatus;
   canPublish: boolean;
-  publishProblem: string | null;
   onPublish: () => void;
+  /** Publish was pressed while fields are open. */
+  onBlocked: () => void;
   onUnpublish: () => void;
   headerActions?: React.ReactNode;
 }) {
@@ -78,7 +76,6 @@ export function BuildHeader({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {headerActions}
-          <AutosaveIndicator state={saveState} />
           {isPublished && slug ? (
             <StatusChip tone="success">
               Published ·{" "}
@@ -86,15 +83,8 @@ export function BuildHeader({
                 /p/{slug}
               </Link>
             </StatusChip>
-          ) : (
-            <StatusChip tone="neutral">Draft</StatusChip>
-          )}
-          <Button
-            size="sm"
-            onClick={onPublish}
-            disabled={!canPublish || publishStatus.kind === "working"}
-            title={publishProblem ?? undefined}
-          >
+          ) : null}
+          <Button size="sm" onClick={canPublish ? onPublish : onBlocked} disabled={publishStatus.kind === "working"}>
             {publishStatus.kind === "working" ? "Working…" : isPublished ? "Republish" : "Publish"}
           </Button>
           {isPublished && (
@@ -110,9 +100,6 @@ export function BuildHeader({
             {publishStatus.message}
           </StatusChip>
         </div>
-      )}
-      {!canPublish && publishProblem && (
-        <p className="mt-4 text-xs text-ink-500">Publishing is blocked. {publishProblem}</p>
       )}
     </>
   );
