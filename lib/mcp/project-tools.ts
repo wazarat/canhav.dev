@@ -7,7 +7,7 @@ import { type Owner, ownerOf } from "@/lib/owner";
 import { getRevision, listRevisions } from "@/lib/revisions-db";
 import { landscapeFor } from "@/lib/competitors/landscape";
 import { latestCheckRuns } from "@/lib/checks/db";
-import { DRAFT_KIND_FIELDS, draftPromptName, openRequests } from "@/lib/draft/requests";
+import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests, withDrafted, withoutRequest } from "@/lib/draft/requests";
 import { DRAFT_AGENT_PROMPTS } from "@/lib/agent-prompts-draft";
 import type { DraftKind } from "@/lib/draft/limits";
 import { ageMonths } from "@/lib/competitors/record";
@@ -37,6 +37,8 @@ import {
 } from "@/lib/mcp/design-views";
 import { type IndexedCurve, getCurve, getTokenAnalytics } from "@/lib/indexer";
 import { listAlerts } from "@/lib/alerts/db";
+import { UPDATE_LIMITS, updateInputSchema } from "@/lib/updates";
+import { listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
 import { type LaunchRow, getLaunchesByProject } from "@/lib/launches-db";
 import {
   type View,
@@ -67,7 +69,7 @@ import {
   projectPatchSchema,
   tokenDesignPatchSchema,
 } from "@/lib/agent-writes";
-import { agentStateOf, listAgentChanges, listPendingChanges, recordAgentChange, withdrawAgentChange } from "@/lib/agent-writes-db";
+import { agentStateOf, listAgentChanges, listPendingChanges, recordAgentChange, withdrawAgentChange, writeProjectDraftAsAgent } from "@/lib/agent-writes-db";
 import { linkLaunch } from "@/lib/launch-project";
 import { storeImageFromBase64, storeImageFromUrl } from "@/lib/images";
 import { milestoneOf, milestoneOfStep } from "@/lib/build-milestones";
@@ -401,7 +403,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           body: r.body ?? null,
           requestedAt: r.requestedAt,
           prompt: draftPromptName(r.kind),
-          howTo: `Write the ${DRAFT_KIND_FIELDS[r.kind] ?? r.kind} field through update_project; that clears this request.`,
+          howTo: draftWriteHint(r.kind),
         })),
         ...stateOf(loaded.value),
         deployer,
@@ -1334,6 +1336,55 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       return jsonResult({ address, analytics });
     },
     { ...scope, plus: "analytics" },
+  );
+
+  registerMeteredTool(
+    server,
+    "set_weekly_update",
+    {
+      title: "Write this week's update",
+      description: `Studio+. Write the team's weekly update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. One row per week (weekOf, the Monday as YYYY-MM-DD, defaults to this week); writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open weekly draft request.`,
+      inputSchema: updateInputSchema.extend({ publish: z.boolean().optional(), note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      const mode = agentStateOf(project).mode;
+      if (mode === "off") return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      const row = await upsertUpdate({ projectId: project.id, weekOf: args.weekOf, body: args.body, highlights: args.highlights, author: "agent", source: args.note ? { note: args.note } : null });
+      if (!row) return errorResult("Could not save the update.");
+      const published = args.publish && mode === "direct" ? await publishUpdate(project.id, row.id) : null;
+      // The owner's open request for it, if any, is answered (M117).
+      if (project.draft_doc.draftRequests?.some((r) => r.kind === "weekly")) {
+        const requests = withoutRequest(project.draft_doc, "weekly");
+        const { draftRequests: _old, ...rest } = project.draft_doc;
+        await writeProjectDraftAsAgent(project.id, ownerOf(project), { ...rest, ...(requests ? { draftRequests: requests } : {}), drafted: withDrafted(project.draft_doc, "weekly", "agent") }, project.agent_rev ?? 0);
+      }
+      return jsonResult({
+        id: row.id,
+        weekOf: row.weekOf,
+        status: published?.status ?? row.status,
+        message: published ? "Published to the public page." : args.publish ? "Saved as a draft; publishing needs direct mode, so the owner publishes it from the Overview." : "Saved as a draft. The owner publishes it from the Overview.",
+      });
+    },
+    { ...scope, plus: "weekly_update" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_weekly_updates",
+    {
+      title: "This project's weekly updates",
+      description: "Studio+. The weekly updates, newest first, each with the week, the body, the highlights, who wrote it and whether it is published. Write this week's with set_weekly_update.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      return jsonResult({ updates: await listUpdates(loaded.value.project.id) });
+    },
+    { ...scope, plus: "weekly_update" },
   );
 
   registerMeteredTool(

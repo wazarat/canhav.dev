@@ -29,6 +29,8 @@ import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
+import { listUpdates } from "@/lib/updates-db";
+import { weekLabel } from "@/lib/updates";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot, projectVisibleTo } from "@/lib/ideation-db";
 import { getSessionUser } from "@/lib/auth";
 import { BUILD_COPY } from "@/content/build";
@@ -134,6 +136,8 @@ export default async function ProjectPublicPage({
     // Tokens launched from this project through the studio (M19d).
     getLaunchesByProject(row.id),
   ]);
+  // The team's published weekly updates (M124), live rows beside the snapshot.
+  const updates = await listUpdates(row.id, true);
   const launchedTokens = await Promise.all(
     (projectLaunches ?? []).slice(0, 5).map(async (l) => ({
       address: l.token_address,
@@ -526,6 +530,24 @@ export default async function ProjectPublicPage({
                 ) : null}
               </div>
             ) : null}
+          </Section>
+        )}
+
+        {updates.length > 0 && (
+          <Section title={BUILD_COPY.weekly.publicTitle}>
+            <ul className="space-y-4">
+              {updates.map((u) => (
+                <li key={u.id} className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-wide text-ink-500">{weekLabel(u.weekOf)}</p>
+                  {u.body.split(/\n{2,}/).map((para, i) => (
+                    <p key={i} className="text-sm leading-relaxed text-ink-200">
+                      {para}
+                    </p>
+                  ))}
+                  {u.highlights.length ? <p className="text-xs text-ink-400">{u.highlights.join(" · ")}</p> : null}
+                </li>
+              ))}
+            </ul>
           </Section>
         )}
 

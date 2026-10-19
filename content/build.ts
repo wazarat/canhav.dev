@@ -223,6 +223,28 @@ export const BUILD_COPY = {
     explorer: "Explorer",
     tokenPage: "Token page",
   },
+  /** The weekly update on the Overview (M124, Studio+). */
+  weekly: {
+    title: "This week",
+    intro: "A short post for your public page, drafted from the week's activity by your agent or by CanHav, edited here, published when you say so. Not the wallet signed milestone update.",
+    none: "nothing written yet",
+    draft: (by: string) => `draft, ${by}`,
+    byAgent: "written by your agent",
+    byCanhav: "drafted by CanHav",
+    byYou: "written by you",
+    published: (date: string) => `published ${date}`,
+    draftButton: "Draft this week",
+    bodyLabel: "Update",
+    bodyPlaceholder: "What landed, what is next, what is slow.",
+    highlightsLabel: "Highlights",
+    highlightsHint: "One per line, up to five.",
+    highlightsPlaceholder: "Curve launched on testnet",
+    save: "Save draft",
+    publish: "Publish to the page",
+    loadFailed: "Could not read the updates. Reload to try again.",
+    failed: "Could not save the update. Try again.",
+    publicTitle: "Updates",
+  },
   /** Monitoring and alerts on Deployments (M123, Studio+). */
   alerts: {
     title: "Alerts",

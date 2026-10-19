@@ -492,6 +492,26 @@ await sql`
     on launchpad.check_runs (project_id, tool, created_at desc)
 `;
 
+// Weekly updates (M124, Studio+). One row per project and week, written
+// by the team or its agent, published to the public page. Distinct from
+// the wallet signed milestone updates anchored on chain.
+await sql`
+  create table if not exists launchpad.project_updates (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    week_of date not null,
+    body text not null check (char_length(body) <= 4000),
+    highlights text[] not null default '{}',
+    status text not null check (status in ('draft','published')),
+    author text not null,
+    source jsonb,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    published_at timestamptz,
+    unique (project_id, week_of)
+  )
+`;
+
 // Monitoring and alerts (M123, Studio+). Rules name an address on the
 // project's chain and the kinds to watch; channels hold the encrypted
 // target (ALERTS_SECRET); events are one row per rule and log, delivered

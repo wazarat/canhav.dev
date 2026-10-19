@@ -20,6 +20,10 @@ Updates do not rewrite `journeyHash` from launch. They add a verifiable trail of
 
 Token detail pages load update hashes from the indexer and resolve stored documents where available. If a document is missing off-chain, the hash on-chain still proves that a specific payload was committed.
 
+## Not the weekly update
+
+A project's **weekly update** (Studio+, written on the Overview and shown on the project page) is a team post stored by CanHav and published when the team says so. A journey update is signed by the launch wallet and anchored on chain; the two are kept apart on purpose.
+
 ## Related
 
 - [Journey and credibility](journey-and-credibility.md)

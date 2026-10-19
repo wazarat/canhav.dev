@@ -9,3 +9,4 @@ import "@/lib/draft/kinds-canvas";
 import "@/lib/draft/kinds-icp";
 import "@/lib/draft/kinds-competitors";
 import "@/lib/draft/kinds-brand";
+import "@/lib/draft/kinds-weekly";

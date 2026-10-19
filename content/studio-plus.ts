@@ -173,6 +173,7 @@ export const STUDIO_PLUS_COPY = {
     askAgent: "Or ask your agent",
     askAgentLabel: "Paste into your IDE",
     askAgentHint: "Your agent writes the same fields through update_project, outside the monthly allowance.",
+    askAgentHintTool: (tool: string) => `Your agent writes it with ${tool}, outside the monthly allowance.`,
     /** What is sent, for the docs and the first use note. */
     sends: "Drafting sends the project record, the kit summary and the fields named for the draft to Anthropic's API from CanHav's side. Nothing from your repository and no keys.",
   },
@@ -258,4 +259,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring", "weekly_update"];

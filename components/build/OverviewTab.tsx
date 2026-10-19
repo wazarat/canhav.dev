@@ -6,6 +6,7 @@ import { ListChecks } from "lucide-react";
 import { AgentFeed } from "@/components/build/AgentFeed";
 import { ProgressDialog } from "@/components/build/ProgressDialog";
 import { SummaryDialog } from "@/components/build/SummaryDialog";
+import { WeeklyUpdateCard } from "@/components/build/WeeklyUpdateCard";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
@@ -83,6 +84,7 @@ export function OverviewTab({
   paused,
   onPatchKit,
   onOpenResources,
+  patch,
   deployer,
   funding,
   onGoDeployments,
@@ -98,6 +100,8 @@ export function OverviewTab({
   onPatchKit: (partial: Partial<ProjectKit>) => void;
   /** Opens the resources drawer on the pack. */
   onOpenResources: () => void;
+  /** Writes the draft, for the weekly update's draft request (M124). */
+  patch: (p: Partial<ProjectDoc>) => void;
   /** The deployer key and its balances (M103). */
   deployer: DeployerView | null;
   funding: DeployerFunding;
@@ -146,6 +150,8 @@ export function OverviewTab({
           </CardSection>
         ) : null}
       </Card>
+
+      <WeeklyUpdateCard projectId={id} name={doc.name} doc={doc} patch={patch} agentMode={agent.state?.mode ?? "propose"} />
 
       <Card>
         <CardSection>

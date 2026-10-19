@@ -35,6 +35,12 @@ export const DRAFT_KIND_FIELDS: Record<DraftKind, string | null> = {
   weekly: null,
 };
 
+/** How the agent answers a request: the field on update_project, or the tool for kinds that write elsewhere. */
+export function draftWriteHint(kind: DraftKind): string {
+  const field = DRAFT_KIND_FIELDS[kind];
+  return field ? `Write the ${field} field through update_project; that clears this request.` : "Write it with set_weekly_update; that clears this request.";
+}
+
 /** The MCP prompt a kind maps to, listed as a slash command by Claude Code. */
 export function draftPromptName(kind: DraftKind): string {
   const base = kind === "canvas_block" ? "canvas" : kind === "onepager" || kind === "deck" || kind === "grants" ? "pack" : kind;

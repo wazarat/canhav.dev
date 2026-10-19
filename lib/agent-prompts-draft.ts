@@ -46,6 +46,17 @@ export function draftCompetitorsPrompt(name: string, projectId: string): string 
   );
 }
 
+/** The weekly update writes a row, not a field (M124), so its prompt ends on set_weekly_update. */
+export function draftWeeklyPrompt(name: string, projectId: string): string {
+  const alias = mcpAlias(name, projectId);
+  return [
+    `Use the ${alias} MCP server for my CanHav project.`,
+    `1. Call get_project_status and get_agent_changes, and read this repository's commits from the last seven days.`,
+    `2. Write this week's update for the public page, two or three short paragraphs in the first person plural, what landed, what is next, one honest line on what is blocked, and up to five one line highlights. Nothing the activity does not support.`,
+    `3. Call set_weekly_update with body and highlights, then tell me what you wrote. I publish it from the Overview.`,
+  ].join("\n\n");
+}
+
 /** The prompt per kind, for the MCP prompts (M117) and the paste blocks. Grows with the run. */
 export function draftBrandPrompt(name: string, projectId: string): string {
   return draftFieldPrompt(
@@ -63,4 +74,5 @@ export const DRAFT_AGENT_PROMPTS: Partial<Record<DraftKind, (name: string, proje
   icp: draftIcpPrompt,
   competitors: draftCompetitorsPrompt,
   brand: draftBrandPrompt,
+  weekly: draftWeeklyPrompt,
 };

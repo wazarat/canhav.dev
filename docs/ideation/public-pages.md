@@ -46,6 +46,10 @@ A project can be published **private** (Publish section, Who can see it). A priv
 
 A Credit project's research kit (its product shape, starting point and resource pack ticks) is part of the draft, so it is inside the snapshot too. Changing a tick after publishing means the next Republish produces a new version.
 
+## Updates
+
+A Studio+ team can publish a short weekly update to its project page from the Overview (see [Studio](studio.md)). The page shows the published weeks newest first, each with its body and highlights, beside the snapshot; a draft week stays private until it is published. These are the team's own words, not the wallet signed milestone updates a token's journey anchors on chain (see [Journey updates](../token-launch/journey-updates.md)).
+
 ## Deployed tokens
 
 A published token design may attach a deployed contract address after a design deploy. That attachment is optional. A design that is never deployed remains a legitimate public document.

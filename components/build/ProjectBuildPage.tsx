@@ -193,6 +193,7 @@ export function ProjectBuildPage({
         paused={stale}
         onPatchKit={patchKit}
         onOpenResources={() => setResourceView("pack")}
+        patch={patch}
         deployer={deployer}
         funding={funding}
         onGoDeployments={() => setTab("deployments")}

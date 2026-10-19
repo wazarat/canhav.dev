@@ -141,7 +141,7 @@ export function DraftButton<T>({
       {!canQueue && gate ? <p className="text-xs text-ink-500">{C.serverFirst}</p> : null}
       {drafted ? <p className="text-xs text-ink-500">{C.by[drafted.by](when(drafted.at))}</p> : null}
       {error ? <p className="text-xs text-rose-400">{error}</p> : null}
-      {askOpen && agentPrompt ? <CopyBlock label={C.askAgentLabel} text={agentPrompt} hint={C.askAgentHint} /> : null}
+      {askOpen && agentPrompt ? <CopyBlock label={C.askAgentLabel} text={agentPrompt} hint={kind === "weekly" ? C.askAgentHintTool("set_weekly_update") : C.askAgentHint} /> : null}
     </div>
   );
 }
