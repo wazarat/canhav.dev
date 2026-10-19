@@ -52,7 +52,7 @@ A Studio+ team can serve a public project's page at a host it owns (Publish sect
 
 ## Updates
 
-A Studio+ team can publish a short weekly update to its project page from the Overview (see [Studio](studio.md)). The page shows the published weeks newest first, each with its body and highlights, beside the snapshot; a draft week stays private until it is published. These are the team's own words, not the wallet signed milestone updates a token's journey anchors on chain (see [Journey updates](../token-launch/journey-updates.md)).
+A Studio+ team can publish short updates to its project page from the Overview, daily, every other day, weekly or only when it asks (see [Studio](studio.md)). The page shows the published ones newest first, each labelled by its day, its two days or its week, each with its body and highlights, beside the snapshot; a draft week stays private until it is published. These are the team's own words, not the wallet signed milestone updates a token's journey anchors on chain (see [Journey updates](../token-launch/journey-updates.md)).
 
 ## Deployed tokens
 

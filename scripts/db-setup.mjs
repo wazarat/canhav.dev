@@ -554,6 +554,11 @@ await sql`
     unique (project_id, week_of)
   )
 `;
+// The cadence a row was written under, for its label (daily, every other day, weekly, manual).
+await sql`
+  alter table launchpad.project_updates
+    add column if not exists cadence text not null default 'weekly'
+`;
 
 // Monitoring and alerts (M123, Studio+). Rules name an address on the
 // project's chain and the kinds to watch; channels hold the encrypted

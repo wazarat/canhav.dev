@@ -4,6 +4,7 @@ import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
+import { type UpdateCadence, isUpdateCadence } from "@/lib/updates";
 import { type GithubSync, normalizeGithubSync } from "@/lib/sync/github";
 import { keccak256, stringToBytes } from "viem";
 
@@ -351,6 +352,8 @@ export interface ProjectDoc {
   brand?: Brand;
   /** The investor and grant pack (M126, Studio+). Optional, never injected, stripped at publish. */
   investorPack?: InvestorPack;
+  /** How often the team posts an update (Studio+). Optional, never injected, stripped at publish; weekly when absent. */
+  updateCadence?: UpdateCadence;
   /** The last GitHub sync (M120). Optional, never injected, never published. */
   githubSync?: GithubSync;
   /** Draft requests waiting for the agent (M117). Optional, never injected, never published. */
@@ -680,6 +683,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeBrand((rest as { brand?: unknown }).brand);
     if (clean) (rest as { brand?: Brand }).brand = clean;
     else delete (rest as { brand?: unknown }).brand;
+  }
+  // Update cadence: one of the four values, dropped otherwise.
+  if ("updateCadence" in rest) {
+    const v = (rest as { updateCadence?: unknown }).updateCadence;
+    if (isUpdateCadence(v)) (rest as { updateCadence?: UpdateCadence }).updateCadence = v;
+    else delete (rest as { updateCadence?: unknown }).updateCadence;
   }
   // Investor pack (M126): texts capped, programmes and questions checked, dropped when empty.
   if ("investorPack" in rest) {

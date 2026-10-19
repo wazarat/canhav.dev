@@ -7,12 +7,13 @@ import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Input";
+import { SegmentedField } from "@/components/ui/Segmented";
 import { TextField } from "@/components/ideation/TextField";
 import { BUILD_COPY } from "@/content/build";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import { draftWeeklyPrompt } from "@/lib/agent-prompts-draft";
 import type { ProjectDoc } from "@/lib/ideation";
-import { type ProjectUpdate, UPDATE_LIMITS, type WeeklyDraft, weekLabel, weekOf } from "@/lib/updates";
+import { DEFAULT_CADENCE, type ProjectUpdate, UPDATE_CADENCES, UPDATE_LIMITS, type UpdateCadence, type WeeklyDraft, periodLabel, periodOf, updateDue } from "@/lib/updates";
 
 /**
  * This week's update on the Overview (M124, Studio+): the current week's
@@ -20,7 +21,7 @@ import { type ProjectUpdate, UPDATE_LIMITS, type WeeklyDraft, weekLabel, weekOf 
  * edited in place, saved as a draft and published to the public page;
  * earlier weeks as a short list. PlusGate for a free account.
  */
-export function WeeklyUpdateCard({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: DraftMeta; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
+export function WeeklyUpdateCard({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: DraftMeta & Pick<ProjectDoc, "updateCadence">; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
   const C = BUILD_COPY.weekly;
   return (
     <Card>
@@ -34,9 +35,10 @@ export function WeeklyUpdateCard({ projectId, name, doc, patch, agentMode }: { p
   );
 }
 
-function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: DraftMeta; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
+function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: DraftMeta & Pick<ProjectDoc, "updateCadence">; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
   const C = BUILD_COPY.weekly;
-  const week = weekOf();
+  const cadence: UpdateCadence = doc.updateCadence ?? DEFAULT_CADENCE;
+  const week = periodOf(cadence);
   const [updates, setUpdates] = useState<ProjectUpdate[] | null>(null);
   const [body, setBody] = useState("");
   const [highlights, setHighlights] = useState("");
@@ -71,7 +73,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
       const res = await fetch(`/api/ideation/projects/${projectId}/updates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: body.trim(), highlights: highlights.split("\n").map((h) => h.trim()).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max) }),
+        body: JSON.stringify({ weekOf: week, body: body.trim(), highlights: highlights.split("\n").map((h) => h.trim()).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max) }),
       });
       if (!res.ok) {
         setFailed(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? C.failed);
@@ -103,14 +105,22 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
   return (
     <div className="space-y-4">
       <p className="text-xs text-ink-400">
-        {weekLabel(week)} · {state}
+        {periodLabel(cadence, week)} · {state}
+        {updates && updateDue(cadence, updates) ? ` · ${C.due}` : ""}
       </p>
+      <SegmentedField
+        label={C.cadenceLabel}
+        hint={C.cadenceHint}
+        value={cadence}
+        onChange={(v) => patch({ updateCadence: v })}
+        options={UPDATE_CADENCES.map((c) => ({ value: c, label: C.cadences[c] }))}
+      />
       <p className="text-xs text-ink-500">{C.intro}</p>
       <DraftButton<WeeklyDraft>
         projectId={projectId}
         kind="weekly"
         body={{ projectId }}
-        label={C.draftButton}
+        label={C.draftButtons[cadence]}
         gate={false}
         doc={doc}
         patch={patch}
@@ -144,7 +154,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
         <ul className="space-y-1 border-t border-ink-800/70 pt-3 text-xs text-ink-400">
           {earlier.map((u) => (
             <li key={u.id}>
-              <span className="text-ink-200">{weekLabel(u.weekOf)}</span> · {u.body.slice(0, 120)}
+              <span className="text-ink-200">{periodLabel(u.cadence, u.weekOf)}</span> · {u.body.slice(0, 120)}
               {u.body.length > 120 ? "…" : ""}
             </li>
           ))}

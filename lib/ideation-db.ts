@@ -601,7 +601,7 @@ export async function publishEntity(
   // the team's machine, which have no place on a public page.
   // The agent's summary (M104) stays on the draft as well.
   // Draft requests and drafted marks (M117) stay on the draft too.
-  const { references: refs, summary: sum, draftRequests: dr, drafted: dm, githubSync: gs, investorPack: ip, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown; draftRequests?: unknown; drafted?: unknown; githubSync?: unknown; investorPack?: unknown };
+  const { references: refs, summary: sum, draftRequests: dr, drafted: dm, githubSync: gs, investorPack: ip, updateCadence: uc, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown; draftRequests?: unknown; drafted?: unknown; githubSync?: unknown; investorPack?: unknown; updateCadence?: unknown };
   // Competitors (M115): the public record keeps the line, not the map's state.
   const pc = publishedCompetitors((projectBody as ProjectDoc).competitors);
   if (table === "projects") {
@@ -612,7 +612,7 @@ export async function publishEntity(
   const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
   const draftOut =
     table === "projects"
-      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }) }
+      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }), ...(uc === undefined ? {} : { updateCadence: uc }) }
       : ticks === undefined
         ? stamped
         : { ...stamped, checklist: ticks };

@@ -5,6 +5,7 @@ import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
 import { investorPackPatchSchema, mergeInvestorPack } from "@/lib/investor-pack";
+import { UPDATE_CADENCES } from "@/lib/updates";
 import { kindsForFields, withDrafted, withoutRequest } from "@/lib/draft/requests";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
@@ -259,6 +260,8 @@ export const projectPatchSchema = z
     brand: brandPatchSchema.nullable(),
     // The investor pack (M126): onepager, deck and grants merge over the stored pack; null clears it.
     investorPack: investorPackPatchSchema.nullable(),
+    // How often the team posts an update (Studio+); null means the default weekly.
+    updateCadence: z.enum(UPDATE_CADENCES).nullable(),
     // Competitors (M115): the line and the map state merge over the stored ones; null clears them.
     competitors: competitorsPatchSchema.nullable(),
     // Ideal customer profiles (M114): the list replaces the stored one; null clears it.
@@ -696,6 +699,7 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
     const cur = next.brand ?? DEFAULT_BRAND;
     next = { ...next, brand: { ...cur, palette: { ...cur.palette, ...(patch.brand.palette ?? {}) }, fonts: { ...cur.fonts, ...(patch.brand.fonts ?? {}) }, tone: patch.brand.tone ?? cur.tone, ...(patch.brand.tagline !== undefined ? { tagline: patch.brand.tagline } : cur.tagline ? { tagline: cur.tagline } : {}) } };
   }
+  if (patch.updateCadence === null) next = dropKey(next, "updateCadence");
   if (patch.investorPack === null) next = dropKey(next, "investorPack");
   else if (patch.investorPack) next = { ...next, investorPack: mergeInvestorPack(next.investorPack, patch.investorPack) };
   if (patch.competitors === null) next = dropKey(next, "competitors");

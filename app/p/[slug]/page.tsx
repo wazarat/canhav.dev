@@ -30,7 +30,7 @@ import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { listUpdates } from "@/lib/updates-db";
-import { weekLabel } from "@/lib/updates";
+import { periodLabel } from "@/lib/updates";
 import { getLinkedTokenDesign, getProjectBySlug, getSnapshot, projectVisibleTo } from "@/lib/ideation-db";
 import { getSessionUser } from "@/lib/auth";
 import { BUILD_COPY } from "@/content/build";
@@ -540,7 +540,7 @@ export default async function ProjectPublicPage({
             <ul className="space-y-4">
               {updates.map((u) => (
                 <li key={u.id} className="space-y-2">
-                  <p className="text-[11px] uppercase tracking-wide text-ink-500">{weekLabel(u.weekOf)}</p>
+                  <p className="text-[11px] uppercase tracking-wide text-ink-500">{periodLabel(u.cadence, u.weekOf)}</p>
                   {u.body.split(/\n{2,}/).map((para, i) => (
                     <p key={i} className="text-sm leading-relaxed text-ink-200">
                       {para}
