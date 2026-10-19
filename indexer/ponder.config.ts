@@ -1,4 +1,5 @@
-import { createConfig } from "ponder";
+import { createConfig, factory } from "ponder";
+import { erc20Abi, getAbiItem } from "viem";
 
 import { AllocationSaleAbi } from "./abis/AllocationSaleAbi";
 import { CurveLauncherAbi } from "./abis/CurveLauncherAbi";
@@ -39,6 +40,15 @@ function rpcUrl(envName = "PONDER_RPC_URL_46630", fallback = PUBLIC_RPC): string
   }
   return raw;
 }
+
+/**
+ * Launched tokens as factory children (M122): every TokenLaunched names the
+ * token, so its ERC-20 Transfer events are indexed for holders and the
+ * day rows. The fee-era event (v3, v4, the curve launcher) and the v1/v2
+ * event differ in signature, so each gets its own entry.
+ */
+const LAUNCHED_V3 = getAbiItem({ abi: TokenFactoryV3Abi, name: "TokenLaunched" });
+const LAUNCHED_V2 = getAbiItem({ abi: TokenFactoryAbi, name: "TokenLaunched" });
 
 const robinhood = createConfig({
   chains: {
@@ -126,6 +136,26 @@ const robinhood = createConfig({
       address: "0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981",
       startBlock: 126200516,
     },
+    LaunchTokenV3: {
+      chain: "robinhoodTestnet",
+      abi: erc20Abi,
+      address: factory({
+        address: ["0xD6166E156B52eB9B301D56Bd68d5D9c551d7d4c5", "0x30Db3A828F65B92434c6aDB27AEeD01850277b08", "0xb2e1F2df7775d17CE70c8CE7586c7bb01bD10981"],
+        event: LAUNCHED_V3,
+        parameter: "token",
+      }),
+      startBlock: 96208927,
+    },
+    LaunchTokenV2: {
+      chain: "robinhoodTestnet",
+      abi: erc20Abi,
+      address: factory({
+        address: ["0x1dAaa8294806d216Df36dc07B3803ED26584c909", "0x10F33eE0f6a72D7Cc1f41196B4EF80B28C909Bc0"],
+        event: LAUNCHED_V2,
+        parameter: "token",
+      }),
+      startBlock: 95600880,
+    },
   },
 });
 
@@ -191,6 +221,8 @@ function arbitrum() {
       LaunchAMM: { ...at, abi: LaunchAMMAbi, address: d.amm },
       FeeSplitter: { ...at, abi: FeeSplitterAbi, address: d.splitter },
       CurveLauncher: { ...at, abi: CurveLauncherAbi, address: d.curve },
+      LaunchTokenV3: { ...at, abi: erc20Abi, address: factory({ address: [d.factory, d.curve], event: LAUNCHED_V3, parameter: "token" }) },
+      LaunchTokenV2: { ...at, abi: erc20Abi, address: NO_LOGS },
     },
   });
 }

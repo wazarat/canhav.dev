@@ -35,7 +35,7 @@ import {
   designDeployability,
   designWarnings,
 } from "@/lib/mcp/design-views";
-import { type IndexedCurve, getCurve } from "@/lib/indexer";
+import { type IndexedCurve, getCurve, getTokenAnalytics } from "@/lib/indexer";
 import { type LaunchRow, getLaunchesByProject } from "@/lib/launches-db";
 import {
   type View,
@@ -1313,6 +1313,26 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       });
     },
     { ...scope, plus: "competitors" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_analytics",
+    {
+      title: "This project's token analytics",
+      description:
+        "Studio+. Holders, wallets that have traded, and one row per UTC day over the last 90 days with volume in wei (the ETH side of curve trades and pool swaps), trades, new wallets trading and the holder count, for the token launched from or linked to this project. Null analytics while the indexer has not filled the tables for this token.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { address } = await projectTokenAddress(loaded.value);
+      if (!address) return errorResult(noTokenMessage(loaded.value));
+      const analytics = await getTokenAnalytics(address, projectChainOf(loaded.value.project.draft_doc));
+      return jsonResult({ address, analytics });
+    },
+    { ...scope, plus: "analytics" },
   );
 
   registerMeteredTool(

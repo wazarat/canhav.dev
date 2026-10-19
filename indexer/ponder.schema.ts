@@ -322,3 +322,58 @@ export const curveTrade = onchainTable(
     pk: primaryKey({ columns: [table.txHash, table.logIndex] }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// Token analytics (M122, Studio+). Holders from ERC-20 Transfer events of
+// every launched token (the factories and the curve launcher as factory
+// sources), and one row per token and day for volume, trades, new traders
+// and the holder count at the end of the day. Kept in handlers rather than
+// a rollup because the app reads GraphQL, which cannot aggregate.
+
+export const balance = onchainTable(
+  "balance",
+  (t) => ({
+    token: t.hex().notNull(),
+    holder: t.hex().notNull(),
+    amount: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.token, table.holder] }),
+  }),
+);
+
+/** Running counts per token: holders with a balance above zero, distinct traders. */
+export const tokenStat = onchainTable("token_stat", (t) => ({
+  token: t.hex().primaryKey(),
+  holders: t.integer().notNull(),
+  traders: t.integer().notNull(),
+}));
+
+/** One row per token and UTC day (unix days). */
+export const tokenDay = onchainTable(
+  "token_day",
+  (t) => ({
+    token: t.hex().notNull(),
+    day: t.integer().notNull(),
+    volumeWei: t.bigint().notNull(),
+    trades: t.integer().notNull(),
+    newTraders: t.integer().notNull(),
+    holders: t.integer().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.token, table.day] }),
+  }),
+);
+
+/** The first day a wallet traded a token, so new traders count once. */
+export const traderFirstSeen = onchainTable(
+  "trader_first_seen",
+  (t) => ({
+    token: t.hex().notNull(),
+    trader: t.hex().notNull(),
+    day: t.integer().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.token, table.trader] }),
+  }),
+);

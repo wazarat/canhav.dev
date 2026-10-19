@@ -2,6 +2,7 @@ import "server-only";
 
 import { LIVE_LAUNCH_CHAINS, launchChain } from "@/content/launch";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
+import { ANALYTICS_DAYS, type TokenAnalytics, type TokenDayRow, type TokenStatRow, buildAnalytics, unixDayOf } from "@/lib/analytics";
 
 /**
  * Data layer for the launchpad indexer (Ponder GraphQL API). Local-first: the
@@ -659,4 +660,41 @@ export function curveWindowOpen(
 /** Whole-token supply (assumes 18 decimals) for display. */
 export function formatSupply(totalSupply: string): number {
   return Number(BigInt(totalSupply) / 10n ** 18n);
+}
+
+// ---------------------------------------------------------------------------
+// Token analytics (M122, Studio+): the day rows and the running counts the
+// indexer keeps from Transfer events and trades. Both chains index them
+// once the Fly instances resync; until then the readers answer null and
+// the surfaces say the data is not there yet.
+
+export async function getTokenDays(
+  tokenAddress: string,
+  days = ANALYTICS_DAYS,
+  chain: ProjectChain = DEFAULT_PROJECT_CHAIN,
+): Promise<TokenDayRow[] | null> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const since = unixDayOf(Date.now()) - days;
+  const data = await queryOn(chain)<{ tokenDays: { items: TokenDayRow[] } }>(
+    `{ tokenDays(where: { token: "${tokenAddress.toLowerCase()}", day_gte: ${since} }, orderBy: "day", orderDirection: "asc", limit: ${days + 1}) { items {
+      day volumeWei trades newTraders holders
+    } } }`,
+  );
+  return data?.tokenDays.items ?? null;
+}
+
+export async function getTokenStat(tokenAddress: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<IndexerRead<TokenStatRow>> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return { status: "empty" };
+  const data = await queryOn(chain)<{ tokenStat: TokenStatRow | null }>(
+    `{ tokenStat(token: "${tokenAddress.toLowerCase()}") { holders traders } }`,
+  );
+  if (!data) return { status: "unavailable" };
+  return data.tokenStat ? { status: "ok", value: data.tokenStat } : { status: "empty" };
+}
+
+/** The window and the counts together; null when the indexer is unreachable or predates the tables. */
+export async function getTokenAnalytics(tokenAddress: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<TokenAnalytics | null> {
+  const [rows, stat] = await Promise.all([getTokenDays(tokenAddress, ANALYTICS_DAYS, chain), getTokenStat(tokenAddress, chain)]);
+  if (!rows || stat.status === "unavailable") return null;
+  return buildAnalytics(tokenAddress, rows, stat.status === "ok" ? stat.value : null);
 }

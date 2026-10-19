@@ -18,6 +18,8 @@ import {
   vesting,
 } from "ponder:schema";
 
+import { bumpTokenDay, poolToken } from "./analytics";
+
 ponder.on("TokenFactory:TokenLaunched", async ({ event, context }) => {
   await context.db.insert(token).values({
     address: event.args.token,
@@ -407,6 +409,9 @@ ponder.on("LaunchAMM:Swapped", async ({ event, context }) => {
           ethReserve: row.ethReserve - event.args.amountOut,
         };
   });
+  // Token analytics (M122): the ETH side of the swap as volume.
+  const swapToken = await poolToken(context, event.args.poolId);
+  if (swapToken) await bumpTokenDay(context, swapToken, event.args.trader, event.args.ethToToken ? event.args.amountIn : event.args.amountOut, event.block.timestamp);
 });
 
 ponder.on("FeeSplitter:Distributed", async ({ event, context }) => {
@@ -487,6 +492,8 @@ ponder.on("CurveLauncher:CurveBuy", async ({ event, context }) => {
     buyCount: row.buyCount + 1,
     ethVolume: row.ethVolume + event.args.ethIn,
   }));
+  // Token analytics (M122).
+  await bumpTokenDay(context, event.args.token, event.args.buyer, event.args.ethIn, event.block.timestamp);
 });
 
 ponder.on("CurveLauncher:CurveSell", async ({ event, context }) => {
@@ -509,6 +516,8 @@ ponder.on("CurveLauncher:CurveSell", async ({ event, context }) => {
     sellCount: row.sellCount + 1,
     ethVolume: row.ethVolume + event.args.ethOut,
   }));
+  // Token analytics (M122).
+  await bumpTokenDay(context, event.args.token, event.args.seller, event.args.ethOut, event.block.timestamp);
 });
 
 ponder.on("CurveLauncher:Graduated", async ({ event, context }) => {

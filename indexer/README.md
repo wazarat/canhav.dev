@@ -256,7 +256,13 @@ The Next app reads this API server-side via `lib/indexer.ts` (`INDEXER_URL`
 env var, defaults to `http://localhost:42069`). It feeds `/explore`, every
 `/launch/t/[address]` page, the governance timelock list, the deploy history on
 `/p/[slug]`, the studio's name-collision check, and the nine launch tools on
-the MCP server (`get_curve_status` reads `curve` and `curve_trade`).
+the MCP server (`get_curve_status` reads `curve` and `curve_trade`). Since M122
+(Studio+ token analytics) every launched token is a factory child
+(`LaunchTokenV3`, `LaunchTokenV2`) whose ERC-20 `Transfer` events keep
+`balance` and `token_stat`, and the curve and pool trade handlers keep
+`token_day`, `trader_first_seen` (see `src/analytics.ts`); the studio's
+Deployments tab and `get_analytics` read `token_day` and `token_stat`.
+Adding those tables changed the schema, so both Fly instances resync.
 
 Everything degrades rather than failing. `lib/indexer.ts` returns null on any
 error, `/explore` says token data is unavailable, and a token page says the

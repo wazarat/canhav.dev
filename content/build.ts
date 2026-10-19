@@ -223,6 +223,24 @@ export const BUILD_COPY = {
     explorer: "Explorer",
     tokenPage: "Token page",
   },
+  /** Token analytics on Deployments (M122, Studio+). */
+  analytics: {
+    title: "Analytics",
+    pick: "Token",
+    noToken: "Analytics start once a token is launched from or linked to the project.",
+    loading: "Reading the indexer.",
+    unavailable: "No analytics for this token yet. The indexer fills them in as it syncs, usually within the hour after a launch.",
+    failed: "Could not read the analytics. Try again in a moment.",
+    facts: (holders: number, traders: number, volume: string, trades: number) =>
+      `${holders.toLocaleString("en-US")} holders · ${traders.toLocaleString("en-US")} wallets have traded · ${volume} volume and ${trades.toLocaleString("en-US")} trades in 90 days`,
+    holdersChange: (change: number) => (change === 0 ? "no change in holders this week" : `${change > 0 ? "up" : "down"} ${Math.abs(change).toLocaleString("en-US")} holders this week`),
+    quiet: "No trades or transfers in the window yet.",
+    holders: "Holders",
+    volume: "Volume in ETH",
+    trades: "Trades",
+    newTraders: "New wallets trading",
+    window: "Daily, UTC, the last 90 days. Volume counts the ETH side of curve trades and pool swaps; holders are wallets with a balance above zero.",
+  },
   publish: {
     title: "Publish",
     record: "The public record",
