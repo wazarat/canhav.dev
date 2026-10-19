@@ -4,6 +4,8 @@ import { DEFAULT_PROJECT_CHAIN, type ProjectChain, chainByChainId, chainInfo } f
 import { getDb } from "@/lib/db";
 import type { JourneyDoc } from "@/lib/journey";
 import { type Owner, ownedBy } from "@/lib/owner";
+import { recordRevision } from "@/lib/revisions-db";
+import { revisionAuthor } from "@/lib/revisions";
 import {
   type IdeationDoc,
   type ProjectDoc,
@@ -165,7 +167,7 @@ export async function updateProjectDraft(
               verify_wallet = ${doc.verifyWallet ?? null},
               updated_at = now()
           where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
-          returning id
+          returning id, owner_id
         `
       : await sql`
           update launchpad.projects
@@ -174,9 +176,14 @@ export async function updateProjectDraft(
               verify_wallet = ${doc.verifyWallet ?? null},
               updated_at = now()
           where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${rev}
-          returning id
+          returning id, owner_id
         `;
-  if (rows.length > 0) return "saved";
+  if (rows.length > 0) {
+    // Version history (M110): one row per save, by the owner or a teammate.
+    const saver = (rows[0] as { owner_id: string }).owner_id === owner.userId ? revisionAuthor("owner") : revisionAuthor("owner", owner.userId);
+    await recordRevision("project", id, doc, saver);
+    return "saved";
+  }
   if (rev === undefined) return "missing";
   return (await getProject(id, owner)) ? "stale" : "missing";
 }
@@ -334,15 +341,19 @@ export async function updateTokenDesignDraft(
           update launchpad.token_designs
           set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
           where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds}))
-          returning id
+          returning id, owner_id
         `
       : await sql`
           update launchpad.token_designs
           set draft_doc = ${JSON.stringify(doc)}, updated_at = now()
           where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${rev}
-          returning id
+          returning id, owner_id
         `;
-  if (rows.length > 0) return "saved";
+  if (rows.length > 0) {
+    const saver = (rows[0] as { owner_id: string }).owner_id === owner.userId ? revisionAuthor("owner") : revisionAuthor("owner", owner.userId);
+    await recordRevision("token_design", id, doc, saver);
+    return "saved";
+  }
   if (rev === undefined) return "missing";
   return (await getTokenDesign(id, owner)) ? "stale" : "missing";
 }

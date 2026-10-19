@@ -9,6 +9,7 @@ import { BuildTabs } from "@/components/build/BuildTabs";
 import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
+import { HistoryDialog } from "@/components/build/HistoryDialog";
 import { PublishBlockedDialog } from "@/components/build/PublishBlockedDialog";
 import { PublishTab } from "@/components/build/PublishTab";
 import { AutosaveIndicator } from "@/components/ideation/AutosaveIndicator";
@@ -93,6 +94,8 @@ export function ProjectBuildPage({
   const [resourceView, setResourceView] = useState<ResourceView | null>(null);
   /** Publish was pressed with open fields. */
   const [blockedOpen, setBlockedOpen] = useState(false);
+  /** The version history pop up (M110). */
+  const [historyOpen, setHistoryOpen] = useState(false);
   const dismissActivity = useCallback(() => setActivity(null), []);
 
   /**
@@ -240,6 +243,7 @@ export function ProjectBuildPage({
           onTab={setTab}
           onMilestone={setMilestone}
           onResource={setResourceView}
+          onHistory={() => setHistoryOpen(true)}
         />
       </aside>
       <div className="min-w-0 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
@@ -273,6 +277,7 @@ export function ProjectBuildPage({
       </div>
       <div className="mt-1">{body[tab]}</div>
       <PublishBlockedDialog open={blockedOpen} onClose={() => setBlockedOpen(false)} problems={problems} onGoTab={setTab} />
+      <HistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} projectId={id} />
       {activity ? <AgentActivityToast key={activity.seq} activity={activity} onDismiss={dismissActivity} /> : null}
       </div>
       <ResourcesDrawer

@@ -390,6 +390,28 @@ await sql`
     add column if not exists share_token text unique
 `;
 
+// Draft revisions (M110): one row per draft save, by the owner, a teammate
+// or an agent, trimmed to the newest 200 per record. Recorded for every
+// account; reading and restoring is Studio+.
+await sql`
+  create table if not exists launchpad.draft_revisions (
+    id bigserial primary key,
+    entity_type text not null check (entity_type in ('project','token_design')),
+    entity_id uuid not null,
+    rev int not null,
+    doc jsonb not null,
+    doc_hash text not null,
+    author text not null,
+    change_id uuid,
+    created_at timestamptz not null default now(),
+    unique (entity_type, entity_id, rev)
+  )
+`;
+await sql`
+  create index if not exists draft_revisions_entity_idx
+    on launchpad.draft_revisions (entity_type, entity_id, rev desc)
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

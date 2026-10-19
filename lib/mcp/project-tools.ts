@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 import { type Owner, ownerOf } from "@/lib/owner";
+import { getRevision, listRevisions } from "@/lib/revisions-db";
 
 import {
   PROJECT_LIMITS,
@@ -1265,6 +1266,29 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       });
     },
     scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_history",
+    {
+      title: "Version history of this project",
+      description:
+        "Studio+. The draft's revisions, newest first, with who saved (owner, agent, member or restore), when, and the top level fields that changed. Send rev to read that revision's full document. Restoring is done by the owner in the studio.",
+      inputSchema: z.object({ rev: z.number().int().min(1).optional() }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (args.rev) {
+        const row = await getRevision("project", project.id, args.rev);
+        if (!row) return errorResult(`No revision ${args.rev} on this project.`);
+        return jsonResult({ rev: row.rev, author: row.author, createdAt: new Date(row.created_at).toISOString(), doc: row.doc });
+      }
+      return jsonResult({ revisions: await listRevisions("project", project.id) });
+    },
+    { ...scope, plus: "version_history" },
   );
 
   registerMeteredTool(

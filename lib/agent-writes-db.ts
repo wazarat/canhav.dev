@@ -13,6 +13,8 @@ import {
 import { getDb } from "@/lib/db";
 import type { ProjectDoc, TokenDesignDoc } from "@/lib/ideation";
 import type { Owner } from "@/lib/owner";
+import { recordRevision } from "@/lib/revisions-db";
+import { revisionAuthor } from "@/lib/revisions";
 
 /**
  * Storage for agent writes. Like lib/ideation-db.ts, nothing here throws on
@@ -239,6 +241,8 @@ export async function writeProjectDraftAsAgent(
   owner: Owner,
   doc: ProjectDoc,
   readRev: number,
+  /** The revision author (M110); a restore names the revision it brought back. */
+  author: string = revisionAuthor("agent"),
 ): Promise<boolean> {
   const sql = getDb();
   if (!sql) return false;
@@ -253,6 +257,7 @@ export async function writeProjectDraftAsAgent(
       where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${readRev}
       returning id
     `;
+    if (rows.length > 0) await recordRevision("project", id, doc, author);
     return rows.length > 0;
   } catch (err) {
     console.error("[agent-writes] project write failed", err);
@@ -277,6 +282,7 @@ export async function writeTokenDesignDraftAsAgent(
       where id = ${id} and (owner_id = ${owner.userId} or org_id = any(${owner.orgIds})) and agent_rev = ${readRev}
       returning id
     `;
+    if (rows.length > 0) await recordRevision("token_design", id, doc, revisionAuthor("agent"));
     return rows.length > 0;
   } catch (err) {
     console.error("[agent-writes] token design write failed", err);

@@ -66,6 +66,7 @@ Across from the project's name, on every section:
 | Control | What it does |
 |---------|--------------|
 | Agent line | Connect agent, Agent connected, Agent working or Waiting on you, from the connected agent's last report |
+| History | The version history pop up. Every save of the draft, by you, a teammate or your agent, newest first with what changed, and Restore on each (Studio+). The published versions are listed for everyone |
 | Move to team | On a personal project, for the account that made it, while a Studio+ team is active. Moves the project, its linked design and its launches to the team, see [Accounts](../accounts/clerk-accounts.md) |
 | Link a token (Token launch once one is linked) | Jumps to the Token launch panel on Overview |
 | Agent prompt | Opens the guide for connecting an agent to this project |

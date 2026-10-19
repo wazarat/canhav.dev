@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, LayoutDashboard, Map, Scale, Server } from "lucide-react";
+import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, History, LayoutDashboard, Map, Scale, Server } from "lucide-react";
 
 import { RESOURCE_VIEWS, type ResourceView } from "@/components/build/ResourcesDrawer";
 
@@ -45,6 +45,7 @@ export function BuildSidebar({
   onTab,
   onMilestone,
   onResource,
+  onHistory,
 }: {
   name: string;
   logo: string | null;
@@ -57,6 +58,8 @@ export function BuildSidebar({
   onMilestone: (m: Milestone | "") => void;
   /** Opens the resources drawer on one section. */
   onResource: (view: ResourceView) => void;
+  /** Opens the version history pop up (M110). */
+  onHistory: () => void;
 }) {
   const R = BUILD_COPY.resources;
   return (
@@ -128,6 +131,10 @@ export function BuildSidebar({
       >
         <Bot className="h-4 w-4 shrink-0 text-ink-500" aria-hidden />
         <span className="flex-1 truncate">{AGENT_COPY.title}</span>
+      </button>
+      <button type="button" onClick={onHistory} className={cn(ITEM, IDLE)}>
+        <History className="h-4 w-4 shrink-0 text-ink-500" aria-hidden />
+        <span className="flex-1 truncate">{BUILD_COPY.sidebar.history}</span>
       </button>
       {publicHref ? (
         <Link href={publicHref} className={cn(ITEM, IDLE)}>
