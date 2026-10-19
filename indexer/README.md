@@ -248,7 +248,9 @@ name and redeploy; the old schema can be dropped once the new one is ready
 (`DROP SCHEMA <old> CASCADE`). The `ponder_sync` RPC cache survives, so a
 replay of the existing contracts takes minutes; only a new contract's own
 range is fetched cold. Schemas used so far: `launchpad` (2026-09-23 to
-2026-09-29), `launchpad_m19` (from 2026-09-29, the curve tables).
+2026-09-29), `launchpad_m19` (from 2026-09-29, the curve tables),
+`launchpad_m122` (from 2026-10-19, the analytics tables, on both apps; the
+Arbitrum app had used the default `launchpad` until then).
 
 ## Site integration
 
