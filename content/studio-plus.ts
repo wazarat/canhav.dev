@@ -67,6 +67,28 @@ export const STUDIO_PLUS_COPY = {
     refresh: "If the studio still reads Studio, reload once.",
   },
   /** Brand identity kit (M118). */
+  /** The investor and grant pack on Publish (M126). */
+  pack: {
+    title: "Investor and grant pack",
+    intro: "A one pager, a short deck and draft grant answers, written from the record, the canvas, the profiles and the competitor line. Drafted by your agent or by CanHav, edited by you, exported as markdown. Never published.",
+    parts: { onepager: "One pager", deck: "Deck", grants: "Grant answers" } as const,
+    none: "Nothing drafted yet.",
+    have: (parts: string[], date: string) => `${parts.join(", ")} drafted · last change ${date}`,
+    draftOnepager: "Draft the one pager",
+    draftDeck: "Draft the deck",
+    draftGrants: "Draft the answers",
+    programLabel: "Programme",
+    download: "Download",
+    print: "Print the one pager",
+    remove: "Remove",
+    slides: (n: number) => `${n} ${n === 1 ? "slide" : "slides"}`,
+    answers: (n: number, program: string) => `${n} ${n === 1 ? "answer" : "answers"} for ${program}`,
+    words: (n: number) => `${n} words`,
+    backToPublish: "Back to Publish",
+    printHint: "Print this page to PDF from your browser.",
+    noOnepager: "No one pager drafted yet.",
+    printFooter: "Made with CanHav Studio+",
+  },
   brand: {
     title: "Brand",
     intro: "Name, ticker, logo, palette, fonts, tone and social banners as one kit. The agent reads it in AGENTS.md and brand.json, and the public page uses the palette. No designer before launch, and a token page that looks like every clone.",
@@ -259,4 +281,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring", "weekly_update", "tester_kit"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring", "weekly_update", "tester_kit", "investor_pack"];

@@ -128,6 +128,8 @@ One card for the project's chain. It opens with the **Deployer key**, a throwawa
 
 The fields of the public record that no other section holds: name, logo, what it does, who you sell to and the personas, who pays, why this chain, the stage, where the first hundred users come from, the GitHub repo, the website and, on a Robinhood project, the distribution acknowledgement. Above the readiness list, **Who can see it** chooses Public or Private for the next publish (see [Public pages](public-pages.md), free accounts keep one private project). Under them the readiness list summarises the record and names what is still missing, with an **Open Decisions** button where the field lives there. Once everything checks out, publish from the header; a private project shows a Private chip there and a **Copy share link** button. The hand off block offers `RESOURCES.md` and `AGENTS.md` built from the draft, the link to launch a token from the project and the prompt that makes an agent load the resource pack.
 
+With Studio+, an **Investor and grant pack** section sits above the hand off: **Draft the one pager**, **Draft the deck** and, with a programme picked (Arbitrum Foundation, Gitcoin, an Optimism style builder grant), **Draft the answers**, each by your agent or by CanHav; the parts render under the buttons, download as `ONEPAGER.md`, `DECK.md` and `GRANTS.md`, and **Print the one pager** opens a page to print to PDF. The pack stays on the draft and is never published.
+
 Publishing snapshots the document and assigns a public slug under `/p/...`. See [Public pages](public-pages.md).
 
 ## The token design editor

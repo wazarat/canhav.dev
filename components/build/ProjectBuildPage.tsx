@@ -232,6 +232,7 @@ export function ProjectBuildPage({
         privateUsed={privateUsed}
         isPrivatePublished={initialVisibility === "private" && initialStatus === "published"}
         chainLocked={chainLocked}
+        agentMode={agent.state?.mode ?? "propose"}
       />
     ),
   };

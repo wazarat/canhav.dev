@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurve } from "@/lib/indexer";
 
 import { brandFile, buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
+import { buildDeckMd, buildGrantsMd, buildOnepagerMd } from "@/lib/export-pack";
 import { exportOwner, markdownResponse } from "@/lib/export-route";
 import { getLinkedTokenDesign, getProject, designDeployChain } from "@/lib/ideation-db";
 
@@ -36,6 +37,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       headers: { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": 'attachment; filename="brand.json"', "Cache-Control": "no-store" },
     });
   }
+  // The investor and grant pack (M126) as three markdown files.
+  if (file === "onepager") return markdownResponse("ONEPAGER.md", buildOnepagerMd(row.draft_doc));
+  if (file === "deck") return markdownResponse("DECK.md", buildDeckMd(row.draft_doc));
+  if (file === "grants") return markdownResponse("GRANTS.md", buildGrantsMd(row.draft_doc));
   if (file === "agents") {
     const linked = await getLinkedTokenDesign(row.id);
     return markdownResponse(

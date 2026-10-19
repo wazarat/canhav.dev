@@ -46,6 +46,16 @@ export function draftCompetitorsPrompt(name: string, projectId: string): string 
   );
 }
 
+export function draftPackPrompt(name: string, projectId: string): string {
+  return draftFieldPrompt(
+    name,
+    projectId,
+    "investorPack",
+    "investor and grant pack",
+    "Three parts, any of them. onepager, markdown with the headings The problem, The product, Who pays and why, Where it stands, The market, The ask, at most 6000 characters. deck, five to twelve slides as title and up to six bullets. grants, per programme id (arbitrum, gitcoin, optimism) the answers per question id within the word limits the studio lists. Numbers only from the record and this repository; mark gaps in square brackets.",
+  );
+}
+
 /** The weekly update writes a row, not a field (M124), so its prompt ends on set_weekly_update. */
 export function draftWeeklyPrompt(name: string, projectId: string): string {
   const alias = mcpAlias(name, projectId);
@@ -75,4 +85,7 @@ export const DRAFT_AGENT_PROMPTS: Partial<Record<DraftKind, (name: string, proje
   competitors: draftCompetitorsPrompt,
   brand: draftBrandPrompt,
   weekly: draftWeeklyPrompt,
+  onepager: draftPackPrompt,
+  deck: draftPackPrompt,
+  grants: draftPackPrompt,
 };

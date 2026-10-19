@@ -3,6 +3,7 @@ import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
+import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
 import { type GithubSync, normalizeGithubSync } from "@/lib/sync/github";
 import { keccak256, stringToBytes } from "viem";
 
@@ -348,6 +349,8 @@ export interface ProjectDoc {
   competitors?: Competitors;
   /** The brand kit (M118, Studio+). Optional, never injected, published with the record. */
   brand?: Brand;
+  /** The investor and grant pack (M126, Studio+). Optional, never injected, stripped at publish. */
+  investorPack?: InvestorPack;
   /** The last GitHub sync (M120). Optional, never injected, never published. */
   githubSync?: GithubSync;
   /** Draft requests waiting for the agent (M117). Optional, never injected, never published. */
@@ -677,6 +680,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeBrand((rest as { brand?: unknown }).brand);
     if (clean) (rest as { brand?: Brand }).brand = clean;
     else delete (rest as { brand?: unknown }).brand;
+  }
+  // Investor pack (M126): texts capped, programmes and questions checked, dropped when empty.
+  if ("investorPack" in rest) {
+    const clean = normalizeInvestorPack((rest as { investorPack?: unknown }).investorPack);
+    if (clean) (rest as { investorPack?: InvestorPack }).investorPack = clean;
+    else delete (rest as { investorPack?: unknown }).investorPack;
   }
   // Draft requests and drafted marks (M117): cleaned, dropped when empty, never invented.
   if ("draftRequests" in rest) {

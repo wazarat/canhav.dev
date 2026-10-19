@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 
+import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
 import { NameWarning } from "@/components/ideation/NameWarning";
@@ -38,6 +39,8 @@ import { type ProblemArea, type ProjectProblems, tabOfArea } from "@/lib/build-r
 import { PROJECT_LIMITS, type ProjectDoc } from "@/lib/ideation";
 import { type LaunchTarget, launchTargetFit } from "@/lib/launch-targets";
 import { PRIVATE_FREE_ALLOWANCE } from "@/lib/plan-shared";
+import type { AgentWriteMode } from "@/lib/agent-writes";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 
 /**
  * Public or private (M109). A free account has one private project; once
@@ -118,7 +121,10 @@ export function PublishTab({
   privateUsed,
   isPrivatePublished,
   chainLocked,
+  agentMode,
 }: {
+  /** The project's agent write mode, for the pack's Draft buttons (M126). */
+  agentMode: AgentWriteMode;
   id: string;
   doc: ProjectDoc;
   patch: (p: Partial<ProjectDoc>) => void;
@@ -295,6 +301,11 @@ export function PublishTab({
               </ul>
             </div>
           )}
+        </CardSection>
+
+        <CardSection className="space-y-4">
+          <Heading>{STUDIO_PLUS_COPY.pack.title}</Heading>
+          <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} />
         </CardSection>
 
         {kit?.shape ? (

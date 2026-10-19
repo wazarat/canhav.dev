@@ -20,6 +20,7 @@ A project's research happens before publishing, so its owner can export from the
 | Artifact | Purpose |
 |----------|---------|
 | `?file=resources` | `RESOURCES.md`, the ticked resource pack alone, grouped Core, Recommended and Deep dive, core items numbered in read-first order, then the build steps with their done state, the contract templates grouped Accepted, Undecided and Rejected, the review passes with their verdicts, an environment section, and "Your files", the file references you added to the project |
+| `?file=onepager`, `?file=deck`, `?file=grants` | Studio+. `ONEPAGER.md`, `DECK.md` (one `##` per slide) and `GRANTS.md` (one section per programme, the answers under their questions) from the investor and grant pack on the draft |
 | `?file=agents` | `AGENTS.md` built from the draft plus the linked token design's draft, marked as a draft export in its first paragraph. Opens with the project's chain and includes "Your files" |
 
 ## MCP server
@@ -168,6 +169,7 @@ An agent on a project's server can change that project's draft, tick build steps
 | `update_project` on Studio+ | Also takes `canvas`, the Business Model Canvas blocks, merged over the stored ones, `null` to clear, and `icp`, one or two ideal customer profiles, the list replacing the stored one. The export and AGENTS.md carry a Business model section when any block is filled |
 | Draft prompts | Studio+. One prompt per draft kind on the project server, `draft_canvas`, `draft_icp`, `draft_competitors` and the later kinds, which Claude Code lists as slash commands. Each reads the project and writes the field through `update_project`, which clears the owner's open draft request; `get_project_status` lists open requests first with the field and the prompt to use |
 | `get_prelaunch_review` | Also carries `checks`, the newest automated run per tool (M121), and each pass's `evidence`; `update_project` `kit.review` entries take `evidence` |
+| Investor pack (Studio+) | `update_project` takes `investorPack` (`onepager` markdown, `deck` as slides of title and bullets, `grants` per programme id `arbitrum`, `gitcoin` or `optimism` and question id, merged over the stored pack, null clears it); the project export answers `?file=onepager`, `?file=deck` and `?file=grants`. The pack stays on the draft and never publishes |
 | Brand (Studio+) | `update_project` takes `brand` (palette, fonts, tone, tagline, merged over the stored kit); AGENTS.md carries a Brand section and the project export answers `?file=brand` with `brand.json` |
 | `get_competitors` | Studio+. The landscape, the protocols in the project's subsectors on its chain from DefiLlama with category, TVL, chains and age, the families the resource pack names, and the differentiator line. Write the line with `update_project` `competitors.differentiator` |
 | `get_analytics` | Studio+. Holders, wallets that have traded, and one row per UTC day over the last 90 days (volume in wei, trades, new wallets, holders) for the project's token. Null while the indexer has not filled the tables for it |

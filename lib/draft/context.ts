@@ -22,10 +22,13 @@ export function renderProjectContext(doc: ProjectDoc, extras: string[] = []): st
       `Shapes: ${s.shapeLabels.join(", ") || "none"}. Chain: ${s.chain}. Build steps ${s.sections.checklist.done} of ${s.sections.checklist.total} done.`, // copy-ok, model context
     );
   }
-  for (const e of extras) if (e.trim()) parts.push("", e.trim());
-  const text = parts.join("\n");
-  if (text.length <= DRAFT_LIMITS.maxContextChars) return text;
-  return `${text.slice(0, DRAFT_LIMITS.maxContextChars)}\n\n(The record was cut here for length.)`;
+  // The kind's extras carry what the draft is about (the questions, the
+  // landscape), so the record is what gets cut, never the extras.
+  const tail = extras.filter((e) => e.trim()).map((e) => `\n\n${e.trim()}`).join("");
+  const room = Math.max(DRAFT_LIMITS.maxContextChars - tail.length, 4_000);
+  const head = parts.join("\n");
+  const cutHead = head.length <= room ? head : `${head.slice(0, room)}\n\n(The record was cut here for length.)`;
+  return `${cutHead}${tail}`;
 }
 
 /** One system line every draft shares. */

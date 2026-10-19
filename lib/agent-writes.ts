@@ -4,6 +4,7 @@ import { canvasPatchSchema } from "@/lib/canvas";
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
+import { investorPackPatchSchema, mergeInvestorPack } from "@/lib/investor-pack";
 import { kindsForFields, withDrafted, withoutRequest } from "@/lib/draft/requests";
 
 import { SECTOR_OPTIONS } from "@/content/ideation";
@@ -256,6 +257,8 @@ export const projectPatchSchema = z
     deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
     // The brand kit (M118): palette, fonts, tone and tagline merge over the stored kit; null clears it.
     brand: brandPatchSchema.nullable(),
+    // The investor pack (M126): onepager, deck and grants merge over the stored pack; null clears it.
+    investorPack: investorPackPatchSchema.nullable(),
     // Competitors (M115): the line and the map state merge over the stored ones; null clears them.
     competitors: competitorsPatchSchema.nullable(),
     // Ideal customer profiles (M114): the list replaces the stored one; null clears it.
@@ -693,6 +696,8 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
     const cur = next.brand ?? DEFAULT_BRAND;
     next = { ...next, brand: { ...cur, palette: { ...cur.palette, ...(patch.brand.palette ?? {}) }, fonts: { ...cur.fonts, ...(patch.brand.fonts ?? {}) }, tone: patch.brand.tone ?? cur.tone, ...(patch.brand.tagline !== undefined ? { tagline: patch.brand.tagline } : cur.tagline ? { tagline: cur.tagline } : {}) } };
   }
+  if (patch.investorPack === null) next = dropKey(next, "investorPack");
+  else if (patch.investorPack) next = { ...next, investorPack: mergeInvestorPack(next.investorPack, patch.investorPack) };
   if (patch.competitors === null) next = dropKey(next, "competitors");
   else if (patch.competitors) next = { ...next, competitors: { differentiator: "", ...(next.competitors ?? {}), ...patch.competitors } };
   if (patch.icp === null) next = dropKey(next, "icp");
