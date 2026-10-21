@@ -619,6 +619,47 @@ await sql`
   )
 `;
 
+// Alerts made simple (M128). A rule's source is manual (the per address
+// form) or watch (created by the project's Watch switch and reconciled on
+// every read); decimals format a large transfer; a test alert is an event
+// with no rule; checked_at on a cursor is the worker's heartbeat per chain;
+// a row in alert_watch means the project is watched.
+await sql`
+  alter table launchpad.alert_rules
+    add column if not exists source text not null default 'manual'
+`;
+await sql`
+  alter table launchpad.alert_rules
+    add column if not exists decimals smallint not null default 18
+`;
+await sql`
+  alter table launchpad.alert_events alter column rule_id drop not null
+`;
+await sql`
+  alter table launchpad.alert_cursors
+    add column if not exists checked_at timestamptz
+`;
+// A test event has no rule, so it needs its own path to the project.
+await sql`
+  delete from launchpad.alert_events e
+  where not exists (select 1 from launchpad.projects p where p.id = e.project_id)
+`;
+await sql`
+  do $$ begin
+    if not exists (select 1 from pg_constraint where conname = 'alert_events_project_fk') then
+      alter table launchpad.alert_events
+        add constraint alert_events_project_fk foreign key (project_id) references launchpad.projects(id) on delete cascade;
+    end if;
+  end $$
+`;
+await sql`
+  create table if not exists launchpad.alert_watch (
+    project_id uuid primary key references launchpad.projects(id) on delete cascade,
+    created_by text not null,
+    created_at timestamptz not null default now()
+  )
+`;
+
 // Studio+ subscriptions (M108). A mirror of what Clerk Billing reports over
 // webhooks, one row per paying organization, so the app and the MCP servers
 // know the plan without a Clerk call. raw keeps the last event for

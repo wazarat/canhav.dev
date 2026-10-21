@@ -1,9 +1,11 @@
 /**
- * The alerts worker (M123). Every minute per chain it reads the logs of
- * every address an enabled rule names since the chain's cursor, decodes
- * the events the rules ask for, writes one alert_events row per rule and
- * log (the unique key makes a replay harmless) and delivers to the
- * project's channels. Rules and channels are reloaded every five minutes.
+ * The alerts worker (M123, simplified in M128). Every minute it reloads the
+ * enabled rules and channels (so a change in the studio is live within a
+ * minute), then per chain reads the logs of every address a rule names
+ * since the chain's cursor, decodes the events the rules ask for, writes one
+ * alert_events row per rule and log (the unique key makes a replay
+ * harmless) and delivers to the project's channels. Every poll stamps
+ * checked_at on the chain's cursor, which the studio reads as the heartbeat.
  * One small Fly machine; see fly.toml and the README.
  */
 import { neon } from "@neondatabase/serverless";
@@ -20,7 +22,7 @@ if (!DATABASE_URL || !ALERTS_SECRET) {
   process.exit(1);
 }
 const sql = neon(DATABASE_URL);
-const env = { resendKey: process.env.RESEND_API_KEY, from: process.env.ALERTS_FROM_EMAIL };
+const env = { resendKey: process.env.RESEND_API_KEY, from: process.env.ALERTS_FROM_EMAIL, telegramToken: process.env.TELEGRAM_BOT_TOKEN };
 
 interface RuleRow extends AlertRuleShape {
   projectId: string;
@@ -35,37 +37,44 @@ interface ChannelRow {
 
 let rules: RuleRow[] = [];
 let channels: ChannelRow[] = [];
-let loadedAt = 0;
 
 async function reload() {
-  if (Date.now() - loadedAt < ALERT_LIMITS.rulesReloadMs) return;
   const r = (await sql`
-    select r.id, r.project_id, r.chain_id, r.address, r.label, r.kinds, r.threshold_wei, p.draft_doc->>'name' as name
+    select r.id, r.project_id, r.chain_id, r.address, r.label, r.kinds, r.threshold_wei, r.decimals, p.draft_doc->>'name' as name
     from launchpad.alert_rules r join launchpad.projects p on p.id = r.project_id
     where r.enabled
-  `) as Array<{ id: string; project_id: string; chain_id: number; address: string; label: string | null; kinds: AlertRuleShape["kinds"]; threshold_wei: string | null; name: string | null }>;
-  rules = r.map((x) => ({ id: x.id, projectId: x.project_id, projectName: x.name ?? "", chainId: Number(x.chain_id), address: x.address, label: x.label, kinds: x.kinds, thresholdWei: x.threshold_wei }));
+  `) as Array<{ id: string; project_id: string; chain_id: number; address: string; label: string | null; kinds: AlertRuleShape["kinds"]; threshold_wei: string | null; decimals: number | null; name: string | null }>;
+  const next = r.map((x) => ({ id: x.id, projectId: x.project_id, projectName: x.name ?? "", chainId: Number(x.chain_id), address: x.address, label: x.label, kinds: x.kinds, thresholdWei: x.threshold_wei, decimals: x.decimals ?? 18 }));
   const c = (await sql`select id, project_id, kind, config_enc from launchpad.alert_channels where enabled`) as Array<{ id: string; project_id: string; kind: ChannelKind; config_enc: string }>;
-  channels = c.map((x) => ({ id: x.id, projectId: x.project_id, kind: x.kind, configEnc: x.config_enc }));
-  loadedAt = Date.now();
-  console.log(`[alerts] ${rules.length} rules, ${channels.length} channels`);
+  const nextChannels = c.map((x) => ({ id: x.id, projectId: x.project_id, kind: x.kind, configEnc: x.config_enc }));
+  if (next.length !== rules.length || nextChannels.length !== channels.length) console.log(`[alerts] ${next.length} rules, ${nextChannels.length} channels`);
+  rules = next;
+  channels = nextChannels;
 }
 
+/** The chain's cursor, created at the head the first time the chain is seen. */
 async function cursorFor(chainId: number, head: bigint): Promise<bigint> {
   const rows = (await sql`select last_block from launchpad.alert_cursors where chain_id = ${chainId}`) as Array<{ last_block: string }>;
   if (rows[0]) return BigInt(rows[0].last_block);
-  // A new chain starts at the head: nothing from before the worker ran is alerted.
-  await sql`insert into launchpad.alert_cursors (chain_id, last_block) values (${chainId}, ${head.toString()}) on conflict do nothing`;
+  await sql`insert into launchpad.alert_cursors (chain_id, last_block, checked_at) values (${chainId}, ${head.toString()}, now()) on conflict do nothing`;
   return head;
 }
 
 async function pollChain(chain: (typeof ALERT_CHAINS)[number]) {
   const mine = rules.filter((r) => r.chainId === chain.chainId);
-  if (mine.length === 0) return;
   const client = createPublicClient({ transport: http(chain.rpcUrl, { timeout: 20_000 }) });
   const head = await client.getBlockNumber();
   const last = await cursorFor(chain.chainId, head);
-  if (head <= last) return;
+  if (mine.length === 0) {
+    // Nothing to watch: the cursor follows the head so a rule added later
+    // starts from now instead of replaying the idle stretch.
+    await sql`update launchpad.alert_cursors set last_block = ${head.toString()}, checked_at = now(), updated_at = now() where chain_id = ${chain.chainId}`;
+    return;
+  }
+  if (head <= last) {
+    await sql`update launchpad.alert_cursors set checked_at = now() where chain_id = ${chain.chainId}`;
+    return;
+  }
   const from = last + 1n;
   const to = head - from >= BigInt(ALERT_LIMITS.blocksPerPoll) ? from + BigInt(ALERT_LIMITS.blocksPerPoll) - 1n : head;
   const addresses = Array.from(new Set(mine.map((r) => r.address.toLowerCase() as `0x${string}`)));
@@ -100,7 +109,7 @@ async function pollChain(chain: (typeof ALERT_CHAINS)[number]) {
       await sql`update launchpad.alert_events set delivered = ${JSON.stringify(delivered)} where id = ${inserted[0].id}`;
     }
   }
-  await sql`update launchpad.alert_cursors set last_block = ${to.toString()}, updated_at = now() where chain_id = ${chain.chainId}`;
+  await sql`update launchpad.alert_cursors set last_block = ${to.toString()}, checked_at = now(), updated_at = now() where chain_id = ${chain.chainId}`;
   if (fired) console.log(`[alerts] ${chain.name} blocks ${from} to ${to}, ${fired} alerts`);
 }
 

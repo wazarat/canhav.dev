@@ -36,7 +36,10 @@ import {
   designWarnings,
 } from "@/lib/mcp/design-views";
 import { type IndexedCurve, getCurve, getTokenAnalytics } from "@/lib/indexer";
-import { listAlerts } from "@/lib/alerts/db";
+import { lastTestAt, listAlerts, recordTestEvent } from "@/lib/alerts/db";
+import { ALERT_LIMITS, testMessage } from "@/lib/alerts/kinds";
+import { deliverToChannels } from "@/lib/alerts/send";
+import { setWatch, syncWatch } from "@/lib/alerts/watch";
 import { DEFAULT_CADENCE, UPDATE_LIMITS, periodOf, updateDue, updateInputSchema } from "@/lib/updates";
 import { inviteState } from "@/lib/tester";
 import { listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
@@ -1417,15 +1420,73 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     server,
     "get_alerts",
     {
-      title: "This project's alert rules and events",
+      title: "This project's alert rules, channels, events and status",
       description:
-        "Studio+. The addresses the alerts worker watches for this project with the kinds (ownership, pause, large_transfer with a threshold in wei, graduation), the channels with their masked targets, and the last ten events, each with the line sent, the transaction and what was delivered. Rules and channels are managed by the owner in the studio under Deployments.",
+        "Studio+. Whether the project is watched (the Watch switch creates a rule per recorded testnet contract and per launched or linked token), the rules with their kinds (ownership, pause, large_transfer with a threshold in the token's base units and its decimals, graduation) and source (watch or manual), the channels with their masked targets, the last ten events (kind test is a test alert sent from the studio, with no transaction) each with the line sent and what was delivered, and status, the worker's last check per chain. Turn watching on with set_alert_watch; channels (email, Telegram, Discord) are connected by the owner in the studio under Deployments.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
       const loaded = await withProject(projectId, ctx, false);
       if (!loaded.ok) return errorResult(loaded.message);
+      await syncWatch(loaded.value.project, mcpOwner(ctx)?.userId ?? ownerOf(loaded.value.project).userId);
       return jsonResult(await listAlerts(loaded.value.project.id));
+    },
+    { ...scope, plus: "monitoring" },
+  );
+
+  registerMeteredTool(
+    server,
+    "set_alert_watch",
+    {
+      title: "Watch this project's contracts",
+      description:
+        "Studio+. Turn the Watch switch on or off (M128). On creates an alert rule for every recorded testnet contract (ownership changes, pauses) and every launched or linked token (those plus large transfers at one percent of the supply and curve graduation), kept in line with the record on every read; off removes those rules and leaves any the owner added by address. The worker picks the change up within a minute. Where alerts go is the owner's choice in the studio; when the project has no channel yet, say so and point them to Deployments, Alerts. Immediate in propose and direct mode, since it reverses. Refused when agent writes are off.",
+      inputSchema: z.object({ enabled: z.boolean() }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (agentStateOf(project).mode === "off")
+        return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      const result = await setWatch(project, args.enabled, mcpOwner(ctx)?.userId ?? ownerOf(project).userId);
+      if (!result.ok) return errorResult(result.message);
+      const { channels } = await listAlerts(project.id);
+      return jsonResult({
+        enabled: args.enabled,
+        rules: result.rules,
+        channels: channels.length,
+        message: args.enabled
+          ? channels.length
+            ? `Watching ${result.rules} addresses. The worker picks them up within a minute.`
+            : `Watching ${result.rules} addresses, but nothing is connected yet. The owner adds an email, Telegram or Discord under Deployments, Alerts.`
+          : "Not watching. Rules added by address stay.",
+      });
+    },
+    { ...scope, plus: "monitoring" },
+  );
+
+  registerMeteredTool(
+    server,
+    "send_test_alert",
+    {
+      title: "Send a test alert",
+      description:
+        "Studio+. Send one synthetic alert through every channel the project has, right now, and record it under the last events as kind test (M128). Proves delivery without a transaction. One a minute per project.",
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      if (Date.now() - (await lastTestAt(project.id)) < ALERT_LIMITS.testEveryMs) return errorResult("One test alert a minute. Try again shortly.");
+      const message = testMessage(project.draft_doc.name);
+      const delivered = await deliverToChannels(project.id, message.subject, message.text);
+      const ids = Object.keys(delivered);
+      if (ids.length === 0) return errorResult("No channel to send to. The owner connects one under Deployments, Alerts.");
+      await recordTestEvent(project.id, chainInfo(projectChainOf(project.draft_doc)).chainId, message.text, delivered);
+      const ok = ids.filter((id) => delivered[id].ok).length;
+      return jsonResult({ delivered, message: ok === ids.length ? `Sent to ${ids.length}.` : `Sent to ${ok} of ${ids.length}. The failures carry the channel's answer.` });
     },
     { ...scope, plus: "monitoring" },
   );

@@ -249,7 +249,7 @@ export const STUDIO_PLUS_COPY = {
     },
     monitoring: {
       title: "Monitoring and alerts",
-      teaser: "Ownership changes, pauses, large transfers and curve graduation on your contracts, sent by email, Telegram or Discord within a minute.",
+      teaser: "One switch watches every contract and token you record for ownership changes, pauses, large transfers and curve graduation, sends to email, Telegram or Discord within a minute, and a test alert proves it before anything happens on chain.",
     },
     analytics: {
       title: "Token analytics",

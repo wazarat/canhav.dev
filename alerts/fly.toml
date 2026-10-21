@@ -2,6 +2,8 @@
 #
 # Secrets: fly secrets set DATABASE_URL=... ALERTS_SECRET=... RESEND_API_KEY=... -a canhav-alerts
 # Optional: ALERTS_FROM_EMAIL="CanHav Alerts <alerts@canhav.com>"
+# Telegram (M128): TELEGRAM_BOT_TOKEN, the platform bot a chat pairs with
+# from the studio; the same value as the app's.
 
 app = "canhav-alerts"
 primary_region = "iad"

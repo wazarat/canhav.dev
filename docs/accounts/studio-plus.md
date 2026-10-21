@@ -26,7 +26,7 @@ The features ship one by one and are listed on the pricing page, with Soon on th
 
 - Business Model Canvas, ICP and Competitor landscape on the Business model tab, Brand identity on the Brand tab
 - Private projects (unlisted publish with a share link), version history and project keys
-- GitHub sync, automated checks, monitoring and alerts (a worker watches your contracts and sends to email, Telegram or Discord, see [Alerts](../token-launch/alerts.md)), token analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
+- GitHub sync, automated checks, monitoring and alerts (one switch has a worker watch every contract and token you record and send to email, Telegram or Discord, with a test alert that proves delivery, see [Alerts](../token-launch/alerts.md)), token analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
 - Investor and grant pack (a one pager, a deck and grant answers for three programme styles, drafted on Claude Sonnet 5.5, exported as markdown and printed to PDF), updates (a post for the public page drafted from the period's activity, daily, every other day, weekly or only when asked, published from the Overview), tester kit (invite links with steps and per step feedback, no accounts, no keys held), custom domain (a host you own serving the public page, DNS records shown in the studio)
 - Partner perks and priority help
 
