@@ -3,7 +3,7 @@ import "server-only";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import type { ProjectDoc } from "@/lib/ideation";
-import { DEFAULT_CADENCE, UPDATE_LIMITS, periodLabel, periodOf, weeklyDraftSchema } from "@/lib/updates";
+import { DEFAULT_CADENCE, UPDATE_LIMITS, cleanWeeklyDraft, periodLabel, periodOf, weeklyDraftSchema } from "@/lib/updates";
 import { weekActivity } from "@/lib/updates-db";
 
 /**
@@ -14,6 +14,7 @@ import { weekActivity } from "@/lib/updates-db";
  */
 registerDraftKind("weekly", {
   schema: weeklyDraftSchema,
+  clean: cleanWeeklyDraft,
   extras: async (doc: ProjectDoc, body) => {
     const projectId = typeof body.projectId === "string" ? body.projectId : null;
     const cadence = doc.updateCadence ?? DEFAULT_CADENCE;

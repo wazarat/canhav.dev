@@ -50,6 +50,7 @@ const block = z.string().max(CANVAS_LIMITS.block.max);
 export const canvasPatchSchema = z.strictObject(Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, block.optional()])) as Record<CanvasBlock, z.ZodOptional<typeof block>>);
 
 /** A full draft: every block present. */
-export const canvasDraftSchema = z.object(Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, block])) as Record<CanvasBlock, typeof block>);
+const loose = z.string();
+export const canvasDraftSchema = z.object(Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, loose])) as Record<CanvasBlock, typeof loose>);
 
-export const canvasBlockDraftSchema = z.object({ text: block });
+export const canvasBlockDraftSchema = z.object({ text: z.string() });

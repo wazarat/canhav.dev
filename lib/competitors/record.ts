@@ -26,7 +26,7 @@ export const competitorsPatchSchema = z.strictObject({
   pinned: z.array(z.string().min(1).max(80)).max(COMPETITOR_LIMITS.pinned.max).optional(),
 });
 
-export const competitorsDraftSchema = z.object({ differentiator: z.string().max(COMPETITOR_LIMITS.differentiator.max) });
+export const competitorsDraftSchema = z.object({ differentiator: z.string() });
 
 export function normalizeCompetitors(raw: unknown): Competitors | null {
   if (!raw || typeof raw !== "object") return null;

@@ -18,6 +18,8 @@ export interface DraftSpec<T = unknown> {
   instructions: (doc: ProjectDoc, body: Record<string, unknown>) => string;
   ask: (doc: ProjectDoc, body: Record<string, unknown>) => string;
   fixture: (doc: ProjectDoc, body: Record<string, unknown>) => T;
+  /** Caps and trims the model's answer to the record's limits. The output schema stays loose so a long line is cut, not refused. */
+  clean?: (value: T) => T;
   long?: boolean;
 }
 

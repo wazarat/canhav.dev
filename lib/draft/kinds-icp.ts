@@ -6,7 +6,7 @@ import { categoriesFor, fetchLlamaProtocols, formatTvl, pickProtocols } from "@/
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import { fetchDuneQueryRows } from "@/lib/dune";
-import { type Icp, icpDraftSchema } from "@/lib/icp";
+import { ICP_LIMITS, type Icp, icpDraftSchema, normalizeIcp } from "@/lib/icp";
 import { type ProjectDoc, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
 
 /** The persona table as the model reads it. */
@@ -67,9 +67,10 @@ function fixture(doc: ProjectDoc): { profiles: Icp[] } {
 
 registerDraftKind("icp", {
   schema: icpDraftSchema,
+  clean: (value) => ({ profiles: normalizeIcp(value.profiles) ?? [] }),
   extras: async (doc) => [personaExtras(doc), ...(await onchainExtras(doc))],
   instructions: () =>
-    `${DRAFT_VOICE}\n\nWrite one or two ideal customer profiles for this project. Each has a short name (a role, not a person), a one paragraph summary, the wallets they use, the channels where they can be reached, the protocols they already use (prefer the ones listed from DefiLlama when they fit), the trigger that makes them act now, and the objection they will raise. Lists hold up to eight short items. Build on the personas; if the record and the protocol list disagree, say so in the summary.`,
+    `${DRAFT_VOICE}\n\nWrite one or two ideal customer profiles for this project. Each has a short name (a role, not a person, at most ${ICP_LIMITS.name.max} characters), a one paragraph summary of at most ${ICP_LIMITS.summary.max} characters, the wallets they use, the channels where they can be reached, the protocols they already use (prefer the ones listed from DefiLlama when they fit), the trigger that makes them act now and the objection they will raise (each at most ${ICP_LIMITS.short.max} characters). Lists hold up to ${ICP_LIMITS.list.max} items of at most ${ICP_LIMITS.list.item} characters. Build on the personas; if the record and the protocol list disagree, say so in the summary.`,
   ask: () => "Draft the ideal customer profiles.",
   fixture: (doc) => fixture(doc),
 });

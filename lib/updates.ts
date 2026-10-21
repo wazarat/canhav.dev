@@ -65,9 +65,17 @@ export function weekOf(date = new Date()): string {
 }
 
 export const weeklyDraftSchema = z.object({
-  body: z.string().min(UPDATE_LIMITS.body.min).max(UPDATE_LIMITS.body.max),
-  highlights: z.array(z.string().max(UPDATE_LIMITS.highlights.each)).max(UPDATE_LIMITS.highlights.max),
+  body: z.string(),
+  highlights: z.array(z.string()),
 });
+
+/** Cut a drafted update to the limits. */
+export function cleanWeeklyDraft(value: WeeklyDraft): WeeklyDraft {
+  return {
+    body: value.body.trim().slice(0, UPDATE_LIMITS.body.max),
+    highlights: value.highlights.map((h) => h.trim().slice(0, UPDATE_LIMITS.highlights.each)).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max),
+  };
+}
 export type WeeklyDraft = z.infer<typeof weeklyDraftSchema>;
 
 export const updateInputSchema = z.object({

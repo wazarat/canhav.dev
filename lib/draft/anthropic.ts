@@ -100,6 +100,12 @@ export async function draft<T>(input: {
     if (err instanceof DraftError) throw err;
     if (err instanceof Anthropic.RateLimitError) throw new DraftError("api", "The model is busy. Try again in a minute.");
     if (err instanceof Anthropic.APIError) throw new DraftError("api", `The model answered ${err.status}. Try again.`);
+    // The SDK refuses an answer that misses the zod shape (seen on production 2026-10-21 for the ICP kind).
+    if (err instanceof Error && err.message.startsWith("Failed to parse structured output")) {
+      console.warn("[draft] unparsed", input.kind, err.message.slice(0, 600));
+      throw new DraftError("unparsed", "The model's answer did not match the expected shape. Try again.");
+    }
+    console.error("[draft] call failed", input.kind, err);
     throw new DraftError("api", "The draft failed. Try again.");
   }
 }

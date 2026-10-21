@@ -53,7 +53,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       fixture: spec.fixture(doc, body),
     });
     await recordDraftRun({ allowanceKey, projectId: project.id, kind, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
-    return NextResponse.json({ value: result.value, usage: result.usage, remaining: Math.max(0, DRAFT_LIMITS.perOrgMonth - used - 1) });
+    const value = spec.clean ? spec.clean(result.value) : result.value;
+    return NextResponse.json({ value, usage: result.usage, remaining: Math.max(0, DRAFT_LIMITS.perOrgMonth - used - 1) });
   } catch (err) {
     if (err instanceof DraftError) {
       const status = err.code === "not_configured" ? 503 : err.code === "refusal" || err.code === "truncated" ? 422 : 502;

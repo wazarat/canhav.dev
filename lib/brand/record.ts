@@ -40,8 +40,9 @@ export const brandPatchSchema = z.strictObject({
 export const brandDraftSchema = z.object({
   palette: z.object({ primary: hex, secondary: hex, accent: hex, surface: hex }),
   fonts: z.object({ display: z.enum(BRAND_DISPLAY_FONTS), body: z.enum(BRAND_BODY_FONTS) }),
-  tone: z.array(z.string().min(1).max(BRAND_LIMITS.tone.item)).min(2).max(BRAND_LIMITS.tone.max),
-  tagline: z.string().max(BRAND_LIMITS.tagline.max),
+  // No caps on the words: normalizeBrand cuts them to the limits afterwards.
+  tone: z.array(z.string()),
+  tagline: z.string(),
 });
 
 export const DEFAULT_BRAND: Brand = {

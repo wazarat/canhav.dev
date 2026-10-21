@@ -28,9 +28,17 @@ export interface InvestorPack {
 
 const slide = z.object({ title: z.string().min(1).max(PACK_LIMITS.deck.title), bullets: z.array(z.string().min(1).max(PACK_LIMITS.deck.bullets.each)).max(PACK_LIMITS.deck.bullets.max) });
 
-export const onepagerDraftSchema = z.object({ onepager: z.string().min(200).max(PACK_LIMITS.onepager.max) });
-export const deckDraftSchema = z.object({ deck: z.array(slide).min(PACK_LIMITS.deck.slides.min).max(PACK_LIMITS.deck.slides.max) });
-export const grantsDraftSchema = z.object({ answers: z.array(z.object({ question: z.string(), answer: z.string().min(1).max(PACK_LIMITS.grants.answer) })) });
+// What the model answers, without caps; the kind's clean step cuts to the limits.
+export const onepagerDraftSchema = z.object({ onepager: z.string() });
+export const deckDraftSchema = z.object({ deck: z.array(z.object({ title: z.string(), bullets: z.array(z.string()) })) });
+export const grantsDraftSchema = z.object({ answers: z.array(z.object({ question: z.string(), answer: z.string() })) });
+
+export function cleanDeck(deck: DeckSlide[]): DeckSlide[] {
+  return deck
+    .map((s) => ({ title: s.title.trim().slice(0, PACK_LIMITS.deck.title), bullets: s.bullets.map((b) => b.trim().slice(0, PACK_LIMITS.deck.bullets.each)).filter(Boolean).slice(0, PACK_LIMITS.deck.bullets.max) }))
+    .filter((s) => s.title)
+    .slice(0, PACK_LIMITS.deck.slides.max);
+}
 
 /** What update_project accepts: any part merges over the stored pack; null clears it all. */
 export const investorPackPatchSchema = z.strictObject({

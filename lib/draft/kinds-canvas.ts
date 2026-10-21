@@ -2,7 +2,7 @@ import "server-only";
 
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { AUDIENCE_OPTIONS, PAYER_OPTIONS, optionLabel } from "@/content/ideation";
-import { CANVAS_BLOCKS, type CanvasBlock, canvasBlockDraftSchema, canvasDraftSchema, isCanvasBlock } from "@/lib/canvas";
+import { CANVAS_BLOCKS, CANVAS_LIMITS, type CanvasBlock, canvasBlockDraftSchema, canvasDraftSchema, isCanvasBlock } from "@/lib/canvas";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import { type ProjectDoc, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
@@ -32,6 +32,7 @@ function fixtureFor(doc: ProjectDoc): Record<CanvasBlock, string> {
 
 registerDraftKind("canvas", {
   schema: canvasDraftSchema,
+  clean: (value) => Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, (value[b] ?? "").trim().slice(0, CANVAS_LIMITS.block.max)])) as typeof value,
   extras: (doc) => customerExtras(doc),
   instructions: () =>
     `${DRAFT_VOICE}\n\nWrite a Business Model Canvas for this project, one paragraph of at most 600 characters per block, no lists. Name the payer from the record in revenue streams. The blocks are\n${blockGuide()}`,
@@ -41,6 +42,7 @@ registerDraftKind("canvas", {
 
 registerDraftKind("canvas_block", {
   schema: canvasBlockDraftSchema,
+  clean: (value) => ({ text: value.text.trim().slice(0, CANVAS_LIMITS.block.max) }),
   extras: (doc, body) => {
     const block = body.block;
     const current = doc.canvas ?? {};

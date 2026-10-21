@@ -38,7 +38,12 @@ export const icpSchema = z.object({
 
 export const icpListSchema = z.array(icpSchema).max(ICP_LIMITS.profiles.max);
 
-export const icpDraftSchema = z.object({ profiles: z.array(icpSchema).min(1).max(ICP_LIMITS.profiles.max) });
+/** What the model answers: no length caps, normalizeIcp cuts to the limits afterwards. */
+export const icpDraftSchema = z.object({
+  profiles: z.array(
+    z.object({ name: z.string(), summary: z.string(), walletsTheyUse: z.array(z.string()), channels: z.array(z.string()), protocolsTheyUse: z.array(z.string()), buyingTrigger: z.string(), objection: z.string() }),
+  ),
+});
 
 export function emptyIcp(): Icp {
   return { name: "", summary: "", walletsTheyUse: [], channels: [], protocolsTheyUse: [], buyingTrigger: "", objection: "" };
