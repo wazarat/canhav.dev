@@ -2,7 +2,13 @@ import "server-only";
 
 import type { ProjectChain } from "@/lib/chains";
 import type { ProjectContext } from "@/lib/ideation";
-import { designDeployChain, getMyProjects, getMyTokenDesigns } from "@/lib/ideation-db";
+import {
+  type ProjectRow,
+  type TokenDesignRow,
+  designDeployChain,
+  getMyProjects,
+  getMyTokenDesigns,
+} from "@/lib/ideation-db";
 import { findToken, type IndexedToken } from "@/lib/indexer";
 import { claimWalletLaunches } from "@/lib/launch-ownership";
 import { projectContext } from "@/lib/launch-project";
@@ -41,12 +47,23 @@ function isoTime(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
+/**
+ * Rows the caller has already asked for, or is asking for at the same time
+ * (2026-10-21). The studio pages read the account's projects and designs
+ * for their own lists, so handing the same promises here saves two Neon
+ * round trips per page. A field left out is fetched here as before.
+ */
+export interface LaunchPreloads {
+  designs?: Promise<TokenDesignRow[] | null> | TokenDesignRow[] | null;
+  projects?: Promise<ProjectRow[] | null> | ProjectRow[] | null;
+}
+
 /** Null only when storage is unconfigured. Indexer outages leave `launch` null per row. */
-export async function getMyLaunches(owner: Owner): Promise<MyLaunch[] | null> {
+export async function getMyLaunches(owner: Owner, preloaded: LaunchPreloads = {}): Promise<MyLaunch[] | null> {
   const [designs, firstRead, projects] = await Promise.all([
-    getMyTokenDesigns(owner),
+    preloaded.designs !== undefined ? preloaded.designs : getMyTokenDesigns(owner),
     getLaunchesByOwner(owner),
-    getMyProjects(owner),
+    preloaded.projects !== undefined ? preloaded.projects : getMyProjects(owner),
   ]);
   if (designs === null || firstRead === null) return null;
   // Tokens launched by the account's verified wallets are its own, whenever

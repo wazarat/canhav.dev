@@ -91,16 +91,22 @@ export default async function StudioPage({
     if (target) redirect(target);
   }
 
-  const plan = await getPlan();
-  const [projects, designs, launches, links] = await Promise.all([
-    getMyProjects(user.owner),
-    getMyTokenDesigns(user.owner),
-    getMyLaunches(user.owner),
+  // One round trip each for projects and designs: the launches reader is
+  // handed the same promises, and the agent reads (keyed by project, so a
+  // team sees them, M107) start as soon as the project rows land instead
+  // of after the slowest read (2026-10-21).
+  const projectsRead = getMyProjects(user.owner);
+  const designsRead = getMyTokenDesigns(user.owner);
+  const projectIdsRead = projectsRead.then((rows) => (rows ?? []).map((p) => p.id));
+  const [plan, projects, designs, launches, links, agent, sessions] = await Promise.all([
+    getPlan(),
+    projectsRead,
+    designsRead,
+    getMyLaunches(user.owner, { projects: projectsRead, designs: designsRead }),
     getEntityLinks(user.owner),
+    projectIdsRead.then(agentActivityByProjects),
+    projectIdsRead.then(latestSessionsByProjects),
   ]);
-  // Agent activity and sessions are keyed by project, so a team sees them (M107).
-  const projectIds = (projects ?? []).map((p) => p.id);
-  const [agent, sessions] = await Promise.all([agentActivityByProjects(projectIds), latestSessionsByProjects(projectIds)]);
   const launched = launchedSets({
     launches: launches ?? [],
     designs: designs ?? [],

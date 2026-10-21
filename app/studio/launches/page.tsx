@@ -43,10 +43,12 @@ export default async function StudioLaunchesPage({
   const { chain: rawChain } = await searchParams;
   const chain = chainParam(rawChain);
 
+  const projectsRead = getMyProjects(user.owner);
+  const designsRead = getMyTokenDesigns(user.owner);
   const [projects, designs, launches, links] = await Promise.all([
-    getMyProjects(user.owner),
-    getMyTokenDesigns(user.owner),
-    getMyLaunches(user.owner),
+    projectsRead,
+    designsRead,
+    getMyLaunches(user.owner, { projects: projectsRead, designs: designsRead }),
     getEntityLinks(user.owner),
   ]);
   const launched = launchedSets({

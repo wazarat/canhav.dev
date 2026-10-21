@@ -77,6 +77,14 @@ const queryOn =
   <T>(gql: string): Promise<T | null> =>
     query<T>(gql, chain);
 
+/**
+ * How long one indexer query may take (2026-10-21). A page that reads the
+ * indexer waits for the slowest query, so a stalled machine used to hold
+ * the studio until the platform gave up; past this bound the read counts
+ * as unavailable and the page renders without the live record.
+ */
+const INDEXER_TIMEOUT_MS = 8_000;
+
 async function query<T>(gql: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN): Promise<T | null> {
   const url = INDEXER_URLS[chain];
   if (!url) return null;
@@ -86,6 +94,7 @@ async function query<T>(gql: string, chain: ProjectChain = DEFAULT_PROJECT_CHAIN
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: gql }),
       cache: "no-store",
+      signal: AbortSignal.timeout(INDEXER_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { data?: T; errors?: unknown };

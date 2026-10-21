@@ -45,17 +45,30 @@ export async function getSessionUser(): Promise<SessionUser | null> {
  * one by signature, at wallet sign-in or when it is added to the profile.
  * Lowercase addresses. Read by user id, so it also works for an MCP token.
  * Empty when Clerk is unconfigured or the lookup fails.
+ *
+ * One Backend API call per account per minute (2026-10-21): the studio
+ * home, the launches page and every project page asked Clerk on each
+ * request. A wallet added to the profile shows within the minute; on a
+ * failed lookup the last answer stands.
  */
+const walletCache = new Map<string, { at: number; wallets: string[] }>();
+const WALLET_TTL_MS = 60_000;
+
 export async function getVerifiedWallets(userId: string): Promise<string[]> {
   if (!isAuthConfigured()) return [];
+  const hit = walletCache.get(userId);
+  if (hit && Date.now() - hit.at < WALLET_TTL_MS) return hit.wallets;
+  let wallets: string[];
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    return user.web3Wallets
+    wallets = user.web3Wallets
       .filter((w) => w.verification?.status === "verified" && /^0x[a-fA-F0-9]{40}$/.test(w.web3Wallet))
       .map((w) => w.web3Wallet.toLowerCase());
   } catch (err) {
     console.warn("wallet lookup failed", err);
-    return [];
+    wallets = hit?.wallets ?? [];
   }
+  walletCache.set(userId, { at: Date.now(), wallets });
+  return wallets;
 }

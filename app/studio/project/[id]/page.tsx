@@ -46,11 +46,12 @@ export default async function ProjectEditorPage({
   if (!row) notFound();
 
   const [privateUsed, checks] = await Promise.all([countPrivateProjects(user.owner, row.id), latestCheckRuns(row.id)]);
+  const designsRead = getMyTokenDesigns(user.owner);
   const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
-    getMyTokenDesigns(user.owner),
+    designsRead,
     projectChainLocked(row.id),
-    getMyLaunches(user.owner),
+    getMyLaunches(user.owner, { designs: designsRead }),
   ]);
   // The launches side of the project (M56). Design-only launches link through the design.
   const chain = projectChainOf(row.draft_doc);
