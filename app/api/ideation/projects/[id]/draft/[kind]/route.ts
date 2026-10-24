@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { DraftError, draft } from "@/lib/draft/anthropic";
+import { briefLines, normalizeBriefAnswers } from "@/lib/draft/briefs";
 import { renderProjectContext } from "@/lib/draft/context";
 import { countDraftsThisMonth, recordDraftRun } from "@/lib/draft/db";
 import { draftSpec } from "@/lib/draft/kinds";
@@ -42,13 +43,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: STUDIO_PLUS_COPY.draft.capReached, used, remaining: 0 }, { status: 429 });
   try {
     const doc = project.draft_doc;
+    // The brief (M142): the answers sent with the click, else the ones stored for the kind; the last extra, so it is never cut.
+    const brief = normalizeBriefAnswers(kind, body.brief) ?? doc.briefs?.[kind]?.answers ?? null;
+    const extras = [...(await spec.extras(doc, body)), ...(brief ? [briefLines(kind, brief)] : [])];
     const result = await draft({
       kind,
       schema: spec.schema,
-      context: renderProjectContext(doc, await spec.extras(doc, body)),
+      context: renderProjectContext(doc, extras),
       instructions: spec.instructions(doc, body),
       ask: spec.ask(doc, body),
       maxTokens: spec.long ? DRAFT_LIMITS.maxTokensLong : DRAFT_LIMITS.maxTokens,
+      effort: brief && !spec.long ? "medium" : "low",
       fixture: spec.fixture(doc, body),
     });
     await recordDraftRun({ allowanceKey, projectId: project.id, kind, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });

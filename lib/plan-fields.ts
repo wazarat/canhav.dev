@@ -21,7 +21,7 @@ export type PlusDocField = keyof typeof PLUS_DOC_FIELDS;
 
 const PLUS_KEYS = Object.keys(PLUS_DOC_FIELDS) as PlusDocField[];
 /** The draft bookkeeping of the paid drafts, stripped with them. */
-const PLUS_SIDE_KEYS = ["draftRequests", "drafted"] as const;
+const PLUS_SIDE_KEYS = ["draftRequests", "drafted", "briefs"] as const;
 
 export function isPlusDocField(key: string): key is PlusDocField {
   return (PLUS_KEYS as readonly string[]).includes(key);

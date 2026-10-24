@@ -33,4 +33,4 @@ export function renderProjectContext(doc: ProjectDoc, extras: string[] = []): st
 
 /** One system line every draft shares. */
 export const DRAFT_VOICE =
-  "You write for a DeFi team on the chain the record names. Plain words, short sentences, no hype, no bullet lists unless the shape asks for lists. Do not restate the record; build on it. Where the record is silent, say what a reasonable team in this subsector would decide and mark it as an assumption in the text. Stay inside every limit named; a longer answer is cut at a word.";
+  "You write for a DeFi team on the chain the record names. Plain words, short sentences, no hype, no bullet lists unless the shape asks for lists. Do not restate the record; build on it. Where the record is silent, say what a reasonable team in this subsector would decide and mark it as an assumption in the text. Stay inside every limit named; a longer answer is cut at a word. Use the team's brief where one is given and mark what is still assumed.";

@@ -2,6 +2,7 @@ import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
 import type { Icp } from "@/lib/icp";
 import type { Competitors } from "@/lib/competitors/record";
 import { googleFontsUrl } from "@/content/brand-fonts";
+import { briefSummary } from "@/lib/draft/briefs";
 import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests } from "@/lib/draft/requests";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
@@ -851,7 +852,10 @@ export function buildAgentsMd(input: {
     const requests = openRequests(project);
     if (requests.length) {
       lines.push("", "## Open draft requests", "", "The owner asked for these drafts. Writing each one clears its request.", "");
-      for (const r of requests) lines.push(`- ${DRAFT_KIND_FIELDS[r.kind] ?? r.kind} (${r.kind}${r.target ? `, ${r.target}` : ""}), asked ${r.requestedAt.slice(0, 10)}, prompt ${draftPromptName(r.kind)}. ${draftWriteHint(r.kind, r.target)}`);
+      for (const r of requests) {
+        const brief = briefSummary(r.kind, project.briefs?.[r.kind]);
+        lines.push(`- ${DRAFT_KIND_FIELDS[r.kind] ?? r.kind} (${r.kind}${r.target ? `, ${r.target}` : ""}), asked ${r.requestedAt.slice(0, 10)}, prompt ${draftPromptName(r.kind)}. ${draftWriteHint(r.kind, r.target)}${brief ? ` The team's brief, ${brief}` : ""}`);
+      }
     }
     // The team's update cadence (Studio+): the agent writes one with set_weekly_update when get_project_status says it is due.
     if (project.updateCadence && project.updateCadence !== "weekly") lines.push("", `Updates: the team posts ${project.updateCadence.replace(/_/g, " ")}. get_project_status says when one is due; write it with set_weekly_update.`); // copy-ok

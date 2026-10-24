@@ -3,19 +3,40 @@
 import { useState } from "react";
 import { ChevronDown, Sparkles } from "lucide-react";
 
+import { DraftBrief } from "@/components/build/DraftBrief";
 import { PlusGate, usePlusHere } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Menu, MenuItem } from "@/components/ui/Menu";
 import { useCopyToClipboard } from "@/components/ui/useCopy";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import type { AgentWriteMode } from "@/lib/agent-writes";
+import { type BriefDoc, normalizeBriefAnswers, openQuestions } from "@/lib/draft/briefs";
 import { DRAFT_KIND_FEATURES, type DraftKind } from "@/lib/draft/limits";
 import { type Drafted, findRequest, withDrafted, withRequest, withoutRequest } from "@/lib/draft/requests";
 import type { ProjectDoc } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
 
-/** The slice of the record the control reads and writes. */
-export type DraftMeta = Pick<ProjectDoc, "draftRequests" | "drafted">;
+/** The slice of the record the control reads and writes, with the fields the brief questions check (M142). */
+export type DraftMeta = Pick<ProjectDoc, "draftRequests" | "drafted"> & Partial<BriefDoc>;
+
+/** A per kind, per project flag that Skip was chosen this session, so the brief does not come back on every click. */
+function skipKey(projectId: string, kind: DraftKind): string {
+  return `canhav:brief-skip:${projectId}:${kind}`;
+}
+function skipped(projectId: string, kind: DraftKind): boolean {
+  try {
+    return sessionStorage.getItem(skipKey(projectId, kind)) === "1";
+  } catch {
+    return false;
+  }
+}
+function rememberSkip(projectId: string, kind: DraftKind): void {
+  try {
+    sessionStorage.setItem(skipKey(projectId, kind), "1");
+  } catch {
+    // Nothing to remember without storage; the brief shows again next time.
+  }
+}
 
 function when(iso: string): string {
   return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -34,7 +55,10 @@ function day(iso: string): string {
  * into another editor. Under it, one sentence says what stands, queued
  * since when with a Cancel, or drafted by whom on which day. The `link`
  * variant is a Redraft text link opening the same menu, for a block
- * inside a section. A free account sees nothing here (M136).
+ * inside a section. A free account sees nothing here (M136). When the
+ * kind has open brief questions on this record (M142), the first action
+ * opens the brief card; Draft saves the answers under briefs[kind] and
+ * runs the action, Skip runs it and is remembered for the session.
  */
 export function DraftControl<T>({
   projectId,
@@ -76,6 +100,7 @@ export function DraftControl<T>({
   const [working, setWorking] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [brief, setBrief] = useState<"queue" | "server" | null>(null);
   const { copied, copy } = useCopyToClipboard(agentPrompt ?? "");
 
   if (gate && !here.ok) return <PlusGate feature={DRAFT_KIND_FEATURES[kind]} />;
@@ -84,23 +109,32 @@ export function DraftControl<T>({
   const open = doc ? findRequest(doc, kind, target) : undefined;
   const drafted: Drafted[DraftKind] | undefined = doc?.drafted?.[kind];
 
-  const queue = () => {
+  const questions = doc ? openQuestions(kind, doc as BriefDoc, body ?? {}) : [];
+  const earlier = doc?.briefs?.[kind];
+
+  const queue = (answers?: Record<string, string>) => {
     if (!doc || !patch) return;
-    patch({ draftRequests: withRequest(doc, kind, body, "owner", target) });
+    const clean = answers ? normalizeBriefAnswers(kind, answers) : null;
+    patch({
+      draftRequests: withRequest(doc, kind, body, "owner", target),
+      ...(clean ? { briefs: { ...(doc.briefs ?? {}), [kind]: { answers: clean, at: new Date().toISOString() } } } : {}),
+    });
   };
   const cancel = () => {
     if (!doc || !patch) return;
     patch({ draftRequests: withoutRequest(doc, kind, target) });
   };
 
-  const server = async () => {
+  const server = async (answers?: Record<string, string>) => {
     setWorking(true);
     setError(null);
+    const clean = answers ? normalizeBriefAnswers(kind, answers) : null;
+    if (clean && doc && patch) patch({ briefs: { ...(doc.briefs ?? {}), [kind]: { answers: clean, at: new Date().toISOString() } } });
     try {
       const res = await fetch(`/api/ideation/projects/${projectId}/draft/${kind}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body ?? {}),
+        body: JSON.stringify({ ...(body ?? {}), ...(clean ? { brief: clean } : {}) }),
       });
       const data = (await res.json()) as { value?: T; remaining?: number; error?: string };
       if (typeof data.remaining === "number") setRemaining(data.remaining);
@@ -117,20 +151,37 @@ export function DraftControl<T>({
     }
   };
 
-  const primary = () => (canQueue ? queue() : void server());
+  /** Runs an action, through the brief first when questions are open and Skip was not chosen this session. */
+  const run = (action: "queue" | "server") => {
+    if (questions.length && doc && patch && !skipped(projectId, kind)) {
+      setBrief(action);
+      return;
+    }
+    if (action === "queue") queue();
+    else void server();
+  };
+  const finishBrief = (answers?: Record<string, string>) => {
+    const action = brief;
+    setBrief(null);
+    if (!action) return;
+    if (!answers) rememberSkip(projectId, kind);
+    if (action === "queue") queue(answers);
+    else void server(answers);
+  };
+  const primary = () => run(canQueue ? "queue" : "server");
   const text = working ? C.working : (label ?? C.draft);
 
   const menu = (trigger: (state: { open: boolean; toggle: () => void }) => React.ReactNode) => (
     <Menu align="left" width="w-72 max-w-[calc(100vw-2rem)]" className="inline-block" trigger={trigger}>
       {canQueue ? (
-        <MenuItem onSelect={queue} disabled={Boolean(open)}>
+        <MenuItem onSelect={() => run("queue")} disabled={Boolean(open)}>
           <span className="flex flex-col items-start">
             <span>{C.menu.agent}</span>
             <span className="text-xs text-ink-500">{C.menu.agentHint}</span>
           </span>
         </MenuItem>
       ) : null}
-      <MenuItem onSelect={() => void server()} disabled={working}>
+      <MenuItem onSelect={() => run("server")} disabled={working}>
         <span className="flex flex-col items-start">
           <span>{C.menu.canhav}</span>
           {remaining !== null ? <span className="text-xs text-ink-500">{C.remaining(remaining)}</span> : null}
@@ -158,6 +209,8 @@ export function DraftControl<T>({
     <p className="text-xs text-ink-500">{C.draftedBy[drafted.by](day(drafted.at))}</p>
   ) : null;
 
+  const briefCard = brief ? <DraftBrief questions={questions} initial={earlier?.answers} working={working} onDraft={(a) => finishBrief(a)} onSkip={() => finishBrief()} /> : null;
+
   if (variant === "link") {
     return (
       <div className={cn("space-y-1", className)}>
@@ -169,6 +222,7 @@ export function DraftControl<T>({
         ))}
         {status}
         {error ? <p className="text-xs text-rose-400">{error}</p> : null}
+        {briefCard}
       </div>
     );
   }
@@ -188,6 +242,7 @@ export function DraftControl<T>({
       ))}
       {status}
       {error ? <p className="text-xs text-rose-400">{error}</p> : null}
+      {briefCard}
     </div>
   );
 }

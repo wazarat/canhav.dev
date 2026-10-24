@@ -214,6 +214,38 @@ export const STUDIO_PLUS_COPY = {
     /** What is sent, for the docs and the first use note. */
     sends: "Drafting sends the project record, the kit summary and the fields named for the draft to Anthropic's API from CanHav's side. Nothing from your repository and no keys.",
   },
+  /** The brief before a draft (M142): a few questions, each answered in one or two sentences. */
+  brief: {
+    title: "Before the draft",
+    lead: "A sentence or two per question. The draft builds on your answers instead of assuming them, and they stay on the project for your agent.",
+    draft: "Draft",
+    skip: "Skip, draft anyway",
+    saved: (date: string) => `Brief from ${date}`,
+    edit: "Edit the brief",
+    questions: {
+      whoPays: { label: "Who pays?", hint: "The person or team whose budget this comes out of." },
+      whoUses: { label: "Who uses it day to day?", hint: "The role that opens it, when that is not the payer." },
+      whereToday: { label: "Where are they today?", hint: "The protocol, spreadsheet or desk that does this job for them now." },
+      switchTrigger: { label: "What makes them switch?", hint: "The moment or number that moves them." },
+      objection: { label: "What is their main objection?", hint: "What they say before they say no." },
+      revenue: { label: "How does the product earn?", hint: "Fees, spread, subscriptions, who pays what and when." },
+      channels: { label: "How do customers find it?", hint: "The channels you will actually work, not every channel." },
+      partners: { label: "Which partners does it lean on?", hint: "Protocols, providers and people the product cannot run without." },
+      cost: { label: "What is the biggest cost?", hint: "The line that dominates, and whether it is fixed." },
+      comparedWith: { label: "Who will you be compared with?", hint: "The one or two names a reviewer brings up first." },
+      differenceKind: { label: "What kind of difference is it?", hint: "Product, users, chain, price or trust, pick the one that holds." },
+      toneWords: { label: "Which words describe the tone?", hint: "Two to five, such as plain, precise, warm." },
+      avoidLook: { label: "Which look do you want to avoid?", hint: "A style, a colour or a competitor's feel." },
+      feel: { label: "How should it feel to use?", hint: "The impression after the first minute." },
+      ask: { label: "What is the ask?", hint: "The amount, the round or the grant size, and what it buys." },
+      traction: { label: "What traction is real today?", hint: "Users, volume, partners or pilots the record can back." },
+      team: { label: "Who is on the team?", hint: "Names, roles and the one thing each has shipped." },
+      budget: { label: "How would the budget be spent?", hint: "The three or four lines a programme expects to see." },
+      landed: { label: "What landed this period?", hint: "Commits, deployments, decisions." },
+      next: { label: "What is next?", hint: "The one or two things the team starts on now." },
+      blocked: { label: "What is blocked?", hint: "One honest line, or none." },
+    },
+  },
   /** Project keys (M111). */
   keys: {
     readOnly: "This key has read scope. Writes need a write key; the owner makes one on the project page under Deployments.",

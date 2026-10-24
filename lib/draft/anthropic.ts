@@ -62,6 +62,8 @@ export async function draft<T>(input: {
   /** The request itself, the user turn. */
   ask: string;
   maxTokens?: number;
+  /** Reasoning effort; low by default, medium when a brief is given to the short kinds (M142). */
+  effort?: "low" | "medium";
   /** The fixture a kind answers with when no key is configured outside production. */
   fixture?: T;
 }): Promise<{ value: T; usage: DraftUsage }> {
@@ -79,7 +81,7 @@ export async function draft<T>(input: {
         { type: "text", text: input.instructions },
       ],
       messages: [{ role: "user", content: input.ask }],
-      output_config: { effort: "low", format: zodOutputFormat(input.schema) },
+      output_config: { effort: input.effort ?? "low", format: zodOutputFormat(input.schema) },
     });
     if (response.stop_reason === "refusal")
       throw new DraftError("refusal", `The model declined this draft${response.stop_details?.category ? ` (${response.stop_details.category})` : ""}.`);

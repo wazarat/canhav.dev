@@ -124,7 +124,7 @@ A **Customers** section holds who you sell to and the persona table (moved here 
 
 ### Business model
 
-Studio+. Three sections on one tab, each a teaser with the upgrade link on a free account. **Business Model Canvas**, the nine blocks drafted from the record (one Draft control, a Redraft link on each block, each opening the menu of ways, your agent, CanHav or the prompt to copy) and edited in place. **Ideal customers**, one or two profiles with the wallets, channels and protocols they use, drafted from the personas and the protocols in your subsector on DefiLlama. **Competitors**, the protocols in your subsector on your chain from DefiLlama (refreshed monthly, with TVL, chains and age), a positioning map you sit on with pins and two axes, and the one line on how you differ, drafted against the landscape.
+Studio+. Three sections on one tab, each a teaser with the upgrade link on a free account. **Business Model Canvas**, the nine blocks drafted from the record (one Draft control, a Redraft link on each block, each opening the menu of ways, your agent, CanHav or the prompt to copy, with a short brief of questions the first time) and edited in place. **Ideal customers**, one or two profiles with the wallets, channels and protocols they use, drafted from the personas and the protocols in your subsector on DefiLlama. **Competitors**, the protocols in your subsector on your chain from DefiLlama (refreshed monthly, with TVL, chains and age), a positioning map you sit on with pins and two axes, and the one line on how you differ, drafted against the landscape.
 
 ### Brand
 

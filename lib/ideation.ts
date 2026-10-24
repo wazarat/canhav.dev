@@ -2,6 +2,7 @@ import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/li
 import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
+import { type Briefs, normalizeBriefs } from "@/lib/draft/briefs";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
 import { type UpdateCadence, isUpdateCadence } from "@/lib/updates";
@@ -369,6 +370,8 @@ export interface ProjectDoc {
   draftRequests?: DraftRequest[];
   /** Who drafted each Studio+ field (M117). Optional, never injected, never published. */
   drafted?: Drafted;
+  /** The team's answers before each draft (M142), per kind. Owner written, optional, never injected, never published. */
+  briefs?: Briefs;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
   /**
@@ -753,6 +756,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeDrafted((rest as { drafted?: unknown }).drafted);
     if (clean) (rest as { drafted?: Drafted }).drafted = clean;
     else delete (rest as { drafted?: unknown }).drafted;
+  }
+  // Briefs (M142): known questions only, answers capped, dropped when empty.
+  if ("briefs" in rest) {
+    const clean = normalizeBriefs((rest as { briefs?: unknown }).briefs);
+    if (clean) (rest as { briefs?: Briefs }).briefs = clean;
+    else delete (rest as { briefs?: unknown }).briefs;
   }
   // Competitors (M115): the line capped, the map state checked, dropped when empty.
   if ("competitors" in rest) {

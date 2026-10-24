@@ -9,6 +9,7 @@ import { landscapeFor } from "@/lib/competitors/landscape";
 import { latestCheckRuns } from "@/lib/checks/db";
 import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests, withDrafted, withoutRequest } from "@/lib/draft/requests";
 import { DRAFT_AGENT_PROMPTS } from "@/lib/agent-prompts-draft";
+import { briefLines } from "@/lib/draft/briefs";
 import { DRAFT_KIND_FEATURES, type DraftKind } from "@/lib/draft/limits";
 import { stripPlusFields } from "@/lib/plan-fields";
 import { projectPlus } from "@/lib/plan-project";
@@ -426,6 +427,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           field: DRAFT_KIND_FIELDS[r.kind],
           target: r.target ?? null,
           body: r.body ?? null,
+          // The team's brief for the kind (M142), as the lines to build on, null when none was written.
+          brief: briefLines(r.kind, project.draft_doc.briefs?.[r.kind]) || null,
           requestedAt: r.requestedAt,
           prompt: draftPromptName(r.kind),
           howTo: draftWriteHint(r.kind, r.target),
@@ -1653,7 +1656,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
   );
 
   // One prompt per draft kind (M117), listed by Claude Code as slash commands.
-  for (const [kind, build] of Object.entries(DRAFT_AGENT_PROMPTS) as Array<[DraftKind, (name: string, id: string) => string]>) {
+  for (const [kind, build] of Object.entries(DRAFT_AGENT_PROMPTS) as Array<[DraftKind, (name: string, id: string, brief?: string) => string]>) {
     const name = draftPromptName(kind);
     if (registeredPrompts.has(name)) continue;
     registeredPrompts.add(name);
@@ -1662,13 +1665,13 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       name,
       {
         title: `Draft the ${DRAFT_KIND_FIELDS[kind] ?? kind} field`,
-        description: `Studio+. Reads the project and writes its ${DRAFT_KIND_FIELDS[kind] ?? kind} through update_project, the way the owner's Draft button asks for. Clears the open draft request of that kind.`,
+        description: `Studio+. Reads the project and writes its ${DRAFT_KIND_FIELDS[kind] ?? kind} through update_project, the way the owner's Draft button asks for, building on the team's brief when one was written. Clears the open draft request of that kind.`,
         argsSchema: z.object({}),
       },
       async (_args, ctx) => {
         const loaded = await withProject(projectId, ctx);
         if (!loaded.ok) return promptResult(loaded.message);
-        return promptResult(build(loaded.value.project.draft_doc.name, projectId));
+        return promptResult(build(loaded.value.project.draft_doc.name, projectId, briefLines(kind, loaded.value.project.draft_doc.briefs?.[kind])));
       },
       { ...scope, plus: DRAFT_KIND_FEATURES[kind] },
     );
