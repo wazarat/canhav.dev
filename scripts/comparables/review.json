@@ -1,0 +1,1549 @@
+[
+  {
+    "id": "aave",
+    "field": "contrast.similarities",
+    "sentence": "Classic pooled money-market model; one of the most trusted DeFi lending brands.",
+    "verdict": "rewrite",
+    "rewrite": "Classic pooled money-market model."
+  },
+  {
+    "id": "aave",
+    "field": "dependency",
+    "sentence": "USDT is one of the largest borrowed assets on Aave; a USDT depeg or redemption shock would stress the biggest loan markets on the protocol.",
+    "verdict": "rewrite",
+    "rewrite": "A USDT depeg or redemption shock would stress the USDT loan markets on the protocol."
+  },
+  {
+    "id": "aerodrome",
+    "field": "contrast.differences",
+    "sentence": "The two are planned to merge, so they are less rivals than siblings.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "aerodrome",
+    "field": "contrast.positioning",
+    "sentence": "Aerodrome's sister protocol on Optimism, built by the same team; the closest architectural analogue (now slated to merge into 'Aero').",
+    "verdict": "rewrite",
+    "rewrite": "Aerodrome's sister protocol on Optimism, built by the same team; the closest architectural analogue."
+  },
+  {
+    "id": "aerodrome",
+    "field": "contrast.positioning",
+    "sentence": "Dominant stableswap / correlated-asset DEX whose vote-escrow (veCRV) gauge model directly inspired the ve(3,3) design Aerodrome uses.",
+    "verdict": "rewrite",
+    "rewrite": "Stableswap / correlated-asset DEX whose vote-escrow (veCRV) gauge model directly inspired the ve(3,3) design Aerodrome uses."
+  },
+  {
+    "id": "aerodrome",
+    "field": "contrast.positioning",
+    "sentence": "The largest DEX overall and the incumbent Aerodrome most directly displaced on Base; also present on Base itself.",
+    "verdict": "rewrite",
+    "rewrite": "A general-purpose DEX also present on Base."
+  },
+  {
+    "id": "aerodrome",
+    "field": "description",
+    "sentence": "Aerodrome is a Solidly-fork ve(3,3) DEX on Base, the dominant venue on the Coinbase L2 by volume.",
+    "verdict": "rewrite",
+    "rewrite": "Aerodrome is a Solidly-fork ve(3,3) DEX on Base, the Coinbase L2."
+  },
+  {
+    "id": "aerodrome",
+    "field": "differentiator",
+    "sentence": "Dominant DEX on Base.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "aerodrome",
+    "field": "risk",
+    "sentence": "Concentrated-liquidity pools and integrating protocols relying on Aerodrome pool prices/TWAPs are exposed to price-manipulation risk in thin or newly created pools, which can propagate to downstream protocols using those pools as a price reference.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "aerodrome",
+    "field": "risk",
+    "sentence": "The planned Aerodrome/Velodrome merger into 'Aero' also introduces migration and execution risk.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "aevo",
+    "field": "contrast.positioning",
+    "sentence": "Established order-book perpetuals DEX, now on its own Cosmos app-chain.",
+    "verdict": "rewrite",
+    "rewrite": "Order-book perpetuals DEX on its own Cosmos app-chain."
+  },
+  {
+    "id": "aevo",
+    "field": "risk",
+    "sentence": "Governance decisions such as the RGP-33 merger were carried by a small number of voters (133 RBN holders), concentrating control over protocol direction and token economics.",
+    "verdict": "rewrite",
+    "rewrite": "Governance decisions such as the protocol merger were carried by a small number of voters, concentrating control over protocol direction and token economics."
+  },
+  {
+    "id": "ankr",
+    "field": "contrast.positioning",
+    "sentence": "Dominant Ethereum liquid staking protocol and overall LST market leader.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "arcton",
+    "field": "component.description",
+    "sentence": "A minimum ~30-day lock applies, and longer locks earn more; rewards accrue in the form of shares.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "arrakis",
+    "field": "risk",
+    "sentence": "Arrakis discloses that upgrades (guarded by a 48-hour timelock) and not-fully-trusted manager/quoter roles could, in principle, misbehave or extract small amounts of liquidity in discrete intervals.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "aura",
+    "field": "component.description",
+    "sentence": "Governance and vote-direction token obtained by locking AURA for 16 weeks. vlAURA holders vote every two weeks on which Balancer gauges receive BAL emissions, effectively steering the veBAL that Aura controls.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "aura",
+    "field": "differentiator",
+    "sentence": "The dominant veBAL aggregator, steering Balancer emissions and underpinning the Balancer bribe market.",
+    "verdict": "rewrite",
+    "rewrite": "A veBAL aggregator, steering Balancer emissions and underpinning the Balancer bribe market."
+  },
+  {
+    "id": "balancer",
+    "field": "contrast.positioning",
+    "sentence": "Leading stable-asset AMM with the veCRV vote-escrow model that Balancer's veBAL is based on.",
+    "verdict": "rewrite",
+    "rewrite": "Stable-asset AMM with the veCRV vote-escrow model that Balancer's veBAL is based on."
+  },
+  {
+    "id": "balancer",
+    "field": "contrast.positioning",
+    "sentence": "The dominant general-purpose AMM/DEX by volume, with concentrated liquidity (V3) and hooks (V4).",
+    "verdict": "rewrite",
+    "rewrite": "General-purpose AMM/DEX with concentrated liquidity (V3) and hooks (V4)."
+  },
+  {
+    "id": "bedrock",
+    "field": "contrast.positioning",
+    "sentence": "Leading ETH liquid restaking token issuer",
+    "verdict": "rewrite",
+    "rewrite": "ETH liquid restaking token issuer"
+  },
+  {
+    "id": "bedrock",
+    "field": "risk",
+    "sentence": "The exploit stemmed from mispricing ETH vs BTC; Bedrock now depends on Chainlink Proof of Reserve, so oracle correctness and availability are load-bearing.",
+    "verdict": "rewrite",
+    "rewrite": "Bedrock depends on Chainlink Proof of Reserve, so oracle correctness and availability are load-bearing."
+  },
+  {
+    "id": "beefy",
+    "field": "contrast.differences",
+    "sentence": "Yearn is Ethereum/L2-focused with more curated, strategist-driven vaults, while Beefy prioritizes extremely broad multi-chain coverage (15+ chains) and permissionless community-built strategies across many smaller farms.",
+    "verdict": "rewrite",
+    "rewrite": "Yearn is Ethereum/L2-focused with more curated, strategist-driven vaults, while Beefy prioritizes very broad multi-chain coverage and permissionless community-built strategies across many smaller farms."
+  },
+  {
+    "id": "beefy",
+    "field": "differentiator",
+    "sentence": "One of the broadest multi-chain vault footprints in DeFi (20+ chains), with fully on-chain, community-audited auto-compounding strategies.",
+    "verdict": "rewrite",
+    "rewrite": "A broad multi-chain vault footprint with fully on-chain, community-audited auto-compounding strategies."
+  },
+  {
+    "id": "beefy",
+    "field": "risk",
+    "sentence": "Beefy's very broad multi-chain footprint (well over 15 chains) plus its historical reliance on cross-chain bridges creates large surface-area and bridge risk.",
+    "verdict": "rewrite",
+    "rewrite": "Beefy's broad multi-chain footprint plus its reliance on cross-chain bridges creates large surface-area and bridge risk."
+  },
+  {
+    "id": "binance-wbeth",
+    "field": "component.description",
+    "sentence": "Wrap, stake and redeem functions pause daily from 23:45 to 00:15 UTC to apply the conversion-rate update.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "boros",
+    "field": "contrast.differences",
+    "sentence": "Early yield-tokenization design (Sense Space AMM); confirm current activity levels before treating its markets as live.",
+    "verdict": "rewrite",
+    "rewrite": "Early yield-tokenization design (Sense Space AMM)."
+  },
+  {
+    "id": "boros",
+    "field": "contrast.differences",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "centrifuge",
+    "field": "component.description",
+    "sentence": "Provides chain abstraction and a unified interface for issuing and administering tokenized funds across 10+ Ethereum-compatible networks including Ethereum, Base and Arbitrum.",
+    "verdict": "rewrite",
+    "rewrite": "Provides chain abstraction and a unified interface for issuing and administering tokenized funds across several Ethereum-compatible networks including Ethereum, Base and Arbitrum."
+  },
+  {
+    "id": "centrifuge",
+    "field": "risk",
+    "sentence": "The V3 protocol runs across 10+ chains with complex tranching, cross-chain messaging and fund-administration logic.",
+    "verdict": "rewrite",
+    "rewrite": "The protocol runs across many chains with complex tranching, cross-chain messaging and fund-administration logic."
+  },
+  {
+    "id": "chateau-capital",
+    "field": "component.description",
+    "sentence": "SME / revenue-based lending across a hyperdiversified book of 100+ positions.",
+    "verdict": "rewrite",
+    "rewrite": "SME / revenue-based lending across a hyperdiversified book of positions."
+  },
+  {
+    "id": "chateau-capital",
+    "field": "contrast.positioning",
+    "sentence": "Leading tokenized-RWA issuer with its own fund family (OUSG, USDY) and lending venue.",
+    "verdict": "rewrite",
+    "rewrite": "Tokenized-RWA issuer with its own fund family (OUSG, USDY) and lending venue."
+  },
+  {
+    "id": "coinbase-cbeth",
+    "field": "contrast.positioning",
+    "sentence": "Fast-growing decentralized liquid restaking provider that has captured significant ETH staking share.",
+    "verdict": "rewrite",
+    "rewrite": "Decentralized liquid restaking provider."
+  },
+  {
+    "id": "coinbase-cbeth",
+    "field": "contrast.positioning",
+    "sentence": "Largest Ethereum liquid staking protocol by staked ETH and market share.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "coinbase-cbeth",
+    "field": "contrast.positioning",
+    "sentence": "Leading decentralization-focused Ethereum liquid staking protocol with permissionless node operators.",
+    "verdict": "rewrite",
+    "rewrite": "Decentralization-focused Ethereum liquid staking protocol with permissionless node operators."
+  },
+  {
+    "id": "compound",
+    "field": "contrast.differences",
+    "sentence": "Aave is the broadest general-purpose pooled money market: brand, liquidity depth, multi-chain reach and risk tooling.",
+    "verdict": "rewrite",
+    "rewrite": "Aave is a general-purpose pooled money market with multi-chain reach and risk tooling."
+  },
+  {
+    "id": "compound",
+    "field": "contrast.positioning",
+    "sentence": "Safest broad money-market brand.",
+    "verdict": "rewrite",
+    "rewrite": "Broad general-purpose money market."
+  },
+  {
+    "id": "convex-finance",
+    "field": "component.description",
+    "sentence": "CVX locked for a 16-week epoch (16 weeks plus a few days) to receive vlCVX voting power. vlCVX holders direct how Convex's aggregated veCRV position votes on Curve gauge weights, and receive a share of protocol-earned CRV plus bribe/incentive income.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "convex-finance",
+    "field": "contrast.positioning",
+    "sentence": "Liquid-locker competitor holding the third-largest veCRV position.",
+    "verdict": "rewrite",
+    "rewrite": "Liquid-locker competitor that also accumulates veCRV."
+  },
+  {
+    "id": "convex-finance",
+    "field": "differentiator",
+    "sentence": "Controls a dominant share of veCRV, making it the primary venue for boosted Curve yield and the heart of the Curve bribe economy.",
+    "verdict": "rewrite",
+    "rewrite": "Aggregates veCRV so that boosted Curve yield and the Curve bribe economy route through it."
+  },
+  {
+    "id": "cozy-finance",
+    "field": "component.description",
+    "sentence": "Cozy's current flagship product: a dedicated on-chain pool of capital that protocols reserve to reimburse their users up to a specified cap in the event of a hack, exploit, or other qualifying loss.",
+    "verdict": "rewrite",
+    "rewrite": "A dedicated on-chain pool of capital that protocols reserve to reimburse their users up to a specified cap in the event of a hack, exploit, or other qualifying loss."
+  },
+  {
+    "id": "cozy-finance",
+    "field": "contrast.positioning",
+    "sentence": "Largest DeFi cover provider; a member-owned discretionary mutual offering smart-contract and custody cover backed by a shared capital pool and the NXM token.",
+    "verdict": "rewrite",
+    "rewrite": "A member-owned discretionary mutual offering smart-contract and custody cover backed by a shared capital pool and the NXM token."
+  },
+  {
+    "id": "cozy-finance",
+    "field": "description",
+    "sentence": "Protection markets settle automatically when on-chain conditions fire — no token governs the core markets today.",
+    "verdict": "rewrite",
+    "rewrite": "Protection markets settle automatically when on-chain conditions fire; no token governs the core markets."
+  },
+  {
+    "id": "curve-finance",
+    "field": "contrast.positioning",
+    "sentence": "Largest general-purpose DEX; with concentrated liquidity (v3) it competes directly for stablecoin and correlated-asset swaps.",
+    "verdict": "rewrite",
+    "rewrite": "General-purpose DEX; with concentrated liquidity (v3) it competes directly for stablecoin and correlated-asset swaps."
+  },
+  {
+    "id": "curve-finance",
+    "field": "contrast.positioning",
+    "sentence": "Leading ve(3,3) AMM/liquidity hub on Base, competing for stable and correlated-asset liquidity on L2.",
+    "verdict": "rewrite",
+    "rewrite": "ve(3,3) AMM/liquidity hub on Base, competing for stable and correlated-asset liquidity on L2."
+  },
+  {
+    "id": "curve-stablecoin",
+    "field": "contrast.differences",
+    "sentence": "USDC is the deepest, most widely integrated regulated fiat-backed dollar with monthly Deloitte attestations and a public-company issuer.",
+    "verdict": "rewrite",
+    "rewrite": "USDC is a regulated fiat-backed dollar with monthly attestations and a public-company issuer."
+  },
+  {
+    "id": "curve-stablecoin",
+    "field": "contrast.positioning",
+    "sentence": "Largest regulated fiat-backed dollar.",
+    "verdict": "rewrite",
+    "rewrite": "Regulated fiat-backed dollar."
+  },
+  {
+    "id": "curve-stablecoin",
+    "field": "contrast.positioning",
+    "sentence": "Stablecoins aren't built to sit still.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "derive",
+    "field": "contrast.positioning",
+    "sentence": "Dominant high-performance on-chain perpetuals venue running its own L1 with a fully on-chain order book.",
+    "verdict": "rewrite",
+    "rewrite": "High-performance on-chain perpetuals venue running its own L1 with a fully on-chain order book."
+  },
+  {
+    "id": "derive",
+    "field": "contrast.positioning",
+    "sentence": "Pioneer of DeFi structured products and automated option-selling vaults (now merged into Aevo).",
+    "verdict": "rewrite",
+    "rewrite": "DeFi structured products and automated option-selling vaults protocol, merged into Aevo."
+  },
+  {
+    "id": "derive",
+    "field": "description",
+    "sentence": "Derive (rebranded from Lyra) is an on-chain options and structured-products protocol with an options AMM and automated vaults, deployed on its own OP-stack chain alongside Optimism, Arbitrum and Base.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "dinari",
+    "field": "component.description",
+    "sentence": "Over 150 tokenized equities are available.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "dinari",
+    "field": "risk",
+    "sentence": "Changes in SEC/FINRA rules or foreign securities regimes across the 85+ countries served could restrict issuance, trading, or redemption.",
+    "verdict": "rewrite",
+    "rewrite": "Changes in SEC/FINRA rules or foreign securities regimes in the countries served could restrict issuance, trading, or redemption."
+  },
+  {
+    "id": "dopex",
+    "field": "component.description",
+    "sentence": "CLAMM became the core product carried into the Stryke rebrand and is integrated with DEXs including PancakeSwap.",
+    "verdict": "rewrite",
+    "rewrite": "CLAMM became the core product carried into the Stryke rebrand."
+  },
+  {
+    "id": "dopex",
+    "field": "component.description",
+    "sentence": "Migrated to SYK at 1 rDPX = 13.333 SYK in the rebrand.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "dopex",
+    "field": "contrast.positioning",
+    "sentence": "AMM-based on-chain options protocol (rebranded to Derive) with dynamic pricing and hedging.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "dopex",
+    "field": "contrast.positioning",
+    "sentence": "Leading DeFi options-vault protocol (Theta Vaults) offering automated option-writing strategies, the closest analog to Dopex's SSOV model.",
+    "verdict": "rewrite",
+    "rewrite": "DeFi options-vault protocol (Theta Vaults) offering automated option-writing strategies, the closest analog to Dopex's SSOV model."
+  },
+  {
+    "id": "dopex",
+    "field": "risk",
+    "sentence": "Stress or failure in those dependencies, or the winding-down/rebrand of Dopex itself, can impair liquidity and product continuity.",
+    "verdict": "rewrite",
+    "rewrite": "Stress or failure in those dependencies can impair liquidity and product continuity."
+  },
+  {
+    "id": "drift-protocol",
+    "field": "contrast.positioning",
+    "sentence": "Dominant perp DEX overall, running a CEX-style CLOB on its own L1 app-chain with sub-second blocks and the largest share of DEX perp volume.",
+    "verdict": "rewrite",
+    "rewrite": "Perp DEX running a CEX-style CLOB on its own L1 app-chain with sub-second blocks."
+  },
+  {
+    "id": "drift-protocol",
+    "field": "contrast.positioning",
+    "sentence": "Established orderbook perp DEX now on its own Cosmos app-chain, known for decentralization depth and ecosystem maturity.",
+    "verdict": "rewrite",
+    "rewrite": "Orderbook perp DEX on its own Cosmos app-chain."
+  },
+  {
+    "id": "drift-protocol",
+    "field": "contrast.positioning",
+    "sentence": "Solana's largest perpetual venue by volume, built by the Jupiter swap-aggregator team using an oracle/pool (JLP) model.",
+    "verdict": "rewrite",
+    "rewrite": "Solana perpetual venue built by the Jupiter swap-aggregator team using an oracle/pool (JLP) model."
+  },
+  {
+    "id": "drift-protocol",
+    "field": "description",
+    "sentence": "Drift is the leading Solana-native perps DEX.",
+    "verdict": "rewrite",
+    "rewrite": "Drift is a Solana-native perps DEX."
+  },
+  {
+    "id": "dydx",
+    "field": "contrast.positioning",
+    "sentence": "Leading pooled-liquidity (oracle-priced, peer-to-pool) perps DEX on Arbitrum and Avalanche.",
+    "verdict": "rewrite",
+    "rewrite": "Pooled-liquidity (oracle-priced, peer-to-pool) perps DEX on Arbitrum and Avalanche."
+  },
+  {
+    "id": "dydx",
+    "field": "contrast.positioning",
+    "sentence": "Perps DEX on its own high-performance L1 appchain with a fully on-chain orderbook; the leading challenger that overtook much of dYdX's perp DEX market share.",
+    "verdict": "rewrite",
+    "rewrite": "Perps DEX on its own high-performance L1 appchain with a fully on-chain orderbook."
+  },
+  {
+    "id": "dydx",
+    "field": "description",
+    "sentence": "dYdX is the original decentralized perps pioneer.",
+    "verdict": "rewrite",
+    "rewrite": "dYdX is a decentralized perpetuals exchange."
+  },
+  {
+    "id": "ease-org",
+    "field": "component.description",
+    "sentence": "These predate the Ease rebrand and RCA model.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "ease-org",
+    "field": "contrast.positioning",
+    "sentence": "The largest DeFi cover mutual and the incumbent Ease is most directly measured against; Armor.fi originally resold Nexus Mutual capacity before building RCA.",
+    "verdict": "rewrite",
+    "rewrite": "The DeFi cover mutual whose capacity Armor.fi originally resold before building RCA."
+  },
+  {
+    "id": "ease-org",
+    "field": "description",
+    "sentence": "Ease.org (formerly Armor) provides coverage vaults where users deposit assets into reciprocal protection pools.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "eigenlayer",
+    "field": "differentiator",
+    "sentence": "Created the restaking primitive; the largest pool of restaked security and the base layer most LRTs build on.",
+    "verdict": "rewrite",
+    "rewrite": "Created the restaking primitive; the base layer most LRTs build on."
+  },
+  {
+    "id": "estate-protocol",
+    "field": "component.description",
+    "sentence": "A planned on-chain marketplace where holders can list tokens for sale to other whitelisted users, intended to provide compliant liquidity.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "component.description",
+    "sentence": "An on-chain hybrid distribution contract (EP-rewards-nft) supporting batched airdrops and ERC-20-based public minting, used for user rewards (total supply 555).",
+    "verdict": "rewrite",
+    "rewrite": "An on-chain hybrid distribution contract (EP-rewards-nft) supporting batched airdrops and ERC-20-based public minting, used for user rewards."
+  },
+  {
+    "id": "estate-protocol",
+    "field": "component.description",
+    "sentence": "Documentation marks this feature as 'Coming Soon'.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "component.description",
+    "sentence": "Each property is represented by security tokens built on a Polymath ST-20 implementation, fully ERC-20 compatible with added transfer-restriction logic (whitelist-based GeneralTransferManager).",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "component.name",
+    "sentence": "Fractional Property Tokens (ST-20 / ERC-20)",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "contrast.differences",
+    "sentence": "Lofty targets US residential rentals on Algorand; Estate Protocol targets Dubai/global property on Arbitrum with a security-token (ST-20) trust model.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "risk",
+    "sentence": "Estate Protocol uses security-token (ST-20) structures and jurisdiction-specific trusts; regulatory treatment of fractional property tokens and Golden-Visa/eligibility claims varies by jurisdiction and is evolving, creating enforcement and marketing-compliance risk.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "risk",
+    "sentence": "The platform relies on custom ST-20/Polymath-derived and rewards contracts on Arbitrum.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "estate-protocol",
+    "field": "risk",
+    "sentence": "The promised secondary marketplace is still 'coming soon'; until compliant on-chain trading is live, tokens may be effectively illiquid, undermining the core liquidity value proposition and leaving holders unable to exit quickly.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "ether-fi",
+    "field": "contrast.positioning",
+    "sentence": "The dominant Ethereum liquid staking protocol (stETH), not a restaking protocol.",
+    "verdict": "rewrite",
+    "rewrite": "Ethereum liquid staking protocol (stETH), not a restaking protocol."
+  },
+  {
+    "id": "ether-fi",
+    "field": "differentiator",
+    "sentence": "Largest liquid restaking protocol; users keep control of their validator keys, plus a Cash/DeFi product suite on top of weETH.",
+    "verdict": "rewrite",
+    "rewrite": "Liquid restaking protocol where users keep control of their validator keys, plus a Cash/DeFi product suite on top of weETH."
+  },
+  {
+    "id": "exactly",
+    "field": "contrast.differences",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "fira",
+    "field": "contrast.differences",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "florence-finance",
+    "field": "risk",
+    "sentence": "Current rollout vaults intentionally target the riskier junior/subordinated/2nd-lien end of the credit spectrum.",
+    "verdict": "rewrite",
+    "rewrite": "Vaults intentionally target the riskier junior/subordinated/2nd-lien end of the credit spectrum."
+  },
+  {
+    "id": "florence-finance",
+    "field": "risk",
+    "sentence": "Due diligence, collateral approval and lending-term decisions are currently centralized with the Florence team, with decentralization to FFM governance stated only as a future goal, creating key-person and centralization risk.",
+    "verdict": "rewrite",
+    "rewrite": "Due diligence, collateral approval and lending-term decisions are centralized with the Florence team, creating key-person and centralization risk."
+  },
+  {
+    "id": "fluid",
+    "field": "contrast.differences",
+    "sentence": "Aave is the broadest general-purpose pooled money market: brand, liquidity depth, multi-chain reach and risk tooling.",
+    "verdict": "rewrite",
+    "rewrite": "Aave is a general-purpose pooled money market with multi-chain reach and risk tooling."
+  },
+  {
+    "id": "fluid",
+    "field": "contrast.positioning",
+    "sentence": "Safest broad money-market brand.",
+    "verdict": "rewrite",
+    "rewrite": "Broad general-purpose money market."
+  },
+  {
+    "id": "fluid",
+    "field": "description",
+    "sentence": "Fluid (formerly Instadapp) combines lending, vaults and DEX liquidity through a shared liquidity layer, so the same capital can support lending and trading.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "franklin-templeton",
+    "field": "contrast.differences",
+    "sentence": "Dinari centers on tokenized equities/securities via a brokerage-style model rather than operating a manager-run money market mutual fund, and lacks Franklin Templeton's scale and '40 Act fund structure.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "franklin-templeton",
+    "field": "contrast.differences",
+    "sentence": "Securitize is primarily a tokenization/transfer-agent infrastructure provider serving third-party issuers (notably BlackRock BUIDL) and is largely institutional/private-placement, whereas Franklin Templeton is the fund manager itself running a U.S.-registered '40 Act mutual fund on its proprietary Benji platform with retail access.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "franklin-templeton",
+    "field": "contrast.positioning",
+    "sentence": "Tokenization platform and SEC-registered transfer agent behind BlackRock's BUIDL tokenized treasury fund, a leading institutional tokenized cash-management product.",
+    "verdict": "rewrite",
+    "rewrite": "Tokenization platform and SEC-registered transfer agent behind BlackRock's BUIDL tokenized treasury fund."
+  },
+  {
+    "id": "franklin-templeton",
+    "field": "risk",
+    "sentence": "As a U.S.-registered '40 Act money market fund subject to SEC oversight and Rule 2a-7, changes to money market fund regulation, securities law treatment of tokenized shares, or KYC/AML requirements could affect the product's structure, availability or on-chain transferability.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "frax",
+    "field": "contrast.differences",
+    "sentence": "USDC is the deepest, most widely integrated regulated fiat-backed dollar with monthly Deloitte attestations and a public-company issuer.",
+    "verdict": "rewrite",
+    "rewrite": "USDC is a regulated fiat-backed dollar with monthly attestations and a public-company issuer."
+  },
+  {
+    "id": "frax",
+    "field": "contrast.positioning",
+    "sentence": "Largest regulated fiat-backed dollar.",
+    "verdict": "rewrite",
+    "rewrite": "Regulated fiat-backed dollar."
+  },
+  {
+    "id": "frax",
+    "field": "differentiator",
+    "sentence": "First-mover hybrid algo-collateral stablecoin, now pivoted to RWA-backed frxUSD with BUIDL — an institutional bridge to DeFi.",
+    "verdict": "rewrite",
+    "rewrite": "Hybrid algo-collateral stablecoin design that moved to RWA-backed frxUSD with BUIDL as collateral."
+  },
+  {
+    "id": "gains-network",
+    "field": "contrast.positioning",
+    "sentence": "Leading on-chain perp DEX using shared LP pools (GLP/GM) as counterparty on Arbitrum and Avalanche.",
+    "verdict": "rewrite",
+    "rewrite": "On-chain perp DEX using shared LP pools (GLP/GM) as counterparty on Arbitrum and Avalanche."
+  },
+  {
+    "id": "gains-network",
+    "field": "contrast.positioning",
+    "sentence": "Order-book derivatives DEX (now on its own Cosmos appchain).",
+    "verdict": "rewrite",
+    "rewrite": "Order-book derivatives DEX on its own Cosmos appchain."
+  },
+  {
+    "id": "gamma",
+    "field": "contrast.positioning",
+    "sentence": "The dominant CLMM DEX and the primary venue Gamma builds on; native V3/V4 LPing is the manual alternative to using a manager like Gamma.",
+    "verdict": "rewrite",
+    "rewrite": "CLMM DEX and the primary venue Gamma builds on; native V3/V4 LPing is the manual alternative to using a manager like Gamma."
+  },
+  {
+    "id": "gearbox",
+    "field": "contrast.positioning",
+    "sentence": "Largest DeFi money market; the dominant overcollateralized lending venue Gearbox competes with for lender liquidity.",
+    "verdict": "rewrite",
+    "rewrite": "Overcollateralized lending venue Gearbox competes with for lender liquidity."
+  },
+  {
+    "id": "gmx",
+    "field": "component.description",
+    "sentence": "GMX is the governance and fee-sharing token; stakers receive a share of protocol fees (in ETH/AVAX) plus esGMX and Multiplier Points. esGMX (escrowed GMX) is a non-transferable reward token that can be staked or linearly vested into liquid GMX over 365 days.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "gmx",
+    "field": "contrast.positioning",
+    "sentence": "Dominant order-book perp DEX on its own L1, leading perpetual DEX volume with a large market share and CEX-like performance.",
+    "verdict": "rewrite",
+    "rewrite": "Order-book perp DEX on its own L1 with CEX-like performance."
+  },
+  {
+    "id": "gmx",
+    "field": "contrast.positioning",
+    "sentence": "Established order-book perpetual DEX running on its own Cosmos appchain with pro trading tooling and 200+ markets.",
+    "verdict": "rewrite",
+    "rewrite": "Order-book perpetual DEX running on its own Cosmos appchain with pro trading tooling."
+  },
+  {
+    "id": "goldfinch",
+    "field": "contrast.similarities",
+    "sentence": "Both are leading onchain private-credit protocols channeling lender capital to vetted institutional borrowers.",
+    "verdict": "rewrite",
+    "rewrite": "Both are onchain private-credit protocols channeling lender capital to vetted institutional borrowers."
+  },
+  {
+    "id": "goldfinch",
+    "field": "risk",
+    "sentence": "Off-chain borrower default risk is the protocol's dominant realized risk.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "hidden-hand",
+    "field": "component.description",
+    "sentence": "Now operates under the Dinero brand.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "hidden-hand",
+    "field": "contrast.positioning",
+    "sentence": "The leading bribe marketplace focused on Convex (vlCVX) and Curve (veCRV) vote incentives.",
+    "verdict": "rewrite",
+    "rewrite": "Bribe marketplace focused on Convex (vlCVX) and Curve (veCRV) vote incentives."
+  },
+  {
+    "id": "hyperliquid",
+    "field": "component.description",
+    "sentence": "Depositors share the vault's PnL directly with no performance fee, subject to a 4-day lockup from the most recent deposit.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "hyperliquid",
+    "field": "contrast.positioning",
+    "sentence": "Leading pool/oracle-based perp DEX on Arbitrum and Avalanche using a shared liquidity pool (GLP-style) as counterparty.",
+    "verdict": "rewrite",
+    "rewrite": "Pool/oracle-based perp DEX on Arbitrum and Avalanche using a shared liquidity pool (GLP-style) as counterparty."
+  },
+  {
+    "id": "hyperliquid",
+    "field": "risk",
+    "sentence": "Perp mark prices, funding, and liquidations rely on price inputs that can be manipulated for thinly traded or newly listed assets.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "insurace",
+    "field": "contrast.positioning",
+    "sentence": "The largest and longest-running DeFi cover protocol, structured as a UK discretionary mutual with NXM member tokens.",
+    "verdict": "rewrite",
+    "rewrite": "DeFi cover protocol structured as a UK discretionary mutual with NXM member tokens."
+  },
+  {
+    "id": "inverse-finance",
+    "field": "contrast.differences",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "inverse-finance",
+    "field": "contrast.differences",
+    "sentence": "USDC is the deepest, most widely integrated regulated fiat-backed dollar with monthly Deloitte attestations and a public-company issuer.",
+    "verdict": "rewrite",
+    "rewrite": "USDC is a regulated fiat-backed dollar with monthly attestations and a public-company issuer."
+  },
+  {
+    "id": "inverse-finance",
+    "field": "contrast.positioning",
+    "sentence": "Largest regulated fiat-backed dollar.",
+    "verdict": "rewrite",
+    "rewrite": "Regulated fiat-backed dollar."
+  },
+  {
+    "id": "jones-dao",
+    "field": "contrast.differences",
+    "sentence": "Rage Trade emphasizes delta-neutral GLP and 80-20 vaults, while Jones emphasizes Smart Leverage amplification of GLP yield paired with a stablecoin-yield jUSDC vault.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "jones-dao",
+    "field": "contrast.positioning",
+    "sentence": "Pioneer of automated DeFi options-vault (DOV) structured products.",
+    "verdict": "rewrite",
+    "rewrite": "Automated DeFi options-vault (DOV) structured products."
+  },
+  {
+    "id": "karak",
+    "field": "contrast.positioning",
+    "sentence": "The pioneer and market leader in Ethereum restaking, securing Actively Validated Services (AVSs).",
+    "verdict": "rewrite",
+    "rewrite": "Ethereum restaking protocol securing Actively Validated Services (AVSs)."
+  },
+  {
+    "id": "kelp-dao",
+    "field": "contrast.positioning",
+    "sentence": "Market-leading Ethereum liquid restaking protocol (eETH/weETH) built on EigenLayer.",
+    "verdict": "rewrite",
+    "rewrite": "Ethereum liquid restaking protocol (eETH/weETH) built on EigenLayer."
+  },
+  {
+    "id": "kelp-dao",
+    "field": "risk",
+    "sentence": "At the LlamaRisk review no DAO existed; the protocol was controlled by a 6/8 admin multisig and a 2/5 manager multisig plus a 10-day timelock, with upgrade, oracle and operator powers concentrated in the team — a centralization and key-management risk.",
+    "verdict": "rewrite",
+    "rewrite": "Upgrade, oracle and operator powers sit with team multisigs behind a timelock rather than a DAO, a centralization and key-management risk."
+  },
+  {
+    "id": "lido",
+    "field": "contrast.differences",
+    "sentence": "Permissionless node operation with RPL collateral bonds and a non-rebasing rETH token; far smaller than Lido but more decentralized at the operator layer.",
+    "verdict": "rewrite",
+    "rewrite": "Permissionless node operation with RPL collateral bonds and a non-rebasing rETH token; more decentralized at the operator layer."
+  },
+  {
+    "id": "lido",
+    "field": "contrast.positioning",
+    "sentence": "A fast-growing decentralized liquid staking and restaking protocol (eETH/weETH).",
+    "verdict": "rewrite",
+    "rewrite": "Decentralized liquid staking and restaking protocol (eETH/weETH)."
+  },
+  {
+    "id": "lido",
+    "field": "contrast.positioning",
+    "sentence": "The largest centralized-exchange liquid staking token.",
+    "verdict": "rewrite",
+    "rewrite": "A centralized-exchange liquid staking token."
+  },
+  {
+    "id": "lido",
+    "field": "contrast.positioning",
+    "sentence": "The leading decentralized, permissionless Ethereum liquid staking alternative (rETH).",
+    "verdict": "rewrite",
+    "rewrite": "Decentralized, permissionless Ethereum liquid staking alternative (rETH)."
+  },
+  {
+    "id": "lido",
+    "field": "differentiator",
+    "sentence": "Deepest liquidity and broadest DeFi integration of any LST; staking is delegated across a DAO-curated set of professional node operators.",
+    "verdict": "rewrite",
+    "rewrite": "Staking is delegated across a DAO-curated set of professional node operators, and stETH is integrated across DeFi."
+  },
+  {
+    "id": "liquity",
+    "field": "contrast.differences",
+    "sentence": "USDC is the deepest, most widely integrated regulated fiat-backed dollar with monthly Deloitte attestations and a public-company issuer.",
+    "verdict": "rewrite",
+    "rewrite": "USDC is a regulated fiat-backed dollar with monthly attestations and a public-company issuer."
+  },
+  {
+    "id": "liquity",
+    "field": "contrast.positioning",
+    "sentence": "Largest regulated fiat-backed dollar.",
+    "verdict": "rewrite",
+    "rewrite": "Regulated fiat-backed dollar."
+  },
+  {
+    "id": "liquity",
+    "field": "contrast.positioning",
+    "sentence": "Stablecoins aren't built to sit still.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "mantle-meth",
+    "field": "contrast.positioning",
+    "sentence": "Leading liquid restaking protocol (eETH/weETH) built natively around EigenLayer restaking.",
+    "verdict": "rewrite",
+    "rewrite": "Liquid restaking protocol (eETH/weETH) built natively around EigenLayer restaking."
+  },
+  {
+    "id": "maverick",
+    "field": "contrast.positioning",
+    "sentence": "Leading AMM for correlated/stable assets with a veTokenomics gauge model.",
+    "verdict": "rewrite",
+    "rewrite": "AMM for correlated/stable assets with a veTokenomics gauge model."
+  },
+  {
+    "id": "maverick",
+    "field": "contrast.positioning",
+    "sentence": "The dominant concentrated-liquidity (V3 CLMM) DEX and the primary benchmark Maverick differentiates against.",
+    "verdict": "rewrite",
+    "rewrite": "Concentrated-liquidity (V3 CLMM) DEX and the primary benchmark Maverick differentiates against."
+  },
+  {
+    "id": "maverick",
+    "field": "risk",
+    "sentence": "veMAV concentrates governance and incentive-direction (emissions/gauge) power in the hands of the largest lockers.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "morpho",
+    "field": "contrast.differences",
+    "sentence": "Aave is the broadest general-purpose pooled money market: brand, liquidity depth, multi-chain reach and risk tooling.",
+    "verdict": "rewrite",
+    "rewrite": "Aave is a general-purpose pooled money market with multi-chain reach and risk tooling."
+  },
+  {
+    "id": "morpho",
+    "field": "contrast.positioning",
+    "sentence": "Largest risk curator in DeFi lending.",
+    "verdict": "rewrite",
+    "rewrite": "Risk curator in DeFi lending."
+  },
+  {
+    "id": "morpho",
+    "field": "contrast.positioning",
+    "sentence": "Safest broad money-market brand.",
+    "verdict": "rewrite",
+    "rewrite": "Broad general-purpose money market."
+  },
+  {
+    "id": "neptune-mutual",
+    "field": "contrast.positioning",
+    "sentence": "The largest DeFi cover protocol, using a discretionary mutual model.",
+    "verdict": "rewrite",
+    "rewrite": "DeFi cover protocol using a discretionary mutual model."
+  },
+  {
+    "id": "neptune-mutual",
+    "field": "risk",
+    "sentence": "A complex 44-contract codebase with intricate storage and access-control patterns.",
+    "verdict": "rewrite",
+    "rewrite": "A complex multi-contract codebase with intricate storage and access-control patterns."
+  },
+  {
+    "id": "neutra-finance",
+    "field": "risk",
+    "sentence": "Despite SolidProof and CertiK audits, audited contracts can still contain exploitable bugs, and the protocol now appears unmaintained, increasing the risk of undiscovered or unpatched vulnerabilities.",
+    "verdict": "rewrite",
+    "rewrite": "Despite SolidProof and CertiK audits, audited contracts can still contain exploitable bugs, and an unmaintained protocol increases the risk of undiscovered or unpatched vulnerabilities."
+  },
+  {
+    "id": "nexus-mutual",
+    "field": "component.description",
+    "sentence": "The mutual offers 100+ products spanning protocol/smart-contract cover, yield-token cover, custody (centralized exchange) cover, slashing and other crypto-native and real-world risks.",
+    "verdict": "rewrite",
+    "rewrite": "The mutual offers many products spanning protocol/smart-contract cover, yield-token cover, custody (centralized exchange) cover, slashing and other crypto-native and real-world risks."
+  },
+  {
+    "id": "nexus-mutual",
+    "field": "contrast.similarities",
+    "sentence": "Provides cover against DeFi/exchange incidents and is frequently grouped with Nexus Mutual among leading on-chain cover providers.",
+    "verdict": "rewrite",
+    "rewrite": "Provides cover against DeFi/exchange incidents and is often compared with Nexus Mutual."
+  },
+  {
+    "id": "notional",
+    "field": "component.description",
+    "sentence": "Lenders buy positive fCash at a discount and redeem it 1:1 at maturity for a fixed return; borrowers mint negative fCash to receive cash today and repay a fixed amount later. fCash trades against Prime Cash in maturity-specific AMM liquidity pools where the ratio of Prime Cash to fCash sets the fixed interest rate.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "notional",
+    "field": "contrast.differences",
+    "sentence": "Aave offers only variable (and previously stable) rates with no native fixed-term product, whereas Notional's core differentiator is true fixed-rate, fixed-term lending via fCash plus leveraged vaults.",
+    "verdict": "rewrite",
+    "rewrite": "Aave offers variable rates with no native fixed-term product, whereas Notional's core differentiator is true fixed-rate, fixed-term lending via fCash plus leveraged vaults."
+  },
+  {
+    "id": "notional",
+    "field": "contrast.differences",
+    "sentence": "Early yield-tokenization design (Sense Space AMM); confirm current activity levels before treating its markets as live.",
+    "verdict": "rewrite",
+    "rewrite": "Early yield-tokenization design (Sense Space AMM)."
+  },
+  {
+    "id": "notional",
+    "field": "contrast.positioning",
+    "sentence": "Largest fixed-yield / yield-tokenization protocol",
+    "verdict": "rewrite",
+    "rewrite": "Fixed-yield / yield-tokenization protocol"
+  },
+  {
+    "id": "notional",
+    "field": "contrast.positioning",
+    "sentence": "Largest variable-rate lending money market",
+    "verdict": "rewrite",
+    "rewrite": "Variable-rate lending money market"
+  },
+  {
+    "id": "notional",
+    "field": "risk",
+    "sentence": "Despite 17+ audits, bugs in these contracts or in the whitelisted vault strategy code could lead to loss of funds.",
+    "verdict": "rewrite",
+    "rewrite": "Despite many audits, bugs in these contracts or in the whitelisted vault strategy code could lead to loss of funds."
+  },
+  {
+    "id": "paladin",
+    "field": "component.description",
+    "sentence": "Staking withdrawal requires a 10-day cooldown plus a 2-day unstaking window.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "paladin",
+    "field": "contrast.positioning",
+    "sentence": "Incumbent vote-incentive (bribe) marketplace concentrated on the Convex/vlCVX (Curve) ecosystem.",
+    "verdict": "rewrite",
+    "rewrite": "Vote-incentive (bribe) marketplace concentrated on the Convex/vlCVX (Curve) ecosystem."
+  },
+  {
+    "id": "pancakeswap",
+    "field": "contrast.positioning",
+    "sentence": "Dominant AMM/liquidity hub on Base, using a ve(3,3) emissions-and-bribes model.",
+    "verdict": "rewrite",
+    "rewrite": "AMM/liquidity hub on Base, using a ve(3,3) emissions-and-bribes model."
+  },
+  {
+    "id": "pancakeswap",
+    "field": "contrast.positioning",
+    "sentence": "Leading AMM DEX on Solana and a major venue by spot trading volume.",
+    "verdict": "rewrite",
+    "rewrite": "AMM DEX on Solana."
+  },
+  {
+    "id": "pancakeswap",
+    "field": "contrast.positioning",
+    "sentence": "Leading DEX for stablecoin and pegged-asset swaps with low slippage and its own vote-escrow governance model.",
+    "verdict": "rewrite",
+    "rewrite": "DEX for stablecoin and pegged-asset swaps with low slippage and its own vote-escrow governance model."
+  },
+  {
+    "id": "pancakeswap",
+    "field": "contrast.similarities",
+    "sentence": "Both are the leading DEX on their home chain and rely on token emissions to bootstrap liquidity.",
+    "verdict": "rewrite",
+    "rewrite": "Both rely on token emissions to bootstrap liquidity on their home chain."
+  },
+  {
+    "id": "pancakeswap",
+    "field": "contrast.similarities",
+    "sentence": "Both offer AMM pools, liquidity-mining incentives and (historically) vote-escrow tokenomics (Curve's veCRV; PancakeSwap's now-retired veCAKE).",
+    "verdict": "rewrite",
+    "rewrite": "Both offer AMM pools, liquidity-mining incentives and vote-escrow tokenomics (Curve's veCRV; PancakeSwap's retired veCAKE)."
+  },
+  {
+    "id": "pancakeswap",
+    "field": "description",
+    "sentence": "PancakeSwap is the dominant DEX in the BNB ecosystem — retail-focused with gamification (lotteries, predictions, NFTs) plus its Infinity CLMM.",
+    "verdict": "rewrite",
+    "rewrite": "PancakeSwap is a DEX in the BNB ecosystem, retail-focused with gamification (lotteries, predictions, NFTs) plus its Infinity CLMM."
+  },
+  {
+    "id": "pendle",
+    "field": "differentiator",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "puffer",
+    "field": "contrast.positioning",
+    "sentence": "Largest EigenLayer-based liquid restaking protocol (eETH/weETH).",
+    "verdict": "rewrite",
+    "rewrite": "EigenLayer-based liquid restaking protocol (eETH/weETH)."
+  },
+  {
+    "id": "puffer",
+    "field": "risk",
+    "sentence": "Validator slashing risk on Ethereum: although Secure-Signer (SGX TEE) is designed to prevent slashable messages, downtime, penalties, or a flaw/compromise in the SGX enclave or attestation flow could still impair pufETH's backing.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "radiant",
+    "field": "contrast.positioning",
+    "sentence": "Broadest multichain money market.",
+    "verdict": "rewrite",
+    "rewrite": "Multichain money market."
+  },
+  {
+    "id": "radiant",
+    "field": "contrast.positioning",
+    "sentence": "Chain-specific money-market leader (BNB Chain).",
+    "verdict": "rewrite",
+    "rewrite": "Chain-specific money market (BNB Chain)."
+  },
+  {
+    "id": "rage-trade",
+    "field": "component.name",
+    "sentence": "Omnichain Perpetuals & 80-20 Vaults",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "raydium",
+    "field": "component.description",
+    "sentence": "It is the dominant venue for Solana meme-coin liquidity.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "raydium",
+    "field": "contrast.differences",
+    "sentence": "Uniswap is the deepest multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4).",
+    "verdict": "rewrite",
+    "rewrite": "Uniswap is a multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4)."
+  },
+  {
+    "id": "raydium",
+    "field": "contrast.positioning",
+    "sentence": "The largest spot DEX by volume.",
+    "verdict": "rewrite",
+    "rewrite": "General-purpose spot DEX."
+  },
+  {
+    "id": "raydium",
+    "field": "description",
+    "sentence": "It is the dominant venue for Solana meme-coin liquidity.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "realt",
+    "field": "risk",
+    "sentence": "RealTokens are unregistered securities sold under Reg D Rule 506(c) (U.S. accredited investors only) and Reg S (offshore).",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "realt",
+    "field": "risk",
+    "sentence": "Reporting found some homes were sold as tokens while the deeds still listed the prior owner because the purchase never closed, meaning token holders may not own what they paid for.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "ribbon-finance",
+    "field": "contrast.positioning",
+    "sentence": "On-chain options exchange (formerly Lyra, rebranded Derive) providing an AMM-based options market as an alternative venue for options yield and hedging.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "ribbon-finance",
+    "field": "risk",
+    "sentence": "Concentrated token-holder governance was demonstrated by RGP-33 passing with only 133 RBN holders voting, enabling a full protocol wind-down and token conversion — a small quorum controlling material outcomes for all holders.",
+    "verdict": "rewrite",
+    "rewrite": "Concentrated token-holder governance: a protocol wind-down and token conversion passed with a small number of voters, a small quorum controlling material outcomes for all holders."
+  },
+  {
+    "id": "rocket-pool",
+    "field": "component.description",
+    "sentence": "Pre-Atlas a minipool required 16 ETH from the operator; the Atlas upgrade introduced 8-ETH minipools (LEB8), and the Saturn I upgrade further reduced the bond toward 4 ETH per validator, improving capital efficiency and rETH-collateralization capacity.",
+    "verdict": "rewrite",
+    "rewrite": "Minipool bonds have been lowered across upgrades (16 ETH, then 8 ETH LEB8, then toward 4 ETH per validator), improving capital efficiency and rETH-collateralization capacity."
+  },
+  {
+    "id": "rocket-pool",
+    "field": "contrast.positioning",
+    "sentence": "The dominant ETH liquid staking protocol by market share (stETH).",
+    "verdict": "rewrite",
+    "rewrite": "ETH liquid staking protocol issuing stETH."
+  },
+  {
+    "id": "securitize",
+    "field": "contrast.positioning",
+    "sentence": "Leading issuer of tokenized U.S.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "securitize",
+    "field": "description",
+    "sentence": "It powers BlackRock BUIDL (the largest tokenized Treasury fund) plus Apollo, KKR, Hamilton Lane, and VanEck product launches.",
+    "verdict": "rewrite",
+    "rewrite": "It powers BlackRock BUIDL, a tokenized Treasury fund, plus other institutional fund launches."
+  },
+  {
+    "id": "securitize",
+    "field": "description",
+    "sentence": "Securitize is the leading SEC-registered transfer agent for tokenized securities.",
+    "verdict": "rewrite",
+    "rewrite": "Securitize is an SEC-registered transfer agent for tokenized securities."
+  },
+  {
+    "id": "securitize",
+    "field": "differentiator",
+    "sentence": "SEC-registered transfer agent + broker-dealer + ATS, powering the largest institutional tokenized funds; filed for an NYSE listing (SECZ).",
+    "verdict": "rewrite",
+    "rewrite": "SEC-registered transfer agent, broker-dealer and ATS powering institutional tokenized funds."
+  },
+  {
+    "id": "sense",
+    "field": "contrast.positioning",
+    "sentence": "The dominant yield-tokenization protocol and the closest analogue to Sense's model.",
+    "verdict": "rewrite",
+    "rewrite": "Yield-tokenization protocol and the closest analogue to Sense's model."
+  },
+  {
+    "id": "sense",
+    "field": "differentiator",
+    "sentence": "Early yield-tokenization design (Sense Space AMM); confirm current activity levels before treating its markets as live.",
+    "verdict": "rewrite",
+    "rewrite": "Early yield-tokenization design (Sense Space AMM)."
+  },
+  {
+    "id": "sense",
+    "field": "risk",
+    "sentence": "Despite multiple audits, unmaintained immutable contracts cannot be patched, so any latent bug in the Divider, adapters, or Space math is permanent and unmitigable now that the team has stepped away.",
+    "verdict": "rewrite",
+    "rewrite": "Despite multiple audits, unmaintained immutable contracts cannot be patched, so any latent bug in the Divider, adapters, or Space math is permanent and unmitigable."
+  },
+  {
+    "id": "sherlock",
+    "field": "component.description",
+    "sentence": "Note: SHER was never launched as a liquid, publicly traded token; the planned large public token round did not result in a live token.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "sherlock",
+    "field": "contrast.positioning",
+    "sentence": "Largest crypto-native cover protocol; discretionary mutual where members stake NXM to underwrite risk.",
+    "verdict": "rewrite",
+    "rewrite": "Discretionary mutual where members stake NXM to underwrite risk."
+  },
+  {
+    "id": "spark",
+    "field": "contrast.differences",
+    "sentence": "Aave is the broadest general-purpose pooled money market: brand, liquidity depth, multi-chain reach and risk tooling.",
+    "verdict": "rewrite",
+    "rewrite": "Aave is a general-purpose pooled money market with multi-chain reach and risk tooling."
+  },
+  {
+    "id": "spark",
+    "field": "contrast.positioning",
+    "sentence": "Largest risk curator in DeFi lending.",
+    "verdict": "rewrite",
+    "rewrite": "Risk curator in DeFi lending."
+  },
+  {
+    "id": "spark",
+    "field": "contrast.positioning",
+    "sentence": "Safest broad money-market brand.",
+    "verdict": "rewrite",
+    "rewrite": "Broad general-purpose money market."
+  },
+  {
+    "id": "spectra",
+    "field": "contrast.positioning",
+    "sentence": "The dominant yield-tokenization protocol and Spectra's primary competitor.",
+    "verdict": "rewrite",
+    "rewrite": "Yield-tokenization protocol and Spectra's primary competitor."
+  },
+  {
+    "id": "spectra",
+    "field": "description",
+    "sentence": "Spectra (formerly APWine) is a permissionless interest-rate derivatives protocol: any yield-bearing asset can be split into principal and yield tokens to trade fixed and variable rates.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "stader",
+    "field": "component.description",
+    "sentence": "Designed to reduce staking concentration risk, with planned DVT-based pools in a later phase.",
+    "verdict": "rewrite",
+    "rewrite": "Designed to reduce staking concentration risk."
+  },
+  {
+    "id": "stake-dao",
+    "field": "contrast.positioning",
+    "sentence": "The dominant Convex/Curve vote-incentive (bribe) marketplace, distributing incentives to vlCVX voters.",
+    "verdict": "rewrite",
+    "rewrite": "Convex/Curve vote-incentive (bribe) marketplace, distributing incentives to vlCVX voters."
+  },
+  {
+    "id": "stakewise",
+    "field": "component.description",
+    "sentence": "Stakers can deposit any amount of ETH (or GNO on Gnosis Chain), earn native staking rewards, and unstake without needing 32 ETH.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "stakewise",
+    "field": "contrast.positioning",
+    "sentence": "Dominant ETH liquid staking protocol issuing stETH; the market-share leader StakeWise competes against for staker deposits and DeFi integrations.",
+    "verdict": "rewrite",
+    "rewrite": "ETH liquid staking protocol issuing stETH, competing with StakeWise for staker deposits and DeFi integrations."
+  },
+  {
+    "id": "susdai",
+    "field": "stablecoin.description",
+    "sentence": "Built by Permian Labs, USD.AI is backed by leading investors including Dragonfly, DCG, Delphi Ventures, Fintech Collective, Ethereal Ventures, and is incubated by Alliance DAO.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "sushiswap",
+    "field": "component.description",
+    "sentence": "SushiSwap maintains an aggressive multi-chain presence (40+ chains).",
+    "verdict": "rewrite",
+    "rewrite": "SushiSwap maintains a broad multi-chain presence."
+  },
+  {
+    "id": "sushiswap",
+    "field": "contrast.differences",
+    "sentence": "Uniswap is the deepest multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4).",
+    "verdict": "rewrite",
+    "rewrite": "Uniswap is a multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4)."
+  },
+  {
+    "id": "sushiswap",
+    "field": "contrast.positioning",
+    "sentence": "The largest spot DEX by volume.",
+    "verdict": "rewrite",
+    "rewrite": "General-purpose spot DEX."
+  },
+  {
+    "id": "sushiswap",
+    "field": "description",
+    "sentence": "SushiSwap maintains an aggressive multi-chain presence (40+ chains).",
+    "verdict": "rewrite",
+    "rewrite": "SushiSwap maintains a broad multi-chain presence."
+  },
+  {
+    "id": "sushiswap",
+    "field": "differentiator",
+    "sentence": "40+ chain coverage and SushiXSwap (Stargate + Squid routed) cross-chain swaps; classic AMM + Trident + V3 CLMM.",
+    "verdict": "rewrite",
+    "rewrite": "Broad chain coverage and SushiXSwap (Stargate + Squid routed) cross-chain swaps; classic AMM + Trident + V3 CLMM."
+  },
+  {
+    "id": "swell",
+    "field": "contrast.differences",
+    "sentence": "Ether.fi scaled to become the largest LRT and expanded into cards/cash products; Swell paired restaking with its own OP Stack L2 which was later sunset.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "swell",
+    "field": "contrast.positioning",
+    "sentence": "Leading liquid restaking protocol issuing eETH/weETH on EigenLayer.",
+    "verdict": "rewrite",
+    "rewrite": "Liquid restaking protocol issuing eETH/weETH on EigenLayer."
+  },
+  {
+    "id": "symbiotic",
+    "field": "contrast.positioning",
+    "sentence": "The largest and first-mover restaking / shared-security protocol on Ethereum.",
+    "verdict": "rewrite",
+    "rewrite": "Restaking / shared-security protocol on Ethereum."
+  },
+  {
+    "id": "synthetix",
+    "field": "contrast.positioning",
+    "sentence": "Leading pooled-liquidity perp DEX on Arbitrum/Avalanche; a direct architectural rival to Synthetix's oracle-and-pool perps model.",
+    "verdict": "rewrite",
+    "rewrite": "Pooled-liquidity perp DEX on Arbitrum/Avalanche; a direct architectural rival to Synthetix's oracle-and-pool perps model."
+  },
+  {
+    "id": "synthetix",
+    "field": "risk",
+    "sentence": "The V3 rebuild is large and novel; the iosiro V3 audit found 6 high and 11 medium-risk issues (all addressed) and attributed them partly to the size and complexity of a first-time-audited new system.",
+    "verdict": "rewrite",
+    "rewrite": "The V3 rebuild is large and novel; its first audit attributed many findings to the size and complexity of a first-time-audited new system."
+  },
+  {
+    "id": "term-finance",
+    "field": "contrast.differences",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "termmax",
+    "field": "contrast.differences",
+    "sentence": "The dominant yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi, with the deepest liquidity and asset coverage in the category.",
+    "verdict": "rewrite",
+    "rewrite": "A yield-tokenization market: PT buyers lock a fixed rate, YT buyers go long yield, a true fixed-income primitive for DeFi."
+  },
+  {
+    "id": "thorchain",
+    "field": "contrast.differences",
+    "sentence": "Uniswap is the deepest multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4).",
+    "verdict": "rewrite",
+    "rewrite": "Uniswap is a multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4)."
+  },
+  {
+    "id": "thorchain",
+    "field": "contrast.positioning",
+    "sentence": "The largest spot DEX by volume.",
+    "verdict": "rewrite",
+    "rewrite": "General-purpose spot DEX."
+  },
+  {
+    "id": "toucan-protocol",
+    "field": "risk",
+    "sentence": "Much of the early bridged supply consisted of old (often 10+ years) low-quality credits that would not qualify in today's market, and researchers (e.g.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "trader-joe",
+    "field": "contrast.differences",
+    "sentence": "Uniswap is the deepest multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4).",
+    "verdict": "rewrite",
+    "rewrite": "Uniswap is a multi-chain AMM with concentrated liquidity (V3) and customizable pools via hooks (V4)."
+  },
+  {
+    "id": "trader-joe",
+    "field": "contrast.positioning",
+    "sentence": "The largest spot DEX by volume.",
+    "verdict": "rewrite",
+    "rewrite": "General-purpose spot DEX."
+  },
+  {
+    "id": "uniswap",
+    "field": "contrast.positioning",
+    "sentence": "Dominant AMM/DEX on BNB Chain and a large multi-chain Uniswap competitor.",
+    "verdict": "rewrite",
+    "rewrite": "AMM/DEX on BNB Chain and a multi-chain Uniswap competitor."
+  },
+  {
+    "id": "uniswap",
+    "field": "contrast.positioning",
+    "sentence": "Leading DEX and liquidity hub on Base, competing directly with Uniswap's large Base presence.",
+    "verdict": "rewrite",
+    "rewrite": "DEX and liquidity hub on Base, competing directly with Uniswap on Base."
+  },
+  {
+    "id": "uniswap",
+    "field": "contrast.positioning",
+    "sentence": "Leading DEX for stable/pegged-asset swaps and a major AMM competitor overall.",
+    "verdict": "rewrite",
+    "rewrite": "DEX for stable/pegged-asset swaps and an AMM competitor."
+  },
+  {
+    "id": "uniswap",
+    "field": "description",
+    "sentence": "Uniswap is the leading automated market maker.",
+    "verdict": "rewrite",
+    "rewrite": "Uniswap is an automated market maker."
+  },
+  {
+    "id": "uniswap",
+    "field": "differentiator",
+    "sentence": "Largest spot DEX by volume; V4 hooks make pools programmable, and UniswapX delivers intent-based, cross-chain routing.",
+    "verdict": "rewrite",
+    "rewrite": "V4 hooks make pools programmable, and UniswapX delivers intent-based, cross-chain routing."
+  },
+  {
+    "id": "usdai",
+    "field": "stablecoin.description",
+    "sentence": "Built by Permian Labs, USD.AI is backed by leading investors including Dragonfly, DCG, Delphi Ventures, Fintech Collective, Ethereal Ventures, and is incubated by Alliance DAO.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "usdc",
+    "field": "stablecoin.description",
+    "sentence": "Learn more about USDC today.",
+    "verdict": "drop",
+    "rewrite": ""
+  },
+  {
+    "id": "usdf",
+    "field": "stablecoin.description",
+    "sentence": "Universal-collateral synthetic dollar (top-10 by supply).",
+    "verdict": "rewrite",
+    "rewrite": "Universal-collateral synthetic dollar."
+  },
+  {
+    "id": "usdg",
+    "field": "stablecoin.description",
+    "sentence": "Global Dollar Network stablecoin (Paxos), Solana-primary; fastest-growing.",
+    "verdict": "rewrite",
+    "rewrite": "Global Dollar Network stablecoin (Paxos), Solana-primary."
+  },
+  {
+    "id": "usdsc",
+    "field": "stablecoin.description",
+    "sentence": "Deprecated legacy version of Stably's original USDS token, kept for backward compatibility and trading with very low liquidity after the rebrand to the unified Stably Dollar (SD).",
+    "verdict": "rewrite",
+    "rewrite": "Deprecated legacy version of Stably's original USDS token, kept for backward compatibility after the rebrand to the unified Stably Dollar (SD)."
+  },
+  {
+    "id": "usdt0",
+    "field": "stablecoin.description",
+    "sentence": "The unified liquidity protocol bringing Tether’s stablecoin assets to the most popular blockchains.",
+    "verdict": "rewrite",
+    "rewrite": "The unified liquidity protocol bringing Tether's stablecoin assets to many blockchains."
+  },
+  {
+    "id": "votium",
+    "field": "component.description",
+    "sentence": "Delegation is non-custodial and persists across CVX lock/unlock/buy/sell; Votium then votes delegated power to capture the highest-value incentives each round. veCRV voting rights cannot currently be delegated.",
+    "verdict": "rewrite",
+    "rewrite": "Delegation is non-custodial and persists across CVX lock/unlock/buy/sell; Votium then votes delegated power to capture the highest-value incentives each round."
+  },
+  {
+    "id": "votium",
+    "field": "risk",
+    "sentence": "Votium is entirely dependent on external systems it does not control: Convex (vlCVX locking and vote power), Curve (gauge weights and the ~10-day cooldown on gauge changes), and Snapshot (delegation and vote signalling).",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "yearn-finance",
+    "field": "component.description",
+    "sentence": "Extensible periphery contracts (4626 Router, Registry, Debt Allocator) sit alongside the core logic.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "yearn-finance",
+    "field": "component.description",
+    "sentence": "It routes BOLD across Liquity V2 Stability Pools, re-evaluating allocation roughly every 30 minutes; permissionless, oracle-less, with no entry/withdraw fee.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "yieldnest",
+    "field": "component.description",
+    "sentence": "Users lock YND to obtain vote-escrowed veYND (minimum 42 YND, 30-day exit queue). veYND holders direct gauge incentives, vote on fees and integrations, and receive protocol revenue via a buyback-and-distribute model.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "yieldnest",
+    "field": "contrast.positioning",
+    "sentence": "Largest Ethereum liquid restaking protocol (eETH/weETH) built on EigenLayer.",
+    "verdict": "rewrite",
+    "rewrite": "Ethereum liquid restaking protocol (eETH/weETH) built on EigenLayer."
+  },
+  {
+    "id": "yieldnest",
+    "field": "risk",
+    "sentence": "As a restaking protocol on EigenLayer (and Kernel/Karak on BNB Chain), restaked assets are subject to slashing penalties for operator/AVS misbehavior; EigenLayer's slashing (ELIP-002) makes slashing outcomes more probable, and withdrawal buffers may be insufficient under stress, forcing queues or reliance on secondary-market liquidity.",
+    "verdict": "keep",
+    "rewrite": ""
+  },
+  {
+    "id": "yieldnest",
+    "field": "risk",
+    "sentence": "The planned transition from Security Council to veYND DAO governance introduces additional uncertainty (per LlamaRisk).",
+    "verdict": "drop",
+    "rewrite": ""
+  }
+]

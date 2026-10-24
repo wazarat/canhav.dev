@@ -1,0 +1,3827 @@
+{
+  "https://aave.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://aave.com/docs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://aerodrome.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://aerodrome.finance/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://alearesearch.substack.com/p/what-you-need-to-know-about-arcton": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://algorand.co/case-studies/lofty-transform-real-estate-industry": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/boros": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/contango-v2": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/csigma-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/deltaprime": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/dolomite": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/euler-v2": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/exactly": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/fira": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/native-credit-pool": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/origami-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/steakhouse-financial": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/t3tris-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/termfinance-lend": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/termmax": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://api.llama.fi/protocol/yield-basis": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://app.aave.com/?marketName=proto_arbitrum_v3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://app.frax.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://app.gamma.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://arcton.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://arcton.gitbook.io/documentation": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://arcton.gitbook.io/documentation/tokenomics/share-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://arrakis.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://arrakis.finance/risks": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://assets.dinari.com/audits/Audit_Hacken_241230.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://atmosphera.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://atmosphera.live": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://aura.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://balancer.fi": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://basescan.org/token/0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://beefy.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://beincrypto.com/pancakeswap-sets-date-for-new-cake-tokenomics": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://benjiinvestments.franklintempleton.com": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blocmates.com/protocol-focus/arcton-democratizing-startup-investments": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.aura.finance/against-all-odds-auras-lbp-recap-and-your-next-steps": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.coinlist.co/introducing-passage-by-coinlist-the-access-layer-for-onchain-capital-markets": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.eigencloud.xyz/slashing-goes-live": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.eigenfoundation.org/announcement": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.gearbox.finance/gearbox-protocol-v3-the-onchain-credit-layer": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.hack.vc/investing-in-chateau-bringing-composable-private-equities-and-funds-on-chain": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.instadapp.io/fluid-dex": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.instadapp.io/fluid-dex-v2": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.instadapp.io/inst": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.ju.com/aave-v4-upgrade-analysis": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.lido.fi/lido-v2-launch": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.lido.fi/participating-in-dual-governance-a-guide-for-steth-holders": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.lido.fi/simpledvt-new-phase-for-lido-on-ethereum": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.notional.finance/introducing-notional-v3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.notional.finance/notional-v3-is-live-on-arbitrum": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.stryke.xyz/articles/introducing-stryke-the-future-of-crypto-options": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.synthetix.io/framework-ventures-backs-synthetix": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.synthetix.io/response-to-oracle-incident": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.synthetix.io/synthetix-perps-v2-is-now-live": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.synthetix.io/synthetix-susd-peg-update": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.toucan.earth/response-to-verras-announcement": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.toucan.earth/toucan-history": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.toucan.earth/verra-consultation-summary": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.uniswap.org/a-win-for-defi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.uniswap.org/arrakis-uniswap-protocol-v3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.uniswap.org/unichain-mainnet-is-here": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.uniswap.org/unification": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.uniswap.org/uniswap-v3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://blog.uniswap.org/uniswapx-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://boros.pendle.finance/markets": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://build.swellnetwork.io/docs/fundamentals/about-swellchain": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://byterocket.com/audit/toucan-nct": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cap.app": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://centrifuge.io": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://chainlinktoday.com/after-2-million-exploit-bedrock-turns-to-chainlink-proof-of-reserve-for-secure-minting": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://chainlinktoday.com/dualmint-joins-chainlink-build-to-bridge-everyday-businesses-and-blockchain": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://chateau.capital": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://clearpool.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://clearpool.medium.com/clearpool-introduces-ozean-the-blockchain-for-real-world-asset-rwa-yield-8669a70f8ef4": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://clearpool.medium.com/florence-finance-brings-european-private-credit-on-chain-to-ozean-b9802ca3a7e3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/audits/2024-07-karak-restaking": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/audits/2024-09-karak-restaking-mitigation-review": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2022-03-paladin": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2022-10-paladin": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2023-06-stader": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2023-08-dopex": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2023-11-kelp": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2024-02-spectra": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2024-04-renzo": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://code4rena.com/reports/2024-07-karak": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://coinmarketcap.com/academy/article/deep-dive-into-the-astronomic-growth-of-yearn-finance-yfi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://coinmarketcap.com/academy/article/what-is-redacted-cartel-s-decentralized-stablecoin-dinero": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://coinmarketcap.com/currencies/clearpool": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://coinmarketcap.com/currencies/neutra-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cointelegraph.com/press-releases/armorfi-becomes-easeorg-to-launch-revolutionary-coverage-model": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://compound.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://contango.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cozy.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://crvusd.curve.fi": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://crypto-fundraising.info/projects/clearpool": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://crypto.news/plume-and-chateau-capital-join-forces-to-unlock-500m-private-market-investments": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cryptobriefing.com/stake-dao-exploit-vsdcrv-arbitrum": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cryptobriefing.com/symbiotic-restaking-protocol-launch": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cryptoslate.com/insurance-protocols-are-paying-out-millions-to-ust-holders": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://cryptoslate.com/press-releases/neptune-mutual-raises-seed-round-led-by-fenbushi-capital-to-build-decentralized-cover-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://csigma.finance": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://csm-docs.cozy.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://csm-docs.cozy.finance/user-guides/user-faqs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://curve.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://curve.substack.com/p/oct-4-rock-the-votium-": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dailycoin.com/ankr-coin-web-3-infrastructure-provider": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://decrypt.co/108180/coinbase-announces-cbeth-wrapped-ethereum-staking-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dedaub.com/audits/maverick/maverick-pool-positions-mar-31-2023": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/aave": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/binance-staked-eth": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/cozy-finance": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/ease.org": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/extra-finance": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/insurace": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/jones-dao": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/paladin-warlord": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://defillama.com/protocol/stake-dao": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://deltaprime.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dev.goldfinch.finance/docs/security/audit-reports": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dev.jup.ag": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://digitalassets.franklintempleton.com/benji": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dinari.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dinari.com/dshares": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs-v2.balancer.fi/reference/contracts/security.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aave.com/developers/deployed-contracts/security-and-audits": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aerodrome.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aevo.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aevo.xyz/aevo-governance/token-distribution": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.arrakis.fi": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.arrakis.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.arrakis.finance/text/arrakisModular/overview.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aura.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aura.finance/aura/security": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aura.finance/aura/usdaura/distribution": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aura.finance/aura/what-is-aura": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.aura.finance/developers/frequently-asked-questions": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.balancer.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.balancer.fi/concepts/core-concepts/hooks.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.balancer.fi/concepts/governance/veBAL": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.bedrock.technology": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.bedrock.technology/security/audit-reports": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.beefy.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.beefy.finance/beefy-products/clm": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.beefy.finance/beefy-products/vaults": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.beefy.finance/ecosystem/beefy-bulletins/beefy-finance-fees-breakdown": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.beefy.finance/ecosystem/bifi-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.centrifuge.io": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.centrifuge.io/getting-started/dao-summary": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.centrifuge.io/getting-started/token-summary": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.chateau.capital/chateau": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.chateau.capital/chateau/legal": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.clearpool.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.clearpool.finance/clearpool": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.clearpool.finance/clearpool/products/lending/prime": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.compound.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.contango.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.convexfinance.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.convexfinance.com/convexfinance/faq/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.convexfinance.com/convexfinance/general-information/tokenomics": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.cozy.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.curve.fi": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.curve.finance/references/whitepaper": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.derive.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.derive.xyz/docs/token": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.dopex.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.drift.trade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.drift.trade/developers/market-makers/jit-auctions": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.drift.trade/protocol/risk-and-safety/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.dydx.community/dydx-token-migration": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.dydx.exchange": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.dydx.xyz/concepts/architecture/overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.ease.org": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.eigencloud.xyz": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.eigencloud.xyz/eigenlayer/security/audits": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.estateprotocol.com/whitepaper/estate-protocol-features/tokenized-real-estate": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.estateprotocol.com/whitepaper/protocol/process": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.estateprotocol.com/whitepaper/protocol/technology": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.ethena.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.ether.fi": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.euler.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.exact.ly": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.extrafi.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.extrafi.io/extra_finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.extrafi.io/extra_finance/audits-and-security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.extrafi.io/extra_finance/tokenomics/tokenomics-v1/allocation-and-emission": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.fira.money/resources-and-ecosystem/contracts-and-audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.florence.finance/docs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.florence.finance/docs/protocol-overview/how-it-works/introduction": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.florence.finance/docs/support/faq": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.florence.finance/docs/support/smart-contracts": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.fluid.instadapp.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.fluid.instadapp.io/audits-and-security.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.fluid.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.frax.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gains.trade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gains.trade/help/faq": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gains.trade/liquidity-farming-pools/gtoken-vaults": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gains.trade/what-is-gains-network/gfarm2-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gamma.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gamma.xyz/gamma": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gamma.xyz/gamma/learn/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gamma.xyz/gamma/learn/staking": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gamma.xyz/gamma/learn/tokenomics": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gearbox.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gearbox.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gearbox.finance/gear-token/supply-information": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gmx.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gmx.io/docs/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.gmx.io/docs/tokenomics/gmx-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.goldfinch.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.goldfinch.finance/goldfinch/goldfinch-v1/goldfinch-overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.insurace.io": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.inverse.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.jonesdao.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.jonesdao.io/jones-dao/features/understanding-jusdc-and-jglp": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.karak.network": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.kelpdao.xyz": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.lfj.gg": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.lido.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.lido.fi/security/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.liquity.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.mantle.xyz/meth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.mantle.xyz/meth/components/architecture/restaking-cmeth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.mantle.xyz/meth/security/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.mav.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.morpho.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.morpho.org/get-started/resources/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.native.org/native-dev/legacy-v2/native-credit-pool": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.neptune-mutual.com": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.neutra.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.nexusmutual.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.nexusmutual.io/overview/claims-history/bzx-2020": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.nexusmutual.io/protocol/capital-pool": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.nexusmutual.io/protocol/nxm-token/token-model": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.nexusmutual.io/resources/audits-and-security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.notional.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.notional.finance/notional-v3/fcash/using-fcash": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.notional.finance/notional-v3/smart-contracts/audits.md": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.origami.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.paladin.vote": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.paladin.vote/deployed-contracts/audits": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.paladin.vote/governance/holy-pal-hpal": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.paladin.vote/paladin-lending/protocol-overview": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.pancakeswap.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.pancakeswap.finance/protocol/cake-tokenomics": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.pancakeswap.finance/welcome-to-pancakeswap/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.pendle.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.pendle.finance/Security": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.puffer.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.puffer.fi/yield/governance/token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.puffer.fi/yield/stakers/stake": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.radiant.capital": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.rage.trade": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.raydium.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.redacted.finance": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.renzoprotocol.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.renzoprotocol.com/docs/products/staking-suite/ezeth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.renzoprotocol.com/docs/security/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.ribbon.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.ribbon.finance/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.rocketpool.net": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.rocketpool.net/guides/atlas/whats-new.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.sense.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.sense.finance/developers/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.sense.finance/docs/faq": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.sherlock.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.spark.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.spark.fi/dev/security/security-and-audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.spectra.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.spectra.finance/security/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.spectra.finance/tokenomics/spectra": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.staderlabs.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakedao.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakedao.org/liquidlockers": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakedao.org/lockerfees": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakedao.org/sdt": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakedao.org/sdt/vesdt": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakedao.org/vm_overview/votemarket": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakewise.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.stakewise.io/docs/ostoken/how-ostoken-works": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.sushi.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.swellnetwork.io": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.symbiotic.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.symbiotic.fi/modules/vault/introduction": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.symbiotic.fi/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.synthetix.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.term.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.thorchain.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.toucan.earth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.ts.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.uniswap.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.uniswap.org/contracts/v4/overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app/faq/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app/faq/multisig-admin-rights": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app/faq/risks": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app/faq/vlcvx-faq": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app/general-information/the-auction": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.votium.app/general-information/why-votium": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yearn.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yearn.fi/developers/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yearn.fi/developers/v3/overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yearn.fi/getting-started/products/yvaults/yBold": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yieldbasis.com/user/how-it-works": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yieldnest.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yieldnest.finance/governance-and-tokenomics/ynd-and-veynd-tokenomics": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yieldnest.finance/protocol-design/yieldnest-protocol-overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://docs.yieldnest.finance/security/audits-and-security-measures": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dolomite.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://drift.trade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://driftprotocol.medium.com/drift-labs-raises-3-8-million-in-seed-round-8c4ed64f2080": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://driftprotocol.medium.com/drift-protocol-technical-incident-report-2022-05-11-eedea078b6d4": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dualmint.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dualmintrwa.medium.com/real-yield-vs-fantasy-apy-dualmints-data-driven-case-for-boring-infrastructure-06d77e82382a": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://dydx.exchange": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ease.org": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ease.org/armor-rebrands-as-ease-adds-uninsurance-flagship-product": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ease.org/armor-releases-new-whitepaper-for-reciprocally-covered-assets": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ease.org/ease-announces-gv-tokenomics": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ease.org/learn-crypto-defi/get-defi-cover-at-ease/token-documentation-get-defi-cover-at-ease/governance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ease.org/the-ease-token-swap-is-live": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://eco.com/support/en/articles/15254016-benji-deep-dive-2026-franklin-templeton-s-tokenized-money-market": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://en.wikipedia.org/wiki/Securitize,_Inc.": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://estateprotocol.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ethdaily.io/607": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ethena.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://etherfi.gitbook.io/etherfi/security/security-and-risks/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://etherfi.medium.com/announcing-ethfi-the-ether-fi-governance-token-8cae7327763a": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://etherscan.io/address/0x378ba9b73309be80bf4c2c027aad799766a7ed5a": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://etherscan.io/token/0x544c42fBB96B39B21DF61cf322b5EDC285EE7429": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://etherscan.io/token/0xa2E3356610840701BDf5611a53974510Ae27E2e1": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://etherscan.io/token/0xbe9895146f7af43049ca1c1ae358b0541ea49704": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://eventtechlive.com/atmosphera-opens-live-events-to-community-investors-through-blockchain-platform": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://exact.ly": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://exponential.fi/protocols/votium/a680cb9e-a0e1-4d83-a465-607ade75fadd": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://extrafi.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://falcon.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://faq.realt.co/en/article/secondary-market-what-is-the-yam-how-does-the-whitelisting-work-mp71wo": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://firstdigitallabs.com": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://florence.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://fluid.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://frax.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://gains.trade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://gainsnetwork-io.medium.com/migrating-gfarm2-to-gns-aa51bea889ff": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://gammastrategies.medium.com/visor-merges-with-gamma-a-re-org-focusing-on-security-and-performance-b4deaf67e273": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://gearbox.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Ankr-network": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/ArrakisFinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Bedrock-Technology": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Cozy-Finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/DeltaPrimeLabs/deltaprime-primeloans": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/EaseDeFi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/EaseDeFi/Audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/EaseDeFi/ease-rca": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Estate-Protocol-Home": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/ExtraFi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/FraxFinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/GainsNetwork-org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/GammaStrategies": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Gearbox-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Gearbox-protocol/security": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Git-on-my-level": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Instadapp": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/InsurAce-Protocol": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/InverseFinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Jones-DAO": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Kelp-DAO/LRT-rsETH": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Layr-Labs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/NexusMutual": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/PaladinFinance": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/PufferFinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/RageTrade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Renzo-Protocol/contracts-public": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/StakeDAO": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/StoboxTechnologies/Stobox_STV3_Protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/SwellNetwork": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Synthetixio": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/ToucanProtocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/ToucanProtocol/contracts": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/Uniswap": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/aave-dao/aave-v3-origin": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/aave/aave-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/aerodrome-finance/contracts": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/aevoxyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/aurafinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/balancer": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/beefyfinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/beefyfinance/beefy-audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/blocksecteam/audit-reports/blob/main/solidity/blocksec_puffer_v1.0-signed.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/centrifuge": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/clearpool-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/compound-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/contango-xyz/core-v2": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/convex-eth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/csigma-labs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/curvefi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/derivexyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/dinaricrypto": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/dolomite-exchange": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/drift-labs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/dydxprotocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/ethena-labs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/etherfi-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/etherfi-protocol/smart-contracts/tree/master/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/exactly": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/florence-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/gmx-io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/goldfinch-eng": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/hyperliquid-dex": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/jup-ag": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/karak-network/v2-contracts": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/lidofinance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/liquity": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/mantle-lsp/contracts": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/marsfoundation": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/maverickprotocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/morpho-org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/neptune-mutual": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/notional-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/oo-00/Votium": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/pancakeswap": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/pendle-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/perspectivefi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/radiant-capital": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/real-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/redacted-cartel": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/redacted-cartel/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/ribbon-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/rocket-pool": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/securitize-io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sense-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sense-finance/sense-v1": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sense-finance/space-v1": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sherlock-audit/2022-10-rage-trade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sherlock-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sherlock-protocol/sherlock-reports/blob/main/audits/2022.11.28%20-%20Final%20-%20Rage%20Trade%20Audit%20Report.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sigp/public-audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/solidproof/projects/blob/main/Neutra%20Finance/v2_SmartContract_Audit_Solidproof_NeutraFinance.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/solidproof/projects/tree/main/Neutra%20Finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/stader-labs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/stake-dao": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/stake-dao/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/stakewise": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/stakewise/v3-core/tree/main/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/stryke-xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/sushiswap": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/symbioticfi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/t3tris-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/term-structure": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/yearn": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://github.com/yieldnest": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://gmx.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://gmxio.substack.com/p/gmx-v2-beta-is-now-live": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://goldfinch.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hackmd.io/@PrismaRisk/cbETH": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://help.coinbase.com/en/coinbase/coinbase-staking/staking/cbeth-intro": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://help.derive.xyz/en/articles/9219427-lyra-to-drv-migration": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://help.dydx.trade/en/articles/166970-geo-restrictions-site-access": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hiddenhand.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hiddenhand.finance/markets": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hyperliquid.gitbook.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hyperliquid.gitbook.io/hyperliquid-docs/audits": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/vaults/protocol-vaults": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://hyperliquid.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://icodrops.com/dopex": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://icodrops.com/gearbox-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://icodrops.com/jones-dao": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://icodrops.com/rage-trade": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://immunefi.com/bug-bounty/aave": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://immunefi.com/bug-bounty/extrafinance/information": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://immunefi.com/bug-bounty/gearbox": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://immunefi.com/bug-bounty/rocketpool/information": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://insights.derive.xyz/announcing-lyra-v2": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://insights.derive.xyz/avalon-is-live": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://insights.derive.xyz/drv": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://insights.derive.xyz/lyra-mainnet-launch": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://inverse.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://iosiro.com/audits/synthetix-v3-smart-contract-audit": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://iq.wiki/wiki/apwine-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://iq.wiki/wiki/julien-bouteloup": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://iq.wiki/wiki/stader-ethx": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://jonesdao.ghost.io/jaura": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://jonesdao.ghost.io/jusdc-jglp-smoothpaper": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://jup.ag": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://karak.network": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://kerneldao.com/kelp": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://kitchen.steakhouse.financial": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://l2beat.com/scaling/projects/swell": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://learn.lofty.ai/en/articles/8724946-how-does-lofty-s-pmm-proactive-market-maker-and-liquidity-pools-work": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://lfj.gg": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://lido.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://lido.fi/how-lido-works/protocol-fee": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://liquity.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://lista.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://llamarisk.com/research/collateral-risk-rseth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://llamarisk.com/research/yieldnest-general-assessment": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://m0.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@ExtraFinance/extra-finance-monthly-review-january-2025-4338fc3079a0": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@RadiantCapital/radiant-capital-incident-update-e56d8c23829e": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@RadiantCapital/radiant-post-mortem-fecd6cd38081": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@multifarm_fi/hidden-hand-by-redacted-cartel-516ba4b5ebc8": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@neutrafinance/delta-neutral-glp-strategy-5f86708412c0": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@neutrafinance/nglp-delta-neutral-vault-v2-update-alpha-6b9273f9e621": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@neutrafinance/uniswap-v3-delta-neutral-strategy-part-2-e56dbd0f565b": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/@yieldnest/eth-liquid-restaking-protocol-yieldnest-raises-5-2m-in-contribution-round-bb7e2e56dbe3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/armorfi/armor-fi-announces-strategic-backers-15631e2ab607": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/balancer-protocol/balancer-labs-raises-3m-to-supercharge-programmable-liquidity-8f1a42323c78": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/balancer-protocol/the-balancer-report-the-recent-vulnerability-disclosure-6cbed7fda9c7": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/beethoven-x/rate-manipulation-in-balancer-boosted-pools-a-beethoven-x-perspective-e419bbb66592": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/boros-fi/boros-by-pendle-yield-trading-with-margin-63d026dc7399": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/centrifuge/defi-2-0-first-real-world-loan-is-financed-on-maker-fbe24675428f": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/clearpool-finance/clearpool-launches-on-base-enabling-institutional-access-to-onchain-credit-2ec15d098742": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/coinmonks/convex-curve-curve-d7e28cd6c1d9": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/compound-finance/compound-governance-decentralized-b18659f811e0": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/despread-global/redacted-cartel-6e8885bbaa38": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/deus-ex-dao/deep-dive-into-rage-trades-delta-neutral-vaults-3e8f71af82c3": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/florencefinance/florence-roadmap-46a9e648b3d1": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/gains-network/gains-farm-using-chainlink-to-power-decentralized-leveraged-trading-fe954b37eb97": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/gains-network/gtrade-expands-to-base-a-strategic-rollout-b6422f77045e": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/gains-network/introducing-gtoken-vaults-ea98f10a49d5": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/maverick-protocol/maverick-v2-the-ai-dex-with-programmable-pools-b2632e6e3d61": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/maverick-protocol/pantera-jump-crypto-circle-and-gemini-backing-maverick-protocols-8-million-strategic-round-c37f9aa1a97d": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/neptune-mutual/exploring-the-neptune-mutual-marketplace-463d803444c5": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/neptune-mutual/neptune-mutual-parametric-marketplace-going-live-on-ethereum-mainnet-8th-november-2ebb1c59070e": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/neptune-mutual/neptune-mutual-protocol-raises-5-3m-in-a-private-funding-round-after-successful-testnet-launch-5fb0f944c8a8": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/neptune-mutual/the-neptune-mutual-ecosystem-fca13a3ac196": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/nexus-mutual/paying-claims-for-the-yearn-hack-693bcfc5cd57": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/pendle/pendle-v2-launch-part-3-3-updated-tokenomics-b6c6501b8286": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/puffer-fi/welcome-to-puffer-mainnet-685eefd59698": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/rocket-pool/rocket-pool-atlas-upgrade-7c69e39a3d5f": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/rocket-pool/rocket-pool-houston-launch-b056ca1a6c10": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/rocket-pool/rocket-pool-staking-protocol-part-3-3029afb57d4c": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/sensefinance/sense-protocol-guarded-launch-a9628fdf29ec": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://medium.com/sensefinance/sunsetting-sense-and-releasing-it-into-the-ether-cd8c8e1731ad": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://messari.io/project/pendle": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://messari.io/project/spark-sky-protocol": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://messari.io/report/state-of-mantle-q3-2025": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://messari.io/report/understanding-spark-a-comprehensive-overview": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://mirror.xyz/cozy.eth/djvG1VRr08GP85ua-stmwQ2vCt8kh6pWjL-VOyZEl5E": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://monerium.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://morpho.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://mountainprotocol.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://nansen.ai/post/what-is-beefy-protocol": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://nansen.ai/post/what-is-extra-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://native.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://neptune-mutual.com": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://neptunemutual.com/docs/about-neptune-mutual": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://neutra.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://news.curve.finance/curve-finance-the-rise-of-the-home-of-stablecoins": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://nexusmutual.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://notional.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://okxventures.medium.com/okx-ventures-announces-lead-investment-in-bedrock-a-multi-asset-liquid-restaking-protocol-0f2bb73e4192": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ondo.finance/usdy": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://opencover.com/ease": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://opencover.com/insurace": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://opencover.com/sherlock": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://origami.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://paladin.vote": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://pancakeswap.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://partners.circle.com/partner/dualmint": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://paxos.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://phantom.com/learn/crypto-101/drift-airdrop": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://radiant.capital": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://raydium.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://realt.co": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://realt.co/team": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://redacted.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://rekt.news/gamma-strategies-rekt": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://reports.chainsecurity.com/Compound/ChainSecurity_Compound_Comet_Audit.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://reports.electisec.com/2025-05-Cozy-Safety-Module": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://reports.yaudit.dev/reports/04-2022-veYFI": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://research.despread.io/reports-redacted": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://reserve.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://resolv.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ribbonfinance.medium.com/theta-vaults-are-now-live-af3d2e4907d6": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://rmm.realtoken.network": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://rocketpool.net": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://rocketpool.net/files/audits/sigma-prime-audit.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://saturn.rocketpool.net": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://securitize.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sense.finance": {
+    "ok": false,
+    "status": 500,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sherlock.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sherlock.xyz/sherlock-shield": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sky.money": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://skynet.certik.com/projects/neutra-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sourcehat.com/audits/Dopex": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sourcehat.com/audits/DopexSSOV": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://sourcehat.com/audits/JonesDAOGLPVaults": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://spark.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://stablecoin.z.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://stably.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://staderlabs.gitbook.io/ethereum": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://staderlabs.gitbook.io/ethereum/ethx-security/audit-reports": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://stakedao.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://stakedaohq.medium.com/introducing-votemarket-v2-633d6ac37f97": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://stakewise.medium.com/announcing-the-launch-of-stakewise-v3-55effc24dbe4": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://stoyanangelov.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://switchere.com/guides/cvx-coin": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://symbiotic.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://synthetix.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://t3tris.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://teamdopex.medium.com/introducing-single-staking-option-vaults-ssov-b90bbb0a9ae5": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://term.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://tether.to": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://thedefiant.io/insurace-raises-3m-in-round-led-by-alameda-hashkey": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://theorg.com/org/chateau-capital/org-chart/hao-jun-tan": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://thorchain.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://tokenbrice.xyz/crv-wars": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://tokeninsight.com/en/coins/neutra-finance/overview": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://toucan.earth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://toucan.earth/about-toucan": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://tracxn.com/d/companies/estate-protocol/__PAv651lMk5oECBT-iN40k_NdZ-1X5ckss1C0JsX-OF4": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://trueusd.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://ts.finance/termmax": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://uniswap.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://usd.ai": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://usdt0.to": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://veridise.com/audits-archive/company/ribbon-finance/ribbon-aevo-exchange-2023-10-04": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://votemarket.stakedao.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://votium.app": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.aevo.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.agora.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ankr.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ankr.com/docs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ankr.com/docs/liquid-staking/eth/overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ankr.com/docs/liquid-staking/overview": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ankr.com/docs/staking-extra/audit-reports": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.anzen.finance": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.bedrock.technology": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.benzinga.com/markets/cryptocurrency/22/08/28600860/insurace-announces-12-million-insurance-payouts-to-155-victims-of-terra-ust-crash": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.binance.com/en/feed/post/2023-09-13-votium-upgrades-to-v2-with-new-features-1141958": {
+    "ok": true,
+    "status": 202,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.binance.com/en/research/projects/maverick-protocol": {
+    "ok": true,
+    "status": 202,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.binance.com/en/research/projects/wrapped-beacon-eth-wbeth": {
+    "ok": true,
+    "status": 202,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.binance.com/en/support/faq/what-is-wbeth-e252366155174ba6887f6b32e3798273": {
+    "ok": true,
+    "status": 202,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.binance.com/en/wbeth": {
+    "ok": true,
+    "status": 202,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.bitget.com/en": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.blokz.dev/articles/the-shadow-peg-liquid-restaking-tokens-and-the-hidden-collateral-risk-for-ai-defi-agents": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.boxmining.com/insurace-protocol-insur": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ccn.com/analysis/crypto/base-aerodrome-finance-slipstream-tvl-2-billion": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.chainsecurity.com/security-audit/arrakis-uniswap-v4-module": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.chainsecurity.com/security-audit/makerdao-sparklend-advanced": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.circle.com/en/usdc": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.circle.com/eurc": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coinbase.com/cbeth": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coincarp.com/currencies/swell-network/fundraising": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coincarp.com/project/cozy-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coingecko.com/en/coins/jones-dao": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coingecko.com/learn/hyperliquid-hlp-vault-analysis": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coingecko.com/learn/what-is-aerodrome-finance-aero-base": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.coingecko.com/learn/what-is-gmx-guide-to-the-decentralized-perpetual-exchange": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.convexfinance.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.cozy.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.cozy.finance/protection-markets": {
+    "ok": false,
+    "status": 404,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.crunchbase.com/funding_round/nexus-mutual-seed--4e7b0a29": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.crunchbase.com/funding_round/pendle-finance-seed--1fafcfe8": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.crunchbase.com/organization/florence-finance": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.datawallet.com/crypto/ether-fi-explained": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.defisafety.com/app/pqrs/161": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.derive.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.dlnews.com/articles/defi/aerodrome-founder-talks-aero-uniswap-feud-pseudonymity": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.dlnews.com/articles/defi/goldfinch-borrower-lend-east-defaults-says-warbler-labs": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.dlnews.com/articles/defi/sherlock-defi-insurer-on-edge-euler-hack": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.dopex.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.drift.trade/updates/drifts-series-a-announcement": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.dualmint.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.easedefi.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.eigencloud.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.einpresswire.com/article/693863558/estate-protocol-launches-its-tokenized-real-estate-marketplace-with-first-property-in-dubai": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.einpresswire.com/article/736535033/estate-protocol-launches-real-estate-in-dubai-in-partnership-with-smartcrowd": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.elixir.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.estateprotocol.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ether.fi": {
+    "ok": false,
+    "status": 429,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.euler.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.fira.money": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.flywheeldefi.com/article/kelp-dao": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.franklintempleton.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.gate.com/learn/articles/what-is-aura-finance/3404": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.gate.com/learn/articles/what-is-dopex/524": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.gemini.com/cryptopedia/pancakeswap-exchange-cake-crypto-pancake-swap": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.goldfinch.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.halborn.com/audits/aura-finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.halborn.com/audits/securitize/dstoken-e07b34": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.htx.com/support/54993739523805": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.insurace.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.janushenderson.com/corporate/press-releases/janus-henderson-to-partner-with-anemoy-and-centrifuge-on-its-first-tokenized-fund": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.jonesdao.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.kelpdao.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.liquity.org": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.llamarisk.com/research/archive-llamarisk-asset-risk-assessment-liquid-lockers-vesdt": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.lofty.ai": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.lofty.ai/help/articles/6145729-which-blockchain-is-lofty-ai-using-to-tokenize-properties": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.lofty.ai/learn/tokenized-real-estate-benefits-and-risks": {
+    "ok": false,
+    "status": 500,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.mantle.xyz/meth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.mav.xyz": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.michiganpublic.org/criminal-justice-legal-system/2025-07-03/detroit-sues-crypto-based-real-estate-company-over-blight-violations": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.michiganpublic.org/economy/2025-07-25/crypto-real-estate-company-realt-collected-millions-from-investors-for-detroit-properties-it-doesnt-own": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.pendle.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.pleasingmarket.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.prnewswire.com/news-releases/2-55m-seed-of-paladins-ecosystem-championing-open-activism-in-decentralized-governance-301388884.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.prnewswire.com/news-releases/bedrocks-br-token-launch-draws-9653-oversubscription-on-binance-wallet-ido-reinforcing-community-driven-bitcoin-staking-302408000.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.prnewswire.com/news-releases/blackrock-usd-institutional-digital-liquidity-fund-buidl-tokenized-by-securitize-surpasses-1b-in-aum-302401480.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.prnewswire.com/news-releases/plume-and-chateau-capital-unlock-500m-private-market-investments-for-global-investors-302329124.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.prnewswire.com/news-releases/securitize-announces-47-million-strategic-funding-round-led-by-blackrock-302133075.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.prnewswire.com/news-releases/y-combinator-backed-lofty-ai-launches-tokenized-liquid-marketplace-for-ai-vetted-real-estate-on-algorand-301359154.html": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.puffer.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.rage.trade": {
+    "ok": false,
+    "status": 402,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.renzoprotocol.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ribbon.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.sec.gov/Archives/edgar/data/2012557/000201255726000004/Dinari_2025_Public.pdf": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.sec.gov/newsroom/press-releases/2025-47": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.spectra.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.spglobal.com/energy/en/news-research/latest-news/energy-transition/052522-as-verra-halts-tokenization-of-carbon-credits-toucan-vows-to-keep-web3-ethos-alive": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.stablecamel.com/ethereum": {
+    "ok": false,
+    "status": 0,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.staderlabs.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.staderlabs.com/blogs/ethereum/ethx-rolling-beta-launch": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.stakewise.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.stakingrewards.com/asset/insurace": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.steakhouse.financial": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.stobox.io/technology": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.sushi.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.swellnetwork.io": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.swellnetwork.io/post/introducing-rsweth": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.swellnetwork.io/post/smart-contract-audit-completed-by-sigma-prime": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.swellnetwork.io/post/swell-token": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/linked/103874/eth2-staking-protocol-lido-raises-73-million-paradigm": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/119761/crypto-staking-platform-stader-labs-seed-funding": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/136200/defi-security-provider-sherlock-aims-to-raise-100-million-in-token-round": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/189140/curve-releases-whitepaper-and-official-code-for-its-stablecoin": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/196319/decentralized-market-maker-arrakis-finance-raises-4-million-exclusive": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/242516/curve-founder-michael-egorov-sells-more-crv-to-dcfgod-and-others": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/244839/web3-equity-trading-firm-dinari-raises-7-5-million-in-seed-funding": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/259658/dydx-chain-officially-launches-on-mainnet-as-standalone-cosmos-layer-1": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/270338/defi-protocol-gamma-strategies-suffers-an-estimated-3-4-million-exploit": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/275102/binance-labs-puffer-investment": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/278564/binance-labs-renzo-ethereum-restaking": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/288295/ethereum-puffer-finance-funding-token-valuation": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/290709/renzos-ezeth-depegs-18-3-following-rez-tokenomics-announcement-on-binance": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/295972/ethereum-kelp-token-round-valuation": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/299864/curve-founder-loan-positions-liquidation-risk": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/300647/ethereum-restaking-protocol-renzo-raises-17-million": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/328631/hyperliquid-plans-to-launch-hype-token-in-nov-29-genesis-event": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/337447/symbiotic-permissionless-modular-restaking-protocol-ethereum-mainnet": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/338843/defi-protocol-goldfinch-prime-pool-apollo": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/341424/hyperliquid-launches-hyperevm-on-mainnet-to-bring-general-purpose-programmability": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/348314/hyperliquid-delists-jellyjelly-memecoin-amid-whale-manipulation-fiasco": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/349204/usual-sherlock-crypto-bug-bounty-16-million-usd-critical-vulnerability": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/351648/paradigm-restaking-symbiotic-series-a-funding": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/358511/a16z-crypto-eigen-token-eigencloud": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/362164/gmx-token-surges-14-after-hacker-begins-returning-funds-from-40-million-exploit": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/372036/franklin-templeton-bnb-chain-benji-tokenization": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/402719/security-researchers-flag-ongoing-stakedao-exploit-vsdcrv": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/403254/unable-to-recover-from-roughly-50-million-hack-radiant-capital-is-winding-down": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/404111/morpho-raises-175m-paradigm-a16z-crypto-ribbit-capital": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/post/406862/symbiotic-officially-pivots-to-collateral-markets-with-core-v2-launch": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.theblock.co/press-releases/370865/sherlock-kicks-off-2m-ethereum-fusaka-upgrade-audit-contest": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.thestreet.com/crypto/markets/estate-protocol-ceo-tokenization-7-trillion-real-estate-liquidity": {
+    "ok": false,
+    "status": 403,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.ycombinator.com/companies/lofty": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://www.yieldnest.finance": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://yearn.fi": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  },
+  "https://yieldbasis.com": {
+    "ok": true,
+    "status": 200,
+    "checkedAt": "2026-10-24"
+  }
+}

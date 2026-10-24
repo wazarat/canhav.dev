@@ -10,7 +10,9 @@
     "check:copy": "node scripts/check-copy.mjs",
     "gen:templates": "node scripts/gen-templates.mjs",
     "check:templates": "node scripts/gen-templates.mjs --check",
-    "check:fly": "node scripts/fly-cost-check.mjs"
+    "check:fly": "node scripts/fly-cost-check.mjs",
+    "gen:comparables": "node scripts/gen-comparables.mjs",
+    "check:comparables": "node scripts/gen-comparables.mjs --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
