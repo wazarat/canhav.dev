@@ -259,7 +259,14 @@ export function DecisionsTab({
                       clearable
                     />
                     <Field label={D.adminRows.holderField}>
-                      <Input value={row.holder ?? ""} onChange={(e) => update({ holder: e.target.value || undefined })} maxLength={PROJECT_LIMITS.adminHolder.max} placeholder={D.adminRows.holderPlaceholder} />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input value={row.holder ?? ""} onChange={(e) => update({ holder: e.target.value || undefined })} maxLength={PROJECT_LIMITS.adminHolder.max} placeholder={D.adminRows.holderPlaceholder} className="min-w-[12rem] flex-1" />
+                        {doc.teamSafe ? (
+                          <button type="button" onClick={() => update({ holder: `Team Safe ${doc.teamSafe!.threshold} of ${doc.teamSafe!.owners.length}` })} className="text-xs text-ink-300 transition-colors hover:text-ink-50 hover:underline">
+                            {BUILD_COPY.deployments.teamSafe.useAsHolder}
+                          </button>
+                        ) : null}
+                      </div>
                     </Field>
                   </div>
                 )}

@@ -11,7 +11,9 @@ import { StepNav } from "@/components/ideation/StepNav";
 import { TextField } from "@/components/ideation/TextField";
 import { BuildingStep } from "@/components/studio/new/BuildingStep";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
+import { usePlan } from "@/components/studio/PlanContext";
 import { PlanWord } from "@/components/studio/PlanWord";
+import { BUILD_COPY } from "@/content/build";
 import { Button } from "@/components/ui/Button";
 import { ChainField } from "@/components/ideation/ChainField";
 import { SegmentedField } from "@/components/ui/Segmented";
@@ -47,6 +49,7 @@ const STEP_KEYS = ["name", "sector", "building", "chain", "finish"] as const;
 export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolean; onClose: () => void }) {
   const C = NEW_PROJECT_COPY;
   const router = useRouter();
+  const usePlanValue = usePlan();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>({
     name: "",
@@ -193,6 +196,7 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
         )}
 
         <p className="text-xs text-ink-500">{C.editableLater}</p>
+        {current === "finish" && usePlanValue.plan === "studio_plus" ? <p className="text-xs text-ink-500">{BUILD_COPY.deployments.teamSafe.next}</p> : null}
         {error ? (
           <StatusChip tone="error" variant="block">
             {error}

@@ -566,8 +566,10 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => `- **${label}:** ${fieldText(doc, key)}`),
   ];
   lines.push(...resourcePackSections(doc, "##"));
-  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.addressBook || doc.verifyWallet || doc.deployer) {
+  if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.addressBook || doc.verifyWallet || doc.deployer || doc.teamSafe) {
     lines.push("", "## Declared pointers", "");
+    // The team Safe (M160), read onchain rather than declared.
+    if (doc.teamSafe) lines.push(`- **Team Safe:** ${doc.teamSafe.address}, ${doc.teamSafe.threshold} of ${doc.teamSafe.owners.length} owners (${doc.teamSafe.owners.join(", ")}), verified onchain ${doc.teamSafe.verifiedAt.slice(0, 10)}`);
     if (doc.githubRepo) lines.push(`- **GitHub:** https://github.com/${doc.githubRepo}`);
     if (doc.website) lines.push(`- **Website:** ${doc.website}`);
     if (doc.verifyWallet)
@@ -911,6 +913,9 @@ export function buildAgentsMd(input: {
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
     // The brand kit (M118), when one is set.
     lines.push(...brandLines(project, token?.ticker ?? null));
+    // The team Safe (M160): where ownership and admin roles should move before mainnet.
+    if (project.teamSafe)
+      lines.push("", "## Team Safe", "", `${project.teamSafe.address} on ${chainInfo(project.teamSafe.chain).name}, ${project.teamSafe.threshold} of ${project.teamSafe.owners.length} owners (${project.teamSafe.owners.join(", ")}), verified onchain ${project.teamSafe.verifiedAt.slice(0, 10)}. Transfer ownership of deployed contracts and every admin role to it before mainnet, and name it as the holder of admin functions on Decisions.`);
     // The owner's requests for the agent (M151): make the deployer key, work a step. Each says how.
     const asks = openAgentRequests(project);
     if (asks.length) {

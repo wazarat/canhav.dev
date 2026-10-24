@@ -421,10 +421,19 @@ export default async function ProjectPublicPage({
           </PropertyList>
         </Section>
 
-        {(deploys || txCount !== null || github || contractChecks) && (
+        {(deploys || txCount !== null || github || contractChecks || doc.teamSafe) && (
           <Section title="Verified signals">
             <p className="text-sm text-ink-500">
               Read from the chain and public sources, not self-reported.
+              {doc.teamSafe ? (
+                <>
+                  {" "}
+                  {`Team Safe ${doc.teamSafe.address.slice(0, 6)}…${doc.teamSafe.address.slice(-4)}, ${doc.teamSafe.threshold} of ${doc.teamSafe.owners.length} owners, verified onchain.`}{" "}
+                  <a href={explorerAddressUrl(doc.teamSafe.address, doc.teamSafe.chain)} target="_blank" rel="noreferrer" className="text-ink-300 hover:underline">
+                    Explorer
+                  </a>
+                </>
+              ) : null}
               {doc.verifyWallet && " Wallet declared by the team."}
             </p>
             <div className="space-y-3">

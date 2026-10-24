@@ -10,6 +10,8 @@ import { AnalyticsSection } from "@/components/build/AnalyticsSection";
 import { KeysSection } from "@/components/build/KeysSection";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { usePlan } from "@/components/studio/PlanContext";
+import { useProjectPlan } from "@/components/studio/ProjectPlanContext";
+import { TeamSafeCard } from "@/components/build/TeamSafeCard";
 import { type CheckRunView, verifiedOn } from "@/lib/checks/schema";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
@@ -117,6 +119,8 @@ export function DeploymentsTab({
 
   // Studio+ sections show for a Studio+ session only (M136).
   const paid = usePlan().plan === "studio_plus";
+  // The team Safe needs the project's team and its plan (M160).
+  const plan = useProjectPlan();
   return (
     <div className={TAB_WIDTH}>
       <Card>
@@ -199,7 +203,24 @@ export function DeploymentsTab({
               placeholder="https://"
             />
           </Field>
-          <Field label="Team wallet" info='Shown as "declared by team". Deploy history for this wallet renders on your public page.'>
+          {plan.plus && plan.orgId ? (
+            <div className="space-y-3">
+              <h3 className="font-display text-sm font-semibold text-ink-50">{D.teamSafe.title}</h3>
+              <TeamSafeCard
+                projectId={id}
+                chain={chainKey}
+                teamSafe={doc.teamSafe}
+                onChange={(teamSafe) => {
+                  if (teamSafe) patch({ teamSafe });
+                  else {
+                    const { teamSafe: _old, ...rest } = doc;
+                    setDoc(rest as ProjectDoc);
+                  }
+                }}
+              />
+            </div>
+          ) : null}
+          <Field label={doc.teamSafe ? D.teamSafe.declaredLabel : D.teamSafe.teamWalletLabel} info={doc.teamSafe ? D.teamSafe.declaredInfo : D.teamSafe.teamWalletInfo}>
             <Input
               value={doc.verifyWallet ?? ""}
               onChange={(e) => patch({ verifyWallet: e.target.value.trim().toLowerCase() || undefined })}

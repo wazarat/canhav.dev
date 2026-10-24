@@ -469,6 +469,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         })),
         ...stateOf(loaded.value),
         deployer,
+        // The team Safe (M160), owners and threshold as read onchain, null until the team records one.
+        teamSafe: project.draft_doc.teamSafe ?? null,
         // The agent's own summary (M104), null until set_summary has run.
         summary: project.draft_doc.summary ?? null,
         // The team's update cadence and whether one is due now (Studio+); write it with set_weekly_update.

@@ -9,6 +9,7 @@ import { SummaryDialog } from "@/components/build/SummaryDialog";
 import { WeeklyUpdateCard } from "@/components/build/WeeklyUpdateCard";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { usePlan } from "@/components/studio/PlanContext";
+import { useProjectPlan } from "@/components/studio/ProjectPlanContext";
 import { PlusLine } from "@/components/studio/PlusLine";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
@@ -122,6 +123,7 @@ export function OverviewTab({
   const line = oneLine(doc.whatItDoes);
   // Studio+ surfaces show for a Studio+ session only (M136); a free account gets one sentence.
   const paid = usePlan().plan === "studio_plus";
+  const projectPlan = useProjectPlan();
   return (
     <div className={`${TAB_WIDTH} space-y-6`}>
       <Card>
@@ -158,6 +160,14 @@ export function OverviewTab({
         ) : null}
       </Card>
 
+      {paid && projectPlan.plus && projectPlan.orgId && !doc.teamSafe ? (
+        <p className="text-xs text-ink-400">
+          {BUILD_COPY.deployments.teamSafe.overview}{" "}
+          <button type="button" onClick={onGoDeployments} className="text-ink-200 hover:underline">
+            {BUILD_COPY.tabs.deployments}
+          </button>
+        </p>
+      ) : null}
       {paid ? <WeeklyUpdateCard projectId={id} name={doc.name} doc={doc} patch={patch} agentMode={agent.state?.mode ?? "propose"} /> : null}
 
       <Card>

@@ -336,6 +336,41 @@ export const BUILD_COPY = {
       agentLine: "Your agent reads the address, the balances and the faucets on get_project_status and in AGENTS.md.",
     },
     testnet: "Testnet",
+    /** The team Safe (M160, F7). */
+    teamSafe: {
+      title: "Team Safe",
+      intro: "A Safe owned by your team members' own wallets, for contract ownership, admin roles and the treasury. Deployed from your connected wallet on the project's testnet, CanHav holds no key; the owners and threshold are read from the chain.",
+      ownersLabel: "Owners",
+      noWallet: "Add a wallet to your account to be an owner",
+      noMembers: "The team members could not be read. Reload, or record an existing Safe below.",
+      thresholdLabel: "Signatures needed",
+      thresholdOf: (n: number) => `of ${n}`,
+      gas: (chain: string, faucet: string) => `The deploy costs a little testnet ETH from your connected wallet on ${chain}. ${faucet}`,
+      connect: "Connect the wallet that pays for the deploy.",
+      create: "Create the team Safe",
+      creating: "Deploying",
+      verifying: "Reading the Safe from the chain",
+      recorded: (short: string, threshold: string, date: string) => `Team Safe ${short}, ${threshold} owners, verified onchain ${date}`,
+      owner: (short: string, name: string | null) => (name ? `${name} ${short}` : short),
+      remove: "Remove the record",
+      removeHint: "Forgets the Safe here. The Safe itself stays on the chain.",
+      existingLabel: "Or record an existing Safe",
+      existingPlaceholder: "0x…",
+      record: "Record",
+      notASafe: "No Safe answers at that address on this chain.",
+      failed: (reason: string) => `The deploy did not go through. ${reason}`,
+      noProxy: "The transaction went through but no Safe address came back. Record it below once you find it on the explorer.",
+      /** The one line the wizard and the Overview show a Studio+ team (M160). */
+      next: "Studio+ teams, create the team Safe under Deployments once the project exists.",
+      overview: "Your team has no Safe yet. Create it under Deployments before contracts take owners.",
+      /** The admin function holder quick pick (M154, M160). */
+      useAsHolder: "Use the team Safe",
+      /** The declared wallet field once a Safe exists. */
+      declaredLabel: "Declared wallet",
+      declaredInfo: "An address the team names without proof, shown as declared on the public page. Deploy history for it renders there.",
+      teamWalletLabel: "Team wallet",
+      teamWalletInfo: "Shown as declared by the team on the public page, with its deploy history. A Studio+ team can create a verified Safe above instead.",
+    },
     /** The recorded contracts (M150): where they came from, as plain text under each. */
     contracts: {
       intro: "Contracts this project deployed or relies on, recorded by your team or its agent. CanHav deploys none of them.",

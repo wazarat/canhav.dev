@@ -6,6 +6,7 @@ import { type AgentRequest, normalizeAgentRequests } from "@/lib/agent-requests"
 import { type Briefs, normalizeBriefs } from "@/lib/draft/briefs";
 import { cutAtWord } from "@/lib/text";
 import { PROFILE_KEYS, VALUE_AREAS, VALUE_CANVAS_LIMITS, type ValueCanvases, normalizeValueCanvases } from "@/lib/value-canvas";
+import { type TeamSafe, normalizeTeamSafe } from "@/lib/safe";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
 import { type UpdateCadence, isUpdateCadence } from "@/lib/updates";
@@ -426,6 +427,8 @@ export interface ProjectDoc {
   briefs?: Briefs;
   /** Declared team wallet (unproven — labeled "declared by team" in UI). */
   verifyWallet?: string;
+  /** The team Safe (M160, Studio+ teams), owners and threshold read onchain. Optional, never injected, written by the studio only. Published. */
+  teamSafe?: TeamSafe;
   /**
    * The throwaway deployer key's address, lowercase hex (M102). The private
    * key never reaches CanHav; it lives in the repository's env file. Optional
@@ -884,6 +887,11 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeAgentRequests((rest as { agentRequests?: unknown }).agentRequests);
     if (clean) (rest as { agentRequests?: AgentRequest[] }).agentRequests = clean;
     else delete (rest as { agentRequests?: unknown }).agentRequests;
+  }
+  if ("teamSafe" in rest) {
+    const clean = normalizeTeamSafe((rest as { teamSafe?: unknown }).teamSafe);
+    if (clean) (rest as { teamSafe?: TeamSafe }).teamSafe = clean;
+    else delete (rest as { teamSafe?: unknown }).teamSafe;
   }
   if ("deployerBy" in rest) {
     const v = (rest as { deployerBy?: unknown }).deployerBy;
@@ -1433,6 +1441,7 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.logo && !isStoredImageUrl(doc.logo)) return "Logo must be an image uploaded to CanHav.";
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
+  if (doc.teamSafe && !normalizeTeamSafe(doc.teamSafe)) return "The team Safe record is malformed.";
   if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
   if (doc.deployerEnvFile !== undefined && (typeof doc.deployerEnvFile !== "string" || doc.deployerEnvFile.length > L.deployerEnvFile.max || doc.deployerEnvFile.startsWith("/") || doc.deployerEnvFile.split("/").includes("..")))
     return `The deployer env file is a relative path of at most ${L.deployerEnvFile.max} characters.`;

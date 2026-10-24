@@ -143,7 +143,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
   {
     id: "review.keys",
     title: "No admin role sits on a single wallet",
-    detail: "Every role in the role model maps to a multisig or a scoped key, timelocked changes are announced where users can see them, and the sentinel holds the least power. Check the admin functions list on Decisions, every holder should be a multisig or a scoped key.",
+    detail: "Every role in the role model maps to a multisig or a scoped key, timelocked changes are announced where users can see them, and the sentinel holds the least power. Check the admin functions list on Decisions, every holder should be a multisig or a scoped key, the team Safe recorded under Deployments where the project has one.",
     shapes: "all",
     resources: ["canhav.role-model", "safe.starter-kit", "oz.access-control"],
   },
