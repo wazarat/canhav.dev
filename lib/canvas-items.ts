@@ -49,14 +49,14 @@ export function itemsFromText(text: string): string[] {
  * shorter than the minimum drops; the list is capped. Idempotent on its
  * own output.
  */
-export function normalizeItems(raw: unknown, limits: ItemLimits): CanvasItem[] {
+export function normalizeItems<T extends CanvasItem = CanvasItem>(raw: unknown, limits: ItemLimits, keep?: (item: CanvasItem, source: Record<string, unknown>) => T): T[] {
   const source: Array<{ id?: unknown; text?: unknown }> =
     typeof raw === "string"
       ? itemsFromText(raw).map((text) => ({ text }))
       : Array.isArray(raw)
         ? raw.map((v) => (typeof v === "string" ? { text: v } : v && typeof v === "object" ? (v as { id?: unknown; text?: unknown }) : { text: "" }))
         : [];
-  const out: CanvasItem[] = [];
+  const out: T[] = [];
   const seen = new Set<string>();
   for (const v of source) {
     const text = typeof v.text === "string" ? cutAtWord(v.text.trim(), limits.maxChars) : "";
@@ -64,7 +64,8 @@ export function normalizeItems(raw: unknown, limits: ItemLimits): CanvasItem[] {
     let id = isItemId(v.id) && !seen.has(v.id) ? v.id : newItemId();
     while (seen.has(id)) id = newItemId();
     seen.add(id);
-    out.push({ id, text });
+    const item: CanvasItem = { id, text };
+    out.push(keep ? keep(item, v as Record<string, unknown>) : (item as T));
     if (out.length >= limits.max) break;
   }
   return out;

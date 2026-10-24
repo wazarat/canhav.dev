@@ -39,6 +39,17 @@ export function draftIcpPrompt(name: string, projectId: string, brief = ""): str
   );
 }
 
+export function draftValueCanvasPrompt(name: string, projectId: string, brief = ""): string {
+  return draftFieldPrompt(
+    name,
+    projectId,
+    "valueCanvas",
+    "Value Proposition Canvas for the first ideal customer profile (valueCanvas.0, or .1 for the second)",
+    "Six areas, products (products and services), painRelievers, gainCreators, jobs (customer jobs), pains and gains, each a list of three to six short items of at most 140 characters, one idea each, built on that profile's trigger and objection, the canvas and the competitor line. Call get_project first and reuse the ids of items that already exist; a reliever or creator may carry answers, the ids of the pains or gains it addresses.",
+    brief,
+  );
+}
+
 export function draftCompetitorsPrompt(name: string, projectId: string, brief = ""): string {
   return draftFieldPrompt(
     name,
@@ -89,6 +100,7 @@ export const DRAFT_AGENT_PROMPTS: Partial<Record<DraftKind, (name: string, proje
   canvas: draftCanvasPrompt,
   canvas_block: draftCanvasPrompt,
   icp: draftIcpPrompt,
+  value_canvas: draftValueCanvasPrompt,
   competitors: draftCompetitorsPrompt,
   brand: draftBrandPrompt,
   weekly: draftWeeklyPrompt,

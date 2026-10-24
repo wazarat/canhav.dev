@@ -34,6 +34,7 @@ export const DRAFT_KIND_FIELDS: Record<DraftKind, string | null> = {
   canvas: "canvas",
   canvas_block: "canvas",
   icp: "icp",
+  value_canvas: "valueCanvas",
   competitors: "competitors",
   brand: "brand",
   onepager: "investorPack",
@@ -46,6 +47,7 @@ export const DRAFT_KIND_FIELDS: Record<DraftKind, string | null> = {
 export function draftWriteHint(kind: DraftKind, target?: string): string {
   const field = DRAFT_KIND_FIELDS[kind];
   if (kind === "canvas_block" && target) return `Write the ${target} block of the canvas field through update_project; that clears this request.`;
+  if (kind === "value_canvas") return `Write valueCanvas.${target ?? "0"} (the six areas for profile ${Number(target ?? 0) + 1}) through update_project; that clears this request.`;
   if (kind === "onepager" || kind === "deck" || kind === "grants") return `Write investorPack.${kind === "onepager" ? "onepager" : kind} through update_project; that clears this request.`;
   return field ? `Write the ${field} field through update_project; that clears this request.` : "Write it with set_weekly_update; that clears this request.";
 }
@@ -131,6 +133,7 @@ export function kindsForPatch(patch: Record<string, unknown>): DraftKind[] {
   const has = (k: string) => patch[k] !== undefined;
   if (has("canvas")) out.push("canvas", "canvas_block");
   if (has("icp")) out.push("icp");
+  if (has("valueCanvas")) out.push("value_canvas");
   if (has("competitors")) out.push("competitors");
   if (has("brand")) out.push("brand");
   const pack = patch.investorPack;

@@ -1,4 +1,5 @@
 import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
+import { PROFILE_KEYS, VALUE_AREAS, unanswered } from "@/lib/value-canvas";
 import type { Icp } from "@/lib/icp";
 import type { Competitors } from "@/lib/competitors/record";
 import { googleFontsUrl } from "@/content/brand-fonts";
@@ -483,6 +484,28 @@ function positioningLines(c: Competitors | undefined): string[] {
 }
 
 /** "## Business model", the nine canvas blocks (M113), or nothing. */
+/** The value proposition canvas per profile (M157): each area as a list, the fit line, under "## Value proposition". */
+function valueCanvasLines(doc: Pick<ProjectDoc, "valueCanvas" | "icp">): string[] {
+  const all = doc.valueCanvas;
+  if (!all) return [];
+  const V = STUDIO_PLUS_COPY.valueCanvas;
+  const lines = ["## Value proposition", ""];
+  for (const key of PROFILE_KEYS) {
+    const c = all[key];
+    if (!c) continue;
+    const who = doc.icp?.[Number(key)]?.name?.trim() || V.profile(Number(key) + 1);
+    lines.push(`### ${V.forProfile(who)}`, "");
+    for (const a of VALUE_AREAS) {
+      if (!c[a].length) continue;
+      lines.push(`**${V.areas[a].label}.**`, ...c[a].map((i) => `- ${i.text}`), "");
+    }
+    const pains = unanswered(c, "pains").length;
+    const gains = unanswered(c, "gains").length;
+    lines.push(pains || gains ? [pains ? V.unansweredPains(pains) : "", gains ? V.unansweredGains(gains) : ""].filter(Boolean).join(" ") : V.allAnswered, "");
+  }
+  return lines;
+}
+
 function canvasLines(canvas: Canvas | undefined): string[] {
   if (!canvas || canvasFilled(canvas) === 0) return [];
   // Each block as a list of its items (M155).
@@ -517,6 +540,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...customerLines(doc),
     ...icpLines(doc.icp),
     ...canvasLines(doc.canvas),
+    ...valueCanvasLines(doc),
     ...positioningLines(doc.competitors),
     "## Distribution reality",
     "",
@@ -865,6 +889,7 @@ export function buildAgentsMd(input: {
       "",
       ...icpLines(project.icp),
       ...canvasLines(project.canvas),
+      ...valueCanvasLines(project),
       ...positioningLines(project.competitors),
       "## Contract architecture",
       "",

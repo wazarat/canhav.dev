@@ -3,6 +3,7 @@
 import { CanvasEditor } from "@/components/build/CanvasEditor";
 import { CompetitorsSection } from "@/components/build/CompetitorsSection";
 import { IcpEditor } from "@/components/build/IcpEditor";
+import { ValueCanvasEditor } from "@/components/build/ValueCanvasEditor";
 import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { PlusGate } from "@/components/studio/PlusGate";
@@ -52,6 +53,13 @@ export function ModelTab({
           <p className="text-xs text-ink-500">{M.icpLead}</p>
           <PlusGate feature="icp">
             <IcpEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} onChange={(icp) => patch({ icp })} />
+          </PlusGate>
+        </CardSection>
+
+        <CardSection id="model-value" className="space-y-4">
+          <Heading>{M.valueCanvas}</Heading>
+          <PlusGate feature="icp">
+            <ValueCanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} value={doc.valueCanvas} onChange={(valueCanvas) => (valueCanvas ? patch({ valueCanvas }) : patch({ valueCanvas: undefined }))} differentiator={doc.competitors?.differentiator} />
           </PlusGate>
         </CardSection>
 

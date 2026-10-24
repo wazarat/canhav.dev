@@ -8,6 +8,8 @@ import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import { cutAtWord } from "@/lib/text";
 import type { ProjectDoc } from "@/lib/ideation";
+import { itemTexts } from "@/lib/canvas-items";
+import { VALUE_AREAS } from "@/lib/value-canvas";
 
 registerDraftKind("competitors", {
   schema: competitorsDraftSchema,
@@ -21,7 +23,11 @@ registerDraftKind("competitors", {
       return `${r.name} (${r.category}), TVL ${formatTvl(r.tvl)}, chains ${r.chains.slice(0, 4).join(", ")}${age !== null ? `, listed ${age} months ago` : ""}`;
     });
     const kit = l.kitFamilies.length ? `Families the project's research kit already names: ${l.kitFamilies.join(", ")}.` : ""; // copy-ok, model context
-    return [[head, ...rows, kit].filter(Boolean).join("\n")];
+    // The value canvas (M157) says what the product does for whom, the ground the line is drafted from.
+    const vc = Object.entries(doc.valueCanvas ?? {}).flatMap(([key, c]) =>
+      c ? [`Value proposition canvas, profile ${Number(key) + 1}: ${VALUE_AREAS.filter((a) => c[a].length).map((a) => `${a} ${itemTexts(c[a]).join("; ")}`).join(". ")}`] : [], // copy-ok, model context
+    );
+    return [[head, ...rows, kit, ...vc].filter(Boolean).join("\n")];
   },
   instructions: () =>
     `${DRAFT_VOICE}\n\nWrite one line, at most 300 characters, on how this project differs from the protocols in the landscape. Name the one or two it will be compared with and the difference a reviewer would remember, in terms of product, users or chain, not in terms of hope. No hype words.`,

@@ -25,6 +25,8 @@ export const BUILD_COPY = {
   model: {
     canvas: "Business Model Canvas",
     icp: "Ideal customers",
+    /** The Value Proposition Canvas section (M157). */
+    valueCanvas: "Value proposition",
     icpLead: "Built on the persona table under Decisions, Customers.",
     competitors: "Competitors",
   },

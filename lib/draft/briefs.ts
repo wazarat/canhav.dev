@@ -19,7 +19,7 @@ export interface BriefQuestion {
 }
 
 /** The slice of the record the questions read. */
-export type BriefDoc = Pick<ProjectDoc, "payer" | "whoPays" | "canvas" | "icp" | "brand" | "competitors" | "investorPack" | "briefs">;
+export type BriefDoc = Pick<ProjectDoc, "payer" | "whoPays" | "canvas" | "icp" | "valueCanvas" | "brand" | "competitors" | "investorPack" | "briefs">;
 
 export interface DraftBrief {
   answers: Record<string, string>;
@@ -57,6 +57,12 @@ export const BRIEF_QUESTIONS: Record<DraftKind, BriefQuestion[]> = {
     { id: "channels", answered: (_doc, body) => CANVAS_BLOCK_QUESTION[String(body.block)] !== "channels" },
     { id: "partners", answered: (_doc, body) => CANVAS_BLOCK_QUESTION[String(body.block)] !== "partners" },
     { id: "cost", answered: (_doc, body) => CANVAS_BLOCK_QUESTION[String(body.block)] !== "cost" },
+  ],
+  // The value canvas is per profile (M157); the profile's objection and trigger already answer the pain and the gain.
+  value_canvas: [
+    { id: "jobs" },
+    { id: "biggestPain", answered: (doc, body) => Boolean(doc.icp?.[Number(body.profile ?? 0)]?.objection?.trim()) },
+    { id: "gainWanted", answered: (doc, body) => Boolean(doc.icp?.[Number(body.profile ?? 0)]?.buyingTrigger?.trim()) },
   ],
   competitors: [{ id: "comparedWith" }, { id: "differenceKind" }],
   brand: [{ id: "toneWords", answered: (doc) => Boolean(doc.brand?.tone?.length) }, { id: "avoidLook" }, { id: "feel" }],

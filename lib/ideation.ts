@@ -5,6 +5,7 @@ import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDraft
 import { type AgentRequest, normalizeAgentRequests } from "@/lib/agent-requests";
 import { type Briefs, normalizeBriefs } from "@/lib/draft/briefs";
 import { cutAtWord } from "@/lib/text";
+import { PROFILE_KEYS, VALUE_AREAS, VALUE_CANVAS_LIMITS, type ValueCanvases, normalizeValueCanvases } from "@/lib/value-canvas";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
 import { type UpdateCadence, isUpdateCadence } from "@/lib/updates";
@@ -407,6 +408,8 @@ export interface ProjectDoc {
   competitors?: Competitors;
   /** The brand kit (M118, Studio+). Optional, never injected, published with the record. */
   brand?: Brand;
+  /** The Value Proposition Canvas per ideal customer profile (M157, Studio+ under icp). Optional, never injected. */
+  valueCanvas?: ValueCanvases;
   /** The investor and grant pack (M126, Studio+). Optional, never injected, stripped at publish. */
   investorPack?: InvestorPack;
   /** How often the team posts an update (Studio+). Optional, never injected, stripped at publish; weekly when absent. */
@@ -867,6 +870,11 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     else delete (rest as { investorPack?: unknown }).investorPack;
   }
   // Draft requests and drafted marks (M117): cleaned, dropped when empty, never invented.
+  if ("valueCanvas" in rest) {
+    const clean = normalizeValueCanvases((rest as { valueCanvas?: unknown }).valueCanvas);
+    if (clean) (rest as { valueCanvas?: ValueCanvases }).valueCanvas = clean;
+    else delete (rest as { valueCanvas?: unknown }).valueCanvas;
+  }
   if ("draftRequests" in rest) {
     const clean = normalizeDraftRequests((rest as { draftRequests?: unknown }).draftRequests);
     if (clean) (rest as { draftRequests?: DraftRequest[] }).draftRequests = clean;
@@ -1435,6 +1443,17 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
       if (v === undefined) continue;
       if (!Array.isArray(v) || v.length > CANVAS_LIMITS.items.max) return `A canvas block holds at most ${CANVAS_LIMITS.items.max} items.`;
       for (const item of v) if (typeof item?.text !== "string" || item.text.length > CANVAS_LIMITS.item.max) return `A canvas item is at most ${CANVAS_LIMITS.item.max} characters.`;
+    }
+  }
+  if (doc.valueCanvas) {
+    for (const key of PROFILE_KEYS) {
+      const c = doc.valueCanvas[key];
+      if (!c) continue;
+      for (const area of VALUE_AREAS) {
+        const items = c[area];
+        if (!Array.isArray(items) || items.length > VALUE_CANVAS_LIMITS.items.max) return `A value canvas area holds at most ${VALUE_CANVAS_LIMITS.items.max} items.`;
+        for (const item of items) if (typeof item?.text !== "string" || item.text.length > VALUE_CANVAS_LIMITS.item.max) return `A value canvas item is at most ${VALUE_CANVAS_LIMITS.item.max} characters.`;
+      }
     }
   }
   if (doc.summary) {

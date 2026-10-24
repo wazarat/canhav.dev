@@ -618,8 +618,8 @@ export async function publishEntity(
   const published: IdeationDoc =
     table === "projects" && opts.plus === false
       ? (() => {
-          const { canvas: _c, icp: _i, brand: _b, competitors: _k, ...rest } = stamped as ProjectDoc;
-          void _c; void _i; void _b; void _k;
+          const { canvas: _c, icp: _i, valueCanvas: _v, brand: _b, competitors: _k, ...rest } = stamped as ProjectDoc;
+          void _c; void _i; void _v; void _b; void _k;
           return rest as IdeationDoc;
         })()
       : stamped;

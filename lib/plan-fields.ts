@@ -11,6 +11,7 @@ import type { PlusFeature } from "@/lib/plan-shared";
 export const PLUS_DOC_FIELDS = {
   canvas: "bmc",
   icp: "icp",
+  valueCanvas: "icp",
   competitors: "competitors",
   brand: "brand",
   investorPack: "investor_pack",

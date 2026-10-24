@@ -42,6 +42,7 @@ import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { Card } from "@/components/ui/Card";
 import { CanvasBlockFrame, CanvasGrid, CanvasItemsList } from "@/components/build/CanvasGrid";
 import { canvasFilled } from "@/lib/canvas";
+import { PROFILE_KEYS, VALUE_AREAS } from "@/lib/value-canvas";
 import { brandVars } from "@/lib/brand/record";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
@@ -250,6 +251,35 @@ export default async function ProjectPublicPage({
                       </dl>
                     </Card>
                   ))}
+                </div>
+              </div>
+            ) : null}
+            {doc.valueCanvas && PROFILE_KEYS.some((k) => doc.valueCanvas?.[k]) ? (
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-ink-500">{STUDIO_PLUS_COPY.valueCanvas.title}</p>
+                <div className="mt-2 space-y-4">
+                  {PROFILE_KEYS.filter((k) => doc.valueCanvas?.[k]).map((k) => {
+                    const c = doc.valueCanvas![k]!;
+                    return (
+                      <Card key={k} className="p-4">
+                        <p className="text-sm font-medium text-ink-50">{STUDIO_PLUS_COPY.valueCanvas.forProfile(doc.icp?.[Number(k)]?.name?.trim() || STUDIO_PLUS_COPY.valueCanvas.profile(Number(k) + 1))}</p>
+                        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                          {VALUE_AREAS.filter((a) => c[a].length).map((a) => (
+                            <div key={a}>
+                              <p className="text-[11px] text-ink-500">{STUDIO_PLUS_COPY.valueCanvas.areas[a].label}</p>
+                              <ul className="mt-1 space-y-0.5">
+                                {c[a].map((i) => (
+                                  <li key={i.id} className="text-sm text-ink-200">
+                                    {i.text}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}

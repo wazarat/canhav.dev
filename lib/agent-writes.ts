@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { CANVAS_ITEM_LIMITS, type Canvas, type CanvasBlock, canvasPatchSchema } from "@/lib/canvas";
 import { normalizeItems } from "@/lib/canvas-items";
+import { PROFILE_KEYS, VALUE_AREAS, type ValueCanvases, emptyValueCanvas, normalizeValueCanvas, valueCanvasPatchSchema } from "@/lib/value-canvas";
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
@@ -302,6 +303,8 @@ export const projectPatchSchema = z
     icp: icpListSchema.nullable(),
     // The Business Model Canvas (M113): blocks merge over the stored ones; null clears it.
     canvas: canvasPatchSchema.nullable(),
+    // The value proposition canvas per profile (M157, Studio+ under icp): a profile key sent replaces its areas, null drops it.
+    valueCanvas: valueCanvasPatchSchema.nullable(),
     // The agent's summary (M104): both lists replace the stored ones; null clears it.
     summary: z
       .strictObject({
@@ -756,6 +759,26 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   else if (patch.competitors) next = { ...next, competitors: { differentiator: "", ...(next.competitors ?? {}), ...patch.competitors } };
   if (patch.icp === null) next = dropKey(next, "icp");
   else if (patch.icp) next = { ...next, icp: patch.icp };
+  if (patch.valueCanvas === null) next = dropKey(next, "valueCanvas");
+  else if (patch.valueCanvas) {
+    const merged: ValueCanvases = { ...(next.valueCanvas ?? {}) };
+    for (const key of PROFILE_KEYS) {
+      const v = patch.valueCanvas[key];
+      if (v === undefined) continue;
+      if (v === null) {
+        delete merged[key];
+        continue;
+      }
+      // Each area sent replaces the stored area; answers are checked against the merged canvas by normalizeValueCanvas.
+      const cur = merged[key] ?? emptyValueCanvas();
+      const raw: Record<string, unknown> = { ...cur };
+      for (const area of VALUE_AREAS) if (v[area] !== undefined) raw[area] = v[area];
+      const clean = normalizeValueCanvas(raw);
+      if (clean) merged[key] = clean;
+      else delete merged[key];
+    }
+    next = Object.keys(merged).length ? { ...next, valueCanvas: merged } : dropKey(next, "valueCanvas");
+  }
   if (patch.canvas === null) next = dropKey(next, "canvas");
   else if (patch.canvas) {
     // Each block sent replaces the stored block (M155): a paragraph or plain lines are lifted into items, an item sent with its id keeps it.
@@ -1161,9 +1184,23 @@ function showItems(v: unknown): string {
   return v.map((i) => (typeof i === "string" ? i : String((i as { text?: unknown })?.text ?? ""))).filter(Boolean).join("\n");
 }
 
+/** A value canvas, or one profile's canvas, or one area (M157): each area as its label then one item per line; answer ids never show. */
+function showValueCanvas(v: unknown): string {
+  if (Array.isArray(v) || typeof v === "string") return showItems(v);
+  if (!v || typeof v !== "object") return show(v);
+  const V = STUDIO_PLUS_COPY.valueCanvas;
+  const o = v as Record<string, unknown>;
+  const areas = VALUE_AREAS.filter((a) => o[a] !== undefined).map((a) => `${V.areas[a].label}\n${showItems(o[a])}`);
+  if (areas.length) return areas.join("\n\n");
+  return PROFILE_KEYS.filter((k) => o[k] !== undefined)
+    .map((k) => `${V.profile(Number(k) + 1)}\n${showValueCanvas(o[k])}`)
+    .join("\n\n");
+}
+
 function fieldRenderer(path: string): ((v: unknown) => string) | null {
   if (path === "icp") return showIcp;
   if (path.startsWith("canvas.")) return showItems;
+  if (path === "valueCanvas" || path.startsWith("valueCanvas.")) return showValueCanvas;
   if (path === "architecture.contracts" || path === "architecture.adminFunctions") return showWhyRows;
   if (path === "brand.palette") return showLabelled(STUDIO_PLUS_COPY.brand.swatches);
   if (path === "brand.fonts") return showLabelled({ display: STUDIO_PLUS_COPY.brand.display, body: STUDIO_PLUS_COPY.brand.body });
@@ -1210,6 +1247,9 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
 
 /** Paths whose field name would read oddly (M51). */
 const PATH_LABELS: Record<string, string> = {
+  valueCanvas: "Value proposition canvas",
+  "valueCanvas.0": "Value canvas, profile 1",
+  "valueCanvas.1": "Value canvas, profile 2",
   "architecture.contracts": "Contracts",
   "architecture.contractsNone": "Contracts, none yet",
   "architecture.contractsLegacy": "Contracts, the earlier answer",
