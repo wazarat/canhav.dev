@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { agentStateOf, writeProjectDraftAsAgent } from "@/lib/agent-writes-db";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 import { normalizeProjectDoc } from "@/lib/ideation";
 import { getRevision } from "@/lib/revisions-db";
@@ -15,9 +15,9 @@ export const runtime = "nodejs";
  * the stale notice; the restore itself is recorded as a revision.
  */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string; rev: string }> }) {
-  const gate = await plusGate("version_history");
-  if (gate instanceof NextResponse) return gate;
   const { id, rev: raw } = await params;
+  const gate = await projectPlusGate(id, "version_history");
+  if (gate instanceof NextResponse) return gate;
   const rev = Number(raw);
   if (!Number.isInteger(rev) || rev < 1) return NextResponse.json({ error: "Unknown revision." }, { status: 400 });
   const project = await getProject(id, gate.owner);

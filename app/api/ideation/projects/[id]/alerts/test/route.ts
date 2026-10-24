@@ -4,7 +4,7 @@ import { lastTestAt, recordTestEvent } from "@/lib/alerts/db";
 import { ALERT_LIMITS, testMessage } from "@/lib/alerts/kinds";
 import { deliverToChannels } from "@/lib/alerts/send";
 import { chainInfo, projectChainOf } from "@/lib/chains";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 
 export const runtime = "nodejs";
@@ -15,9 +15,9 @@ export const runtime = "nodejs";
  * event of kind test so Last events shows it. One a minute per project.
  */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("monitoring");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "monitoring");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (Date.now() - (await lastTestAt(id)) < ALERT_LIMITS.testEveryMs) return NextResponse.json({ error: "One test alert a minute. Try again shortly." }, { status: 429 });

@@ -28,6 +28,8 @@ import {
   writeTokenDesignDraftAsAgent,
 } from "@/lib/agent-writes-db";
 import { isProjectChain, projectChainOf } from "@/lib/chains";
+import { plusFieldProblem } from "@/lib/plan-fields";
+import { projectPlus } from "@/lib/plan-project";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   type ProjectRow,
@@ -271,6 +273,9 @@ export async function submitAgentChange(
     const problem = projectPatchProblem(project.draft_doc, input.patch);
     if (problem) return { ok: false, message: problem };
     if (await chainChangeRefused(project, input.patch)) return { ok: false, message: CHAIN_LOCKED };
+    // The Studio+ fields are refused when the project's team is not on the plan (M134), in both modes.
+    const plusProblem = plusFieldProblem(input.patch, await projectPlus(project));
+    if (plusProblem) return { ok: false, message: plusProblem };
   }
   if (Object.keys(input.patch).length === 0)
     return { ok: false, message: "The change is empty. Send at least one field." };

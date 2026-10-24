@@ -12,8 +12,11 @@ import { devForced, planForOrgs } from "@/lib/plan";
  * honoured on the session side only, since the mirror knows plans, not
  * features.
  */
-export async function mcpAllowsPlus(ctx: unknown, _feature: PlusFeature | true): Promise<boolean> {
+export async function mcpAllowsPlus(ctx: unknown, _feature: PlusFeature | true, orgId?: string | null): Promise<boolean> {
   if (devForced()) return true;
+  // A project scoped server reads the project's team (M134), the plan the
+  // project has, whatever the caller's own organizations are.
+  if (orgId !== undefined) return (await planForOrgs(orgId ? [orgId] : [])).plan === "studio_plus";
   const owner = mcpOwner(ctx);
   if (!owner) return false;
   const info = await planForOrgs(owner.orgIds);

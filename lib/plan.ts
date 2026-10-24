@@ -12,7 +12,7 @@ import {
   featureFromHas,
   planFromHas,
 } from "@/lib/plan-shared";
-import { getSubscriptions, subscriptionGrants } from "@/lib/subscriptions-db";
+import { getSubscriptions, subscriptionGrants, upsertSubscription } from "@/lib/subscriptions-db";
 
 export type { PlanInfo, PlusFeature, StudioPlan } from "@/lib/plan-shared";
 export { PLAN_SLUG, PLUS_FEATURES } from "@/lib/plan-shared";
@@ -106,9 +106,13 @@ async function orgHasPlanFromClerk(orgId: string): Promise<boolean> {
   try {
     const client = await clerkClient();
     const sub = await client.billing.getOrganizationBillingSubscription(orgId);
-    plus = sub.subscriptionItems.some(
-      (item) => item.plan?.slug === PLAN_SLUG && (item.status === "active" || item.status === "past_due"),
+    const item = sub.subscriptionItems.find(
+      (i) => i.plan?.slug === PLAN_SLUG && (i.status === "active" || i.status === "past_due"),
     );
+    plus = Boolean(item);
+    // Write the answer through to the mirror (M134), so readers that cannot
+    // ask Clerk (the alerts worker, the edge domain lookup) see the same plan.
+    if (item) void upsertSubscription({ orgId, plan: PLAN_SLUG, status: item.status, seats: null, periodEnd: null, raw: { source: "clerk-fallback", at: new Date().toISOString() } });
   } catch (err) {
     console.warn("[plan] subscription lookup failed", err);
     plus = hit?.plus ?? false;

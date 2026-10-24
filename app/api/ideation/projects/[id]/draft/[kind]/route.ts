@@ -7,9 +7,8 @@ import { countDraftsThisMonth, recordDraftRun } from "@/lib/draft/db";
 import { draftSpec } from "@/lib/draft/kinds";
 import { DRAFT_KIND_FEATURES, DRAFT_LIMITS, isDraftKind } from "@/lib/draft/limits";
 import "@/lib/draft/register";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
-import { getPlan } from "@/lib/plan";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -23,7 +22,7 @@ export const maxDuration = 60;
 export async function POST(req: Request, { params }: { params: Promise<{ id: string; kind: string }> }) {
   const { id, kind } = await params;
   if (!isDraftKind(kind)) return NextResponse.json({ error: "Unknown draft." }, { status: 404 });
-  const gate = await plusGate(DRAFT_KIND_FEATURES[kind]);
+  const gate = await projectPlusGate(id, DRAFT_KIND_FEATURES[kind]);
   if (gate instanceof NextResponse) return gate;
   const spec = draftSpec(kind);
   if (!spec) return NextResponse.json({ error: "This draft is not available yet." }, { status: 404 });
@@ -36,8 +35,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
-  const plan = await getPlan();
-  const allowanceKey = plan.orgId ?? gate.id;
+  // The allowance is the project's team's (M134), the account's on a personal project under the dev override.
+  const allowanceKey = project.org_id ?? gate.id;
   const used = await countDraftsThisMonth(allowanceKey);
   if (used >= DRAFT_LIMITS.perOrgMonth)
     return NextResponse.json({ error: STUDIO_PLUS_COPY.draft.capReached, used, remaining: 0 }, { status: 429 });

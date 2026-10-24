@@ -108,8 +108,8 @@ export function registerMeteredTool<Schema extends z.ZodType>(
   name: string,
   config: { title: string; description: string; inputSchema?: Schema; annotations?: ToolAnnotations },
   cb: (args: z.infer<Schema>, ctx: unknown) => Promise<ToolResult>,
-  /** scope names the mount, so a project-scoped server's calls are countable. plus gates the tool on Studio+ (M106), on one feature when named. */
-  opts?: { scope?: string; plus?: PlusFeature | true },
+  /** scope names the mount, so a project-scoped server's calls are countable. plus gates the tool on Studio+ (M106), on one feature when named; orgOf answers the project's team so the gate reads the project's plan (M134). */
+  opts?: { scope?: string; plus?: PlusFeature | true; orgOf?: () => Promise<string | null> },
 ): void {
   const schema = config.inputSchema;
   // The SDK's registerTool generics are stricter than we need; the runtime
@@ -148,7 +148,7 @@ export function registerMeteredTool<Schema extends z.ZodType>(
         console.info(JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: 0, isError: true, readKey: true, ...(opts?.scope ? { scope: opts.scope } : {}) }));
         return result;
       }
-      if (opts?.plus && !(await mcpAllowsPlus(ctx, opts.plus))) {
+      if (opts?.plus && !(await mcpAllowsPlus(ctx, opts.plus, opts.orgOf ? await opts.orgOf() : undefined))) {
         result = errorResult(STUDIO_PLUS_COPY.gate.mcp);
         console.info(JSON.stringify({ mcpTool: name, userId: mcpUserId(ctx), ms: 0, isError: true, plusRequired: true, ...(opts?.scope ? { scope: opts.scope } : {}) }));
         return result;
@@ -202,7 +202,8 @@ export function registerMeteredPrompt<Schema extends z.ZodType>(
   name: string,
   config: { title: string; description: string; argsSchema?: Schema },
   cb: (args: z.infer<Schema>, ctx: unknown) => Promise<PromptResult>,
-  opts?: { scope?: string },
+  /** plus and orgOf gate a prompt the way they gate a tool (M134). */
+  opts?: { scope?: string; plus?: PlusFeature | true; orgOf?: () => Promise<string | null> },
 ): void {
   (server.registerPrompt as unknown as (
     name: string,
@@ -211,6 +212,10 @@ export function registerMeteredPrompt<Schema extends z.ZodType>(
   ) => void)(name, config, async (args, ctx) => {
     const startedAt = Date.now();
     try {
+      if (opts?.plus && !(await mcpAllowsPlus(ctx, opts.plus, opts.orgOf ? await opts.orgOf() : undefined))) {
+        console.info(JSON.stringify({ mcpPrompt: name, userId: mcpUserId(ctx), ms: 0, plusRequired: true, ...(opts?.scope ? { scope: opts.scope } : {}) }));
+        return promptResult(STUDIO_PLUS_COPY.gate.mcp);
+      }
       const result = await cb(args, ctx);
       console.info(
         JSON.stringify({

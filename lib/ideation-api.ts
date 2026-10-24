@@ -11,6 +11,8 @@ import { STUDIO_COPY } from "@/content/ideation";
 import { PRIVATE_FREE_ALLOWANCE } from "@/lib/plan-shared";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { type PlusFeature, PlusRequired, getPlan, requirePlus } from "@/lib/plan";
+import { keepStoredPlusFields } from "@/lib/plan-fields";
+import { projectPlus } from "@/lib/plan-project";
 import { CHAIN_LOCKED, projectChainLocked } from "@/lib/launch-project";
 import {
   emptyProjectDoc,
@@ -61,6 +63,24 @@ export async function plusGate(feature?: PlusFeature): Promise<SessionUser | Nex
       );
     throw err;
   }
+  return gate;
+}
+
+/**
+ * authGate plus the project's team plan (M134). A project whose team is not
+ * on Studio+ answers 403 with code plus_required; an unknown or foreign id
+ * answers 404. The feature only names the surface in the answer.
+ */
+export async function projectPlusGate(id: string, feature?: PlusFeature): Promise<SessionUser | NextResponse> {
+  const gate = await authGate();
+  if (gate instanceof NextResponse) return gate;
+  const row = await getProject(id, gate.owner);
+  if (!row) return notFound();
+  if (!(await projectPlus(row)))
+    return NextResponse.json(
+      { error: STUDIO_PLUS_COPY.gate.project, code: "plus_required", feature: feature ?? null, upgrade: STUDIO_PLUS_COPY.path },
+      { status: 403 },
+    );
   return gate;
 }
 
@@ -177,6 +197,9 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
         const held = await getProject(id, gate.owner);
         if (held && projectChainOf(held.draft_doc) !== projectChainOf(doc as ProjectDoc) && (await projectChainLocked(id)))
           return NextResponse.json({ error: CHAIN_LOCKED }, { status: 409 });
+        // A team off Studio+ cannot write the paid blocks (M134); the editor
+        // hides them, so the stored ones are kept as they were.
+        if (held && !(await projectPlus(held))) doc = keepStoredPlusFields(doc as ProjectDoc, held.draft_doc);
       }
       const result =
         kind === "project"
@@ -231,10 +254,14 @@ export function makeEntityHandlers(kind: "project" | "token_design") {
         return NextResponse.json({ error: BUILD_COPY.publish.visibility.launched, code: "launched" }, { status: 403 });
       // Free accounts keep one private project; Studio+ has no cap (M109).
       const plan = await getPlan();
+      // The Studio+ blocks publish only while the project's team is on the plan (M134).
+      const held = kind === "project" ? await getProject(id, gate.owner) : null;
+      const plus = held ? await projectPlus(held) : undefined;
       const result = await publishEntity(table, id, gate.owner, {
         visibility,
         privateCap: plan.plan === "studio_plus" ? null : PRIVATE_FREE_ALLOWANCE,
         privateCapMessage: BUILD_COPY.publish.visibility.capReached,
+        ...(plus === undefined ? {} : { plus }),
       });
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
       return NextResponse.json(result);

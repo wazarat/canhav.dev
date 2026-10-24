@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 import { inviteInputSchema } from "@/lib/tester";
 import { createInvite, listFeedback, listInvites } from "@/lib/tester-db";
@@ -9,9 +9,9 @@ export const runtime = "nodejs";
 
 /** The project's tester invites and feedback (M125), Studio+. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("tester_kit");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "tester_kit");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const [invites, feedback] = await Promise.all([listInvites(id), listFeedback(id)]);
@@ -20,9 +20,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 /** Create an invite link. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("tester_kit");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "tester_kit");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const parsed = inviteInputSchema.safeParse(await req.json().catch(() => null));

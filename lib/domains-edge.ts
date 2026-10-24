@@ -25,7 +25,15 @@ export async function slugForHost(host: string): Promise<string | null> {
   let slug: string | null = null;
   try {
     const sql = neon(url);
-    const rows = (await sql`select slug from launchpad.projects where custom_domain = ${h} and status = 'published' and visibility = 'public' limit 1`) as Array<{ slug: string | null }>;
+    // The host serves only while the project's team is on Studio+ (M134), read
+    // from the subscription mirror; the dev override skips the join.
+    const forced = process.env.STUDIO_PLUS_DEV_FORCE === "1" && process.env.VERCEL_ENV !== "production";
+    const rows = (forced
+      ? await sql`select slug from launchpad.projects where custom_domain = ${h} and status = 'published' and visibility = 'public' limit 1`
+      : await sql`select p.slug from launchpad.projects p
+          join launchpad.subscriptions s on s.org_id = p.org_id and s.plan = 'studio_plus'
+            and (s.status = 'active' or (s.status = 'past_due' and s.period_end > now()))
+          where p.custom_domain = ${h} and p.status = 'published' and p.visibility = 'public' limit 1`) as Array<{ slug: string | null }>;
     slug = rows[0]?.slug ?? null;
   } catch {
     slug = null;

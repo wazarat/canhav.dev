@@ -1,5 +1,8 @@
 import "server-only";
 
+import { BUILD_COPY } from "@/content/build";
+import { orgPlus } from "@/lib/plan-project";
+
 import { randomBytes } from "node:crypto";
 
 import { getDb } from "@/lib/db";
@@ -107,7 +110,7 @@ export async function listFeedback(projectId: string): Promise<TesterFeedback[]>
 export interface PublicInvite {
   invite: TesterInvite;
   state: ReturnType<typeof inviteState>;
-  project: { id: string; name: string; doc: Pick<ProjectDoc, "chain" | "testnetContracts" | "website" | "logo" | "whatItDoes"> };
+  project: { id: string; name: string; orgId: string | null; doc: Pick<ProjectDoc, "chain" | "testnetContracts" | "website" | "logo" | "whatItDoes"> };
 }
 
 export async function getPublicInvite(token: string): Promise<PublicInvite | null> {
@@ -115,11 +118,11 @@ export async function getPublicInvite(token: string): Promise<PublicInvite | nul
   if (!sql || !/^[\w-]{16,32}$/.test(token)) return null;
   try {
     const rows = await sql`
-      select i.*, p.id as project_id, p.draft_doc->>'name' as name, p.draft_doc->'chain' as chain, p.draft_doc->'testnetContracts' as contracts,
+      select i.*, p.id as project_id, p.org_id as project_org_id, p.draft_doc->>'name' as name, p.draft_doc->'chain' as chain, p.draft_doc->'testnetContracts' as contracts,
              p.draft_doc->>'website' as website, p.draft_doc->>'logo' as logo, p.draft_doc->>'whatItDoes' as what
       from launchpad.tester_invites i join launchpad.projects p on p.id = i.project_id where i.token = ${token}
     `;
-    const r = rows[0] as (InviteRow & { project_id: string; name: string | null; chain: unknown; contracts: unknown; website: string | null; logo: string | null; what: string | null }) | undefined;
+    const r = rows[0] as (InviteRow & { project_id: string; project_org_id: string | null; name: string | null; chain: unknown; contracts: unknown; website: string | null; logo: string | null; what: string | null }) | undefined;
     if (!r) return null;
     const invite = mapInvite(r);
     return {
@@ -128,6 +131,7 @@ export async function getPublicInvite(token: string): Promise<PublicInvite | nul
       project: {
         id: r.project_id,
         name: r.name ?? "",
+        orgId: r.project_org_id ?? null,
         doc: {
           chain: (r.chain as ProjectDoc["chain"]) ?? undefined,
           testnetContracts: (Array.isArray(r.contracts) ? r.contracts : undefined) as ProjectDoc["testnetContracts"],
@@ -154,6 +158,9 @@ export async function recordFeedback(token: string, input: { stepIndex: number; 
     const invite = mapInvite(r);
     const state = inviteState(invite);
     if (state !== "open") return { ok: false, message: state === "full" ? "This invite has reached its limit." : "This invite is closed." };
+    // The kit is a Studio+ feature of the project's team (M134); a lapsed team's links pause.
+    const org = (await sql`select org_id from launchpad.projects where id = ${r.project_id}`)[0] as { org_id?: string | null } | undefined;
+    if (!(await orgPlus(org?.org_id))) return { ok: false, message: BUILD_COPY.tester.page.closed.lapsed };
     if (input.stepIndex >= invite.steps.length) return { ok: false, message: "No such step." };
     await sql`
       insert into launchpad.tester_feedback (invite_token, project_id, wallet, step_index, rating, note)

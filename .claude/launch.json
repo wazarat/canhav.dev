@@ -20,6 +20,16 @@
       ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "canhav-free",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "STUDIO_PLUS_DEV_FORCE=0 npm run dev"
+      ],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

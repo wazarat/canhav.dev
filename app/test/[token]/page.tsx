@@ -7,6 +7,7 @@ import { BUILD_COPY } from "@/content/build";
 import { PROJECT_CHAIN_INFO, projectChainOf } from "@/lib/chains";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { testnetContractRows } from "@/lib/ideation";
+import { orgPlus } from "@/lib/plan-project";
 import { getPublicInvite } from "@/lib/tester-db";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,9 @@ export default async function Page({ params }: { params: Promise<{ token: string
   const chainKey = projectChainOf(data.project.doc);
   const chain = PROJECT_CHAIN_INFO[chainKey];
   const contracts = testnetContractRows(data.project.doc);
-  const open = data.state === "open";
+  // The kit is a Studio+ feature of the project's team (M134); a lapsed team's links pause.
+  const state: keyof typeof T.closed = (await orgPlus(data.project.orgId)) ? data.state : "lapsed";
+  const open = state === "open";
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div className="space-y-2">
@@ -81,7 +84,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
       ) : (
         <Card>
           <CardSection>
-            <p className="text-sm text-ink-300">{T.closed[data.state]}</p>
+            <p className="text-sm text-ink-300">{T.closed[state]}</p>
           </CardSection>
         </Card>
       )}

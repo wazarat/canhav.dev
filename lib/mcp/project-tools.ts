@@ -9,7 +9,9 @@ import { landscapeFor } from "@/lib/competitors/landscape";
 import { latestCheckRuns } from "@/lib/checks/db";
 import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests, withDrafted, withoutRequest } from "@/lib/draft/requests";
 import { DRAFT_AGENT_PROMPTS } from "@/lib/agent-prompts-draft";
-import type { DraftKind } from "@/lib/draft/limits";
+import { DRAFT_KIND_FEATURES, type DraftKind } from "@/lib/draft/limits";
+import { stripPlusFields } from "@/lib/plan-fields";
+import { projectPlus } from "@/lib/plan-project";
 import { ageMonths } from "@/lib/competitors/record";
 
 import {
@@ -33,6 +35,7 @@ import {
   getProject,
   getSnapshot,
   designDeployChain,
+  getProjectOrgId,
 } from "@/lib/ideation-db";
 import {
   designConstraints,
@@ -279,7 +282,8 @@ function publicUrl(base: "p" | "t", row: { slug: string | null; status: string }
 }
 
 export function registerProjectTools(server: McpServer, projectId: string): void {
-  const scope = { scope: `project:${projectId}` };
+  // The project's team answers the Studio+ gates (M134), read per request, never at registration.
+  const scope = { scope: `project:${projectId}`, orgOf: () => getProjectOrgId(projectId) };
   const registeredPrompts = new Set<string>();
 
   // Shared by every write tool (M39). Declared first because the token build
@@ -317,6 +321,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const snapshot = project.published_hash
         ? await getSnapshot(project.published_hash)
         : null;
+      // The Studio+ blocks read back only while the project's team is on the plan (M134).
+      const plus = await projectPlus(project);
+      const shown = <T extends Partial<ProjectDoc>>(d: T): T => (plus ? d : stripPlusFields(d));
       return jsonResult({
         ...stateOf(loaded.value),
         id: project.id,
@@ -325,13 +332,14 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         name: project.draft_doc.name,
         updatedAt: project.updated_at,
         publicUrl: publicUrl("p", project),
-        draft: project.draft_doc,
+        plus,
+        draft: shown(project.draft_doc),
         published: snapshot
           ? {
               version: snapshot.version,
               publishedAt: snapshot.created_at,
               snapshotHash: snapshot.snapshot_hash,
-              doc: snapshot.doc,
+              doc: snapshot.doc.kind === "project" ? shown(snapshot.doc) : snapshot.doc,
             }
           : null,
       });
@@ -354,6 +362,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project, design } = loaded.value;
       const projectProblem = validateProjectDoc(project.draft_doc);
       const designProblem = design ? validateTokenDesignDoc(design.draft_doc) : null;
+      // The draft requests and the update cadence are Studio+ work, shown while the team is on the plan (M134).
+      const plus = await projectPlus(project);
       // The design's deployed token, else a token launched from this project
       // through the studio (M19d), the newest first.
       const { address: tokenAddress, deployed, launched } = await projectTokenAddress(loaded.value);
@@ -409,8 +419,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           })()
         : { address: null, hint: DEPLOYER_HINT };
       return jsonResult({
+        plus,
         // Open draft requests come first (M117): the owner clicked Draft and waits on the agent.
-        draftRequests: openRequests(project.draft_doc).map((r) => ({
+        draftRequests: (plus ? openRequests(project.draft_doc) : []).map((r) => ({
           kind: r.kind,
           field: DRAFT_KIND_FIELDS[r.kind],
           body: r.body ?? null,
@@ -424,6 +435,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         summary: project.draft_doc.summary ?? null,
         // The team's update cadence and whether one is due now (Studio+); write it with set_weekly_update.
         updates: await (async () => {
+          if (!plus) return null;
           const cadence = project.draft_doc.updateCadence ?? DEFAULT_CADENCE;
           const rows = await listUpdates(project.id);
           return { cadence, periodOf: periodOf(cadence), due: updateDue(cadence, rows), howTo: "When due is true, write the period's update with set_weekly_update; manual means only when the owner asks." };
@@ -700,7 +712,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear), logo (a URL on CanHav's image store from set_logo, or null to clear), and summary (built and building lists, see set_summary, null to clear), and canvas, the Business Model Canvas (Studio+), any of customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners and costStructure as one paragraph of up to 600 characters each, merged over the stored blocks, null to clear, competitors (Studio+) with differentiator, one line of up to 300 characters on how the project differs, read the landscape with get_competitors first, brand (Studio+) with palette (primary, secondary, accent, surface as lowercase hex), fonts (display and body from the Google Fonts list the studio offers), tone (two to five words) and tagline, merged over the stored kit, null to clear, and icp (Studio+), one or two ideal customer profiles with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection, the list replaces the stored one, null to clear, and investorPack (Studio+) with onepager (markdown, at most 6000 characters), deck (five to twelve slides of title and up to six bullets) and grants (per programme id arbitrum, gitcoin or optimism, the answers per question id), merged over the stored pack, null to clear, never published. Writing canvas, icp, competitors, brand or investorPack clears the owner's open draft request for it (get_project_status lists them first) and marks the field as drafted by the agent. What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also updateCadence (Studio+), how often the team posts an update, daily, every_other_day, weekly or manual, null for the default weekly. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. Also waived, a map of recommended field to a reason of 3 to 200 characters saying why it does not apply (subsectors, sectorOther, contracts, externalDeps, oracles, adminFunctions, upgradeability, worstCase, audit, bugBounty, monitoring, incidentResponse, keyCustody, firstHundredUsers), merged over the stored map, a key sent as null clears that waiver; the reason publishes as plain text and a stated value always wins over it. check_project lists the recommended fields still open under recommendedOpen. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts, externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions, upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear), logo (a URL on CanHav's image store from set_logo, or null to clear), and summary (built and building lists, see set_summary, null to clear), and canvas, the Business Model Canvas (Studio+), any of customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners and costStructure as one paragraph of up to 600 characters each, merged over the stored blocks, null to clear, competitors (Studio+) with differentiator, one line of up to 300 characters on how the project differs, read the landscape with get_competitors first, brand (Studio+) with palette (primary, secondary, accent, surface as lowercase hex), fonts (display and body from the Google Fonts list the studio offers), tone (two to five words) and tagline, merged over the stored kit, null to clear, and icp (Studio+), one or two ideal customer profiles with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection, the list replaces the stored one, null to clear, and investorPack (Studio+) with onepager (markdown, at most 6000 characters), deck (five to twelve slides of title and up to six bullets) and grants (per programme id arbitrum, gitcoin or optimism, the answers per question id), merged over the stored pack, null to clear, never published. Writing canvas, icp, competitors, brand or investorPack clears the owner's open draft request for it (get_project_status lists them first) and marks the field as drafted by the agent. What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also updateCadence (Studio+), how often the team posts an update, daily, every_other_day, weekly or manual, null for the default weekly. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. The Studio+ fields (canvas, icp, competitors, brand, investorPack, updateCadence) are refused when the project's team is not on Studio+. Also waived, a map of recommended field to a reason of 3 to 200 characters saying why it does not apply (subsectors, sectorOther, contracts, externalDeps, oracles, adminFunctions, upgradeability, worstCase, audit, bugBounty, monitoring, incidentResponse, keyCustody, firstHundredUsers), merged over the stored map, a key sent as null clears that waiver; the reason publishes as plain text and a stated value always wins over it. check_project lists the recommended fields still open under recommendedOpen. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -1657,7 +1669,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         if (!loaded.ok) return promptResult(loaded.message);
         return promptResult(build(loaded.value.project.draft_doc.name, projectId));
       },
-      scope,
+      { ...scope, plus: DRAFT_KIND_FEATURES[kind] },
     );
   }
 

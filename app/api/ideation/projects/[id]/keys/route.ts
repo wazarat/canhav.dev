@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 import { KEY_LIMITS, countActiveKeys, createKey, listKeys } from "@/lib/project-keys";
 
@@ -10,9 +10,9 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /** The project's keys, fingerprints only (M111). */
 export async function GET(_req: Request, { params }: Ctx) {
-  const gate = await plusGate("project_keys");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "project_keys");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   return NextResponse.json({ keys: await listKeys(id) });
@@ -20,9 +20,9 @@ export async function GET(_req: Request, { params }: Ctx) {
 
 /** Make a key. The body carries { name, scope }; the answer carries the key once. */
 export async function POST(req: Request, { params }: Ctx) {
-  const gate = await plusGate("project_keys");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "project_keys");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   let body: { name?: unknown; scope?: unknown };

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { PALETTE_TYPES, paletteFromImage } from "@/lib/brand/palette";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 import { IMAGE_LIMITS, isStoredImageUrl } from "@/lib/images";
 
@@ -9,9 +9,9 @@ export const runtime = "nodejs";
 
 /** The dominant colours of the project's logo (M118), for the swatch picker and the brand draft. */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("brand");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "brand");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const logo = project.draft_doc.logo;

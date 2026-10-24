@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 
-import { PlusGate } from "@/components/studio/PlusGate";
+import { PlusGate, usePlusHere } from "@/components/studio/PlusGate";
 import { usePlan } from "@/components/studio/PlanContext";
 import { Button } from "@/components/ui/Button";
 import { CopyBlock } from "@/components/ui/CopyBlock";
@@ -61,14 +61,14 @@ export function DraftButton<T>({
   gate?: boolean;
 }) {
   const C = STUDIO_PLUS_COPY.draft;
-  const plan = usePlan();
+  const here = usePlusHere(DRAFT_KIND_FEATURES[kind]);
   const [working, setWorking] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [askOpen, setAskOpen] = useState(false);
   const feature = DRAFT_KIND_FEATURES[kind];
 
-  if (gate && !(plan.plan === "studio_plus" && plan.hasFeature(feature))) return <PlusGate feature={feature} />;
+  if (gate && !here.ok) return <PlusGate feature={feature} />;
 
   const canQueue = Boolean(doc && patch) && agentMode !== "off";
   const open: DraftRequest | undefined = doc?.draftRequests?.find((r) => r.kind === kind);

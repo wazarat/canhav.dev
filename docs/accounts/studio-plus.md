@@ -46,6 +46,8 @@ The pricing page lists partners CanHav routes to for audits, KYC, simulation and
 
 Cancel from the Team page. The plan runs to the end of the paid period, then the team reads Studio again. Records stay where they are; a private project beyond the free allowance stays private and cannot be republished until it is made public, and the Studio+ sections of a project stay stored but closed until the team is back on the plan.
 
+A project's plan is its team's plan (M134). While a team is off Studio+, the paid fields of its projects are refused on `update_project`, the draft prompts and the studio autosave (the stored values stay on the draft), publishing leaves the Business Model Canvas, the ideal customers, the brand kit and the competitor line out of the new snapshot, the public page, the share image, the exports, `get_project` and `AGENTS.md` serve the record without them, the one pager page, the brand and pack downloads, the custom domain and the tester links pause, the team updates leave the public page, and the alerts worker stops watching the team's contracts (rules are kept). A Studio+ account working on a personal project sees a card offering to move the project to the team instead of the paid sections. Everything opens again when the plan is active.
+
 ## What stays free
 
 Everything documented before Studio+: projects, token designs, publishing, launching, the shared MCP server and the project servers, exports, and one private project.

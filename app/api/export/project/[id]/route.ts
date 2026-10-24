@@ -5,6 +5,9 @@ import { getCurve } from "@/lib/indexer";
 import { brandFile, buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
 import { buildDeckMd, buildGrantsMd, buildOnepagerMd } from "@/lib/export-pack";
 import { exportOwner, markdownResponse } from "@/lib/export-route";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
+import { stripPlusFields } from "@/lib/plan-fields";
+import { projectPlus } from "@/lib/plan-project";
 import { getLinkedTokenDesign, getProject, designDeployChain } from "@/lib/ideation-db";
 
 export const runtime = "nodejs";
@@ -29,7 +32,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!row) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const file = new URL(req.url).searchParams.get("file");
-  if (file === "resources") return markdownResponse("RESOURCES.md", buildResourcesMd(row.draft_doc, true));
+  // The Studio+ files answer only while the project's team is on the plan, and
+  // the other files are built without the paid blocks (M134).
+  const plus = await projectPlus(row);
+  const draft = plus ? row.draft_doc : stripPlusFields(row.draft_doc);
+  if (!plus && (file === "brand" || file === "onepager" || file === "deck" || file === "grants"))
+    return NextResponse.json({ error: STUDIO_PLUS_COPY.gate.project, code: "plus_required" }, { status: 404 });
+  if (file === "resources") return markdownResponse("RESOURCES.md", buildResourcesMd(draft, true));
   // The brand kit as one file (M118) that the agent and the public page both read.
   if (file === "brand") {
     const linked = await getLinkedTokenDesign(row.id);
@@ -46,7 +55,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return markdownResponse(
       "AGENTS.md",
       buildAgentsMd({
-        project: row.draft_doc,
+        project: draft,
         token: linked?.draft_doc,
         deployedAddress: linked?.deployed_token_address,
         draft: true,

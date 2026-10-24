@@ -4,7 +4,7 @@ import { erc20Abi } from "viem";
 import { createAlertRule } from "@/lib/alerts/db";
 import { alertRuleInputSchema, toBaseUnits } from "@/lib/alerts/schema";
 import { chainInfo, projectChainOf } from "@/lib/chains";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 import { publicClientFor } from "@/lib/publicClient";
 
@@ -17,9 +17,9 @@ export const runtime = "nodejs";
  * not answer.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("monitoring");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "monitoring");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const parsed = alertRuleInputSchema.safeParse(await req.json().catch(() => null));

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { listAlerts } from "@/lib/alerts/db";
 import { telegramAvailable } from "@/lib/alerts/telegram";
 import { syncWatch } from "@/lib/alerts/watch";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject } from "@/lib/ideation-db";
 import { alertsSecret } from "@/lib/secrets";
 
@@ -16,9 +16,9 @@ export const runtime = "nodejs";
  * contract recorded since is watched.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("monitoring");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "monitoring");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   await syncWatch(project, gate.id);

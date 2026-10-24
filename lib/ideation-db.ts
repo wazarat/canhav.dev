@@ -560,7 +560,7 @@ export async function publishEntity(
    * besides this one (null for no cap). A token design is always public,
    * its snapshot hash is what a launch commits on chain.
    */
-  opts: { visibility?: "public" | "private"; privateCap?: number | null; privateCapMessage?: string } = {},
+  opts: { visibility?: "public" | "private"; privateCap?: number | null; privateCapMessage?: string; plus?: boolean } = {},
 ): Promise<PublishResult> {
   const sql = getDb();
   if (!sql) return { ok: false, error: "Storage not configured.", status: 503 };
@@ -610,18 +610,29 @@ export async function publishEntity(
   }
   const base = table === "projects" ? (projectBody as IdeationDoc) : (draftBody as IdeationDoc);
   const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
+  // The Studio+ blocks publish only while the project's team is on the plan
+  // (M134). The snapshot loses them; the draft keeps them, so a later plan
+  // publishes them again.
+  const published: IdeationDoc =
+    table === "projects" && opts.plus === false
+      ? (() => {
+          const { canvas: _c, icp: _i, brand: _b, competitors: _k, ...rest } = stamped as ProjectDoc;
+          void _c; void _i; void _b; void _k;
+          return rest as IdeationDoc;
+        })()
+      : stamped;
   const draftOut =
     table === "projects"
       ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }), ...(uc === undefined ? {} : { updateCadence: uc }) }
       : ticks === undefined
         ? stamped
         : { ...stamped, checklist: ticks };
-  const problem = validateIdeationDoc(stamped);
+  const problem = validateIdeationDoc(published);
   if (problem) return { ok: false, error: problem, status: 400 };
 
   // Republishing identical content is a no-op — return the existing snapshot.
   // A change of visibility alone still updates the row (M109).
-  if (latestSnap && row.status === "published" && sameContent(stamped, latestSnap.doc)) {
+  if (latestSnap && row.status === "published" && sameContent(published, latestSnap.doc)) {
     if (table === "projects" && visibility !== current) {
       await sql`
         update launchpad.projects
@@ -640,14 +651,14 @@ export async function publishEntity(
     };
   }
 
-  const canonical = canonicalizeIdeationDoc(stamped);
-  const hash = hashIdeationDoc(stamped);
+  const canonical = canonicalizeIdeationDoc(published);
+  const hash = hashIdeationDoc(published);
 
   await sql`
     insert into launchpad.ideation_snapshots
       (snapshot_hash, entity_type, entity_id, version, doc, canonical)
     values
-      (${hash}, ${entityType}, ${id}, ${version}, ${JSON.stringify(stamped)}, ${canonical})
+      (${hash}, ${entityType}, ${id}, ${version}, ${JSON.stringify(published)}, ${canonical})
     on conflict (snapshot_hash) do nothing
   `;
   if (table === "projects") {
@@ -862,4 +873,12 @@ export async function getLinkedProject(tokenDesignId: string): Promise<ProjectRo
 /** The chain a design's deployed token is on. Robinhood for every deploy from before M54. */
 export function designDeployChain(row: Pick<TokenDesignRow, "deployed_chain_id">): ProjectChain {
   return (row.deployed_chain_id ? chainByChainId(row.deployed_chain_id) : null) ?? DEFAULT_PROJECT_CHAIN;
+}
+
+/** The team a project belongs to (M134), null for a personal project or an unknown id. One column, no owner check. */
+export async function getProjectOrgId(id: string): Promise<string | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  const rows = await sql`select org_id from launchpad.projects where id = ${id}`;
+  return (rows[0] as { org_id?: string | null } | undefined)?.org_id ?? null;
 }

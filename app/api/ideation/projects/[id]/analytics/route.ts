@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { projectChainOf } from "@/lib/chains";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
 import { getTokenAnalytics } from "@/lib/indexer";
 import { getLaunchesByProject } from "@/lib/launches-db";
@@ -14,9 +14,9 @@ export const runtime = "nodejs";
  * null while the indexer has no analytics tables yet.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("analytics");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "analytics");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const token = (new URL(req.url).searchParams.get("token") ?? "").toLowerCase();

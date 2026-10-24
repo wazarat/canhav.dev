@@ -16,6 +16,7 @@ import { projectChainLocked } from "@/lib/launch-project";
 import { type MyLaunch, getMyLaunches } from "@/lib/my-launches";
 import { countPrivateProjects, getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
 import { latestCheckRuns } from "@/lib/checks/db";
+import { projectPlus } from "@/lib/plan-project";
 
 export const metadata: Metadata = {
   title: "Studio",
@@ -37,7 +38,8 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
   const row = await getProject(id, user.owner);
   if (!row) notFound();
 
-  const [privateUsed, checks] = await Promise.all([countPrivateProjects(user.owner, row.id), latestCheckRuns(row.id)]);
+  // The project's team plan decides the Studio+ surfaces on the page (M134).
+  const [privateUsed, checks, plus] = await Promise.all([countPrivateProjects(user.owner, row.id), latestCheckRuns(row.id), projectPlus(row)]);
   const designsRead = getMyTokenDesigns(user.owner);
   const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
@@ -120,6 +122,9 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
       ]}
       headerActions={headerActions}
       linkPanel={linkPanel}
+      projectPlus={plus}
+      orgId={row.org_id ?? null}
+      creator={row.owner_id === user.id}
     />
   );
 }

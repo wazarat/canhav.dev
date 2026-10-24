@@ -12,6 +12,8 @@ import {
   projectVisibleTo,
 } from "@/lib/ideation-db";
 import { getSessionUser } from "@/lib/auth";
+import { stripPlusFields } from "@/lib/plan-fields";
+import { projectPlus } from "@/lib/plan-project";
 
 export const runtime = "nodejs";
 
@@ -36,6 +38,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const snapshot = await getSnapshot(row.published_hash);
   if (!snapshot || snapshot.doc.kind !== "project")
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  // The Studio+ blocks export while the project's team is on the plan (M134).
+  const doc = (await projectPlus(row)) ? snapshot.doc : stripPlusFields(snapshot.doc);
 
   const file = new URL(req.url).searchParams.get("file");
   if (file === "agents") {
@@ -47,7 +51,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     return markdownResponse(
       "AGENTS.md",
       buildAgentsMd({
-        project: snapshot.doc,
+        project: doc,
         token: linkedSnap?.doc.kind === "token_design" ? linkedSnap.doc : undefined,
         deployedAddress: linked?.deployed_token_address,
         curve: linked?.deployed_token_address ? await getCurve(linked.deployed_token_address, designDeployChain(linked)) : null,
@@ -58,6 +62,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const publishedAt = new Date(snapshot.created_at).toISOString().slice(0, 10);
   return markdownResponse(
     `canhav-${slug}.md`,
-    buildProjectMarkdown(snapshot.doc, publishedAt),
+    buildProjectMarkdown(doc, publishedAt),
   );
 }

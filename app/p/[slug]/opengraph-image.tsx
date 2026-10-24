@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { DEFAULT_BRAND } from "@/lib/brand/record";
 import { getProjectBySlug } from "@/lib/ideation-db";
+import { projectPlus } from "@/lib/plan-project";
 
 export const runtime = "nodejs";
 export const alt = "CanHav project";
@@ -17,7 +18,8 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const { slug } = await params;
   const row = await getProjectBySlug(slug);
   const doc = row && row.visibility !== "private" ? row.draft_doc : null;
-  const brand = doc?.brand ?? DEFAULT_BRAND;
+  // The brand palette is a Studio+ block, shown while the team is on the plan (M134).
+  const brand = doc?.brand && row && (await projectPlus(row)) ? doc.brand : DEFAULT_BRAND;
   const p = brand.palette;
   const light = (() => {
     const n = parseInt(p.surface.slice(1), 16);

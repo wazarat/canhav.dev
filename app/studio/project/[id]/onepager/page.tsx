@@ -7,6 +7,7 @@ import { PlusGate } from "@/components/studio/PlusGate";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { getSessionUser } from "@/lib/auth";
 import { getProject } from "@/lib/ideation-db";
+import { projectPlus } from "@/lib/plan-project";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!user) redirect("/studio");
   const row = await getProject(id, user.owner);
   if (!row) notFound();
+  // The pack is a Studio+ block of the project's team (M134).
+  if (!(await projectPlus(row))) notFound();
   const C = STUDIO_PLUS_COPY.pack;
   const doc = row.draft_doc;
   return (

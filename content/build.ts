@@ -302,7 +302,7 @@ export const BUILD_COPY = {
       send: "Send",
       thanks: "Sent. Thank you.",
       failed: "Could not send that. Try again.",
-      closed: { revoked: "This invite was closed by the team.", expired: "This invite has expired.", full: "This invite has all the replies it can take.", open: "" } as const,
+      closed: { revoked: "This invite was closed by the team.", expired: "This invite has expired.", full: "This invite has all the replies it can take.", lapsed: "This invite is paused while the team is off Studio+.", open: "" } as const,
       footer: "Testnet only. Nothing here moves real funds.",
     },
   },

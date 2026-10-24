@@ -26,6 +26,15 @@ export const STUDIO_PLUS_COPY = {
     mcp: "This tool needs Studio+. The project owner can upgrade at canhav.com/studio/plus.",
     /** After checkout, before the session token has caught up. */
     refresh: "Just upgraded? Reload once and the page catches up.",
+    /** A project whose team is not on the plan (M134), the 403 and the MCP answer. */
+    project: "This project's team is not on Studio+. Upgrade from the studio, or move the project to a team that is.",
+    /** The agent sent Studio+ fields for a project whose team is not on the plan. */
+    fields: (fields: readonly string[]) =>
+      `${fields.join(", ")} ${fields.length === 1 ? "is" : "are"} part of Studio+. This project's team is not on the plan, so nothing was changed.`,
+    /** A Studio+ account on a personal project. */
+    personal: "This project is personal, so Studio+ does not reach it here. Move it to your team to use Studio+ on it.",
+    /** A Studio+ account on a project whose team lapsed. */
+    lapsed: "This project's team is not on Studio+ any more. These surfaces open again when the plan is active.",
   },
   /** The pricing page (M108). */
   page: {

@@ -27,6 +27,8 @@ import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
 import { fieldText, openFields } from "@/lib/project-fields";
+import { stripPlusFields } from "@/lib/plan-fields";
+import { projectPlus } from "@/lib/plan-project";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { listUpdates } from "@/lib/updates-db";
 import { periodLabel } from "@/lib/updates";
@@ -122,7 +124,9 @@ export default async function ProjectPublicPage({
 
   const snapshot = await getSnapshot(row.published_hash);
   if (!snapshot || snapshot.doc.kind !== "project") notFound();
-  const doc = snapshot.doc;
+  // The Studio+ blocks show while the project's team is on the plan (M134).
+  const plus = await projectPlus(row);
+  const doc = plus ? snapshot.doc : stripPlusFields(snapshot.doc);
   const audience = docAudience(doc);
   const personaCards = audiencePersonaCards(doc);
 
@@ -138,7 +142,7 @@ export default async function ProjectPublicPage({
     getLaunchesByProject(row.id),
   ]);
   // The team's published weekly updates (M124), live rows beside the snapshot.
-  const updates = await listUpdates(row.id, true);
+  const updates = plus ? await listUpdates(row.id, true) : [];
   const launchedTokens = await Promise.all(
     (projectLaunches ?? []).slice(0, 5).map(async (l) => ({
       address: l.token_address,

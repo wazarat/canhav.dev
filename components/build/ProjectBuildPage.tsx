@@ -21,6 +21,7 @@ import { type ResourceView, ResourcesDrawer } from "@/components/build/Resources
 import { useDeployerBalances } from "@/components/build/useDeployerBalances";
 import { useAgentChanges } from "@/components/build/useAgentChanges";
 import { useTabParam } from "@/components/build/useTabParam";
+import { ProjectPlanProvider } from "@/components/studio/ProjectPlanContext";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
@@ -64,9 +65,18 @@ export function ProjectBuildPage({
   tokens = [],
   linkPanel,
   headerActions,
+  projectPlus = true,
+  orgId = null,
+  creator = false,
 }: {
   id: string;
   initialDoc: ProjectDoc;
+  /** Whether the project's team is on Studio+ (M134), as the server read it. */
+  projectPlus?: boolean;
+  /** The project's team, null when personal (M134). */
+  orgId?: string | null;
+  /** Whether the signed in account created the project, so it may move it to a team (M134). */
+  creator?: boolean;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
   /** ISO time the project was started (M115). */
@@ -248,6 +258,7 @@ export function ProjectBuildPage({
   const publicHref = published && slug ? (publishedVisibility === "private" && shareToken ? `/p/${slug}?s=${shareToken}` : `/p/${slug}`) : null;
 
   return (
+    <ProjectPlanProvider value={{ plus: projectPlus, orgId, creator, projectId: id, name: doc.name }}>
     <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
       <aside className="hidden lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-r lg:border-ink-700/40">
         <BuildSidebar
@@ -306,5 +317,6 @@ export function ProjectBuildPage({
         onPatchKit={patchKit}
       />
     </div>
+    </ProjectPlanProvider>
   );
 }

@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { addDomain, domainStatus, domainsConfigured, normalizeDomain, removeDomain } from "@/lib/domains";
-import { plusGate } from "@/lib/ideation-api";
+import { projectPlusGate } from "@/lib/ideation-api";
 import { getProject, setCustomDomain } from "@/lib/ideation-db";
 
 export const runtime = "nodejs";
 
 /** The project's custom domain and its DNS state (M127), Studio+. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("custom_domain");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "custom_domain");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const status = await domainStatus(project.custom_domain ?? null);
@@ -19,9 +19,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 /** Connect a host: added to the Vercel project, stored on the row. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("custom_domain");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "custom_domain");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (!domainsConfigured()) return NextResponse.json({ error: "Custom domains are not configured on this deployment yet." }, { status: 503 });
@@ -42,9 +42,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
 /** Disconnect the host on both sides. */
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await plusGate("custom_domain");
-  if (gate instanceof NextResponse) return gate;
   const { id } = await params;
+  const gate = await projectPlusGate(id, "custom_domain");
+  if (gate instanceof NextResponse) return gate;
   const project = await getProject(id, gate.owner);
   if (!project) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (project.custom_domain) await removeDomain(project.custom_domain);
