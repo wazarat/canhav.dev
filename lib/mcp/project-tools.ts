@@ -1411,8 +1411,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     server,
     "set_weekly_update",
     {
-      title: "Write this week's update",
-      description: `Studio+. Write the team's weekly update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open weekly draft request.`,
+      title: "Write the team update",
+      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open team update draft request.`,
       inputSchema: updateInputSchema.extend({ publish: z.boolean().optional(), note: noteField }),
     },
     async (args, ctx) => {
@@ -1444,8 +1444,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     server,
     "get_weekly_updates",
     {
-      title: "This project's weekly updates",
-      description: "Studio+. The weekly updates, newest first, each with the week, the body, the highlights, who wrote it and whether it is published. Write this week's with set_weekly_update.",
+      title: "This project's team updates",
+      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights, who wrote it and whether it is published. Write the current one with set_weekly_update.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {

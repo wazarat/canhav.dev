@@ -103,7 +103,7 @@ export function OverviewTab({
   onPatchKit: (partial: Partial<ProjectKit>) => void;
   /** Opens the resources drawer on the pack. */
   onOpenResources: () => void;
-  /** Writes the draft, for the weekly update's draft request (M124). */
+  /** Writes the draft, for the team update's draft request (M124). */
   patch: (p: Partial<ProjectDoc>) => void;
   /** The deployer key and its balances (M103). */
   deployer: DeployerView | null;

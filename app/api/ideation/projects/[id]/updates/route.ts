@@ -7,7 +7,7 @@ import { listUpdates, upsertUpdate } from "@/lib/updates-db";
 
 export const runtime = "nodejs";
 
-/** The project's weekly updates, newest first (M124), Studio+. */
+/** The project's team updates, newest first (M124), Studio+. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const gate = await projectPlusGate(id, "weekly_update");

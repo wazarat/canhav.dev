@@ -23,10 +23,11 @@ email on your account becomes the first channel.
 Up to five channels per project:
 
 - **Email**, any address.
-- **Telegram**, through **Connect Telegram**: the studio opens a link to
-  CanHav's bot, you press Start, and the row reads Connected. No bot token
-  to paste. A team with its own bot can still paste the token and chat id
-  under **Use your own Telegram bot**.
+- **Telegram**, through **Connect Telegram** where the deployment runs a
+  CanHav bot: the studio opens a link to the bot, you press Start, and the
+  row reads Connected. No bot token to paste. The button is absent while no
+  bot is configured; a team with its own bot can always paste the token and
+  chat id under **Use your own Telegram bot**.
 - **Discord**, a webhook URL from the channel's Integrations settings.
   CanHav posts a hello message to it before saving, so a wrong paste never
   saves.

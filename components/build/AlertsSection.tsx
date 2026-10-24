@@ -286,9 +286,11 @@ function AlertsInner({ projectId, contracts, tokens }: { projectId: string; cont
           <Button size="sm" variant="secondary" disabled={busy} onClick={() => setEmailOpen((o) => !o)}>
             {C.addEmail}
           </Button>
-          <Button size="sm" variant="secondary" disabled={busy || Boolean(pairing)} onClick={connectTelegram} title={data?.telegram.available ? undefined : C.telegramUnavailable}>
-            {C.connectTelegram}
-          </Button>
+          {data?.telegram.available ? (
+            <Button size="sm" variant="secondary" disabled={busy || Boolean(pairing)} onClick={connectTelegram}>
+              {C.connectTelegram}
+            </Button>
+          ) : null}
           <Button size="sm" variant="secondary" disabled={busy} onClick={() => setDiscordOpen((o) => !o)}>
             {C.connectDiscord}
           </Button>
@@ -296,7 +298,6 @@ function AlertsInner({ projectId, contracts, tokens }: { projectId: string; cont
             {busy ? C.testing : C.test}
           </Button>
         </div>
-        {data && !data.telegram.available ? <p className="text-xs text-ink-500">{C.telegramUnavailable}</p> : null}
         {pairing ? (
           <p className="text-xs text-ink-300">
             {C.telegramWaiting}{" "}

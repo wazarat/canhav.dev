@@ -1,10 +1,12 @@
 import { z } from "zod";
 
 /**
- * Weekly updates (M124, Studio+). Pure: the limits, the week key and the
- * shapes the routes, the draft kind and the MCP tool share. A weekly
- * update is written by the team or its agent and published to the public
- * page; it is not the wallet signed milestone update anchored on chain.
+ * Team updates (M124, Studio+, named apart from the milestone update in
+ * M140). Pure: the limits, the period key and the shapes the routes, the
+ * draft kind and the MCP tool share. A team update is written by the team
+ * or its agent and published to the public page; it is not the wallet
+ * signed milestone update anchored on chain. The tool and kind names keep
+ * the word weekly.
  */
 export const UPDATE_LIMITS = {
   body: { min: 40, max: 4000 },

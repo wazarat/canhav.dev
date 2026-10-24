@@ -137,7 +137,7 @@ export default async function ProjectPublicPage({
     // Tokens launched from this project through the studio (M19d).
     getLaunchesByProject(row.id),
   ]);
-  // The team's published weekly updates (M124), live rows beside the snapshot.
+  // The team's published team updates (M124), live rows beside the snapshot.
   const updates = plus ? await listUpdates(row.id, true) : [];
   const launchedTokens = await Promise.all(
     (projectLaunches ?? []).slice(0, 5).map(async (l) => ({

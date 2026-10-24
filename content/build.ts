@@ -310,9 +310,9 @@ export const BUILD_COPY = {
       footer: "Testnet only. Nothing here moves real funds.",
     },
   },
-  /** The weekly update on the Overview (M124, Studio+). */
+  /** The team update on the Overview (M124, named apart from the milestone update in M140, Studio+). */
   weekly: {
-    title: "Updates",
+    title: "Team update",
     intro: "A short post for your public page, drafted from the period's activity by your agent or by CanHav, edited here, published when you say so. Not the wallet signed milestone update.",
     cadenceLabel: "How often",
     cadenceHint: "Your connected agent sees when one is due on its next call. Only when asked means it writes one when you click Draft or ask it.",
@@ -334,7 +334,7 @@ export const BUILD_COPY = {
     publish: "Publish to the page",
     loadFailed: "Could not read the updates. Reload to try again.",
     failed: "Could not save the update. Try again.",
-    publicTitle: "Updates",
+    publicTitle: "Team updates",
   },
   /** Monitoring and alerts on Deployments (M123, simplified in M128, Studio+). */
   alerts: {
@@ -387,7 +387,6 @@ export const BUILD_COPY = {
     telegramWaiting: "Waiting for Telegram. Press Start in the chat that opened and this row updates on its own.",
     telegramConnected: "Connected. Telegram shows a message from the bot.",
     telegramExpired: "The link expired. Connect Telegram again.",
-    telegramUnavailable: "Telegram is not set up on this deployment yet.",
     connectDiscord: "Connect Discord",
     discordLabel: "Webhook URL",
     discordHint: "From the channel's Integrations settings. CanHav posts a hello message before it saves the webhook, and stores it encrypted.",

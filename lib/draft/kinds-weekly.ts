@@ -7,7 +7,7 @@ import { DEFAULT_CADENCE, UPDATE_LIMITS, cleanWeeklyDraft, periodLabel, periodOf
 import { weekActivity } from "@/lib/updates-db";
 
 /**
- * The weekly update (M124): a short status post from the week's activity
+ * The team update (M124, kind weekly): a short status post from the period's activity
  * (agent sessions and changes, check runs, the GitHub sync line, the
  * agent's summary), for the team to edit and publish. The body carries
  * projectId so the activity can be read.

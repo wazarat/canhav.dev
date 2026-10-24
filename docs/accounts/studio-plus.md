@@ -22,13 +22,13 @@ Seats are counted by Clerk. Three members and pending invitations fit in the pla
 
 ## What Studio+ adds
 
-The features ship one by one and are listed on the pricing page, with Soon on the ones still to come. Each one is gated by the plan in the studio, in the API and on the project's MCP server; a free account sees a short description and the upgrade link in its place.
+The features ship one by one and are listed on the pricing page, with Soon on the ones still to come. Each one is gated by the project's team plan in the studio, in the API, on the public page and the exports, and on the project's MCP server; a free account sees the five free tabs and one sentence on the Overview pointing at this page.
 
 - Business Model Canvas, ICP and Competitor landscape on the Business model tab, Brand identity on the Brand tab
 - Private projects (unlisted publish with a share link), version history and project keys
-- GitHub sync, automated checks, monitoring and alerts (one switch has a worker watch every contract and token you record and send to email, Telegram or Discord, with a test alert that proves delivery, see [Alerts](../token-launch/alerts.md)), token analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
-- Investor and grant pack (a one pager, a deck and grant answers for three programme styles, drafted on Claude Sonnet 5.5, exported as markdown and printed to PDF), updates (a post for the public page drafted from the period's activity, daily, every other day, weekly or only when asked, published from the Overview), tester kit (invite links with steps and per step feedback, no accounts, no keys held), custom domain (a host you own serving the public page, DNS records shown in the studio)
-- Partner perks and priority help
+- GitHub sync, automated checks (Slither or Aderyn and a Sourcify lookup in a GitHub Action), monitoring and alerts (one switch has a worker watch every contract and token you record and send to email, Discord or Telegram where the deployment has a bot, with a test alert that proves delivery, see [Alerts](../token-launch/alerts.md)), holder and volume analytics (holders, traders, daily volume and new wallets over 90 days on Deployments and over `get_analytics`)
+- Investor and grant pack (a one pager, a deck and grant answers for three programme styles, drafted on Claude Sonnet 5.5, exported as markdown and printed to PDF), team updates (a post for the public page drafted from the period's activity, daily, every other day, weekly or only when asked, published from the Overview, named apart from the wallet signed milestone update), tester kit (invite links with steps and per step feedback, no accounts, no keys held), custom domain (a host you own serving the public page, DNS records shown in the studio)
+- Priority help, replies within one working day and a booking page for a call
 
 Drafting is agent first: your own IDE agent writes every Studio+ field, and CanHav's server draft is the fallback for a team with no agent connected, within a monthly allowance.
 
@@ -36,11 +36,11 @@ Drafting is agent first: your own IDE agent writes every Studio+ field, and CanH
 
 A Draft button queues a request on the project. A connected agent sees open requests first on `get_project_status` (and in AGENTS.md), writes the field through `update_project`, and that clears the request; the field then reads "Drafted by your agent" with the time. Claude Code lists one slash command per kind (`draft_canvas`, `draft_icp`, `draft_competitors`, and the later kinds), and Or ask your agent gives the same prompt to paste into another editor.
 
-With agent writes off, or from Draft with CanHav now, CanHav drafts on its side: the project record (the same markdown the export produces), a short kit summary and the fields named for that draft go to Anthropic's API, on Claude Haiku 5.5 for the canvas, the profiles, the competitor line, the brand kit and the weekly update, and on Claude Sonnet 5.5 for the investor pack. Nothing from your repository and no keys are sent. The answer lands in the draft as an edit you can change, the field reads "Drafted by CanHav", and a team has 60 server drafts a month across every kind; the button shows what is left. A draft that is refused, cut off or malformed fails plainly and counts against nothing.
+With agent writes off, or from Draft with CanHav now, CanHav drafts on its side: the project record (the same markdown the export produces), a short kit summary and the fields named for that draft go to Anthropic's API, on Claude Haiku 5.5 for the canvas, the profiles, the competitor line, the brand kit and the team update, and on Claude Sonnet 5.5 for the investor pack. Nothing from your repository and no keys are sent. The answer lands in the draft as an edit you can change, the field reads "Drafted by CanHav", and a team has 60 server drafts a month across every kind; the button shows what is left. A draft that is refused, cut off or malformed fails plainly and counts against nothing.
 
-## Partner perks and priority help
+## Priority help
 
-The pricing page lists partners CanHav routes to for audits, KYC, simulation and monitoring, and RPC, with the referral terms once agreed (until then the row says so and the contact form carries the request), and a booking link for the monthly office hour. Replies within one working day for Studio+ teams.
+Studio+ teams get replies within one working day and a booking page for a call, both from the pricing page. There is no partner perks list; nothing is agreed with a partner, so nothing is promised.
 
 ## Cancelling and downgrading
 

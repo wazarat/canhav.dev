@@ -3,7 +3,7 @@ import "server-only";
 import { getDb } from "@/lib/db";
 import { DEFAULT_CADENCE, type ProjectUpdate, UPDATE_LIMITS, type UpdateCadence, isUpdateCadence, periodOf } from "@/lib/updates";
 
-/** Storage for weekly updates (M124). Rows go with their project; the routes check ownership first. */
+/** Storage for team updates (M124, the kind is still called weekly). Rows go with their project; the routes check ownership first. */
 
 interface Row {
   id: string;

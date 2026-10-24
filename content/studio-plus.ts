@@ -245,7 +245,7 @@ export const STUDIO_PLUS_COPY = {
     },
     private_projects: {
       title: "Private projects",
-      teaser: "Stealth mode before announcing. Free gets public projects plus one private.",
+      teaser: "Unlimited private projects with share links. Free keeps one.",
     },
     project_keys: {
       title: "Secret keys",
@@ -257,27 +257,27 @@ export const STUDIO_PLUS_COPY = {
     },
     checks: {
       title: "Automated checks",
-      teaser: "A GitHub Action runs Slither or Aderyn, Sourcify verification and Tenderly links, so Review becomes proof.",
+      teaser: "A GitHub Action runs Slither or Aderyn and asks Sourcify about your deployed addresses, and the result sits beside the review pass as proof.",
     },
     monitoring: {
       title: "Monitoring and alerts",
       teaser: "One switch watches every contract and token you record for ownership changes, pauses, large transfers and curve graduation, sends to email, Telegram or Discord within a minute, and a test alert proves it before anything happens on chain.",
     },
     analytics: {
-      title: "Token analytics",
-      teaser: "Holders, curve progress, volume and wallet growth over 90 days.",
+      title: "Holder and volume analytics",
+      teaser: "Holders, traders, daily volume and new wallets over 90 days. The curve itself is on every token page.",
     },
     investor_pack: {
       title: "Investor and grant pack",
       teaser: "A one pager, a short deck and draft grant answers generated from the record, canvas, ICP and competitors.",
     },
     weekly_update: {
-      title: "Weekly update",
-      teaser: "The agent drafts a status post from the activity feed, the team approves it, and it posts to the public page.",
+      title: "Team update",
+      teaser: "A short post for the public page, drafted from the period's activity by your agent or by CanHav, published when you click Publish.",
     },
     tester_kit: {
       title: "Tester kit",
-      teaser: "An invite link gives testers the faucet and collects feedback per step.",
+      teaser: "An invite link that shows testers the faucet link, your testnet contracts and your steps, and collects a rating and a note per step.",
     },
     custom_domain: {
       title: "Custom domain",
@@ -285,7 +285,7 @@ export const STUDIO_PLUS_COPY = {
     },
     version_history: {
       title: "Version history",
-      teaser: "Restore earlier drafts and decisions after an agent or teammate overwrites something.",
+      teaser: "Draft version history with restore, for when an agent or a teammate overwrites something. Published snapshots are free for everyone.",
     },
   } satisfies Record<PlusFeature, { title: string; teaser: string }>,
 } as const;

@@ -50,9 +50,9 @@ A Credit project's research kit (its product shape, starting point and resource 
 
 A Studio+ team can serve a public project's page at a host it owns (Publish section, Custom domain). CanHav adds the host to its deployment and shows the DNS records to set, an `A` record for an apex domain or a `CNAME` for a subdomain plus a `TXT` record that proves ownership; once the DNS resolves, the root of that host shows the project page and becomes the page's canonical address, while the `/p/...` page stays. A private project keeps its share link instead; a host can serve one project at a time.
 
-## Updates
+## Team updates
 
-A Studio+ team can publish short updates to its project page from the Overview, daily, every other day, weekly or only when it asks (see [Studio](studio.md)). The page shows the published ones newest first, each labelled by its day, its two days or its week, each with its body and highlights, beside the snapshot; a draft week stays private until it is published. These are the team's own words, not the wallet signed milestone updates a token's journey anchors on chain (see [Journey updates](../token-launch/journey-updates.md)).
+A Studio+ team can publish short team updates to its project page from the Overview, daily, every other day, weekly or only when it asks (see [Studio](studio.md)). The page shows the published ones newest first, each labelled by its day, its two days or its week, each with its body and highlights, beside the snapshot; a draft week stays private until it is published. These are the team's own words, not the wallet signed milestone updates a token's journey anchors on chain (see [Journey updates](../token-launch/journey-updates.md)).
 
 ## Deployed tokens
 

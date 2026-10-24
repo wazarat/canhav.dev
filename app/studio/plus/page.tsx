@@ -11,9 +11,8 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { SoonBadge } from "@/components/ui/SoonBadge";
 import { STUDIO_PLUS_COPY, STUDIO_PLUS_SHIPPED } from "@/content/studio-plus";
-import { HELP_COPY, PERKS, PERKS_COPY } from "@/content/perks";
+import { HELP_COPY } from "@/content/perks";
 import { CONTACT_COPY } from "@/content/studio-pro";
-import { ContactCta } from "@/components/home/ContactCta";
 import { getSessionUser, isAuthConfigured } from "@/lib/auth";
 import { getPlan } from "@/lib/plan";
 import { PLUS_FEATURES, type PlusFeature } from "@/lib/plan-shared";
@@ -145,62 +144,10 @@ export default async function StudioPlusPage() {
         </section>
         <section>
           <h2 className="font-display text-lg font-semibold text-ink-50">
-            {PERKS_COPY.title}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            {PERKS_COPY.lead}
-          </p>
-          <div className="mt-3">
-            <Card>
-              {PERKS.map((perk) => (
-                <CardSection
-                  key={perk.partner}
-                  className="flex flex-wrap items-start justify-between gap-3"
-                >
-                  <div className="min-w-0 max-w-xl">
-                    <h3 className="font-display text-sm font-semibold text-ink-50">
-                      {perk.partner}{" "}
-                      <span className="font-normal text-ink-400">
-                        · {perk.what}
-                      </span>
-                    </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-ink-300">
-                      {perk.blurb}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-500">
-                      {perk.referralUrl
-                        ? PERKS_COPY.agreed
-                        : PERKS_COPY.pending}
-                      {perk.code ? ` · ${PERKS_COPY.code(perk.code)}` : ""}
-                    </p>
-                  </div>
-                  <a
-                    href={perk.referralUrl ?? perk.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-ink-200 hover:underline"
-                  >
-                    {PERKS_COPY.open}
-                  </a>
-                </CardSection>
-              ))}
-            </Card>
-            <div className="mt-3">
-              <ContactCta
-                label={PERKS_COPY.ask}
-                sourcePage="studio-plus-perks"
-              />
-            </div>
-          </div>
-        </section>
-        <section>
-          <h2 className="font-display text-lg font-semibold text-ink-50">
             {HELP_COPY.title}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            {HELP_COPY.lead}
-          </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
+            <p className="text-sm leading-relaxed text-ink-400">{HELP_COPY.lead}</p>
             <Button asChild size="sm" variant="outline">
               <a
                 href={CONTACT_COPY.bookingUrl}
@@ -210,7 +157,6 @@ export default async function StudioPlusPage() {
                 {HELP_COPY.book}
               </a>
             </Button>
-            <span className="text-xs text-ink-500">{HELP_COPY.reply}</span>
           </div>
         </section>
       </div>
