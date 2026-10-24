@@ -88,8 +88,11 @@ import { storeImageFromBase64, storeImageFromUrl } from "@/lib/images";
 import { milestoneOf, milestoneOfStep } from "@/lib/build-milestones";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
 import { AGENT_COPY, CHAIN_COPY } from "@/content/ideation";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { agentRequestHowTo, openAgentRequests } from "@/lib/agent-requests";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
+import { PROSPECT_LIMITS, prospectInputSchema } from "@/lib/prospects";
+import { listProspects } from "@/lib/prospects-db";
 import { groupsFor } from "@/content/kits/checklists";
 import { latestAgentSession, reportAgentSession } from "@/lib/agent-sessions-db";
 import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
@@ -1420,6 +1423,47 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       });
     },
     { ...scope, plus: "competitors" },
+  );
+
+  // Prospects (M158): the real people the team means to contact. Private to the team, so a
+  // project key (a CI or cloud agent) is refused and only a signed in session reads or writes them.
+  registerMeteredTool(
+    server,
+    "get_prospects",
+    {
+      title: "This project's prospects",
+      description:
+        "Studio+. The real people the team means to contact for this project, with name, contact (email, LinkedIn, X), whether they were contacted and when, and the ideal customer profile they fit. Private to the team, never published, exported or sent to a drafting model, and answered only on a signed in session, never on a project key." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      if (mcpKey(ctx)) return errorResult(STUDIO_PLUS_COPY.prospects.sessionOnly);
+      const prospects = await listProspects(loaded.value.project.id);
+      return jsonResult({ ...stateOf(loaded.value), total: prospects.length, contacted: prospects.filter((p) => p.contacted).length, prospects });
+    },
+    { ...scope, plus: "icp" },
+  );
+
+  registerMeteredTool(
+    server,
+    "set_prospects",
+    {
+      title: "Add or update this project's prospects",
+      description: `Studio+. Add or update prospects, up to ${PROSPECT_LIMITS.upsert.max} rows per call, each with name (1 to 80 characters), optional email, linkedin (a linkedin.com URL or a handle) and x (an x.com URL or a handle), contacted (default false), contactedOn (YYYY-MM-DD, only when contacted) and profile (0 or 1, the ideal customer profile the person fits). A row with an id from get_prospects updates that row; a row whose email or handle matches a stored row updates it too; the rest are added, at most ${PROSPECT_LIMITS.rows} per project. Nothing is deleted through this tool. Rides the project's write mode like any change, so in propose mode the owner accepts the rows on the project page. Answered only on a signed in session, never on a project key. ${WRITE_RULES}`,
+      inputSchema: z.object({ upsert: z.array(prospectInputSchema).min(1).max(PROSPECT_LIMITS.upsert.max), note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      if (mcpKey(ctx)) return errorResult(STUDIO_PLUS_COPY.prospects.sessionOnly);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "prospects", patch: { upsert: args.upsert } }, args.note);
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult(await afterWrite(project.id, ctx, result));
+    },
+    { ...scope, plus: "icp" },
   );
 
   registerMeteredTool(

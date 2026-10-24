@@ -1086,7 +1086,7 @@ export const AGENT_COPY = {
   now: "Now",
   empty: "Empty",
   targets: { project: "Project", token_design: "Token design" },
-  kinds: { fields: "Fields", build_steps: "Build steps", create: "Started", link: "Launch link" },
+  kinds: { fields: "Fields", build_steps: "Build steps", create: "Started", link: "Launch link", prospects: "Prospects" },
   statuses: {
     proposed: "Proposed",
     applied: "Written by agent",

@@ -42,6 +42,9 @@ import {
 } from "@/lib/ideation-db";
 import { emptyTokenDesignDoc } from "@/lib/ideation";
 import { type Owner, ownedBy, ownerOf } from "@/lib/owner";
+import { type ProspectsPatch, prospectsPatchSchema } from "@/lib/prospects";
+import { upsertProspects } from "@/lib/prospects-db";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 
 /**
  * The one path an agent change takes, whatever tool sent it. Reads the
@@ -69,6 +72,7 @@ const APPLIED =
 type Input =
   | { target: "project"; kind: "fields"; patch: ProjectPatch }
   | { target: "project"; kind: "build_steps"; patch: BuildStepsPatch }
+  | { target: "project"; kind: "prospects"; patch: ProspectsPatch }
   | { target: "token_design"; kind: "fields"; patch: TokenDesignPatch }
   | { target: "token_design"; kind: "build_steps"; patch: BuildStepsPatch };
 
@@ -91,6 +95,12 @@ export function nextProjectDoc(
     const problem = buildStepsProblem(row.draft_doc, parsed.data);
     if (problem) return { ok: false, message: problem };
     return { ok: true, doc: applyBuildSteps(row.draft_doc, parsed.data) };
+  }
+  // A prospects change (M158) touches the table, not the draft; the projection leaves the draft as it is.
+  if (kind === "prospects") {
+    const parsed = prospectsPatchSchema.safeParse(patch);
+    if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
+    return { ok: true, doc: row.draft_doc };
   }
   const parsed = projectPatchSchema.safeParse(patch);
   if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
@@ -130,6 +140,13 @@ export async function writeChange(
   for (let attempt = 0; attempt < 2; attempt++) {
     const project = await getProject(projectId, owner);
     if (!project) return { ok: false, message: "Project not found." };
+    if (target === "project" && kind === "prospects") {
+      // Rows go to the prospects table (M158); no draft write, so no revision.
+      const parsed = prospectsPatchSchema.safeParse(patch);
+      if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, patch) };
+      const saved = await upsertProspects(project.id, owner.userId, parsed.data.upsert);
+      return saved.ok ? { ok: true } : { ok: false, message: saved.message };
+    }
     if (target === "project") {
       const rev = agentStateOf(project).rev;
       if (rev === null) return { ok: false, message: NOT_READY };
@@ -269,6 +286,11 @@ export async function submitAgentChange(
   } else if (input.kind === "build_steps") {
     const problem = buildStepsProblem(project.draft_doc, input.patch);
     if (problem) return { ok: false, message: problem };
+  } else if (input.kind === "prospects") {
+    // Rows for the prospects table (M158): Studio+ under icp, the shape checked here, never a delete.
+    const parsed = prospectsPatchSchema.safeParse(input.patch);
+    if (!parsed.success) return { ok: false, message: describeIssues(parsed.error, input.patch) };
+    if (!(await projectPlus(project))) return { ok: false, message: STUDIO_PLUS_COPY.gate.project };
   } else {
     const problem = projectPatchProblem(project.draft_doc, input.patch);
     if (problem) return { ok: false, message: problem };

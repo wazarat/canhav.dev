@@ -183,6 +183,26 @@ export const STUDIO_PLUS_COPY = {
     differLine: "How you differ",
     differEdit: "Edit under Competitors",
   },
+  /** Prospects (M158, F14), the real people to contact. */
+  prospects: {
+    title: "People to contact",
+    intro: "Real people who fit a profile. Private to your team, never published, exported or sent to a model; your agent reads and adds them only on a signed in session.",
+    count: (n: number, contacted: number) => `${n === 1 ? "1 person" : `${n} people`}, ${contacted} contacted`,
+    columns: { name: "Name", contact: "Contact", contacted: "Contacted", date: "Date", profile: "Profile" },
+    add: "Add a person",
+    save: "Save",
+    cancel: "Cancel",
+    edit: "Edit",
+    remove: "Remove",
+    yes: "Yes",
+    no: "No",
+    noProfile: "No profile",
+    placeholders: { name: "Name", email: "Email", linkedin: "LinkedIn URL or handle", x: "X URL or handle" },
+    empty: "Nobody yet. Add the people your profiles describe, or let your agent add them as it works through outreach.",
+    limit: (max: number) => `At most ${max} people per project.`,
+    failed: "Could not save. Check the contact details and try again.",
+    sessionOnly: "Prospects are private to the team and are read or written only on a signed in session, not on a project key.",
+  },
   /** Ideal customer profiles (M114). */
   icp: {
     title: "Ideal customers",

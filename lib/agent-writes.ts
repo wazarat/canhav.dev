@@ -125,7 +125,8 @@ export type AgentChangeTarget = "project" | "token_design";
  * started the linked token design (M82); link records a launch linked to
  * or unlinked from the project (M89).
  */
-export type AgentChangeKind = "fields" | "build_steps" | "create" | "link";
+/** prospects (M158) adds or updates rows in the prospects table, never the draft document. */
+export type AgentChangeKind = "fields" | "build_steps" | "create" | "link" | "prospects";
 /** withdrawn means the agent took a waiting proposal back (M88). */
 export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected" | "withdrawn";
 
@@ -1247,6 +1248,7 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
 
 /** Paths whose field name would read oddly (M51). */
 const PATH_LABELS: Record<string, string> = {
+  prospects: "Prospects",
   valueCanvas: "Value proposition canvas",
   "valueCanvas.0": "Value canvas, profile 1",
   "valueCanvas.1": "Value canvas, profile 2",

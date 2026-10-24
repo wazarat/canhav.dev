@@ -55,7 +55,8 @@ export async function POST(req: Request, { params }: Ctx) {
 
   let applied: unknown = change.patch;
   if (body.action === "accept") {
-    if (body.patch !== undefined) {
+    // A prospects change (M158) is accepted as a whole; its rows go to the prospects table through writeChange.
+    if (body.patch !== undefined && change.kind !== "prospects") {
       if (change.kind === "build_steps") {
         const stored = buildStepsPatchSchema.safeParse(change.patch);
         const decided = buildStepsPatchSchema.safeParse(body.patch);

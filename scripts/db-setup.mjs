@@ -682,6 +682,35 @@ await sql`
   create index if not exists projects_org_id_idx on launchpad.projects (org_id)
 `;
 
+// M158. Prospects, the real people a team means to contact for a project.
+// Private to the team: never on the draft document, so never in version
+// history, a published snapshot, an export or the drafting context. Rows go
+// with their project.
+await sql`
+  create table if not exists launchpad.prospects (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    name text not null check (char_length(name) between 1 and 80),
+    email text check (email is null or char_length(email) <= 200),
+    linkedin text check (linkedin is null or char_length(linkedin) <= 200),
+    x text check (x is null or char_length(x) <= 200),
+    contacted boolean not null default false,
+    contacted_on date,
+    profile smallint check (profile is null or profile in (0, 1)),
+    created_by text not null,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  )
+`;
+await sql`create index if not exists prospects_project_idx on launchpad.prospects (project_id, created_at)`;
+
+// M158. An agent adds or updates prospects through a change of kind prospects.
+await sql`alter table launchpad.agent_changes drop constraint if exists agent_changes_kind_check`;
+await sql`
+  alter table launchpad.agent_changes
+    add constraint agent_changes_kind_check check (kind in ('fields','build_steps','create','link','prospects'))
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

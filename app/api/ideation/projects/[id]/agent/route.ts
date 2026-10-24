@@ -17,6 +17,7 @@ import {
 import { agentStateOf, listAgentChanges, setAgentWriteMode } from "@/lib/agent-writes-db";
 import { nextProjectDoc, nextTokenDesignDoc } from "@/lib/agent-writes-server";
 import { latestAgentSession } from "@/lib/agent-sessions-db";
+import { prospectsSummary } from "@/lib/prospects";
 import { authGate } from "@/lib/ideation-api";
 import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
 import { type ProductShape, kitShapes } from "@/lib/kits";
@@ -78,6 +79,8 @@ export async function GET(_req: Request, { params }: Ctx) {
         : buildStepLines(c.patch as BuildStepsPatch);
       return raw.map((l) => ({ ...l, path: stepLabel(l.path, c.patch as BuildStepsPatch) }));
     }
+    // Prospects (M158) are rows in their own table, read as one block of people; accepted or rejected as a whole.
+    if (c.kind === "prospects") return [{ path: "prospects", before: undefined as unknown as string, after: prospectsSummary(c.patch) }];
     // A decided change shows what the owner let through (M44).
     if (decided) return decisionLines(c.patch, c.appliedPatch);
     const doc = c.target === "project" ? project.draft_doc : design?.draft_doc;
