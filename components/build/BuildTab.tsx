@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/Input";
 import { Segmented } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { TAB_WIDTH } from "@/components/build/layout";
+import { usePlan } from "@/components/studio/PlanContext";
 import { BUILD_COPY, type BuildTab as BuildTabName } from "@/content/build";
 import { removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, REVIEW_COPY, shapeLabel } from "@/content/kits/copy";
@@ -95,7 +97,7 @@ export function BuildTab({
 
   if (!kit?.shape) {
     return (
-      <div className="max-w-2xl space-y-3">
+      <div className={`${TAB_WIDTH} space-y-3`}>
         <p className="text-sm text-ink-400">{BUILD_COPY.overview.noShape}</p>
         <Button size="sm" variant="outline" onClick={() => onGoTab("decisions")}>
           {BUILD_COPY.publish.openIn(BUILD_COPY.tabs.decisions)} <ArrowRight aria-hidden className="h-3.5 w-3.5" />
@@ -116,7 +118,7 @@ export function BuildTab({
   const total = MILESTONES.reduce((n, m) => n + filtered[m].length, 0);
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className={`${TAB_WIDTH} space-y-6`}>
       <div className="flex flex-wrap items-center gap-3">
         <Segmented
           size="sm"
@@ -243,6 +245,8 @@ function MilestoneSection({
   checks?: CheckRunView[];
   onGoTab: (tab: BuildTabName) => void;
 }) {
+  // The tester kit is Studio+ work, shown for a Studio+ session only (M136).
+  const paid = usePlan().plan === "studio_plus";
   const M = BUILD_COPY.milestones[milestone];
   const progress = groupProgress(groups, kit);
   const review = passes.length ? reviewProgress(passes, kit) : null;
@@ -309,7 +313,7 @@ function MilestoneSection({
           </ul>
         )}
       </CardSection>
-      {testerKit ? (
+      {testerKit && paid ? (
         <CardSection className="space-y-3">
           <h3 className="font-display text-sm font-semibold text-ink-50">{BUILD_COPY.tester.title}</h3>
           {testerKit}

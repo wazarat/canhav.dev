@@ -20,12 +20,30 @@ export const Input = React.forwardRef<
 ));
 Input.displayName = "Input";
 
+/**
+ * A textarea that grows with its text (M136): `rows` is the minimum, the
+ * box follows the content up to sixty percent of the viewport and scrolls
+ * past that. Browsers with field-sizing do it in CSS; the others get the
+ * same from a layout effect on the value.
+ */
 export const TextArea = React.forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(({ className, ...props }, ref) => (
-  <textarea ref={ref} className={cn(inputClasses, className)} {...props} />
-));
+>(({ className, value, ...props }, ref) => {
+  const inner = React.useRef<HTMLTextAreaElement | null>(null);
+  const setRef = (el: HTMLTextAreaElement | null) => {
+    inner.current = el;
+    if (typeof ref === "function") ref(el);
+    else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+  };
+  React.useLayoutEffect(() => {
+    const el = inner.current;
+    if (!el || "fieldSizing" in el.style) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return <textarea ref={setRef} value={value} className={cn(inputClasses, "max-h-[60vh] resize-none overflow-y-auto [field-sizing:content]", className)} {...props} />;
+});
 TextArea.displayName = "TextArea";
 
 /**

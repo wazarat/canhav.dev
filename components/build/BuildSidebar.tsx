@@ -6,7 +6,7 @@ import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, His
 import { RESOURCE_VIEWS, type ResourceView } from "@/components/build/ResourcesDrawer";
 
 import { AGENT_COPY } from "@/content/ideation";
-import { BUILD_COPY, BUILD_TABS, type BuildTab } from "@/content/build";
+import { BUILD_COPY, type BuildTab } from "@/content/build";
 import { MILESTONES, type Milestone } from "@/lib/build-milestones";
 import type { ProblemTab } from "@/lib/build-readiness";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,7 @@ const ACTIVE = "bg-ink-800/60 text-ink-50";
 export function BuildSidebar({
   name,
   logo,
+  tabs,
   tab,
   milestone,
   problems,
@@ -62,6 +63,8 @@ export function BuildSidebar({
 }: {
   name: string;
   logo: string | null;
+  /** The tabs this session sees (M136). */
+  tabs: readonly BuildTab[];
   tab: BuildTab;
   milestone: Milestone | "";
   problems: Record<ProblemTab, string | null>;
@@ -89,7 +92,7 @@ export function BuildSidebar({
         <span className="truncate text-sm font-medium text-ink-50">{name.trim() || "Untitled"}</span>
       </div>
 
-      {BUILD_TABS.map((t) => {
+      {tabs.map((t) => {
         const Icon = ICONS[t];
         const active = tab === t;
         const dot = t === "decisions" || t === "publish" ? problems[t as ProblemTab] : null;

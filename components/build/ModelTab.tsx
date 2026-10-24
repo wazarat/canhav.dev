@@ -3,6 +3,7 @@
 import { CanvasEditor } from "@/components/build/CanvasEditor";
 import { CompetitorsSection } from "@/components/build/CompetitorsSection";
 import { IcpEditor } from "@/components/build/IcpEditor";
+import { TAB_WIDTH } from "@/components/build/layout";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Card, CardSection } from "@/components/ui/Card";
 import { BUILD_COPY } from "@/content/build";
@@ -35,7 +36,7 @@ export function ModelTab({
 }) {
   const M = BUILD_COPY.model;
   return (
-    <div className="max-w-2xl">
+    <div className={TAB_WIDTH}>
       <Card>
         <CardSection id="model-canvas" className="space-y-4">
           <Heading>{M.canvas}</Heading>

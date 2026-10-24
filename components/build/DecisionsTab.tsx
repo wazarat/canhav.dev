@@ -3,6 +3,7 @@
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { FieldWaiver } from "@/components/build/FieldWaiver";
+import { TAB_WIDTH } from "@/components/build/layout";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import type { AgentWriteMode } from "@/lib/agent-writes";
@@ -80,7 +81,7 @@ export function DecisionsTab({
   const audience = docAudience(doc);
 
   return (
-    <div className="max-w-2xl">
+    <div className={TAB_WIDTH}>
       <Card>
         <CardSection id="decisions-building" className="space-y-4">
           <Heading>{D.building}</Heading>

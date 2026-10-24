@@ -276,7 +276,7 @@ export function TokenDesignEditor({
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         {stale ? <StaleDraftNotice /> : null}
-        <div className="max-w-2xl space-y-6">
+        <div className="max-w-3xl space-y-6">
           {step === 0 && (
             <>
               <ShapeAdviceCard shapes={linkedShapes} why={doc.rationale.why} />

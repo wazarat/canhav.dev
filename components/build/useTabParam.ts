@@ -36,7 +36,7 @@ function isMilestone(value: string | null): value is Milestone {
   return (MILESTONES as readonly string[]).includes(value ?? "");
 }
 
-export function useTabParam(): {
+export function useTabParam(allowed: readonly BuildTab[] = BUILD_TABS): {
   tab: BuildTab;
   setTab: (tab: BuildTab) => void;
   /** The Build milestone in view, from ?milestone= (the sidebar's sub items), empty for all. */
@@ -49,7 +49,8 @@ export function useTabParam(): {
   const agentHash = useSyncExternalStore(subscribeHash, atAgentHash, neverOnServer);
 
   const raw = params.get("tab");
-  const tab: BuildTab = agentHash ? "overview" : isBuildTab(raw) ? raw : "overview";
+  // A tab the session does not see (the Studio+ tabs on a free account, M136) falls back to Overview.
+  const tab: BuildTab = agentHash ? "overview" : isBuildTab(raw) && allowed.includes(raw) ? raw : "overview";
   const rawMilestone = params.get(MILESTONE_PARAM);
   const milestone: Milestone | "" = tab === "build" && isMilestone(rawMilestone) ? rawMilestone : "";
 

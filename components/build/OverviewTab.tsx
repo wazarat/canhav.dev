@@ -7,6 +7,9 @@ import { AgentFeed } from "@/components/build/AgentFeed";
 import { ProgressDialog } from "@/components/build/ProgressDialog";
 import { SummaryDialog } from "@/components/build/SummaryDialog";
 import { WeeklyUpdateCard } from "@/components/build/WeeklyUpdateCard";
+import { TAB_WIDTH } from "@/components/build/layout";
+import { usePlan } from "@/components/studio/PlanContext";
+import { PlusLine } from "@/components/studio/PlusLine";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
@@ -117,8 +120,10 @@ export function OverviewTab({
   const [progressOpen, setProgressOpen] = useState(false);
   const shapes = shapeLabels(kit);
   const line = oneLine(doc.whatItDoes);
+  // Studio+ surfaces show for a Studio+ session only (M136); a free account gets one sentence.
+  const paid = usePlan().plan === "studio_plus";
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className={`${TAB_WIDTH} space-y-6`}>
       <Card>
         <CardSection className="space-y-3">
           {line ? <p className="text-sm leading-relaxed text-ink-200">{line}</p> : null}
@@ -138,6 +143,7 @@ export function OverviewTab({
             <DeployerChip deployer={deployer} funding={funding} onClick={onGoDeployments} />
           </div>
           {!kit?.shape ? <p className="text-xs text-ink-500">{BUILD_COPY.overview.noShape}</p> : null}
+          <PlusLine />
           <div>
             <Button size="sm" variant="outline" onClick={() => setSummaryOpen(true)}>
               <ListChecks aria-hidden className="h-3.5 w-3.5" /> {BUILD_COPY.overview.summary.button}
@@ -151,7 +157,7 @@ export function OverviewTab({
         ) : null}
       </Card>
 
-      <WeeklyUpdateCard projectId={id} name={doc.name} doc={doc} patch={patch} agentMode={agent.state?.mode ?? "propose"} />
+      {paid ? <WeeklyUpdateCard projectId={id} name={doc.name} doc={doc} patch={patch} agentMode={agent.state?.mode ?? "propose"} /> : null}
 
       <Card>
         <CardSection>

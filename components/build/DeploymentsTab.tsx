@@ -7,6 +7,8 @@ import { DeployerSection } from "@/components/build/DeployerSection";
 import { AlertsSection } from "@/components/build/AlertsSection";
 import { AnalyticsSection } from "@/components/build/AnalyticsSection";
 import { KeysSection } from "@/components/build/KeysSection";
+import { TAB_WIDTH } from "@/components/build/layout";
+import { usePlan } from "@/components/studio/PlanContext";
 import { type CheckRunView, verifiedOn } from "@/lib/checks/schema";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { ContractRowsEditor } from "@/components/ideation/ContractRowsEditor";
@@ -81,18 +83,22 @@ export function DeploymentsTab({
     }
   };
 
+  // Studio+ sections show for a Studio+ session only (M136).
+  const paid = usePlan().plan === "studio_plus";
   return (
-    <div className="max-w-2xl">
+    <div className={TAB_WIDTH}>
       <Card>
         <CardSection className="space-y-4">
           <Heading>{D.deployer.title}</Heading>
           <DeployerSection deployer={deployer} funding={funding} onAddress={setDeployer} />
         </CardSection>
 
-        <CardSection className="space-y-4">
-          <Heading>{BUILD_COPY.keys.title}</Heading>
-          <KeysSection projectId={id} />
-        </CardSection>
+        {paid ? (
+          <CardSection className="space-y-4">
+            <Heading>{BUILD_COPY.keys.title}</Heading>
+            <KeysSection projectId={id} />
+          </CardSection>
+        ) : null}
 
         <CardSection className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -107,9 +113,9 @@ export function DeploymentsTab({
                 {D.sync.open}
               </a>
             </p>
-          ) : (
+          ) : paid ? (
             <p className="text-xs text-ink-500">{D.sync.none}</p>
-          )}
+          ) : null}
           {sourcify ? (
             <p className="text-xs text-ink-400">
               {BUILD_COPY.checks.sourcify(verifiedCount, testnetContractRows(doc).length, new Date(sourcify.createdAt).toLocaleDateString("en-US"))}{" "}
@@ -199,15 +205,19 @@ export function DeploymentsTab({
           )}
         </CardSection>
 
-        <CardSection className="space-y-4">
-          <Heading>{BUILD_COPY.analytics.title}</Heading>
-          <AnalyticsSection projectId={id} tokens={tokens} />
-        </CardSection>
+        {paid ? (
+          <CardSection className="space-y-4">
+            <Heading>{BUILD_COPY.analytics.title}</Heading>
+            <AnalyticsSection projectId={id} tokens={tokens} />
+          </CardSection>
+        ) : null}
 
-        <CardSection className="space-y-4">
-          <Heading>{BUILD_COPY.alerts.title}</Heading>
-          <AlertsSection projectId={id} contracts={testnetContractRows(doc)} tokens={tokens} />
-        </CardSection>
+        {paid ? (
+          <CardSection className="space-y-4">
+            <Heading>{BUILD_COPY.alerts.title}</Heading>
+            <AlertsSection projectId={id} contracts={testnetContractRows(doc)} tokens={tokens} />
+          </CardSection>
+        ) : null}
 
         <CardSection className="space-y-4">
           <Heading>{D.mainnet}</Heading>

@@ -22,13 +22,17 @@ import { useDeployerBalances } from "@/components/build/useDeployerBalances";
 import { useAgentChanges } from "@/components/build/useAgentChanges";
 import { useTabParam } from "@/components/build/useTabParam";
 import { ProjectPlanProvider } from "@/components/studio/ProjectPlanContext";
+import { usePlan } from "@/components/studio/PlanContext";
+import { buildTabsFor } from "@/lib/build-tabs";
+import { TAB_WIDTH } from "@/components/build/layout";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
 import { useDraftDoc } from "@/components/ideation/useDraftDoc";
 import { useDraftSave } from "@/components/ideation/useDraftSave";
 import { usePublish } from "@/components/ideation/usePublish";
-import { BUILD_COPY, BUILD_TABS, type BuildTab } from "@/content/build";
+import { BUILD_COPY, type BuildTab } from "@/content/build";
+import { cn } from "@/lib/utils";
 import { STUDIO_COPY } from "@/content/ideation";
 import { kitsForDoc } from "@/content/kits";
 import type { AgentActivity } from "@/lib/agent-writes";
@@ -108,7 +112,10 @@ export function ProjectBuildPage({
   const { status: publishStatus, publish, unpublish } = usePublish("projects", id);
   /** The visibility the next publish uses (M109). */
   const [visibility, setVisibility] = useState<"public" | "private">(initialVisibility);
-  const { tab, setTab, milestone, setMilestone } = useTabParam();
+  // The Studio+ tabs show for a Studio+ session only (M136).
+  const plan = usePlan();
+  const tabs = buildTabsFor(plan.plan === "studio_plus");
+  const { tab, setTab, milestone, setMilestone } = useTabParam(tabs);
   const [activity, setActivity] = useState<(AgentActivity & { seq: number }) | null>(null);
   /** The resources drawer's section, null while closed. */
   const [resourceView, setResourceView] = useState<ResourceView | null>(null);
@@ -161,7 +168,7 @@ export function ProjectBuildPage({
     const C = STUDIO_COPY.command;
     return registerCommands(
       "project-build-tabs",
-      BUILD_TABS.map((t) => ({
+      tabs.map((t) => ({
         id: `tab:${t}`,
         label: C.step(BUILD_COPY.tabs[t]),
         group: C.groups.project,
@@ -169,7 +176,7 @@ export function ProjectBuildPage({
         run: () => setTab(t),
       })),
     );
-  }, [setTab]);
+  }, [setTab, tabs]);
 
   const session = agent.state?.session ?? null;
   const view = session ? sessionView(session) : null;
@@ -264,6 +271,7 @@ export function ProjectBuildPage({
         <BuildSidebar
           name={doc.name}
           logo={doc.logo ?? null}
+          tabs={tabs}
           tab={tab}
           milestone={milestone}
           problems={tabDots}
@@ -292,7 +300,7 @@ export function ProjectBuildPage({
         headerActions={headerActions}
       />
       <div className="mt-6 lg:hidden">
-        <BuildTabs tab={tab} onChange={setTab} problems={tabDots} />
+        <BuildTabs tabs={tabs} tab={tab} onChange={setTab} problems={tabDots} />
       </div>
       {stale ? (
         <div className="mt-6">
@@ -300,7 +308,7 @@ export function ProjectBuildPage({
         </div>
       ) : null}
       {/* The save state sits with the section being edited, not in the header (2026-10-19). */}
-      <div className="mt-6 flex h-7 max-w-3xl items-center justify-end">
+      <div className={cn("mt-6 flex h-7 items-center justify-end", TAB_WIDTH)}>
         <AutosaveIndicator state={saveState} />
       </div>
       <div className="mt-1">{body[tab]}</div>

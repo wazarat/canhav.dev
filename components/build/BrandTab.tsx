@@ -1,6 +1,7 @@
 "use client";
 
 import { BrandEditor } from "@/components/build/BrandEditor";
+import { TAB_WIDTH } from "@/components/build/layout";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Card, CardSection } from "@/components/ui/Card";
 import { BUILD_COPY } from "@/content/build";
@@ -11,7 +12,7 @@ import type { ProjectDoc } from "@/lib/ideation";
 export function BrandTab({ id, agentMode, doc, patch }: { id: string; agentMode: AgentWriteMode; doc: ProjectDoc; patch: (p: Partial<ProjectDoc>) => void }) {
   const B = BUILD_COPY.brandTab;
   return (
-    <div className="max-w-2xl">
+    <div className={TAB_WIDTH}>
       <Card>
         <CardSection id="brand-kit" className="space-y-4">
           <h2 className="font-display text-base font-semibold text-ink-50">{B.title}</h2>

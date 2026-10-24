@@ -1,7 +1,7 @@
 "use client";
 
 import { Segmented } from "@/components/ui/Segmented";
-import { BUILD_COPY, BUILD_TABS, type BuildTab } from "@/content/build";
+import { BUILD_COPY, type BuildTab } from "@/content/build";
 import type { ProblemTab } from "@/lib/build-readiness";
 import { cn } from "@/lib/utils";
 
@@ -12,16 +12,19 @@ import { cn } from "@/lib/utils";
  * four for Segmented, which is fine for the one tablist on the page.
  */
 export function BuildTabs({
+  tabs,
   tab,
   onChange,
   problems,
 }: {
+  /** The tabs this session sees (M136). */
+  tabs: readonly BuildTab[];
   tab: BuildTab;
   onChange: (tab: BuildTab) => void;
   /** The first open problem per gated tab, null when complete. */
   problems: Record<ProblemTab, string | null>;
 }) {
-  const options = BUILD_TABS.map((value) => {
+  const options = tabs.map((value) => {
     const problem = value === "decisions" || value === "publish" ? problems[value] : null;
     return {
       value,

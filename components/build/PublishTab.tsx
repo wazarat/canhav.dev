@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 import { DomainSection } from "@/components/build/DomainSection";
 import { FieldWaiver } from "@/components/build/FieldWaiver";
+import { FIELD_GRID, TAB_WIDTH } from "@/components/build/layout";
 import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
@@ -15,7 +16,6 @@ import { Field, Input } from "@/components/ui/Input";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { SegmentedField } from "@/components/ui/Segmented";
 import { SelectField } from "@/components/ui/Select";
-import { PlusGate } from "@/components/studio/PlusGate";
 import { usePlan } from "@/components/studio/PlanContext";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import {
@@ -81,7 +81,7 @@ function VisibilityChoice({
       />
       {chainLocked ? <p className="text-xs text-ink-400">{V.launched}</p> : null}
       {plus ? null : capped ? (
-        <PlusGate feature="private_projects" />
+        <p className="text-xs text-ink-400">{V.capReached}</p>
       ) : (
         <p className="text-xs text-ink-400">{privateUsed >= PRIVATE_FREE_ALLOWANCE || isPrivatePublished ? V.freeUsed : V.freeLeft}</p>
       )}
@@ -148,9 +148,11 @@ export function PublishTab({
   const open = AREAS.filter((area) => problems[area] !== null);
   // The recommended fields as they stand, each a row of the readiness list (M130).
   const fields = fieldViews(doc);
+  // Studio+ sections show for a Studio+ session only (M136).
+  const paid = usePlan().plan === "studio_plus";
 
   return (
-    <div className="max-w-2xl">
+    <div className={TAB_WIDTH}>
       <Card>
         <CardSection className="space-y-6">
           <Heading>{P.record}</Heading>
@@ -175,14 +177,17 @@ export function PublishTab({
             rows={5}
             placeholder="One paragraph. What does it actually do?"
           />
-          <SelectField
-            label="Who pays"
-            info="Often not the same answer as who the user is."
-            value={doc.payer}
-            onChange={(v) => patch({ payer: v })}
-            options={PAYER_OPTIONS}
-            clearable
-          />
+          <div className={FIELD_GRID}>
+            <SelectField
+              label="Who pays"
+              info="Often not the same answer as who the user is."
+              value={doc.payer}
+              onChange={(v) => patch({ payer: v })}
+              options={PAYER_OPTIONS}
+              clearable
+            />
+            <SelectField label="Current stage" required value={doc.stage} onChange={(v) => patch({ stage: v })} options={STAGE_OPTIONS} />
+          </div>
           {doc.payer === "third_party" && (
             <TextField
               label="Who pays, exactly?"
@@ -200,7 +205,6 @@ export function PublishTab({
             max={PROJECT_LIMITS.whyThisChain.max}
             rows={3}
           />
-          <SelectField label="Current stage" required value={doc.stage} onChange={(v) => patch({ stage: v })} options={STAGE_OPTIONS} />
           <FieldWaiver field="firstHundredUsers" doc={doc} patch={patch}>
             <TextField
               label={ROBINHOOD_MYTH.followUp}
@@ -212,21 +216,23 @@ export function PublishTab({
               placeholder="Names of communities, channels, waitlists. The concrete plan."
             />
           </FieldWaiver>
-          <Field label="GitHub repo" hint="owner/name" info="Linking it adds commit history to your public page.">
-            <Input
-              value={doc.githubRepo ?? ""}
-              onChange={(e) => patch({ githubRepo: e.target.value.trim() || undefined })}
-              placeholder="your-org/your-repo"
-            />
-          </Field>
-          <Field label="Website" info="Shown on your public page." hint="https only.">
-            <Input
-              type="url"
-              value={doc.website ?? ""}
-              onChange={(e) => patch({ website: e.target.value.trim() || undefined })}
-              placeholder="https://"
-            />
-          </Field>
+          <div className={FIELD_GRID}>
+            <Field label="GitHub repo" hint="owner/name" info="Linking it adds commit history to your public page.">
+              <Input
+                value={doc.githubRepo ?? ""}
+                onChange={(e) => patch({ githubRepo: e.target.value.trim() || undefined })}
+                placeholder="your-org/your-repo"
+              />
+            </Field>
+            <Field label="Website" info="Shown on your public page." hint="https only.">
+              <Input
+                type="url"
+                value={doc.website ?? ""}
+                onChange={(e) => patch({ website: e.target.value.trim() || undefined })}
+                placeholder="https://"
+              />
+            </Field>
+          </div>
           {chainKey === "robinhood_testnet" ? (
             <>
               <p className="inline-flex items-center gap-1 text-sm font-medium text-ink-100">
@@ -251,10 +257,12 @@ export function PublishTab({
           <VisibilityChoice value={visibility} onChange={onVisibility} privateUsed={privateUsed} isPrivatePublished={isPrivatePublished} chainLocked={chainLocked} />
         </CardSection>
 
-        <CardSection className="space-y-4">
-          <Heading>{BUILD_COPY.domain.title}</Heading>
-          <DomainSection projectId={id} />
-        </CardSection>
+        {paid ? (
+          <CardSection className="space-y-4">
+            <Heading>{BUILD_COPY.domain.title}</Heading>
+            <DomainSection projectId={id} />
+          </CardSection>
+        ) : null}
 
         <CardSection className="space-y-4">
           <Heading>{P.readiness}</Heading>
@@ -305,10 +313,12 @@ export function PublishTab({
           )}
         </CardSection>
 
-        <CardSection className="space-y-4">
-          <Heading>{STUDIO_PLUS_COPY.pack.title}</Heading>
-          <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} />
-        </CardSection>
+        {paid ? (
+          <CardSection className="space-y-4">
+            <Heading>{STUDIO_PLUS_COPY.pack.title}</Heading>
+            <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} />
+          </CardSection>
+        ) : null}
 
         {kit?.shape ? (
           <CardSection>

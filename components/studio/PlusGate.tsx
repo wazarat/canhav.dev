@@ -47,6 +47,8 @@ export function PlusGate({
   const project = useProjectPlan();
   const here = usePlusHere(feature);
   if (here.ok) return <>{children}</>;
+  // A free account sees no teaser in the editor (M136); the Overview carries one sentence.
+  if (here.reason === "free") return null;
   const F = STUDIO_PLUS_COPY.features[feature];
   if (here.reason === "personal" || here.reason === "lapsed") {
     return (
