@@ -4,6 +4,7 @@ import { BRAND_BODY_FONTS, BRAND_DISPLAY_FONTS } from "@/content/brand-fonts";
 import { BRAND_LIMITS, DEFAULT_BRAND, brandDraftSchema, normalizeBrand } from "@/lib/brand/record";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
+import { cutAtWord } from "@/lib/text";
 import type { ProjectDoc } from "@/lib/ideation";
 
 function hexes(body: Record<string, unknown>): string[] {
@@ -13,7 +14,7 @@ function hexes(body: Record<string, unknown>): string[] {
 registerDraftKind("brand", {
   schema: brandDraftSchema,
   // normalizeBrand caps the words and checks the hexes; the cast keeps the schema's font enums, which the fixture and the kit both hold as plain strings.
-  clean: (value) => (normalizeBrand(value) ?? { ...value, tone: value.tone.map((t) => t.trim().slice(0, BRAND_LIMITS.tone.item)).filter(Boolean).slice(0, BRAND_LIMITS.tone.max), tagline: value.tagline.trim().slice(0, BRAND_LIMITS.tagline.max) }) as typeof value,
+  clean: (value) => (normalizeBrand(value) ?? { ...value, tone: value.tone.map((t) => cutAtWord(t.trim(), BRAND_LIMITS.tone.item)).filter(Boolean).slice(0, BRAND_LIMITS.tone.max), tagline: cutAtWord(value.tagline.trim(), BRAND_LIMITS.tagline.max) }) as typeof value,
   extras: (doc: ProjectDoc, body) => {
     const picked = hexes(body);
     const lines = ["## Brand inputs"]; // copy-ok, model context

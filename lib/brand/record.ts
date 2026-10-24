@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cutAtWord } from "@/lib/text";
 
 import { BRAND_BODY_FONTS, BRAND_DISPLAY_FONTS } from "@/content/brand-fonts";
 
@@ -77,7 +78,7 @@ export function normalizeBrand(raw: unknown): Brand | null {
   const toneList = Array.isArray(o.tone)
     ? o.tone.filter((t): t is string => typeof t === "string").map((t) => t.trim().slice(0, BRAND_LIMITS.tone.item)).filter(Boolean).slice(0, BRAND_LIMITS.tone.max)
     : [];
-  const tagline = typeof o.tagline === "string" ? o.tagline.trim().slice(0, BRAND_LIMITS.tagline.max) : "";
+  const tagline = typeof o.tagline === "string" ? cutAtWord(o.tagline.trim(), BRAND_LIMITS.tagline.max) : "";
   if (!Object.keys(palette).length && !fonts.display && !fonts.body && !toneList.length && !tagline) return null;
   return {
     palette: { ...DEFAULT_BRAND.palette, ...palette },

@@ -6,7 +6,9 @@ import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
 import { investorPackPatchSchema, mergeInvestorPack } from "@/lib/investor-pack";
 import { UPDATE_CADENCES } from "@/lib/updates";
-import { kindsForFields, withDrafted, withoutRequest } from "@/lib/draft/requests";
+import { kindsForPatch, withDrafted, withoutRequest } from "@/lib/draft/requests";
+import { grantProgram } from "@/content/grants";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 
 import { SECTOR_OPTIONS, WAIVABLE_FIELD_LABELS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -682,14 +684,13 @@ function deepMerge<D>(base: D, patch: unknown): D {
 }
 
 export function applyProjectPatch(doc: ProjectDoc, patch: ProjectPatch): ProjectDoc {
-  const written = Object.keys(patch).filter((k) => (patch as Record<string, unknown>)[k] !== undefined);
-  return markDraftedFields(applyProjectPatchInner(doc, patch), written);
+  return markDraftedFields(applyProjectPatchInner(doc, patch), patch as Record<string, unknown>);
 }
 
-/** A field an agent writes clears its draft request and reads as drafted by the agent (M117). */
-function markDraftedFields(doc: ProjectDoc, fields: string[]): ProjectDoc {
+/** A field an agent writes clears its draft request and reads as drafted by the agent (M117); the pack clears part by part (M141). */
+function markDraftedFields(doc: ProjectDoc, patch: Record<string, unknown>): ProjectDoc {
   let next = doc;
-  for (const kind of kindsForFields(fields)) {
+  for (const kind of kindsForPatch(patch)) {
     const requests = withoutRequest(next, kind);
     next = { ...next, drafted: withDrafted(next, kind, "agent"), ...(requests ? { draftRequests: requests } : {}) };
     if (!requests) next = dropKey(next, "draftRequests");
@@ -1030,6 +1031,64 @@ export interface ChangeLine {
   edited?: boolean;
 }
 
+/** One profile as lines: the name, the summary, then the labelled lists and the two short answers (M141). */
+function showIcp(v: unknown): string {
+  if (!Array.isArray(v)) return show(v);
+  const F = STUDIO_PLUS_COPY.icp.fields;
+  return v
+    .map((p) => {
+      if (!isPlain(p)) return show(p);
+      const list = (x: unknown) => (Array.isArray(x) ? x.map(show).filter(Boolean).join(", ") : show(x));
+      const lines = [show(p.name), show(p.summary)];
+      for (const k of ["walletsTheyUse", "channels", "protocolsTheyUse", "buyingTrigger", "objection"] as const) {
+        const text = k === "buyingTrigger" || k === "objection" ? show(p[k]) : list(p[k]);
+        if (text) lines.push(`${F[k].label}, ${text}`);
+      }
+      return lines.filter(Boolean).join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/** A palette or font set as "Label, value" lines. */
+function showLabelled(labels: Record<string, string>): (v: unknown) => string {
+  return (v) => (isPlain(v) ? Object.entries(v).map(([k, x]) => (show(x) ? `${labels[k] ?? k}, ${show(x)}` : "")).filter(Boolean).join("\n") : show(v));
+}
+
+/** A deck as numbered slides, each with its bullets under it. */
+function showDeck(v: unknown): string {
+  if (!Array.isArray(v)) return show(v);
+  return v
+    .map((s, i) => (isPlain(s) ? [`${i + 1}. ${show(s.title)}`, ...(Array.isArray(s.bullets) ? s.bullets.map((b) => `   ${show(b)}`) : [])].join("\n") : show(s)))
+    .join("\n");
+}
+
+/** Grant answers for one programme as "Question, answer" paragraphs. */
+function showGrant(programId: string): (v: unknown) => string {
+  return (v) => {
+    if (!isPlain(v)) return show(v);
+    const program = grantProgram(programId);
+    return Object.entries(v)
+      .map(([qid, a]) => (show(a) ? `${program?.questions.find((q) => q.id === qid)?.label ?? qid}\n${show(a)}` : ""))
+      .filter(Boolean)
+      .join("\n\n");
+  };
+}
+
+/**
+ * Paths the feed renders by shape rather than by joining values (M141):
+ * the profiles, the palette and fonts, the deck and the grant answers.
+ * Each is a leaf in changeLines.
+ */
+function fieldRenderer(path: string): ((v: unknown) => string) | null {
+  if (path === "icp") return showIcp;
+  if (path === "brand.palette") return showLabelled(STUDIO_PLUS_COPY.brand.swatches);
+  if (path === "brand.fonts") return showLabelled({ display: STUDIO_PLUS_COPY.brand.display, body: STUDIO_PLUS_COPY.brand.body });
+  if (path === "investorPack.deck") return showDeck;
+  if (path.startsWith("investorPack.grants.") && path.split(".").length === 3) return showGrant(path.slice("investorPack.grants.".length));
+  return null;
+}
+
 function show(v: unknown): string {
   if (v === undefined || v === null || v === "") return "";
   if (typeof v === "string") return v;
@@ -1054,6 +1113,11 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
   for (const [k, v] of Object.entries(patch)) {
     if (v === undefined) continue;
     const path = prefix ? `${prefix}.${k}` : k;
+    const render = fieldRenderer(path);
+    if (render) {
+      out.push({ path, before: render(base[k]), after: render(v) });
+      continue;
+    }
     const leaf = !isPlain(v) || "status" in v;
     if (leaf) out.push({ path, before: show(base[k]), after: show(v) });
     else out.push(...changeLines(base[k], v, path));
@@ -1089,6 +1153,11 @@ const PATH_LABELS: Record<string, string> = {
   competitors: "Competitors",
   "competitors.differentiator": "How you differ",
   canvas: "Business model",
+  investorPack: "Investor and grant pack",
+  "investorPack.onepager": "One pager",
+  "investorPack.deck": "Deck",
+  "investorPack.grants": "Grant answers",
+  updateCadence: "Team update cadence",
   "canvas.customerSegments": "Canvas, customer segments",
   "canvas.valueProposition": "Canvas, value proposition",
   "canvas.channels": "Canvas, channels",
@@ -1155,6 +1224,11 @@ export function pathLabel(path: string): string {
   if (path.startsWith("waived.")) {
     const key = path.slice("waived.".length) as keyof typeof WAIVABLE_FIELD_LABELS;
     return `Not applicable, ${WAIVABLE_FIELD_LABELS[key] ?? key}`;
+  }
+  // One line per grant programme (M141), named after the programme.
+  if (path.startsWith("investorPack.grants.")) {
+    const id = path.slice("investorPack.grants.".length).split(".")[0];
+    return `Grant answers, ${grantProgram(id)?.name ?? id}`;
   }
   // One line per template decision (M63), named after the template.
   if (path.startsWith("kit.templates.")) {

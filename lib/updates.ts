@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { cutAtWord } from "@/lib/text";
+
 /**
  * Team updates (M124, Studio+, named apart from the milestone update in
  * M140). Pure: the limits, the period key and the shapes the routes, the
@@ -74,8 +76,8 @@ export const weeklyDraftSchema = z.object({
 /** Cut a drafted update to the limits. */
 export function cleanWeeklyDraft(value: WeeklyDraft): WeeklyDraft {
   return {
-    body: value.body.trim().slice(0, UPDATE_LIMITS.body.max),
-    highlights: value.highlights.map((h) => h.trim().slice(0, UPDATE_LIMITS.highlights.each)).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max),
+    body: cutAtWord(value.body.trim(), UPDATE_LIMITS.body.max),
+    highlights: value.highlights.map((h) => cutAtWord(h.trim(), UPDATE_LIMITS.highlights.each)).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max),
   };
 }
 export type WeeklyDraft = z.infer<typeof weeklyDraftSchema>;

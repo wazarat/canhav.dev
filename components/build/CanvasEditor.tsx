@@ -1,6 +1,6 @@
 "use client";
 
-import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import { DraftControl, type DraftMeta } from "@/components/build/DraftControl";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
 import { TextField } from "@/components/ideation/TextField";
@@ -10,8 +10,8 @@ import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, type CanvasBlock, canvasFill
 
 /**
  * The Business Model Canvas on Decisions (M113): nine text blocks with
- * counters, one Draft for the whole canvas, a Redraft on each block, and
- * the prompt that asks the owner's agent instead. Every change lands
+ * counters, one Draft control for the whole canvas and a Redraft link on
+ * each block (M141), each opening the same menu of ways. Every change lands
  * through the record's patch, so autosave and the agent revision guard
  * work as for any field.
  */
@@ -40,7 +40,7 @@ export function CanvasEditor({
     <div className="space-y-5">
       <p className="text-xs leading-relaxed text-ink-400">{C.intro}</p>
       <div className="flex flex-wrap items-center gap-3">
-        <DraftButton<Record<CanvasBlock, string>>
+        <DraftControl<Record<CanvasBlock, string>>
           projectId={projectId}
           doc={meta}
           patch={patch}
@@ -63,17 +63,19 @@ export function CanvasEditor({
               max={CANVAS_LIMITS.block.max}
               rows={4}
             />
-            <DraftButton<{ text: string }>
+            <DraftControl<{ text: string }>
               projectId={projectId}
               doc={meta}
               patch={patch}
               agentMode={agentMode}
               kind="canvas_block"
+              target={block}
               body={{ block }}
               label={C.redraft}
               onResult={(value) => set(block, value.text)}
+              agentPrompt={draftCanvasPrompt(name, projectId)}
               gate={false}
-              variant="outline"
+              variant="link"
             />
           </div>
         ))}

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { cutAtWord } from "@/lib/text";
+
 /**
  * The Business Model Canvas (M113): nine blocks of free text on the
  * project record, drafted by CanHav or the owner's agent and edited by the
@@ -33,7 +35,7 @@ export function normalizeCanvas(raw: unknown): Canvas | null {
   for (const block of CANVAS_BLOCKS) {
     const v = (raw as Record<string, unknown>)[block];
     if (typeof v !== "string") continue;
-    const t = v.trim().slice(0, CANVAS_LIMITS.block.max);
+    const t = cutAtWord(v.trim(), CANVAS_LIMITS.block.max);
     if (t) out[block] = t;
   }
   return Object.keys(out).length ? out : null;

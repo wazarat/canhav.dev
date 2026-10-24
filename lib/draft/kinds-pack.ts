@@ -3,6 +3,7 @@ import "server-only";
 import { GRANT_PROGRAMS, grantProgram } from "@/content/grants";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
+import { cutAtWord } from "@/lib/text";
 import type { ProjectDoc } from "@/lib/ideation";
 import { PACK_LIMITS, cleanDeck, deckDraftSchema, grantsDraftSchema, onepagerDraftSchema } from "@/lib/investor-pack";
 
@@ -21,7 +22,7 @@ function packExtras(doc: ProjectDoc): string[] {
 
 registerDraftKind("onepager", {
   schema: onepagerDraftSchema,
-  clean: (value) => ({ onepager: value.onepager.trim().slice(0, PACK_LIMITS.onepager.max) }),
+  clean: (value) => ({ onepager: cutAtWord(value.onepager.trim(), PACK_LIMITS.onepager.max) }),
   long: true,
   extras: (doc) => packExtras(doc),
   instructions: () =>
@@ -51,7 +52,7 @@ registerDraftKind("deck", {
 
 registerDraftKind("grants", {
   schema: grantsDraftSchema,
-  clean: (value) => ({ answers: value.answers.map((a) => ({ question: a.question.trim(), answer: a.answer.trim().slice(0, PACK_LIMITS.grants.answer) })).filter((a) => a.answer) }),
+  clean: (value) => ({ answers: value.answers.map((a) => ({ question: a.question.trim(), answer: cutAtWord(a.answer.trim(), PACK_LIMITS.grants.answer) })).filter((a) => a.answer) }),
   long: true,
   extras: (doc, body) => {
     const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? GRANT_PROGRAMS[0];

@@ -1,6 +1,6 @@
 "use client";
 
-import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import { DraftControl, type DraftMeta } from "@/components/build/DraftControl";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
 import { TextField } from "@/components/ideation/TextField";
@@ -40,7 +40,7 @@ export function IcpEditor({
   return (
     <div className="space-y-5">
       <p className="text-xs leading-relaxed text-ink-400">{C.intro}</p>
-      <DraftButton<{ profiles: Icp[] }>
+      <DraftControl<{ profiles: Icp[] }>
         projectId={projectId}
         doc={meta}
         patch={patch}
@@ -63,7 +63,8 @@ export function IcpEditor({
           <div className="grid gap-4 md:grid-cols-3">
             {(["walletsTheyUse", "channels", "protocolsTheyUse"] as const).map((k) => (
               <Field key={k} label={C.fields[k].label} hint={C.listHint}>
-                <Input defaultValue={p[k].join(", ")} placeholder={C.fields[k].placeholder} onBlur={(e) => set(i, { [k]: listFromText(e.target.value) })} />
+                {/* Keyed on the value so a landed draft remounts the uncontrolled input (M141). */}
+                <Input key={p[k].join("|")} defaultValue={p[k].join(", ")} placeholder={C.fields[k].placeholder} onBlur={(e) => set(i, { [k]: listFromText(e.target.value) })} />
               </Field>
             ))}
           </div>

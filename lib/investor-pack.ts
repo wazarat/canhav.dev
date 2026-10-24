@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { GRANT_PROGRAMS } from "@/content/grants";
+import { cutAtWord } from "@/lib/text";
 
 /**
  * The investor and grant pack on the record (M126, Studio+): a one pager,
@@ -35,7 +36,7 @@ export const grantsDraftSchema = z.object({ answers: z.array(z.object({ question
 
 export function cleanDeck(deck: DeckSlide[]): DeckSlide[] {
   return deck
-    .map((s) => ({ title: s.title.trim().slice(0, PACK_LIMITS.deck.title), bullets: s.bullets.map((b) => b.trim().slice(0, PACK_LIMITS.deck.bullets.each)).filter(Boolean).slice(0, PACK_LIMITS.deck.bullets.max) }))
+    .map((s) => ({ title: cutAtWord(s.title.trim(), PACK_LIMITS.deck.title), bullets: s.bullets.map((b) => cutAtWord(b.trim(), PACK_LIMITS.deck.bullets.each)).filter(Boolean).slice(0, PACK_LIMITS.deck.bullets.max) }))
     .filter((s) => s.title)
     .slice(0, PACK_LIMITS.deck.slides.max);
 }
@@ -52,13 +53,13 @@ export function normalizeInvestorPack(raw: unknown): InvestorPack | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const out: InvestorPack = {};
-  if (typeof o.onepager === "string" && o.onepager.trim()) out.onepager = o.onepager.trim().slice(0, PACK_LIMITS.onepager.max);
+  if (typeof o.onepager === "string" && o.onepager.trim()) out.onepager = cutAtWord(o.onepager.trim(), PACK_LIMITS.onepager.max);
   if (Array.isArray(o.deck)) {
     const deck = o.deck
       .filter((s): s is { title: unknown; bullets?: unknown } => Boolean(s) && typeof s === "object")
       .map((s) => ({
-        title: typeof s.title === "string" ? s.title.trim().slice(0, PACK_LIMITS.deck.title) : "",
-        bullets: Array.isArray(s.bullets) ? s.bullets.filter((b): b is string => typeof b === "string" && b.trim().length > 0).map((b) => b.trim().slice(0, PACK_LIMITS.deck.bullets.each)).slice(0, PACK_LIMITS.deck.bullets.max) : [],
+        title: typeof s.title === "string" ? cutAtWord(s.title.trim(), PACK_LIMITS.deck.title) : "",
+        bullets: Array.isArray(s.bullets) ? s.bullets.filter((b): b is string => typeof b === "string" && b.trim().length > 0).map((b) => cutAtWord(b.trim(), PACK_LIMITS.deck.bullets.each)).slice(0, PACK_LIMITS.deck.bullets.max) : [],
       }))
       .filter((s) => s.title)
       .slice(0, PACK_LIMITS.deck.slides.max);
@@ -72,7 +73,7 @@ export function normalizeInvestorPack(raw: unknown): InvestorPack | null {
       const clean: Record<string, string> = {};
       for (const q of p.questions) {
         const a = (answers as Record<string, unknown>)[q.id];
-        if (typeof a === "string" && a.trim()) clean[q.id] = a.trim().slice(0, PACK_LIMITS.grants.answer);
+        if (typeof a === "string" && a.trim()) clean[q.id] = cutAtWord(a.trim(), PACK_LIMITS.grants.answer);
       }
       if (Object.keys(clean).length) grants[p.id] = clean;
     }

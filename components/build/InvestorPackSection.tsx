@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { type DraftMeta, DraftButton } from "@/components/build/DraftButton";
+import { type DraftMeta, DraftControl } from "@/components/build/DraftControl";
 import { SimpleMarkdown } from "@/components/build/SimpleMarkdown";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
@@ -16,8 +16,8 @@ import type { ProjectDoc } from "@/lib/ideation";
 import { type DeckSlide, type InvestorPack, mergeInvestorPack, packParts } from "@/lib/investor-pack";
 
 /**
- * The investor and grant pack on Publish (M126, Studio+): three Draft
- * buttons (agent first, CanHav fallback), the parts rendered under them,
+ * The investor and grant pack (M126, Studio+): one Draft control per
+ * part (M141), the parts rendered under them,
  * the markdown downloads and the print page. The pack stays on the draft.
  */
 export function InvestorPackSection({ projectId, doc, patch, agentMode }: { projectId: string; doc: ProjectDoc; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
@@ -59,12 +59,12 @@ function Inner({ projectId, doc, patch, agentMode }: { projectId: string; doc: P
       </p>
 
       <div className="flex flex-wrap items-start gap-3">
-        <DraftButton<{ onepager: string }> projectId={projectId} kind="onepager" label={C.draftOnepager} doc={meta} patch={patch} agentMode={agentMode} gate={false} agentPrompt={prompt} onResult={(v) => apply({ onepager: v.onepager })} />
-        <DraftButton<{ deck: DeckSlide[] }> projectId={projectId} kind="deck" label={C.draftDeck} doc={meta} patch={patch} agentMode={agentMode} gate={false} agentPrompt={prompt} onResult={(v) => apply({ deck: v.deck })} />
+        <DraftControl<{ onepager: string }> projectId={projectId} kind="onepager" label={C.draftOnepager} doc={meta} patch={patch} agentMode={agentMode} gate={false} agentPrompt={prompt} onResult={(v) => apply({ onepager: v.onepager })} />
+        <DraftControl<{ deck: DeckSlide[] }> projectId={projectId} kind="deck" label={C.draftDeck} doc={meta} patch={patch} agentMode={agentMode} gate={false} agentPrompt={prompt} onResult={(v) => apply({ deck: v.deck })} />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
         <SelectField label={C.programLabel} value={program} onChange={(v) => setProgram(v || GRANT_PROGRAMS[0].id)} options={GRANT_PROGRAMS.map((p) => ({ value: p.id, label: p.name }))} />
-        <DraftButton<{ answers: Array<{ question: string; answer: string }> }>
+        <DraftControl<{ answers: Array<{ question: string; answer: string }> }>
           projectId={projectId}
           kind="grants"
           body={{ program }}

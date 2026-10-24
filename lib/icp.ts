@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { cutAtWord } from "@/lib/text";
+
 /**
  * Ideal customer profiles (M114): one or two, with the wallets, channels
  * and protocols they use, the trigger that makes them buy and the
@@ -53,7 +55,7 @@ function cleanList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((x): x is string => typeof x === "string")
-    .map((x) => x.trim().slice(0, ICP_LIMITS.list.item))
+    .map((x) => cutAtWord(x.trim(), ICP_LIMITS.list.item))
     .filter(Boolean)
     .slice(0, ICP_LIMITS.list.max);
 }
@@ -65,7 +67,7 @@ export function normalizeIcp(raw: unknown): Icp[] | null {
   for (const r of raw.slice(0, ICP_LIMITS.profiles.max)) {
     if (!r || typeof r !== "object") continue;
     const o = r as Record<string, unknown>;
-    const str = (k: string, max: number) => (typeof o[k] === "string" ? (o[k] as string).trim().slice(0, max) : "");
+    const str = (k: string, max: number) => (typeof o[k] === "string" ? cutAtWord((o[k] as string).trim(), max) : "");
     const p: Icp = {
       name: str("name", ICP_LIMITS.name.max),
       summary: str("summary", ICP_LIMITS.summary.max),

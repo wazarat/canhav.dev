@@ -6,11 +6,12 @@ import { formatTvl } from "@/lib/competitors/llama";
 import { COMPETITOR_LIMITS, ageMonths, competitorsDraftSchema } from "@/lib/competitors/record";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
+import { cutAtWord } from "@/lib/text";
 import type { ProjectDoc } from "@/lib/ideation";
 
 registerDraftKind("competitors", {
   schema: competitorsDraftSchema,
-  clean: (value) => ({ differentiator: value.differentiator.trim().slice(0, COMPETITOR_LIMITS.differentiator.max) }),
+  clean: (value) => ({ differentiator: cutAtWord(value.differentiator.trim(), COMPETITOR_LIMITS.differentiator.max) }),
   extras: async (doc: ProjectDoc) => {
     const l = await landscapeFor(doc);
     if (!l.rows.length) return [];

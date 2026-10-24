@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import { DraftControl, type DraftMeta } from "@/components/build/DraftControl";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
 import { PositioningMap } from "@/components/build/PositioningMap";
@@ -154,7 +154,7 @@ export function CompetitorsSection({
       )}
       <div className="space-y-3">
         <TextField label={C.differentiator} hint={C.differentiatorHint} value={current.differentiator} onChange={(v) => onChange({ ...current, differentiator: v })} max={COMPETITOR_LIMITS.differentiator.max} rows={2} />
-        <DraftButton<{ differentiator: string }>
+        <DraftControl<{ differentiator: string }>
           projectId={projectId}
           doc={meta}
           patch={patch}

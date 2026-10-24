@@ -424,10 +424,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         draftRequests: (plus ? openRequests(project.draft_doc) : []).map((r) => ({
           kind: r.kind,
           field: DRAFT_KIND_FIELDS[r.kind],
+          target: r.target ?? null,
           body: r.body ?? null,
           requestedAt: r.requestedAt,
           prompt: draftPromptName(r.kind),
-          howTo: draftWriteHint(r.kind),
+          howTo: draftWriteHint(r.kind, r.target),
         })),
         ...stateOf(loaded.value),
         deployer,

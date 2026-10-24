@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { DraftButton, type DraftMeta } from "@/components/build/DraftButton";
+import { DraftControl, type DraftMeta } from "@/components/build/DraftControl";
 import { TextField } from "@/components/ideation/TextField";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
@@ -72,7 +72,7 @@ export function BrandEditor({
       <p className="text-xs leading-relaxed text-ink-400">{C.intro}</p>
       {!brand ? <p className="text-xs text-ink-500">{C.none}</p> : null}
       <div className="flex flex-wrap items-center gap-3">
-        <DraftButton<Brand>
+        <DraftControl<Brand>
           projectId={projectId}
           doc={meta}
           patch={patch}

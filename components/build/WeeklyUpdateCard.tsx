@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { type DraftMeta, DraftButton } from "@/components/build/DraftButton";
+import { type DraftMeta, DraftControl } from "@/components/build/DraftControl";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
@@ -116,7 +116,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
         options={UPDATE_CADENCES.map((c) => ({ value: c, label: C.cadences[c] }))}
       />
       <p className="text-xs text-ink-500">{C.intro}</p>
-      <DraftButton<WeeklyDraft>
+      <DraftControl<WeeklyDraft>
         projectId={projectId}
         kind="weekly"
         body={{ projectId }}
