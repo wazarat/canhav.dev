@@ -226,18 +226,26 @@ export const BUILD_COPY = {
         "A throwaway key your agent deploys from on both testnets. CanHav never sees the private key. Make it here, paste it into your repository, fund the address from each faucet.",
       create: "Create a deployer key",
       creating: "Creating",
+      /** Shown when the explorer names who deployed a recorded contract (M149, P1). */
+      creatorFound: (label: string, short: string) => `${label} was deployed by ${short}. Record it as the deployer so the record matches what happened.`,
+      recordIt: "Record it as the deployer",
+      /** The lead when the explorer cannot answer but contracts are recorded (M149). */
+      recordExisting: "Record the address you deployed from",
       made: "Copy the key now. It is shown once and CanHav does not keep it.",
+      /** Saves the line as a file (M149, F4). */
+      download: "Download as .env",
       envLabel: (file: string) => `Paste this line into ${file}`,
       envHint: "One key, both testnets. Add the env file to .gitignore if it is not there already.",
       /** Where the key lives (M138), a path the team or its agent records. */
       envFileLabel: "Where the key lives",
-      envFileHint: "A path relative to your repository, for example packages/contracts/.env or .env beside foundry.toml. Your agent can record it from the repository layout.",
-      envFileDefault: "Left empty, CanHav assumes .env at the root of your contracts package.",
+      envFileHint: "Relative to your repository. Use packages/contracts/.env in a monorepo, or the .env beside foundry.toml.",
       saved: "I have saved it",
       recordLabel: "Or record an address your agent already made",
       recordPlaceholder: "0x…",
       record: "Record",
       address: "Address",
+      /** Beside the faucet link (M149, F3): copy, open, paste. */
+      pasteAddress: "Paste your address",
       balance: "Balance",
       balanceUnknown: "RPC did not answer",
       funded: "Funded",
@@ -251,6 +259,10 @@ export const BUILD_COPY = {
       refresh: "Refresh balances",
       replace: "Replace the key",
       replaceHint: (file: string) => `Clears the address here. Make a new key and paste it over the old line in ${file}.`,
+      /** The confirm step before Replace (M149, F4). */
+      replaceConfirm: "The new address needs funding again.",
+      replaceYes: "Replace",
+      replaceNo: "Keep it",
       whereLine: (file: string) => `The private key lives in ${file} on your machine, never here.`,
       /** The chip on the Overview strip (M103). */
       chipNone: "No deployer key",
