@@ -32,7 +32,8 @@ const STEP_INDEX: Partial<Record<TokenStepKey, number>> = {
   market: 4,
   governance: 5,
   legal: 6,
-  postLaunch: 7,
+  // The post launch answers sit under Governance's More since M131.
+  postLaunch: 5,
 };
 
 /**

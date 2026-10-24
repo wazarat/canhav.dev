@@ -81,6 +81,7 @@ import {
   type StatusDecl,
 } from "@/lib/ideation";
 import { fieldText, openFieldLines } from "@/lib/project-fields";
+import { tokenDesignOpenSections } from "@/lib/token-design-steps";
 import {
   DEPLOYABILITY_COPY,
   DEPLOYABILITY_TIER_LABELS,
@@ -886,6 +887,10 @@ export function buildAgentsMd(input: {
         ? `Deployed at ${input.deployedAddress} (${net.explorerUrl}/address/${input.deployedAddress}).`
         : "Not deployed yet.",
       ...(input.deployedAddress && input.curve ? ["", marketLine(input.curve)] : []),
+      // The editor sections still open (M131); update_linked_token_design fills any field.
+      ...(input.draft && tokenDesignOpenSections(token).length
+        ? ["", `Open sections in the design: ${tokenDesignOpenSections(token).join(", ")}. Fill any field with update_linked_token_design.`]
+        : []),
       "",
       "### Design constraints (testable assertions)",
       "",

@@ -829,6 +829,7 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
   if (kitsForSectors(sectors, next.subsectors ?? []).length === 0 && !next.kit)
     return "This project has no subsector with product shapes yet. Send sectors and subsectors first, in the same change or an earlier one.";
   if (k.shapes) {
+    if (k.shapes.length > KIT_LIMITS.shapes.max) return `At most ${KIT_LIMITS.shapes.max} shapes per project. Pick the ones the product is really made of.`;
     const offered = offeredShapes(next.subsectors ?? []);
     const stray = k.shapes.filter((s) => !offered.includes(s));
     if (stray.length) return `${stray[0]} is not offered under this project's subsectors (${(next.subsectors ?? []).join(", ") || "none"}). Offered shapes are ${offered.join(", ") || "none"}.`;

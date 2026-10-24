@@ -1,6 +1,6 @@
 # Token track
 
-**Available now.** The eight sections below match the studio Token design editor.
+**Available now.** The studio Token design editor shows seven sections, Rationale, Supply, Vesting, Distribution, Market, Governance and Legal, each with its required answers in view and the optional ones under **More**; the post launch answers (section 8 below) sit under Governance's More. An agent fills any field over `update_linked_token_design`, and `get_project_status` lists the sections still open under `tokenDesign.openSections`.
 
 The Token track is a design document for a token you may or may not deploy. Publishing a design does not deploy a contract. Deploying from a published design is a separate step that commits the design snapshot hash on-chain as `journeyHash`. See [Deploy paths](../token-launch/deploy-paths.md).
 
@@ -223,7 +223,7 @@ None.
 
 ## 8. Post-launch
 
-All optional.
+All optional. In the editor these sit under Governance, behind **More**, since M131.
 
 ### Asked
 

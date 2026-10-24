@@ -1167,3 +1167,13 @@ export const FIELD_STATE_COPY = {
   /** The sentence on a public page under a field the team did not state. */
   publicNote: "Recommended fields the team left open read as Not stated.",
 } as const;
+
+/** The token design editor since M131, essentials first. */
+export const TOKEN_EDITOR_COPY = {
+  /** The fold under each section holding the optional answers and the reading. */
+  more: "More",
+  moreHint: "Optional answers and background. Your agent can fill any of these over MCP.",
+  /** The post launch answers, under Governance since M131. */
+  postLaunch: "After launch",
+  postLaunchLead: "All optional, but the teams that can answer these tend to still be here in two years.",
+} as const;

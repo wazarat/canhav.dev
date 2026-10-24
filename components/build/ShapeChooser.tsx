@@ -228,7 +228,9 @@ export function ShapeChooser({
               onChange={onShapes}
               max={KIT_LIMITS.shapes.max}
               groups={shapeGroups}
-            />
+            >
+              <p className="text-xs text-ink-500">{KIT_COPY.shapeCap(KIT_LIMITS.shapes.max)}</p>
+            </ChipMultiSelectGroups>
           ) : null}
           {kitShapes(kit).length && kit ? (
             <Collapsible summary={KIT_COPY.aboutShapes}>

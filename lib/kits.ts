@@ -371,8 +371,8 @@ export const REVIEW_VERDICTS: readonly ReviewVerdict[] = ["pass", "fail", "na"];
 
 export const KIT_LIMITS = {
   existingProduct: { max: 200 },
-  /** Every shape at most once. */
-  shapes: { max: PRODUCT_SHAPE_VALUES.length },
+  /** Shapes per project (M131). Three keeps the build steps a team can read; stored docs over it keep working. */
+  shapes: { max: 3 },
   /** Cap on each id list, well above any catalog size. */
   ids: { max: 400 },
   /** Cap on stored checklist entries. */
@@ -562,7 +562,8 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     return "Research kits are out of step.";
   if (kit.shape && !PRODUCT_SHAPE_VALUES.includes(kit.shape)) return "Unknown product shape.";
   if (kit.shapes.some((s) => !PRODUCT_SHAPE_VALUES.includes(s))) return "Unknown product shape.";
-  if (new Set(kit.shapes).size !== kit.shapes.length || kit.shapes.length > KIT_LIMITS.shapes.max)
+  // Stored docs from before the cap (M131) may hold more shapes than the picker allows now.
+  if (new Set(kit.shapes).size !== kit.shapes.length || kit.shapes.length > PRODUCT_SHAPE_VALUES.length)
     return "Too many product shapes.";
   if (kit.shape && !kit.shapes.includes(kit.shape)) return "Product shapes are out of step.";
   if (kit.startingPoint && !STARTING_POINT_VALUES.includes(kit.startingPoint))

@@ -30,13 +30,13 @@ import {
   DEPLOYABILITY_TIER_LABELS,
   type ResourceIntroKey,
 } from "@/content/ideation-resources";
-import { POST_LAUNCH_MILESTONE_COPY, PUBLISH_COPY, LOGO_COPY } from "@/content/ideation";
+import { POST_LAUNCH_MILESTONE_COPY, PUBLISH_COPY, LOGO_COPY, TOKEN_EDITOR_COPY } from "@/content/ideation";
 import { CHECKLIST_COPY } from "@/content/kits/copy";
 import { TOKEN_STEPS_COPY, tokenBuildProgressOf } from "@/content/token-steps";
 import type { IndexedCurve } from "@/lib/indexer";
-import { validateMilestones } from "@/lib/journey";
 import type { ProductShape } from "@/lib/kits";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
+import { TOKEN_DESIGN_STEP_LABELS, tokenDesignStepProblems } from "@/lib/token-design-steps";
 import { LAUNCH_FORM, launchChain } from "@/content/launch";
 import {
   ALLOCATION_ENFORCEMENT_NOTE,
@@ -68,7 +68,6 @@ import {
   type TokenDesignDoc,
   type VestedCohort,
   isSaleEvent,
-  validateTokenDesignDoc,
   vestedCohorts,
 } from "@/lib/ideation";
 import { type DeployabilityTier, deployabilityFindings } from "@/lib/tokenDesign";
@@ -82,21 +81,19 @@ const GOVERNANCE_INTROS: Record<string, ResourceIntroKey> = {
 const TIER_ORDER: DeployabilityTier[] = ["custom", "stated", "canhav"];
 const TIER_TONES = { custom: "warning", stated: "neutral", canhav: "info" } as const;
 
-const STEP_LABELS = [
-  "Rationale",
-  "Supply",
-  "Vesting",
-  "Distribution",
-  "Market",
-  "Governance",
-  "Legal",
-  "Post-launch",
-  "Review",
-] as const;
+/** Index of the Build section (M46), after the seven design sections (M131), and of Review after it. */
+const BUILD_STEP = TOKEN_DESIGN_STEP_LABELS.length;
+const REVIEW_STEP = BUILD_STEP + 1;
 
-/** Index of the Build section (M46), between Post-launch and Review, and of Review after it. */
-const BUILD_STEP = 8;
-const REVIEW_STEP = 9;
+/** The fold under a section with the optional answers and the reading (M131). */
+function More({ children }: { children: React.ReactNode }) {
+  return (
+    <Collapsible summary={TOKEN_EDITOR_COPY.more}>
+      <p className="mb-4 text-xs text-ink-500">{TOKEN_EDITOR_COPY.moreHint}</p>
+      <div className="space-y-5">{children}</div>
+    </Collapsible>
+  );
+}
 
 const COHORT_LABELS: Record<VestedCohort, string> = {
   team: "Team",
@@ -152,80 +149,6 @@ function NumberField({
   );
 }
 
-function stepProblems(doc: TokenDesignDoc): Array<string | null> {
-  const L = TOKEN_DESIGN_LIMITS;
-  const a = doc.supply.allocations;
-  const sum =
-    a.team + a.investors + a.treasuryEcosystem + a.public + a.liquidity + a.advisors + a.other;
-
-  const rationale =
-    !doc.rationale.why ||
-    !doc.rationale.path ||
-    doc.rationale.beyondDatabaseRow.trim().length < L.beyondDatabaseRow.min
-      ? "Rationale incomplete"
-      : null;
-
-  const supply =
-    doc.name.trim().length < L.name.min ||
-    !doc.ticker.trim() ||
-    doc.supply.total < L.supplyTotal.min ||
-    !doc.supply.policy ||
-    sum !== 100 ||
-    (a.other > 0 && !a.otherLabel?.trim())
-      ? "Supply incomplete"
-      : null;
-
-  const needed = vestedCohorts(a);
-  const vesting =
-    needed.length === 0
-      ? null
-      : needed.some((c) => !doc.vesting.cohorts.find((r) => r.cohort === c)) ||
-          doc.vesting.cohorts.some((r) => r.cliffMonths > r.durationMonths) ||
-          !doc.vesting.release ||
-          !doc.vesting.founderLeaves
-        ? "Vesting incomplete"
-        : null;
-
-  const s = doc.distribution.sale;
-  const distribution = !doc.distribution.event
-    ? "Distribution incomplete"
-    : isSaleEvent(doc.distribution.event) &&
-        (!s || !(s.price > 0) || !(s.hardCap > 0) || !s.access || !s.undersubscription)
-      ? "Sale terms incomplete"
-      : null;
-
-  const m = doc.market.atLaunch;
-  const market = !doc.market.when
-    ? "Market incomplete"
-    : doc.market.when === "at_launch" &&
-        (!m || !(m.liquidityEth > 0) || m.ethSource.trim().length < L.ethSource.min || !m.lp || !m.antiSniping || (m.lp === "locked" && !m.lpLockMonths))
-      ? "Launch-market terms incomplete"
-      : null;
-
-  const governance = Object.values(doc.governance).some(
-    (d) => !["in_place", "legal_ops", "planned_before_mainnet", "not_yet"].includes(d.status),
-  )
-    ? "Governance incomplete"
-    : null;
-
-  const legal = doc.legal.counsel ? null : "Legal incomplete";
-
-  return [
-    rationale,
-    supply,
-    vesting,
-    distribution,
-    market,
-    governance,
-    legal,
-    // Post-launch is optional, but a half filled milestone list is a problem (M48).
-    doc.postLaunch.milestones !== undefined && validateMilestones(doc.postLaunch.milestones)
-      ? POST_LAUNCH_MILESTONE_COPY.stepProblem
-      : null,
-    validateTokenDesignDoc(doc),
-  ];
-}
-
 export function TokenDesignEditor({
   id,
   initialDoc,
@@ -266,8 +189,8 @@ export function TokenDesignEditor({
   const saveState = useAutosave(doc, save);
   const { status: publishStatus, publish, unpublish } = usePublish("token-designs", id);
 
-  const problems = useMemo(() => stepProblems(doc), [doc]);
-  const overall = problems[8];
+  const problems = useMemo(() => tokenDesignStepProblems(doc), [doc]);
+  const overall = problems.overall;
   // Published in this session counts, so the computed publish row ticks at once.
   const published =
     publishStatus.kind === "published" ||
@@ -295,7 +218,7 @@ export function TokenDesignEditor({
         ? POST_LAUNCH_MILESTONE_COPY.republish
         : null;
   const steps = [
-    ...STEP_LABELS.slice(0, 8).map((label, i) => ({ key: label, label, problem: problems[i] })),
+    ...TOKEN_DESIGN_STEP_LABELS.map((label, i) => ({ key: label, label, problem: problems.steps[i] })),
     {
       key: "build",
       label: TOKEN_STEPS_COPY.pillLabel(doc.ticker),
@@ -303,7 +226,7 @@ export function TokenDesignEditor({
       kicker: CHECKLIST_COPY.productKicker,
       problem: build.done === build.total ? null : TOKEN_STEPS_COPY.openProblem,
     },
-    { key: "Review", label: "Review", problem: problems[8] },
+    { key: "Review", label: "Review", problem: overall },
   ];
   const findings = useMemo(() => deployabilityFindings(doc), [doc]);
 
@@ -364,7 +287,6 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("rationale", { why: v })}
                 options={RATIONALE_WHY_OPTIONS}
               />
-              <OptionResourceCard field="token.rationale.why" value={doc.rationale.why} />
               <SelectField
                 label="Issue now and trade later, or straight to market?"
                 required
@@ -372,8 +294,6 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("rationale", { path: v })}
                 options={ISSUANCE_PATH_OPTIONS}
               />
-              <OptionResourceCard field="token.rationale.path" value={doc.rationale.path} />
-              <FieldIntroCard intro="token.rationale.beyondDatabaseRow" />
               <TextField
                 label="What does the token do that a database row couldn't?"
                 required
@@ -384,6 +304,11 @@ export function TokenDesignEditor({
                 rows={3}
                 placeholder="The economic work only a token can do here."
               />
+              <More>
+                <OptionResourceCard field="token.rationale.why" value={doc.rationale.why} />
+                <OptionResourceCard field="token.rationale.path" value={doc.rationale.path} />
+                <FieldIntroCard intro="token.rationale.beyondDatabaseRow" />
+              </More>
             </>
           )}
 
@@ -399,9 +324,7 @@ export function TokenDesignEditor({
                 max={TOKEN_DESIGN_LIMITS.name.max}
               />
               {deployabilityFindings(doc).includes("name_not_deployable") && (
-                <StatusChip tone="warning" variant="block">
-                  {DEPLOYABILITY_COPY.name_not_deployable.text}
-                </StatusChip>
+                <p className="text-sm leading-relaxed text-ink-300">{DEPLOYABILITY_COPY.name_not_deployable.text}</p>
               )}
               <Field label="Ticker" required hint={LAUNCH_FORM.ticker.hint}>
                 <Input
@@ -416,7 +339,6 @@ export function TokenDesignEditor({
                 />
               </Field>
               <NameTickerCheck designId={id} name={doc.name} ticker={doc.ticker} />
-              <LogoField value={doc.logo} onChange={(logo) => patch({ logo })} hint={LOGO_COPY.designHint} />
               <NumberField
                 label="Total supply"
                 required
@@ -434,7 +356,6 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("supply", { policy: v })}
                 options={SUPPLY_POLICY_OPTIONS}
               />
-              <OptionResourceCard field="token.supply.policy" value={doc.supply.policy} />
               {doc.supply.policy === "inflationary" && (
                 <TextField
                   label="Inflation schedule"
@@ -445,22 +366,24 @@ export function TokenDesignEditor({
                   hint="Who mints, how much, on what schedule, and who governs it."
                 />
               )}
-              <StatusChip tone="info" variant="block">
-                {ALLOCATION_ENFORCEMENT_NOTE}
-              </StatusChip>
               <AllocationSplitEditor
                 value={doc.supply.allocations}
                 onChange={(v) => patchSection("supply", { allocations: v })}
               />
+              <More>
+                <LogoField value={doc.logo} onChange={(logo) => patch({ logo })} hint={LOGO_COPY.designHint} />
+                <OptionResourceCard field="token.supply.policy" value={doc.supply.policy} />
+                <p className="text-xs leading-relaxed text-ink-400">{ALLOCATION_ENFORCEMENT_NOTE}</p>
+              </More>
             </>
           )}
 
           {step === 2 &&
             (needed.length === 0 ? (
-              <StatusChip tone="info" variant="block">
+              <p className="text-sm leading-relaxed text-ink-300">
                 No team, investor, or advisor allocations, so nothing to vest.
                 Set allocations in the Supply step if that&apos;s not right.
-              </StatusChip>
+              </p>
             ) : (
               <>
                 {needed.map((cohort) => {
@@ -503,7 +426,6 @@ export function TokenDesignEditor({
                   onChange={(v) => patchSection("vesting", { release: v })}
                   options={RELEASE_TYPE_OPTIONS}
                 />
-                <OptionResourceCard field="token.vesting.release" value={doc.vesting.release} />
                 <SelectField
                   label="If a founder leaves early"
                   required
@@ -511,10 +433,10 @@ export function TokenDesignEditor({
                   onChange={(v) => patchSection("vesting", { founderLeaves: v })}
                   options={FOUNDER_LEAVES_OPTIONS}
                 />
-                <OptionResourceCard
-                  field="token.vesting.founderLeaves"
-                  value={doc.vesting.founderLeaves}
-                />
+                <More>
+                  <OptionResourceCard field="token.vesting.release" value={doc.vesting.release} />
+                  <OptionResourceCard field="token.vesting.founderLeaves" value={doc.vesting.founderLeaves} />
+                </More>
               </>
             ))}
 
@@ -533,10 +455,6 @@ export function TokenDesignEditor({
                   })
                 }
                 options={DISTRIBUTION_EVENT_OPTIONS}
-              />
-              <OptionResourceCard
-                field="token.distribution.event"
-                value={doc.distribution.event}
               />
               {isSaleEvent(doc.distribution.event) && (
                 <>
@@ -562,30 +480,7 @@ export function TokenDesignEditor({
                       zeroAsEmpty
                       suffix="ETH"
                     />
-                    <NumberField
-                      label="Soft cap"
-                      value={sale.softCap}
-                      onChange={(v) =>
-                        patchSection("distribution", { sale: { ...sale, softCap: v } })
-                      }
-                      min={0}
-                      zeroAsEmpty
-                      suffix="ETH"
-                    />
-                    <NumberField
-                      label="Per-wallet limit"
-                      value={sale.perWalletLimit}
-                      onChange={(v) =>
-                        patchSection("distribution", { sale: { ...sale, perWalletLimit: v } })
-                      }
-                      min={0}
-                      zeroAsEmpty
-                      suffix="ETH"
-                    />
                   </div>
-                  {sale.softCap > 0 && (
-                    <FieldIntroCard intro="token.distribution.softCap" />
-                  )}
                   <SelectField
                     label="Allowlist or open"
                     required
@@ -596,7 +491,6 @@ export function TokenDesignEditor({
                       { value: "open", label: "Open" },
                     ]}
                   />
-                  <OptionResourceCard field="token.distribution.access" value={sale.access} />
                   <SelectField
                     label="If the sale undersubscribes"
                     required
@@ -606,12 +500,40 @@ export function TokenDesignEditor({
                     }
                     options={UNDERSUBSCRIPTION_OPTIONS}
                   />
-                  <OptionResourceCard
-                    field="token.distribution.undersubscription"
-                    value={sale.undersubscription}
-                  />
                 </>
               )}
+              <More>
+                <OptionResourceCard field="token.distribution.event" value={doc.distribution.event} />
+                {isSaleEvent(doc.distribution.event) ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <NumberField
+                        label="Soft cap"
+                        value={sale.softCap}
+                        onChange={(v) =>
+                          patchSection("distribution", { sale: { ...sale, softCap: v } })
+                        }
+                        min={0}
+                        zeroAsEmpty
+                        suffix="ETH"
+                      />
+                      <NumberField
+                        label="Per-wallet limit"
+                        value={sale.perWalletLimit}
+                        onChange={(v) =>
+                          patchSection("distribution", { sale: { ...sale, perWalletLimit: v } })
+                        }
+                        min={0}
+                        zeroAsEmpty
+                        suffix="ETH"
+                      />
+                    </div>
+                    {sale.softCap > 0 && <FieldIntroCard intro="token.distribution.softCap" />}
+                    <OptionResourceCard field="token.distribution.access" value={sale.access} />
+                    <OptionResourceCard field="token.distribution.undersubscription" value={sale.undersubscription} />
+                  </>
+                ) : null}
+              </More>
             </>
           )}
 
@@ -633,16 +555,11 @@ export function TokenDesignEditor({
               />
               {doc.market.launchTarget && launchTargetChainBound(doc.market.launchTarget) ? (
                 linkedChain === "arbitrum_sepolia" ? (
-                  <StatusChip tone="info" variant="block">
-                    {LAUNCH_TARGET_COPY.arbitrumNote(launchTargetLabel(doc.market.launchTarget))}
-                  </StatusChip>
+                  <p className="text-sm leading-relaxed text-ink-300">{LAUNCH_TARGET_COPY.arbitrumNote(launchTargetLabel(doc.market.launchTarget))}</p>
                 ) : linkedProjectId === null ? (
-                  <StatusChip tone="info" variant="block">
-                    {LAUNCH_TARGET_COPY.unlinkedNote(launchTargetLabel(doc.market.launchTarget))}
-                  </StatusChip>
+                  <p className="text-sm leading-relaxed text-ink-300">{LAUNCH_TARGET_COPY.unlinkedNote(launchTargetLabel(doc.market.launchTarget))}</p>
                 ) : null
               ) : null}
-              <FieldIntroCard intro="token.market.when" />
               <SelectField
                 label="Does a market exist at launch?"
                 required
@@ -690,7 +607,6 @@ export function TokenDesignEditor({
                     }
                     options={LP_TREATMENT_OPTIONS}
                   />
-                  <OptionResourceCard field="token.market.lp" value={atLaunch.lp} />
                   {atLaunch.lp === "locked" && (
                     <NumberField
                       label="Lock duration"
@@ -716,19 +632,25 @@ export function TokenDesignEditor({
                     }
                     options={ANTI_SNIPING_OPTIONS}
                   />
-                  <OptionResourceCard
-                    field="token.market.antiSniping"
-                    value={atLaunch.antiSniping}
-                  />
                 </>
               )}
-              <Collapsible summary={LAUNCH_TARGET_COPY.factsTitle}>
-                <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
-                  {LAUNCH_TARGET_INFO[doc.market.launchTarget ?? "canhav_curve"].facts.map((fact) => (
-                    <li key={fact}>{fact}</li>
-                  ))}
-                </ul>
-              </Collapsible>
+              <More>
+                <FieldIntroCard intro="token.market.when" />
+                {doc.market.when === "at_launch" ? (
+                  <>
+                    <OptionResourceCard field="token.market.lp" value={atLaunch.lp} />
+                    <OptionResourceCard field="token.market.antiSniping" value={atLaunch.antiSniping} />
+                  </>
+                ) : null}
+                <div>
+                  <p className="text-xs font-medium text-ink-200">{LAUNCH_TARGET_COPY.factsTitle}</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
+                    {LAUNCH_TARGET_INFO[doc.market.launchTarget ?? "canhav_curve"].facts.map((fact) => (
+                      <li key={fact}>{fact}</li>
+                    ))}
+                  </ul>
+                </div>
+              </More>
             </>
           )}
 
@@ -737,31 +659,95 @@ export function TokenDesignEditor({
               <p className="text-sm leading-relaxed text-ink-400">{GOVERNANCE_FRAMING}</p>
               <div className="space-y-5">
                 {GOVERNANCE_FIELDS.map(({ key, label }) => (
-                  <div key={key} className="space-y-3">
-                    <FieldIntroCard intro={GOVERNANCE_INTROS[key]} />
-                    <StatusDeclarationField
-                      label={label}
-                      value={doc.governance[key]}
-                      onChange={(v) => patchSection("governance", { [key]: v })}
-                    />
-                  </div>
+                  <StatusDeclarationField
+                    key={key}
+                    label={label}
+                    value={doc.governance[key]}
+                    onChange={(v) => patchSection("governance", { [key]: v })}
+                  />
                 ))}
               </div>
-              <Collapsible summary="Guaranteed by the contract, not a promise">
-                <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
-                  {GOVERNANCE_FACTS.map((fact) => (
-                    <li key={fact}>{fact}</li>
-                  ))}
-                </ul>
-                <a
-                  href={explorerAddressUrl(launchChain().factoryAddress)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 block text-xs text-electric-300 transition-colors hover:text-electric-200"
-                >
-                  Verified factory on Blockscout →
-                </a>
-              </Collapsible>
+              <More>
+                {GOVERNANCE_FIELDS.map(({ key }) => (
+                  <FieldIntroCard key={key} intro={GOVERNANCE_INTROS[key]} />
+                ))}
+                <div>
+                  <p className="text-xs font-medium text-ink-200">Guaranteed by the contract, not a promise</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
+                    {GOVERNANCE_FACTS.map((fact) => (
+                      <li key={fact}>{fact}</li>
+                    ))}
+                  </ul>
+                  <a
+                    href={explorerAddressUrl(launchChain().factoryAddress)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 block text-xs text-electric-300 transition-colors hover:text-electric-200"
+                  >
+                    Verified factory on Blockscout →
+                  </a>
+                </div>
+                <div className="space-y-5 border-t border-ink-700/40 pt-5">
+                  <div>
+                    <p className="text-sm font-medium text-ink-100">{TOKEN_EDITOR_COPY.postLaunch}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-400">{TOKEN_EDITOR_COPY.postLaunchLead}</p>
+                  </div>
+                  <FieldIntroCard intro="token.postLaunch.runwayMonths" />
+                  <NumberField
+                    label="Treasury runway"
+                    value={doc.postLaunch.runwayMonths}
+                    onChange={(v) =>
+                      patchSection("postLaunch", {
+                        runwayMonths: v > 0 ? Math.floor(v) : undefined,
+                      })
+                    }
+                    min={TOKEN_DESIGN_LIMITS.runwayMonths.min}
+                    max={TOKEN_DESIGN_LIMITS.runwayMonths.max}
+                    zeroAsEmpty
+                    suffix="months"
+                  />
+                  <FieldIntroCard intro="token.postLaunch.reporting" />
+                  <SelectField
+                    label="Reporting cadence"
+                    value={doc.postLaunch.reporting ?? ""}
+                    onChange={(v) => patchSection("postLaunch", { reporting: v || undefined })}
+                    options={REPORTING_OPTIONS}
+                  />
+                  <FieldIntroCard intro="token.postLaunch.milestones" />
+                  {doc.postLaunch.milestones ? (
+                    <div className="space-y-3">
+                      <MilestoneListFields
+                        heading={POST_LAUNCH_MILESTONE_COPY.heading}
+                        required={false}
+                        milestones={doc.postLaunch.milestones}
+                        onChange={(milestones) => patchSection("postLaunch", { milestones })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => patchSection("postLaunch", { milestones: undefined })}
+                        className="text-xs text-ink-400 transition-colors hover:text-rose-400"
+                      >
+                        {POST_LAUNCH_MILESTONE_COPY.remove}
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        patchSection("postLaunch", {
+                          milestones: [
+                            { date: "", title: "", description: "" },
+                            { date: "", title: "", description: "" },
+                          ],
+                        })
+                      }
+                    >
+                      {POST_LAUNCH_MILESTONE_COPY.add}
+                    </Button>
+                  )}
+                </div>
+              </More>
             </>
           )}
 
@@ -774,95 +760,39 @@ export function TokenDesignEditor({
                 onChange={(v) => patchSection("legal", { counsel: v })}
                 options={COUNSEL_OPTIONS}
               />
-              <Collapsible summary="What typically matters">
-                <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
-                  {LEGAL_TOPICS.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-              </Collapsible>
-              <StatusChip tone="neutral" variant="block">
-                {LEGAL_DISCLAIMER}
-              </StatusChip>
-            </>
-          )}
-
-          {step === 7 && (
-            <>
-              <p className="text-sm leading-relaxed text-ink-400">
-                All optional, but the teams that can answer these tend to
-                still be here in two years.
-              </p>
-              <FieldIntroCard intro="token.postLaunch.runwayMonths" />
-              <NumberField
-                label="Treasury runway"
-                value={doc.postLaunch.runwayMonths}
-                onChange={(v) =>
-                  patchSection("postLaunch", {
-                    runwayMonths: v > 0 ? Math.floor(v) : undefined,
-                  })
-                }
-                min={TOKEN_DESIGN_LIMITS.runwayMonths.min}
-                max={TOKEN_DESIGN_LIMITS.runwayMonths.max}
-                zeroAsEmpty
-                suffix="months"
-              />
-              <FieldIntroCard intro="token.postLaunch.reporting" />
-              <SelectField
-                label="Reporting cadence"
-                value={doc.postLaunch.reporting ?? ""}
-                onChange={(v) => patchSection("postLaunch", { reporting: v || undefined })}
-                options={REPORTING_OPTIONS}
-              />
-              <FieldIntroCard intro="token.postLaunch.priceCollapsePlan" />
-              <TextField
-                label="If the price collapses, what do you do?"
-                value={doc.postLaunch.priceCollapsePlan ?? ""}
-                onChange={(v) => patchSection("postLaunch", { priceCollapsePlan: v || undefined })}
-                max={TOKEN_DESIGN_LIMITS.priceCollapsePlan.max}
-                rows={3}
-              />
-              <FieldIntroCard intro="token.postLaunch.failureCriteria" />
-              <TextField
-                label="What would make you call this a failure?"
-                value={doc.postLaunch.failureCriteria ?? ""}
-                onChange={(v) => patchSection("postLaunch", { failureCriteria: v || undefined })}
-                max={TOKEN_DESIGN_LIMITS.failureCriteria.max}
-                rows={3}
-              />
-              <FieldIntroCard intro="token.postLaunch.milestones" />
-              {doc.postLaunch.milestones ? (
-                <div className="space-y-3">
-                  <MilestoneListFields
-                    heading={POST_LAUNCH_MILESTONE_COPY.heading}
-                    required={false}
-                    milestones={doc.postLaunch.milestones}
-                    onChange={(milestones) => patchSection("postLaunch", { milestones })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => patchSection("postLaunch", { milestones: undefined })}
-                    className="text-xs text-ink-400 transition-colors hover:text-rose-400"
-                  >
-                    {POST_LAUNCH_MILESTONE_COPY.remove}
-                  </button>
+              <p className="text-xs leading-relaxed text-ink-400">{LEGAL_DISCLAIMER}</p>
+              <More>
+                <div>
+                  <p className="text-xs font-medium text-ink-200">What typically matters</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-200">
+                    {LEGAL_TOPICS.map((t) => (
+                      <li key={t}>{t}</li>
+                    ))}
+                  </ul>
                 </div>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    patchSection("postLaunch", {
-                      milestones: [
-                        { date: "", title: "", description: "" },
-                        { date: "", title: "", description: "" },
-                      ],
-                    })
-                  }
-                >
-                  {POST_LAUNCH_MILESTONE_COPY.add}
-                </Button>
-              )}
+                <div className="space-y-5 border-t border-ink-700/40 pt-5">
+                  <div>
+                    <p className="text-sm font-medium text-ink-100">{TOKEN_EDITOR_COPY.postLaunch}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-400">{TOKEN_EDITOR_COPY.postLaunchLead}</p>
+                  </div>
+                  <FieldIntroCard intro="token.postLaunch.priceCollapsePlan" />
+                  <TextField
+                    label="If the price collapses, what do you do?"
+                    value={doc.postLaunch.priceCollapsePlan ?? ""}
+                    onChange={(v) => patchSection("postLaunch", { priceCollapsePlan: v || undefined })}
+                    max={TOKEN_DESIGN_LIMITS.priceCollapsePlan.max}
+                    rows={3}
+                  />
+                  <FieldIntroCard intro="token.postLaunch.failureCriteria" />
+                  <TextField
+                    label="What would make you call this a failure?"
+                    value={doc.postLaunch.failureCriteria ?? ""}
+                    onChange={(v) => patchSection("postLaunch", { failureCriteria: v || undefined })}
+                    max={TOKEN_DESIGN_LIMITS.failureCriteria.max}
+                    rows={3}
+                  />
+                </div>
+              </More>
             </>
           )}
 

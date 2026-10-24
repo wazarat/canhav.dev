@@ -23,6 +23,7 @@ import {
   validateTokenDesignDoc,
 } from "@/lib/ideation";
 import { FIELD_PATCH_PATH, FIELD_TAB, openFields } from "@/lib/project-fields";
+import { tokenDesignOpenSections } from "@/lib/token-design-steps";
 import {
   type ProjectRow,
   type TokenDesignRow,
@@ -459,6 +460,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               status: design.status,
               slug: design.slug,
               firstProblem: designProblem,
+              // The editor sections still open (M131); update_linked_token_design fills any field.
+              openSections: tokenDesignOpenSections(design.draft_doc),
               publicUrl: publicUrl("t", design),
               // A summary of the tokenomics (M45). The full picture and the
               // warning text are on get_linked_token_design and check_design.

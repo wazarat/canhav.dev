@@ -2,6 +2,7 @@ import { kitsForDoc } from "@/content/kits";
 import { offeredShapes } from "@/content/kits/copy";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
+  KIT_LIMITS,
   type ProductShape,
   emptyProjectKit,
   impliedShapesFor,
@@ -75,12 +76,14 @@ export function subsectorsChange(doc: ProjectDoc, picked: readonly Subsector[]):
 export function shapesChange(doc: ProjectDoc, picked: readonly ProductShape[]): Partial<ProjectDoc> {
   const sectors = docSectors(doc);
   const subsectors = doc.subsectors ?? [];
-  const nextSubs = withShapeSubsectors(subsectors, picked, sectors);
+  // At most KIT_LIMITS.shapes.max shapes per project (M131); the first picks win.
+  const kept = picked.slice(0, KIT_LIMITS.shapes.max);
+  const nextSubs = withShapeSubsectors(subsectors, kept, sectors);
   const kits = kitsForSectors(sectors, nextSubs);
   const base = doc.kit ?? emptyProjectKit(kitsForDoc(doc));
   const nextKits = kits.length ? kits : base.kits;
   return {
     ...(nextSubs.length !== subsectors.length ? { subsectors: nextSubs } : {}),
-    kit: { ...base, ...withShapes(picked), kits: nextKits, id: nextKits[0] },
+    kit: { ...base, ...withShapes(kept), kits: nextKits, id: nextKits[0] },
   };
 }

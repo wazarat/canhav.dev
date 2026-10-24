@@ -64,7 +64,9 @@ export const STARTING_POINT_OPTIONS: ReadonlyArray<ChipOption<StartingPoint>> = 
 
 export const KIT_COPY = {
   shapeLabel: "What are you building",
-  shapeHint: "Pick every layer your users touch. The research kit merges the packs for what you choose.",
+  shapeHint: "Pick every layer your users touch, up to three. The research kit merges the packs for what you choose.",
+  /** Under the shape chips (M131). */
+  shapeCap: (max: number) => `Up to ${max} shapes per project, so the build steps stay a list a team can read.`,
   /** One line per subsector that names its shape on its own. */
   buildingLine: (phrase: string, sentence: string) => `I am building ${phrase}. ${sentence}`,
   buildingHint: "These follow from the subsectors you picked. Untick a subsector to drop its product.",
