@@ -7,7 +7,7 @@ export function buildOnepagerMd(doc: ProjectDoc): string {
   const p = doc.investorPack;
   const lines = [`# ${doc.name || "Project"}`, ""];
   if (p?.onepager) lines.push(p.onepager.trim(), "");
-  else lines.push("No one pager drafted yet. Draft it from the Publish section of the studio or ask your agent for update_project investorPack.onepager.", "");
+  else lines.push("No one pager drafted yet. Draft it from the Business model tab of the studio or ask your agent for update_project investorPack.onepager.", "");
   if (doc.website) lines.push(`Website: ${doc.website}`); // copy-ok, export line
   if (doc.githubRepo) lines.push(`Repository: https://github.com/${doc.githubRepo}`); // copy-ok, export line
   return lines.join("\n").trimEnd() + "\n";
@@ -22,7 +22,7 @@ export function buildDeckMd(doc: ProjectDoc): string {
       for (const b of s.bullets) lines.push(`- ${b}`);
       lines.push("");
     }
-  } else lines.push("No deck drafted yet. Draft it from the Publish section of the studio or ask your agent for update_project investorPack.deck.", "");
+  } else lines.push("No deck drafted yet. Draft it from the Business model tab of the studio or ask your agent for update_project investorPack.deck.", "");
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -40,6 +40,6 @@ export function buildGrantsMd(doc: ProjectDoc): string {
       lines.push(`### ${q.label} (${q.words} words)`, "", answers[q.id], "");
     }
   }
-  if (!any) lines.push("No grant answers drafted yet. Draft them from the Publish section of the studio or ask your agent for update_project investorPack.grants.", "");
+  if (!any) lines.push("No grant answers drafted yet. Draft them from the Business model tab of the studio or ask your agent for update_project investorPack.grants.", "");
   return lines.join("\n").trimEnd() + "\n";
 }

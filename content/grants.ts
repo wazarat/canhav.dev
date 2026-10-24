@@ -1,3 +1,5 @@
+import type { ProjectChain } from "@/lib/chains";
+
 /**
  * Grant programmes the investor pack drafts answers for (M126, Studio+).
  * Each carries the questions a form of that style asks and the word
@@ -47,9 +49,9 @@ export const GRANT_PROGRAMS: readonly GrantProgram[] = [
     ],
   },
   {
-    id: "optimism",
-    name: "Optimism style builder grant",
-    blurb: "Retro and builder grants that ask for impact and metrics; the same shape many L2 programmes use.",
+    id: "general",
+    name: "General builder grant",
+    blurb: "The recurring questions of builder and retro grant forms, impact, metrics, plan and risks, the shape many programmes share.",
     url: "https://app.optimism.io/retropgf",
     questions: [
       { id: "impact", label: "Impact on the ecosystem", words: 200 },
@@ -60,6 +62,25 @@ export const GRANT_PROGRAMS: readonly GrantProgram[] = [
   },
 ];
 
-export function grantProgram(id: string): GrantProgram | null {
-  return GRANT_PROGRAMS.find((p) => p.id === id) ?? null;
+/** Programme ids from before M143, read as the programme that replaced them. */
+export const GRANT_PROGRAM_ALIASES: Record<string, string> = { optimism: "general" };
+
+export function grantProgramId(id: string): string {
+  return GRANT_PROGRAM_ALIASES[id] ?? id;
 }
+
+export function grantProgram(id: string): GrantProgram | null {
+  const real = grantProgramId(id);
+  return GRANT_PROGRAMS.find((p) => p.id === real) ?? null;
+}
+
+/** The programmes in the order the project's chain suggests (M143): the chain's own first where it has one. */
+export function grantProgramsFor(chain: ProjectChain): GrantProgram[] {
+  const order = chain === "arbitrum_sepolia" ? ["arbitrum", "gitcoin", "general"] : ["general", "gitcoin", "arbitrum"];
+  return order.map((id) => GRANT_PROGRAMS.find((p) => p.id === id)).filter((p): p is GrantProgram => Boolean(p));
+}
+
+/** One line under the programme picker where the chain has no programme of its own. */
+export const GRANT_CHAIN_NOTE: Partial<Record<ProjectChain, string>> = {
+  robinhood_testnet: "Robinhood Chain has no public grant programme today, so the general form stands in.",
+};

@@ -3,10 +3,12 @@
 import { CanvasEditor } from "@/components/build/CanvasEditor";
 import { CompetitorsSection } from "@/components/build/CompetitorsSection";
 import { IcpEditor } from "@/components/build/IcpEditor";
+import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Card, CardSection } from "@/components/ui/Card";
 import { BUILD_COPY } from "@/content/build";
+import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
 
@@ -17,8 +19,8 @@ function Heading({ children }: { children: React.ReactNode }) {
 /**
  * The Business model tab (owner feedback 2026-10-19): the Studio+ market
  * work on its own tab instead of inside Decisions. The nine block canvas,
- * the ideal customer profiles and the competitor landscape, each behind
- * its feature gate for a free account.
+ * the ideal customer profiles, the competitor landscape and, since M143,
+ * the investor and grant pack, each behind its feature gate.
  */
 export function ModelTab({
   id,
@@ -58,6 +60,11 @@ export function ModelTab({
           <PlusGate feature="competitors">
             <CompetitorsSection projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
           </PlusGate>
+        </CardSection>
+
+        <CardSection id="model-pack" className="space-y-4">
+          <Heading>{STUDIO_PLUS_COPY.pack.title}</Heading>
+          <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} />
         </CardSection>
       </Card>
     </div>

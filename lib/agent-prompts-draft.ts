@@ -56,7 +56,7 @@ export function draftPackPrompt(name: string, projectId: string, brief = ""): st
     projectId,
     "investorPack",
     "investor and grant pack",
-    "Three parts, any of them. onepager, markdown with the headings The problem, The product, Who pays and why, Where it stands, The market, The ask, at most 6000 characters. deck, five to twelve slides as title and up to six bullets. grants, per programme id (arbitrum, gitcoin, optimism) the answers per question id within the word limits the studio lists. Numbers only from the record and this repository; mark gaps in square brackets.",
+    "Three parts, any of them. onepager, markdown with the headings The problem, The product, Who pays and why, Where it stands, The market, The ask, at most 6000 characters. deck, five to twelve slides as title and up to six bullets. grants, per programme id (arbitrum, gitcoin or general; optimism is read as general) the answers per question id within the word limits the studio lists, the project's chain's own programme first. Numbers only from the record and this repository; mark gaps in square brackets.",
     brief,
   );
 }

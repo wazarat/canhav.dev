@@ -8,16 +8,18 @@ import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { SelectField } from "@/components/ui/Select";
-import { GRANT_PROGRAMS, grantProgram } from "@/content/grants";
+import { GRANT_CHAIN_NOTE, grantProgram, grantProgramsFor } from "@/content/grants";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { draftPackPrompt } from "@/lib/agent-prompts-draft";
 import type { AgentWriteMode } from "@/lib/agent-writes";
+import { projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import { type DeckSlide, type InvestorPack, mergeInvestorPack, packParts } from "@/lib/investor-pack";
 
 /**
- * The investor and grant pack (M126, Studio+): one Draft control per
- * part (M141), the parts rendered under them,
+ * The investor and grant pack on Business model (M126, moved there in
+ * M143, Studio+): one Draft control per part (M141), the programmes in
+ * the order the project's chain suggests, the parts rendered under them,
  * the markdown downloads and the print page. The pack stays on the draft.
  */
 export function InvestorPackSection({ projectId, doc, patch, agentMode }: { projectId: string; doc: ProjectDoc; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
@@ -30,7 +32,9 @@ export function InvestorPackSection({ projectId, doc, patch, agentMode }: { proj
 
 function Inner({ projectId, doc, patch, agentMode }: { projectId: string; doc: ProjectDoc; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
   const C = STUDIO_PLUS_COPY.pack;
-  const [program, setProgram] = useState(GRANT_PROGRAMS[0].id);
+  const chain = projectChainOf(doc);
+  const programs = grantProgramsFor(chain);
+  const [program, setProgram] = useState(programs[0].id);
   const pack = doc.investorPack;
   const parts = packParts(pack);
   const meta: DraftMeta = doc;
@@ -49,7 +53,8 @@ function Inner({ projectId, doc, patch, agentMode }: { projectId: string; doc: P
     set(left.length ? { ...rest, updatedAt: new Date().toISOString() } : undefined);
   };
   const file = (name: string) => `/api/export/project/${projectId}?file=${name}`;
-  const prog = grantProgram(program) ?? GRANT_PROGRAMS[0];
+  const prog = grantProgram(program) ?? programs[0];
+  const chainNote = GRANT_CHAIN_NOTE[chain];
 
   return (
     <div className="space-y-5">
@@ -63,7 +68,7 @@ function Inner({ projectId, doc, patch, agentMode }: { projectId: string; doc: P
         <DraftControl<{ deck: DeckSlide[] }> projectId={projectId} kind="deck" label={C.draftDeck} doc={meta} patch={patch} agentMode={agentMode} gate={false} agentPrompt={prompt} onResult={(v) => apply({ deck: v.deck })} />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-        <SelectField label={C.programLabel} value={program} onChange={(v) => setProgram(v || GRANT_PROGRAMS[0].id)} options={GRANT_PROGRAMS.map((p) => ({ value: p.id, label: p.name }))} />
+        <SelectField label={C.programLabel} hint={chainNote} value={program} onChange={(v) => setProgram(v || programs[0].id)} options={programs.map((p) => ({ value: p.id, label: p.name }))} />
         <DraftControl<{ answers: Array<{ question: string; answer: string }> }>
           projectId={projectId}
           kind="grants"

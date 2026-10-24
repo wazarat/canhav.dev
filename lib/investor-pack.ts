@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { GRANT_PROGRAMS } from "@/content/grants";
+import { GRANT_PROGRAMS, grantProgramId } from "@/content/grants";
 import { cutAtWord } from "@/lib/text";
 
 /**
@@ -67,12 +67,19 @@ export function normalizeInvestorPack(raw: unknown): InvestorPack | null {
   }
   if (o.grants && typeof o.grants === "object") {
     const grants: Record<string, Record<string, string>> = {};
-    for (const p of GRANT_PROGRAMS) {
-      const answers = (o.grants as Record<string, unknown>)[p.id];
+    // An old programme id folds into the one that replaced it (M143); the real id wins where both are stored.
+    const stored: Record<string, Record<string, unknown>> = {};
+    for (const [pid, answers] of Object.entries(o.grants as Record<string, unknown>)) {
       if (!answers || typeof answers !== "object") continue;
+      const real = grantProgramId(pid);
+      stored[real] = pid === real ? { ...(stored[real] ?? {}), ...(answers as Record<string, unknown>) } : { ...(answers as Record<string, unknown>), ...(stored[real] ?? {}) };
+    }
+    for (const p of GRANT_PROGRAMS) {
+      const answers = stored[p.id];
+      if (!answers) continue;
       const clean: Record<string, string> = {};
       for (const q of p.questions) {
-        const a = (answers as Record<string, unknown>)[q.id];
+        const a = answers[q.id];
         if (typeof a === "string" && a.trim()) clean[q.id] = cutAtWord(a.trim(), PACK_LIMITS.grants.answer);
       }
       if (Object.keys(clean).length) grants[p.id] = clean;
@@ -90,7 +97,10 @@ export function mergeInvestorPack(current: InvestorPack | undefined, patch: Inve
   if (patch.deck !== undefined) next.deck = patch.deck;
   if (patch.grants) {
     const grants = { ...(current?.grants ?? {}) };
-    for (const [pid, answers] of Object.entries(patch.grants)) grants[pid] = { ...(grants[pid] ?? {}), ...answers };
+    for (const [pid, answers] of Object.entries(patch.grants)) {
+      const real = grantProgramId(pid);
+      grants[real] = { ...(grants[real] ?? {}), ...answers };
+    }
     next.grants = grants;
   }
   return next;

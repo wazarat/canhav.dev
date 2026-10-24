@@ -5,7 +5,6 @@ import { ArrowRight } from "lucide-react";
 import { DomainSection } from "@/components/build/DomainSection";
 import { FieldWaiver } from "@/components/build/FieldWaiver";
 import { FIELD_GRID, TAB_WIDTH } from "@/components/build/layout";
-import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
 import { NameWarning } from "@/components/ideation/NameWarning";
@@ -314,13 +313,6 @@ export function PublishTab({
             </div>
           )}
         </CardSection>
-
-        {paid ? (
-          <CardSection className="space-y-4">
-            <Heading>{STUDIO_PLUS_COPY.pack.title}</Heading>
-            <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} />
-          </CardSection>
-        ) : null}
 
         {kit?.shape ? (
           <CardSection>

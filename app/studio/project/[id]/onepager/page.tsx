@@ -40,8 +40,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <main className="mx-auto max-w-2xl px-4 py-10 print:max-w-none print:px-0 print:py-0">
       <style>{PRINT_CSS}</style>
       <div className="no-print mb-6 flex flex-wrap items-center gap-3 text-xs text-ink-400">
-        <Link href={`/studio/project/${id}?tab=publish`} className="text-ink-200 hover:underline">
-          {C.backToPublish}
+        <Link href={`/studio/project/${id}?tab=model`} className="text-ink-200 hover:underline">
+          {C.backToModel}
         </Link>
         <span>·</span>
         <span>{C.printHint}</span>

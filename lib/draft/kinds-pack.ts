@@ -1,6 +1,7 @@
 import "server-only";
 
-import { GRANT_PROGRAMS, grantProgram } from "@/content/grants";
+import { grantProgram, grantProgramsFor } from "@/content/grants";
+import { projectChainOf } from "@/lib/chains";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import { cutAtWord } from "@/lib/text";
@@ -55,17 +56,17 @@ registerDraftKind("grants", {
   clean: (value) => ({ answers: value.answers.map((a) => ({ question: a.question.trim(), answer: cutAtWord(a.answer.trim(), PACK_LIMITS.grants.answer) })).filter((a) => a.answer) }),
   long: true,
   extras: (doc, body) => {
-    const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? GRANT_PROGRAMS[0];
+    const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? grantProgramsFor(projectChainOf(doc))[0];
     const lines = [`## The programme\n${prog.name}. ${prog.blurb}`, "## The questions, with the word limit each", ...prog.questions.map((q) => `- ${q.id}: ${q.label} (${q.words} words)`)]; // copy-ok, model context
     return [...packExtras(doc), lines.join("\n")];
   },
-  instructions: (_doc, body) => {
-    const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? GRANT_PROGRAMS[0];
+  instructions: (doc, body) => {
+    const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? grantProgramsFor(projectChainOf(doc))[0];
     return `${DRAFT_VOICE}\n\nAnswer every question of the ${prog.name} form listed in the context, as answers with the question id and the answer text, each within its word limit, in the first person plural. Claims only from the record; where a question asks for something the record lacks (budget, team), write the shape of an answer and mark the gap in square brackets for the team to fill.`;
   },
-  ask: (_doc, body) => `Draft the ${(grantProgram(typeof body.program === "string" ? body.program : "") ?? GRANT_PROGRAMS[0]).name} answers.`,
-  fixture: (_doc, body) => {
-    const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? GRANT_PROGRAMS[0];
+  ask: (doc, body) => `Draft the ${(grantProgram(typeof body.program === "string" ? body.program : "") ?? grantProgramsFor(projectChainOf(doc))[0]).name} answers.`,
+  fixture: (doc, body) => {
+    const prog = grantProgram(typeof body.program === "string" ? body.program : "") ?? grantProgramsFor(projectChainOf(doc))[0];
     return { answers: prog.questions.map((q) => ({ question: q.id, answer: `[${q.label}, drafted locally. Fixture, no model key is set.]` })) };
   },
 });

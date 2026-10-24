@@ -83,7 +83,7 @@ export const STUDIO_PLUS_COPY = {
   /** The investor and grant pack on Publish (M126). */
   pack: {
     title: "Investor and grant pack",
-    intro: "A one pager, a short deck and draft grant answers, written from the record, the canvas, the profiles and the competitor line. Drafted by your agent or by CanHav, edited by you, exported as markdown. Never published.",
+    intro: "A one pager, a short deck and draft grant answers, written from the record, the canvas, the profiles and the competitor line on this tab. Drafted by your agent or by CanHav, edited by you, exported as markdown. Never published.",
     parts: { onepager: "One pager", deck: "Deck", grants: "Grant answers" } as const,
     none: "Nothing drafted yet.",
     have: (parts: string[], date: string) => `${parts.join(", ")} drafted · last change ${date}`,
@@ -97,7 +97,7 @@ export const STUDIO_PLUS_COPY = {
     slides: (n: number) => `${n} ${n === 1 ? "slide" : "slides"}`,
     answers: (n: number, program: string) => `${n} ${n === 1 ? "answer" : "answers"} for ${program}`,
     words: (n: number) => `${n} words`,
-    backToPublish: "Back to Publish",
+    backToModel: "Back to Business model",
     printHint: "Print this page to PDF from your browser.",
     noOnepager: "No one pager drafted yet.",
     printFooter: "Made with CanHav Studio+",
