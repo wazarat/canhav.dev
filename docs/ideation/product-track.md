@@ -74,7 +74,7 @@ Nine free text blocks, the Business Model Canvas: customer segments, value propo
 
 | Field | Notes |
 |-------|-------|
-| What contracts exist | “None yet” is an honest answer |
+| What contracts exist | One row per contract, the name on top and why it exists under it (2 to 80 and 10 to 300 characters, up to thirty rows). "None yet" is a checkbox, not typed text. An answer written before rows existed stays readable above the list until you or your agent split it into rows (`update_project` `architecture.contracts` with `contractsLegacy` null). A row whose name matches a recorded testnet contract shows its address |
 | External dependencies | Protocols your contracts call (for example Uniswap, Morpho, Chainlink) |
 | Oracles | Free text |
 | Upgradeability | Immutable; upgradeable proxy; partially upgradeable; undecided |

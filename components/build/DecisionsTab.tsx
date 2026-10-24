@@ -8,7 +8,11 @@ import { TAB_WIDTH } from "@/components/build/layout";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import type { AgentWriteMode } from "@/lib/agent-writes";
+import { ExternalLink } from "lucide-react";
+
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
+import { WhyRowsEditor } from "@/components/ideation/WhyRowsEditor";
+import { explorerAddressUrl } from "@/lib/explorer";
 import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
 import { TextField } from "@/components/ideation/TextField";
@@ -32,7 +36,7 @@ import { WORST_CASE_WHY } from "@/content/ideation";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { type ProjectChain, projectChainOf } from "@/lib/chains";
-import { PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona } from "@/lib/ideation";
+import { PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, testnetContractRows } from "@/lib/ideation";
 import { type ProjectKit, emptyProjectKit, setTemplateDecision } from "@/lib/kits";
 import { kitsForDoc } from "@/content/kits";
 
@@ -78,6 +82,8 @@ export function DecisionsTab({
   const agentNote = (id: string) =>
     earlier.find((c) => c.note && c.lines.some((l) => l.path.includes("templates") && l.path.includes(id)));
   const a = doc.architecture;
+  // A row whose name matches a recorded testnet contract shows its address (M153).
+  const recordedByLabel = new Map(testnetContractRows(doc).filter((c) => c.label?.trim()).map((c) => [c.label!.trim().toLowerCase(), c.address.toLowerCase()] as const));
   const audience = docAudience(doc);
 
   return (
@@ -149,15 +155,42 @@ export function DecisionsTab({
         <CardSection id="decisions-contracts" className="space-y-6">
           <Heading>{D.contracts}</Heading>
           <FieldWaiver field="contracts" doc={doc} patch={patch}>
-            <TextField
-              label="What contracts exist"
-              hint='"None yet" is an honest answer.'
-              value={a.contracts}
-              onChange={(v) => patchSection("architecture", { contracts: v })}
-              min={PROJECT_LIMITS.architectureField.min}
-              max={PROJECT_LIMITS.architectureField.max}
-              rows={3}
-            />
+            <div className="space-y-3">
+              {a.contractsLegacy ? (
+                <div className="space-y-2 rounded-lg border border-ink-700/40 p-3">
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.contractsLegacy}</p>
+                  <p className="text-xs text-ink-400">
+                    {D.contractRows.legacy}{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const { contractsLegacy: _l, ...rest } = a;
+                        patch({ architecture: rest });
+                      }}
+                      className="text-ink-300 transition-colors hover:text-ink-50 hover:underline"
+                    >
+                      {D.contractRows.legacyRemove}
+                    </button>
+                  </p>
+                </div>
+              ) : null}
+              <WhyRowsEditor
+                rows={a.contracts}
+                none={a.contractsNone}
+                onChange={(contracts, contractsNone) => patchSection("architecture", { contracts, contractsNone })}
+                max={PROJECT_LIMITS.whyEntries.max}
+                copy={D.contractRows}
+                empty={() => ({ name: "", why: "" })}
+                beside={(row) => {
+                  const hit = recordedByLabel.get(row.name.trim().toLowerCase());
+                  return hit ? (
+                    <a href={explorerAddressUrl(hit, chainKey)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-electric-300 transition-colors hover:text-electric-200">
+                      {D.contractRows.onChain(`${hit.slice(0, 6)}…${hit.slice(-4)}`)} <ExternalLink aria-hidden className="h-3 w-3" />
+                    </a>
+                  ) : null;
+                }}
+              />
+            </div>
           </FieldWaiver>
           <FieldWaiver field="externalDeps" doc={doc} patch={patch}>
             <ExternalDepsEditor

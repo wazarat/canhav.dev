@@ -134,6 +134,18 @@ function personaTable<T extends { [K in keyof T]: string }>(
   ];
 }
 
+/**
+ * The contracts as markdown (M153): one line per row, the name in bold then
+ * why it exists; the earlier free text answer as a paragraph; else the
+ * field's state in words (None yet, Not stated, Not applicable).
+ */
+function contractsLines(doc: ProjectDoc): string[] {
+  const a = doc.architecture;
+  if (a.contracts.length) return [`- **Contracts:**`, ...a.contracts.map((c) => `  - **${c.name}.** ${c.why}`)];
+  if (a.contractsLegacy?.trim()) return [`- **Contracts:** ${a.contractsLegacy.trim()}`];
+  return [`- **Contracts:** ${fieldText(doc, "contracts")}`];
+}
+
 /** The customer block: audience, persona table, earlier free text, payer, chain. Empty answers drop. */
 function customerLines(doc: ProjectDoc): string[] {
   const out: string[] = [];
@@ -498,7 +510,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     "## Contract architecture",
     "",
-    `- **Contracts:** ${fieldText(doc, "contracts")}`,
+    ...contractsLines(doc),
     `- **External dependencies:** ${a.externalDeps.length ? externalDepsLine(a) : fieldText(doc, "externalDeps")}`,
     `- **Oracles:** ${fieldText(doc, "oracles")}`,
     `- **Admin functions:** ${fieldText(doc, "adminFunctions")}`,
@@ -836,7 +848,7 @@ export function buildAgentsMd(input: {
       ...positioningLines(project.competitors),
       "## Contract architecture",
       "",
-      `- **Contracts:** ${fieldText(project, "contracts")}`,
+      ...contractsLines(project),
       `- **External dependencies:** ${a.externalDeps.length ? externalDepsLine(a) : fieldText(project, "externalDeps")}`,
       `- **Oracles:** ${fieldText(project, "oracles")}`,
       `- **Admin functions (and why):** ${fieldText(project, "adminFunctions")}`,

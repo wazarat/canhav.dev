@@ -1165,6 +1165,7 @@ export const WAIVABLE_FIELD_LABELS: Record<WaivableField, string> = {
 export const FIELD_STATE_COPY = {
   notStated: "Not stated",
   none: "None",
+  noneYet: "None yet",
   notApplicable: (reason: string) => `Not applicable, ${reason}`,
   /** The link under a recommended field. */
   markNa: "Does not apply",

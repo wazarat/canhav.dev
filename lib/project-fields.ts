@@ -72,7 +72,10 @@ function statedText(doc: ProjectDoc, key: WaivableField): string | null {
       return doc.sectorOther?.trim() || null;
     }
     case "contracts":
-      return long(a.contracts, L.architectureField.min);
+      // Rows, the honest None yet, or the answer from before M153.
+      if (a.contracts.length) return a.contracts.map((c) => c.name).join(", ");
+      if (a.contractsNone) return FIELD_STATE_COPY.noneYet;
+      return a.contractsLegacy?.trim() ? a.contractsLegacy.trim() : null;
     case "externalDeps":
       if (a.externalDepsNone) return FIELD_STATE_COPY.none;
       return a.externalDeps.length ? a.externalDeps.map((d) => d.name).join(", ") : null;
@@ -133,7 +136,7 @@ export function fieldText(doc: ProjectDoc, key: WaivableField): string {
 export const FIELD_PATCH_PATH: Record<WaivableField, string> = {
   subsectors: "subsectors",
   sectorOther: "sectorOther",
-  contracts: "architecture.contracts",
+  contracts: "architecture.contracts as rows of name and why, or architecture.contractsNone true",
   externalDeps: "architecture.externalDeps, or architecture.externalDepsNone true",
   oracles: "architecture.oracleUse none or uses, with architecture.oracles",
   adminFunctions: "architecture.adminFunctions",

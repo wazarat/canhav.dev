@@ -313,7 +313,20 @@ export default async function ProjectPublicPage({
         <Section title="Contract architecture">
           {openFields(doc).length ? <p className="text-xs text-ink-500">{FIELD_STATE_COPY.publicNote}</p> : null}
           <div className="space-y-4">
-            <Prose label="Contracts" text={fieldText(doc, "contracts")} />
+            {doc.architecture.contracts.length ? (
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-ink-500">Contracts</p>
+                <ul className="mt-1 space-y-1.5">
+                  {doc.architecture.contracts.map((c, i) => (
+                    <li key={`${c.name}-${i}`} className="text-sm leading-relaxed text-ink-200">
+                      <span className="font-medium text-ink-50">{c.name}.</span> {c.why}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <Prose label="Contracts" text={doc.architecture.contractsLegacy?.trim() || fieldText(doc, "contracts")} />
+            )}
             <div>
               <p className="text-[11px] uppercase tracking-wide text-ink-500">
                 External dependencies

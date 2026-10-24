@@ -4,6 +4,7 @@ import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
 import { type AgentRequest, normalizeAgentRequests } from "@/lib/agent-requests";
 import { type Briefs, normalizeBriefs } from "@/lib/draft/briefs";
+import { cutAtWord } from "@/lib/text";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
 import { type UpdateCadence, isUpdateCadence } from "@/lib/updates";
@@ -205,6 +206,35 @@ export interface ExternalDep {
   url?: string;
 }
 
+/** One contract the project has or plans, with why it exists (M153, F11). */
+export interface ContractEntry {
+  name: string;
+  why: string;
+}
+
+/**
+ * Rows of name and why (M153): trimmed, cut at a word, a row without a name
+ * or a why drops, capped. A string (the answer from before M153) is not
+ * parsed; the caller keeps it as the legacy text. Pure.
+ */
+export function normalizeWhyEntries<T extends ContractEntry>(raw: unknown, max: number, keep?: (row: T, o: Record<string, unknown>) => T): T[] {
+  if (!Array.isArray(raw)) return [];
+  const L = PROJECT_LIMITS;
+  const out: T[] = [];
+  for (const v of raw) {
+    if (!v || typeof v !== "object") continue;
+    const o = v as Record<string, unknown>;
+    const name = typeof o.name === "string" ? cutAtWord(o.name.trim(), L.whyEntryName.max) : "";
+    const why = typeof o.why === "string" ? cutAtWord(o.why.trim(), L.whyEntryWhy.max) : "";
+    if (!name && !why) continue;
+    let row = { name, why } as T;
+    if (keep) row = keep(row, o);
+    out.push(row);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 /**
  * A file the team keeps for this project, by reference (M53). Nothing is
  * uploaded. `location` is a link or a path on the team's own machine, so a
@@ -302,8 +332,12 @@ export interface ProjectDoc {
   whyThisChain: string;
   stage: ProjectStage | "";
   architecture: {
-    /** What contracts exist (or "None yet"). */
-    contracts: string;
+    /** One row per contract with why it exists (M153). */
+    contracts: ContractEntry[];
+    /** The honest "None yet" (M153), like externalDepsNone. */
+    contractsNone: boolean;
+    /** The free text answer from before M153, kept readable until the team or its agent splits it into rows. Optional, never injected. */
+    contractsLegacy?: string;
     /** External dependencies, one entry per contract/protocol, each linkable. */
     externalDeps: ExternalDep[];
     /** Explicit "no external dependencies" is a first-class answer. */
@@ -521,6 +555,10 @@ export const PROJECT_LIMITS = {
   personaAgeRange: { max: 12 },
   architectureField: { min: 4, max: 800 },
   externalDeps: { max: 12 },
+  /** Contracts and admin functions as rows (M153, M154). */
+  whyEntries: { max: 30 },
+  whyEntryName: { min: 2, max: 80 },
+  whyEntryWhy: { min: 10, max: 300 },
   externalDepName: { min: 2, max: 80 },
   externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
@@ -579,9 +617,21 @@ export function isWaivableField(value: unknown): value is WaivableField {
  */
 export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
   const doc = raw as ProjectDoc & {
-    architecture: ProjectDoc["architecture"] & { externalDeps: ExternalDep[] | string };
+    architecture: ProjectDoc["architecture"] & { externalDeps: ExternalDep[] | string; contracts: ContractEntry[] | string };
   };
   const a = doc.architecture ?? ({} as (typeof doc)["architecture"]);
+
+  // Contracts (M153): rows of name and why. A stored string is the answer
+  // from before M153; it is kept as the legacy text, never parsed.
+  const rawArchContracts = a.contracts;
+  const contractsLegacy =
+    typeof rawArchContracts === "string" && rawArchContracts.trim()
+      ? cutAtWord(rawArchContracts.trim(), PROJECT_LIMITS.architectureField.max)
+      : typeof a.contractsLegacy === "string" && a.contractsLegacy.trim()
+        ? cutAtWord(a.contractsLegacy.trim(), PROJECT_LIMITS.architectureField.max)
+        : undefined;
+  const contracts = normalizeWhyEntries<ContractEntry>(rawArchContracts, PROJECT_LIMITS.whyEntries.max);
+  const contractsNone = a.contractsNone === true && contracts.length === 0;
 
   let externalDeps: ExternalDep[];
   const rawDeps = a.externalDeps;
@@ -868,7 +918,7 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     else delete (rest as { mainnet?: unknown }).mainnet;
   }
 
-  return {
+  const out: ProjectDoc = {
     ...(rest as ProjectDoc),
     ...(kit ? { kit } : {}),
     sector,
@@ -882,12 +932,18 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     whoPays,
     architecture: {
       ...a,
+      contracts,
+      contractsNone,
+      ...(contractsLegacy ? { contractsLegacy } : {}),
       externalDeps,
       externalDepsNone: a.externalDepsNone === true,
       oracleUse,
       oracles,
     },
   };
+  // A string answer became rows and legacy text (M153); the key must not linger.
+  if (!contractsLegacy) delete (out.architecture as { contractsLegacy?: string }).contractsLegacy;
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -1250,8 +1306,17 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   // The contract and security fields are recommended since M130 (see
   // lib/project-fields.ts); only their bounds and shapes are checked here.
   const a = doc.architecture;
-  p = checkText("Contracts", a.contracts, { max: L.architectureField.max });
-  if (p) return p;
+  if (a.contracts.length > L.whyEntries.max) return `At most ${L.whyEntries.max} contracts.`;
+  for (const row of a.contracts) {
+    p = checkText("Contract name", row.name, L.whyEntryName);
+    if (p) return p;
+    p = checkText("Contract why", row.why, { max: L.whyEntryWhy.max });
+    if (p) return p;
+  }
+  if (a.contractsLegacy !== undefined) {
+    p = checkText("Contracts", a.contractsLegacy, { max: L.architectureField.max });
+    if (p) return p;
+  }
   if (a.externalDeps.length > L.externalDeps.max)
     return `At most ${L.externalDeps.max} external dependencies.`;
   for (const dep of a.externalDeps) {
@@ -1613,7 +1678,8 @@ export function emptyProjectDoc(name = ""): ProjectDoc {
     whyThisChain: "",
     stage: "",
     architecture: {
-      contracts: "",
+      contracts: [],
+      contractsNone: false,
       externalDeps: [],
       externalDepsNone: false,
       oracleUse: "",

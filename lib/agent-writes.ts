@@ -217,7 +217,13 @@ export const projectPatchSchema = z
     stage: z.enum(["idea", "design_doc", "prototype", "testnet_deployed", "live_elsewhere"]),
     architecture: z
       .strictObject({
-        contracts: z.string().max(L.architectureField.max),
+        // One row per contract with why it exists (M153); the list replaces the stored list.
+        contracts: z
+          .array(z.strictObject({ name: z.string().min(L.whyEntryName.min).max(L.whyEntryName.max), why: z.string().min(L.whyEntryWhy.min).max(L.whyEntryWhy.max) }))
+          .max(L.whyEntries.max),
+        contractsNone: z.boolean(),
+        /** Only null, to drop the answer from before M153 once it is split into rows. */
+        contractsLegacy: z.null(),
         externalDeps: z
           .array(
             z.strictObject({
@@ -744,6 +750,10 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   // The two dependency answers exclude each other. The one the agent sent wins.
   if (patch.architecture?.externalDepsNone === true) a.externalDeps = [];
   else if (patch.architecture?.externalDeps?.length) a.externalDepsNone = false;
+  // Contracts (M153): None yet and rows exclude each other; null drops the legacy text.
+  if (patch.architecture?.contractsNone === true) a.contracts = [];
+  else if (patch.architecture?.contracts?.length) a.contractsNone = false;
+  if (patch.architecture && "contractsLegacy" in patch.architecture) delete (a as { contractsLegacy?: string }).contractsLegacy;
   next = { ...next, architecture: a };
   // Classification in the order the editor asks for it, each with its cascade.
   if (sectors) next = { ...next, ...sectorsChange(next, sectors) };
@@ -1104,8 +1114,21 @@ function showGrant(programId: string): (v: unknown) => string {
  * the profiles, the palette and fonts, the deck and the grant answers.
  * Each is a leaf in changeLines.
  */
+/** Rows of name and why (M153), two lines per row so proposals read as the editor shows them. */
+function showWhyRows(v: unknown): string {
+  if (!Array.isArray(v)) return show(v);
+  return v
+    .map((r) => {
+      const o = (r ?? {}) as { name?: unknown; why?: unknown; contract?: unknown; holder?: unknown };
+      const tail = [o.contract ? `on ${String(o.contract)}` : "", o.holder ? `held by ${String(o.holder)}` : ""].filter(Boolean).join(", ");
+      return `${String(o.name ?? "")}\n${String(o.why ?? "")}${tail ? `\n${tail}` : ""}`;
+    })
+    .join("\n\n");
+}
+
 function fieldRenderer(path: string): ((v: unknown) => string) | null {
   if (path === "icp") return showIcp;
+  if (path === "architecture.contracts" || path === "architecture.adminFunctions") return showWhyRows;
   if (path === "brand.palette") return showLabelled(STUDIO_PLUS_COPY.brand.swatches);
   if (path === "brand.fonts") return showLabelled({ display: STUDIO_PLUS_COPY.brand.display, body: STUDIO_PLUS_COPY.brand.body });
   if (path === "investorPack.deck") return showDeck;
@@ -1151,6 +1174,9 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
 
 /** Paths whose field name would read oddly (M51). */
 const PATH_LABELS: Record<string, string> = {
+  "architecture.contracts": "Contracts",
+  "architecture.contractsNone": "Contracts, none yet",
+  "architecture.contractsLegacy": "Contracts, the earlier answer",
   references: "Project files",
   waived: "Not applicable",
   "kit.shapes": "Product shapes",

@@ -194,6 +194,23 @@ export const BUILD_COPY = {
     templates: "Templates",
     templatesEmpty: "No template decided yet. Decide them from the Build tab or let your agent.",
     contracts: "Contracts",
+    /** One row per contract with why it exists (M153, F11). */
+    contractRows: {
+      label: "What contracts exist",
+      hint: "One row per contract, the name on top and why it exists under it. Your agent can fill these from the repository.",
+      namePlaceholder: "Vault",
+      whyPlaceholder: "Holds deposits and allocates them across the curated markets.",
+      nameField: "Contract name",
+      whyField: "Why it exists",
+      add: "Add a contract",
+      remove: "Remove",
+      none: "None yet is an honest answer. There are no contracts to list.",
+      limit: (max: number) => `At most ${max} contracts.`,
+      legacy: "Your earlier answer is kept here. Split it into one contract per row, or ask your agent to.",
+      legacyRemove: "Remove the earlier answer",
+      /** Beside a row whose name matches a recorded testnet contract (M153). */
+      onChain: (short: string) => `On the testnet at ${short}`,
+    },
     dependencies: "External dependencies",
     oracles: "Oracles",
     admin: "Admin functions",
