@@ -3,6 +3,7 @@ import "server-only";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { AUDIENCE_OPTIONS, PAYER_OPTIONS, optionLabel } from "@/content/ideation";
 import { CANVAS_BLOCKS, CANVAS_LIMITS, type CanvasBlock, canvasBlockDraftSchema, canvasDraftSchema, isCanvasBlock } from "@/lib/canvas";
+import { itemTexts } from "@/lib/canvas-items";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import { cutAtWord } from "@/lib/text";
@@ -26,34 +27,44 @@ function blockGuide(): string {
   return CANVAS_BLOCKS.map((b) => `${b}: ${labels[b].label}. ${labels[b].hint}`).join("\n"); // copy-ok, model context
 }
 
-function fixtureFor(doc: ProjectDoc): Record<CanvasBlock, string> {
+/** Short lines, one idea each (M155): trimmed, cut at a word, empties dropped, capped. */
+function cleanItems(lines: readonly string[]): string[] {
+  return lines
+    .map((l) => cutAtWord(l.trim().replace(/^[-*\u2022]\s*/, ""), CANVAS_LIMITS.item.max))
+    .filter((l) => l.length >= CANVAS_LIMITS.item.min)
+    .slice(0, CANVAS_LIMITS.items.max);
+}
+
+const ITEM_RULE = `Each block is a list of three to six short items, one idea each, at most ${CANVAS_LIMITS.item.max} characters, no full sentences needed.`; // copy-ok, model context
+
+function fixtureFor(doc: ProjectDoc): Record<CanvasBlock, string[]> {
   const name = doc.name || "The product";
-  return Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, `${labels[b].label} for ${name}, drafted from the record. (Fixture, no model key is set locally.)`])) as Record<CanvasBlock, string>;
+  return Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, [`${labels[b].label} item for ${name}`, "Drafted from the record", "Fixture, no model key is set locally"]])) as Record<CanvasBlock, string[]>;
 }
 
 registerDraftKind("canvas", {
   schema: canvasDraftSchema,
-  clean: (value) => Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, cutAtWord((value[b] ?? "").trim(), CANVAS_LIMITS.block.max)])) as typeof value,
+  clean: (value) => Object.fromEntries(CANVAS_BLOCKS.map((b) => [b, cleanItems(value[b] ?? [])])) as typeof value,
   extras: (doc) => customerExtras(doc),
   instructions: () =>
-    `${DRAFT_VOICE}\n\nWrite a Business Model Canvas for this project, one paragraph of at most 600 characters per block, no lists. Name the payer from the record in revenue streams. The blocks are\n${blockGuide()}`,
-  ask: () => "Draft all nine blocks.",
+    `${DRAFT_VOICE}\n\nWrite a Business Model Canvas for this project. ${ITEM_RULE} Name the payer from the record in revenue streams. The blocks are\n${blockGuide()}`,
+  ask: () => "Draft all nine blocks as lists of items.",
   fixture: (doc) => fixtureFor(doc),
 });
 
 registerDraftKind("canvas_block", {
   schema: canvasBlockDraftSchema,
-  clean: (value) => ({ text: cutAtWord(value.text.trim(), CANVAS_LIMITS.block.max) }),
+  clean: (value) => ({ items: cleanItems(value.items) }),
   extras: (doc, body) => {
     const block = body.block;
     const current = doc.canvas ?? {};
-    const others = CANVAS_BLOCKS.filter((b) => b !== block && current[b]).map((b) => `${labels[b].label}: ${current[b]}`); // copy-ok, model context
+    const others = CANVAS_BLOCKS.filter((b) => b !== block && current[b]?.length).map((b) => `${labels[b].label}: ${itemTexts(current[b]).join("; ")}`); // copy-ok, model context
     return [...customerExtras(doc), ...(others.length ? [`## The other blocks as they stand\n${others.join("\n")}`] : [])];
   },
   instructions: (_doc, body) => {
     const block = isCanvasBlock(body.block) ? body.block : "valueProposition";
-    return `${DRAFT_VOICE}\n\nRewrite one block of the Business Model Canvas, ${labels[block].label}. ${labels[block].hint} One paragraph of at most 600 characters, no lists, consistent with the other blocks.`;
+    return `${DRAFT_VOICE}\n\nRewrite one block of the Business Model Canvas, ${labels[block].label}. ${labels[block].hint} ${ITEM_RULE} Stay consistent with the other blocks.`;
   },
-  ask: (_doc, body) => `Redraft ${isCanvasBlock(body.block) ? labels[body.block].label : "the block"}.`,
-  fixture: (doc, body) => ({ text: fixtureFor(doc)[isCanvasBlock(body.block) ? body.block : "valueProposition"] }),
+  ask: (_doc, body) => `Redraft ${isCanvasBlock(body.block) ? labels[body.block].label : "the block"} as a list of items.`,
+  fixture: (doc, body) => ({ items: fixtureFor(doc)[isCanvasBlock(body.block) ? body.block : "valueProposition"] }),
 });

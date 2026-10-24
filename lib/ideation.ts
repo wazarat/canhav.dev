@@ -1432,8 +1432,9 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.canvas) {
     for (const b of CANVAS_BLOCKS) {
       const v = doc.canvas[b];
-      if (v !== undefined && (typeof v !== "string" || v.length > CANVAS_LIMITS.block.max))
-        return `A canvas block is at most ${CANVAS_LIMITS.block.max} characters.`;
+      if (v === undefined) continue;
+      if (!Array.isArray(v) || v.length > CANVAS_LIMITS.items.max) return `A canvas block holds at most ${CANVAS_LIMITS.items.max} items.`;
+      for (const item of v) if (typeof item?.text !== "string" || item.text.length > CANVAS_LIMITS.item.max) return `A canvas item is at most ${CANVAS_LIMITS.item.max} characters.`;
     }
   }
   if (doc.summary) {

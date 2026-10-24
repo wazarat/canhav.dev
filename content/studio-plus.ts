@@ -174,10 +174,20 @@ export const STUDIO_PLUS_COPY = {
   /** The Business Model Canvas (M113). */
   canvas: {
     title: "Business model",
-    intro: "Nine blocks, drafted from what the record already says about the product, the personas and who pays, then yours to edit. Accelerators and grants ask for it.",
+    intro: "The classic nine block canvas, each block a few short items. Drafted from what the record already says about the product, the personas and who pays, then yours to edit block by block. Accelerators and grants ask for it.",
     filled: (n: number) => `${n} of 9 blocks filled`,
     draft: "Draft the canvas",
     redraft: "Redraft",
+    /** The block cards (M155). */
+    add: "Add",
+    edit: "Edit",
+    addItem: "Add an item",
+    done: "Done",
+    remove: "Remove",
+    empty: "Nothing here yet.",
+    itemPlaceholder: "One idea, in a few words",
+    count: (n: number, max: number) => `${n} of ${max} items`,
+    keys: "Enter adds the next item, Escape closes.",
     blocks: {
       customerSegments: { label: "Customer segments", hint: "Who the product is for, in order of priority." },
       valueProposition: { label: "Value proposition", hint: "What they get that they cannot get elsewhere." },
@@ -263,7 +273,7 @@ export const STUDIO_PLUS_COPY = {
   features: {
     bmc: {
       title: "Business Model Canvas",
-      teaser: "A nine block canvas on the Business model tab, drafted from the pitch, the personas and who pays, then edited by you.",
+      teaser: "The classic nine block canvas on the Business model tab, each block a few short items, drafted from the pitch, the personas and who pays, then edited by you.",
     },
     icp: {
       title: "ICP",

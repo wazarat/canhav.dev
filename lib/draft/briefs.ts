@@ -46,10 +46,10 @@ export const BRIEF_QUESTIONS: Record<DraftKind, BriefQuestion[]> = {
     { id: "objection" },
   ],
   canvas: [
-    { id: "revenue", answered: (doc) => Boolean(doc.canvas?.revenueStreams?.trim()) },
-    { id: "channels", answered: (doc) => Boolean(doc.canvas?.channels?.trim()) },
-    { id: "partners", answered: (doc) => Boolean(doc.canvas?.keyPartners?.trim()) },
-    { id: "cost", answered: (doc) => Boolean(doc.canvas?.costStructure?.trim()) },
+    { id: "revenue", answered: (doc) => Boolean(doc.canvas?.revenueStreams?.length) },
+    { id: "channels", answered: (doc) => Boolean(doc.canvas?.channels?.length) },
+    { id: "partners", answered: (doc) => Boolean(doc.canvas?.keyPartners?.length) },
+    { id: "cost", answered: (doc) => Boolean(doc.canvas?.costStructure?.length) },
   ],
   // One block asks the canvas question for that block, when it has one; the block's own text is being redrafted, so it never counts as answered.
   canvas_block: [

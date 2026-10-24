@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { canvasPatchSchema } from "@/lib/canvas";
+import { CANVAS_ITEM_LIMITS, type Canvas, type CanvasBlock, canvasPatchSchema } from "@/lib/canvas";
+import { normalizeItems } from "@/lib/canvas-items";
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
@@ -756,7 +757,17 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.icp === null) next = dropKey(next, "icp");
   else if (patch.icp) next = { ...next, icp: patch.icp };
   if (patch.canvas === null) next = dropKey(next, "canvas");
-  else if (patch.canvas) next = { ...next, canvas: { ...(next.canvas ?? {}), ...patch.canvas } };
+  else if (patch.canvas) {
+    // Each block sent replaces the stored block (M155): a paragraph or plain lines are lifted into items, an item sent with its id keeps it.
+    const merged: Canvas = { ...(next.canvas ?? {}) };
+    for (const [b, v] of Object.entries(patch.canvas) as Array<[CanvasBlock, unknown]>) {
+      if (v === undefined) continue;
+      const items = normalizeItems(v, CANVAS_ITEM_LIMITS);
+      if (items.length) merged[b] = items;
+      else delete merged[b];
+    }
+    next = Object.keys(merged).length ? { ...next, canvas: merged } : dropKey(next, "canvas");
+  }
   if (patch.summary === null) next = dropKey(next, "summary");
   else if (patch.summary) next = { ...next, summary: { ...patch.summary, updatedAt: new Date().toISOString() } };
   const a = { ...next.architecture };
@@ -1143,8 +1154,16 @@ function showWhyRows(v: unknown): string {
     .join("\n\n");
 }
 
+/** A canvas block as its items, one per line (M155); ids never show. */
+function showItems(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (!Array.isArray(v)) return show(v);
+  return v.map((i) => (typeof i === "string" ? i : String((i as { text?: unknown })?.text ?? ""))).filter(Boolean).join("\n");
+}
+
 function fieldRenderer(path: string): ((v: unknown) => string) | null {
   if (path === "icp") return showIcp;
+  if (path.startsWith("canvas.")) return showItems;
   if (path === "architecture.contracts" || path === "architecture.adminFunctions") return showWhyRows;
   if (path === "brand.palette") return showLabelled(STUDIO_PLUS_COPY.brand.swatches);
   if (path === "brand.fonts") return showLabelled({ display: STUDIO_PLUS_COPY.brand.display, body: STUDIO_PLUS_COPY.brand.body });

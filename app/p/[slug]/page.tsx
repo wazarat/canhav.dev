@@ -40,7 +40,8 @@ import { getSessionUser } from "@/lib/auth";
 import { BUILD_COPY } from "@/content/build";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { Card } from "@/components/ui/Card";
-import { CANVAS_BLOCKS, canvasFilled } from "@/lib/canvas";
+import { CanvasBlockFrame, CanvasGrid, CanvasItemsList } from "@/components/build/CanvasGrid";
+import { canvasFilled } from "@/lib/canvas";
 import { brandVars } from "@/lib/brand/record";
 import { getCurve, getTokensByCreator } from "@/lib/indexer";
 import {
@@ -290,14 +291,14 @@ export default async function ProjectPublicPage({
 
         {doc.canvas && canvasFilled(doc.canvas) > 0 ? (
           <Section title={STUDIO_PLUS_COPY.canvas.title}>
-            <div className="grid gap-3 md:grid-cols-2">
-              {CANVAS_BLOCKS.filter((b) => doc.canvas?.[b]).map((b) => (
-                <Card key={b} className="p-4">
-                  <p className="text-[11px] uppercase tracking-wide text-ink-500">{STUDIO_PLUS_COPY.canvas.blocks[b].label}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-ink-200">{doc.canvas?.[b]}</p>
-                </Card>
-              ))}
-            </div>
+            {/* The same classic grid as the editor, read only (M155). */}
+            <CanvasGrid
+              render={(b, placement) => (
+                <CanvasBlockFrame key={b} block={b} title={STUDIO_PLUS_COPY.canvas.blocks[b].label} className={placement}>
+                  <CanvasItemsList items={doc.canvas?.[b]} empty={STUDIO_PLUS_COPY.canvas.empty} />
+                </CanvasBlockFrame>
+              )}
+            />
           </Section>
         ) : null}
 

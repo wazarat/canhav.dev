@@ -485,8 +485,13 @@ function positioningLines(c: Competitors | undefined): string[] {
 /** "## Business model", the nine canvas blocks (M113), or nothing. */
 function canvasLines(canvas: Canvas | undefined): string[] {
   if (!canvas || canvasFilled(canvas) === 0) return [];
+  // Each block as a list of its items (M155).
   const lines = ["## Business model", ""];
-  for (const b of CANVAS_BLOCKS) if (canvas[b]) lines.push(`**${STUDIO_PLUS_COPY.canvas.blocks[b].label}.** ${canvas[b]}`, "");
+  for (const b of CANVAS_BLOCKS) {
+    const items = canvas[b];
+    if (!items?.length) continue;
+    lines.push(`**${STUDIO_PLUS_COPY.canvas.blocks[b].label}.**`, ...items.map((i) => `- ${i.text}`), "");
+  }
   return lines;
 }
 
