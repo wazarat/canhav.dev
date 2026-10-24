@@ -43,7 +43,7 @@ export function LaunchesSummary({
           </Button>
         ) : (
           <Link
-            href="/launch"
+            href="/studio"
             className="text-xs text-electric-300 transition-colors hover:text-electric-200"
           >
             {C.launchOne} →

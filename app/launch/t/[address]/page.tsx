@@ -156,7 +156,7 @@ function UnresolvedLaunch({
   return (
     <div className="container max-w-6xl py-14 md:py-20">
       <Link
-        href="/explore"
+        href="/studio"
         className="inline-flex items-center gap-1.5 text-sm text-ink-400 transition-colors hover:text-ink-100"
       >
         <ArrowLeft className="h-4 w-4" /> {TOKEN_PAGE_COPY.back}
@@ -336,7 +336,7 @@ export default async function TokenPage({
   return (
     <div className="container max-w-6xl py-14 md:py-20">
       <Link
-        href="/explore"
+        href="/studio"
         className="inline-flex items-center gap-1.5 text-sm text-ink-400 transition-colors hover:text-ink-100"
       >
         <ArrowLeft className="h-4 w-4" /> {TOKEN_PAGE_COPY.back}

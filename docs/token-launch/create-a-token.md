@@ -4,7 +4,7 @@
 
 This page explains what a launch deploys and stores. For the form itself, field by field, see [The launch form](launch-form.md).
 
-Launches from the **Launch** tab (`/launch`) go through the **CurveLauncher** on the chain you pick, which puts the supply on a [bonding curve](bonding-curve.md). A TokenFactory is also deployed on each chain for launches made by script, which is the only path that can create a vesting wallet.
+Launches from the launch form (`/launch`, opened from a project) go through the **CurveLauncher** on the chain you pick, which puts the supply on a [bonding curve](bonding-curve.md). A TokenFactory is also deployed on each chain for launches made by script, which is the only path that can create a vesting wallet.
 
 ## What gets deployed
 

@@ -931,8 +931,6 @@ export const STUDIO_COPY = {
     studio: "Studio home",
     launches: "Launches",
     templates: "Contract templates",
-    explore: "Explore",
-    launch: "Launch a token",
     openProject: (name: string) => `Project ${name || "Untitled"}`,
     openDesign: (name: string) => `Token design ${name || "Untitled"}`,
     step: (label: string) => `Go to ${label}`,
@@ -959,7 +957,7 @@ export const STUDIO_COPY = {
         : `You have launched ${count} tokens${newest ? `, newest ${newest}` : ""}`,
     viewAll: "View all launches",
     viewAllHint: "Opens in a new tab",
-    launchOne: "Launch a token",
+    launchOne: "Start from a project",
     none: "No launches yet. Launch a token while signed in and it appears here and in get_my_launches.",
     pageTitle: "Your launches",
     pageSubtitle:

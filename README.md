@@ -549,3 +549,8 @@ event window so judges can verify it.
   every tool carries MCP annotations.
 
 This list grows as work lands on the branch.
+- Oct 24, 2026. Light once signed in, a quieter nav (M146, M147). The studio
+  opens light for a signed in person and the site stays dark signed out; the
+  nav toggle's choice is stored and wins. Launch and Explore leave the nav: a
+  launch starts from a project (Launch a token from this project) and
+  /explore stays reachable by URL, unindexed.

@@ -89,7 +89,7 @@ export const LAUNCH_TARGET_COPY = {
   handoffOffChain: (venue: string) =>
     `Ideating for ${venue}, which runs on ${ROBINHOOD_MAINNET} mainnet. This project builds on Arbitrum Sepolia, so the launch stays on the CanHav curve unless the project moves chain.`,
   /** For the curve itself. */
-  handoffCurve: "Ideating for the CanHav curve. Launch on the project's testnet from the Launch tab once the design is published.",
+  handoffCurve: "Ideating for the CanHav curve. Launch on the project's testnet from the project once the design is published.",
   /** Pack and export section titles. */
   packTitle: "Launch venue",
   ponsFitTitle: "Templates with a Pons fit",

@@ -1,6 +1,6 @@
 # Public pages
 
-**Available now.** Project pages live at `/p/[slug]`. Token design pages live at `/t/[slug]`. Launched tokens are listed at `/explore`, and published projects at `/explore?view=projects`.
+**Available now.** Project pages live at `/p/[slug]`. Token design pages live at `/t/[slug]`. Launched tokens are listed at `/explore`, and published projects at `/explore?view=projects` (both reachable by URL, not from the navigation).
 
 ## Separate entities
 

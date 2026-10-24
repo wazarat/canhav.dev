@@ -1,6 +1,7 @@
 /**
- * Config and validators for the /launch page (testnet token launchpad), the
- * Launch tab in the primary nav. Nothing here touches a network.
+ * Config and validators for the /launch page (testnet token launchpad),
+ * reached from a project (Launch a token from this project) since M147, no
+ * longer from the primary nav. Nothing here touches a network.
  */
 import { formatEther } from "viem";
 
@@ -447,7 +448,7 @@ export const MCP_CONNECT = {
 
 /** The token page in its market layout (M58). ETH only, both chains are testnets. */
 export const TOKEN_PAGE_COPY = {
-  back: "Back to explore",
+  back: "Back to the studio",
   /** Anchor the context card's commitment link scrolls to. */
   commitmentAnchor: "commitment",
   about: {

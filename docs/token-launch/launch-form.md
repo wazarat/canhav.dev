@@ -2,7 +2,7 @@
 
 **Available now** on Robinhood Chain Testnet and Arbitrum Sepolia.
 
-The **Launch** tab (`/launch`) is a two-step form. Step 1, **Token**, collects what the token is. Step 2, **Launch**, is the review and the one transaction. This page explains each part. For what the transaction does on-chain, see [Create a token](create-a-token.md).
+The launch form (`/launch`), opened from a project with **Launch a token from this project**, is a two-step form. Step 1, **Token**, collects what the token is. Step 2, **Launch**, is the review and the one transaction. This page explains each part. For what the transaction does on-chain, see [Create a token](create-a-token.md).
 
 ## Reading the form
 

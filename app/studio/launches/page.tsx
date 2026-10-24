@@ -110,7 +110,7 @@ export default async function StudioLaunchesPage({
                 {C.title}
                 {shownLaunches ? <span className="ml-2 text-sm font-normal text-ink-400">{shownLaunches.length}</span> : null}
               </h2>
-              <Link href="/launch" className="text-xs text-electric-300 transition-colors hover:text-electric-200">
+              <Link href="/studio" className="text-xs text-electric-300 transition-colors hover:text-electric-200">
                 {C.launchOne} →
               </Link>
             </div>

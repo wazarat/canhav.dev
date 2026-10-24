@@ -10,7 +10,7 @@ Pick a chain and fund your wallet on it. See [Network setup](network-setup.md) f
 
 ## 2. Open Launch and pick the chain
 
-Go to the **Launch** tab (`/launch`). Choose **Robinhood testnet** or **Arbitrum Sepolia** under Chain, then connect your wallet. Approve the network switch if the wallet asks.
+Open a project in the studio and click **Launch a token from this project** (the form at `/launch`). Choose **Robinhood testnet** or **Arbitrum Sepolia** under Chain, then connect your wallet. Approve the network switch if the wallet asks.
 
 ## 3. Describe the token
 

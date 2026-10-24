@@ -2,7 +2,7 @@
 
 **Available now.**
 
-The **Explore** tab (`/explore`) is the board of everything launched and published through CanHav, on both chains. A toggle switches it between two views.
+The Explore board (`/explore`) lists everything launched and published through CanHav, on both chains. It is reachable by URL and is not linked from the navigation, since tokens are created from a project in the studio. A toggle switches it between two views.
 
 ## Views
 

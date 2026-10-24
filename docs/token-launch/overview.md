@@ -14,7 +14,7 @@ CanHav has no affiliation with Robinhood. Robinhood Chain does not distribute to
 |------|--------|
 | Networks | Robinhood Chain Testnet (chain ID `46630`) and Arbitrum Sepolia (chain ID `421614`). See [Network setup](network-setup.md). |
 | Launcher | **CurveLauncher**, one per chain. Every launch from `/launch` goes through it. A TokenFactory is also deployed on each chain for launches made by script; on Robinhood Chain Testnet factory v4 is live and v1 to v3 are paused. Every token stays indexed and browsable. |
-| Product UI | The **Launch** tab (`/launch`) and the **Explore** tab (`/explore`) on canhav.com. |
+| Product UI | The launch form (`/launch`), opened from a project with **Launch a token from this project**, and the Explore board (`/explore`, reachable by URL) on canhav.com. Neither sits in the navigation; a launch starts from a project in the studio. |
 | Audience | Builders and testers. Not a mainnet product. |
 
 {% hint style="warning" %}

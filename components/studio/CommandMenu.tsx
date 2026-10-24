@@ -100,8 +100,6 @@ export function CommandMenu() {
       { id: "go:studio", label: C.studio, group: C.groups.go, run: go("/studio") },
       { id: "go:launches", label: C.launches, group: C.groups.go, run: go("/studio/launches") },
       { id: "go:templates", label: C.templates, group: C.groups.go, run: go("/studio/templates") },
-      { id: "go:explore", label: C.explore, group: C.groups.go, run: go("/explore") },
-      { id: "go:launch", label: C.launch, group: C.groups.go, keywords: "token curve", run: go("/launch") },
       ...registered.filter((c) => c.group !== C.groups.project),
       ...(records?.projects ?? []).map((r) => ({
         id: `open:project:${r.id}`,

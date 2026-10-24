@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   title: "Explore",
   description:
     "Every token launched through CanHav on Robinhood Chain Testnet and Arbitrum Sepolia and every project published from the studio, newest first.",
+  // Unlinked since M147 and kept out of search; reachable by URL only.
+  robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";

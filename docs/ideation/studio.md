@@ -33,7 +33,7 @@ Every step says the same thing at the bottom: everything here can be changed lat
 
 ### The launches page
 
-`/studio/launches` lists every launch of the account, then every project still in progress, with a chain filter (all chains, Robinhood testnet, Arbitrum Sepolia) kept in the URL. It is reached from the studio home and is not linked from the navigation.
+`/studio/launches` lists every launch of the account, then every project still in progress, with a chain filter (all chains, Robinhood testnet, Arbitrum Sepolia) kept in the URL. It is reached from the studio home and is not linked from the navigation, which since M147 carries only Docs, the theme toggle and the account button.
 
 ### A launch row
 
