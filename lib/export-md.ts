@@ -837,6 +837,8 @@ export function buildAgentsMd(input: {
       "",
       "Treat the worst-case answer as the review bar: changes touching value",
       "flows deserve scrutiny proportional to it.",
+      "",
+      "Before proposing architecture, call get_comparables on this project's MCP server for how protocols in the same subsectors are built and what goes wrong with each design (no metrics or dates on purpose), and read its risks before the security review passes.",
     );
     // Recommended fields the team left open (M130): the agent states each or waives it.
     const open = openFieldLines(project);

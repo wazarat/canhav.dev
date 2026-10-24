@@ -24,6 +24,10 @@ memory.
   records them in the manifest. `unofficial` means a community artifact to
   verify before trusting. `testnet_only` means do not carry it to mainnet.
   `not_on_robinhood` means background reading only.
+- Call `get_comparables` on the project's MCP server for how protocols in this
+  subsector are built, how they differ and what goes wrong with each design.
+  It carries no metrics or dates on purpose; read the linked docs for anything
+  current. Read its risks before the security review passes.
 
 ## Then, work in this order
 

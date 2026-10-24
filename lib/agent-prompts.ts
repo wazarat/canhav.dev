@@ -49,7 +49,7 @@ export function continueBuildPrompt(name: string, projectId: string, openSteps: 
     serverLine(alias),
     `These build steps are still open on the project page.`,
     list,
-    `1. Call get_build_steps and report_session with your plan for the first three.`,
+    `1. Call get_build_steps and get_comparables, then report_session with your plan for the first three.`,
     `2. Work through them in this repository. Tick each one with set_build_steps as soon as it is done, with the file, test or address as evidence. Mark a step that does not fit this product notApplicable with the reason.`,
     `3. Call set_summary with the updated built and building lists, then tell me where things stand.`,
   ].join("\n\n");

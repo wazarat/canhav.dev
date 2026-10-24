@@ -21,6 +21,7 @@ import {
   designWarnings,
 } from "@/lib/mcp/design-views";
 import { KIT_CATALOG } from "@/content/kits/catalog";
+import { COMPARABLES_NOTE, COMPARABLES_SOURCE, COMPARABLE_SECTIONS, type ComparableSection, assetTypeFacets, assetTypes, comparableById, comparablesForSubsectors, pickSections, subsectorsForShape } from "@/lib/comparables";
 import { GATE_COPY, SHAPE_OPTIONS, FAMILY_LABELS } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { SECTOR_OPTIONS, SUBSECTOR_OPTIONS_BY_SECTOR } from "@/content/ideation";
@@ -390,6 +391,51 @@ export function registerAllTools(server: McpServer): void {
         total: list.length,
         templates: list.map(view),
       });
+    },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_comparables",
+    {
+      title: "Comparables, how protocols in a subsector are built",
+      description:
+        "Reference research on how existing protocols in a subsector are designed, how they differ from each other and what goes wrong with each design, from the canhav.co research store. Each entity carries its components (the contracts and tokens that make it up), contrasts with other entities (similarities, differences, positioning), risks by category, external dependencies with severity, links to the docs and the source, and templateIds into get_template_catalog where CanHav carries the protocol's contracts. It carries no metrics, no dates and no rankings on purpose; read the linked docs for anything current. A protocol appearing here says nothing about whether it is deployed on Robinhood Chain or Arbitrum testnets; get_template_catalog and the resource pack's environment block answer that. Filter by subsector, shape (resolved through the shape's subsectors) or entity (one id), and narrow with include. No sign-in needed.",
+      inputSchema: z.object({
+        subsector: z.enum(SUBSECTOR_VALUES as [Subsector, ...Subsector[]]).optional(),
+        shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
+        entity: z.string().max(80).optional().describe("One entity id, as listed under entities."),
+        include: z.array(z.enum(COMPARABLE_SECTIONS as unknown as [ComparableSection, ...ComparableSection[]])).optional().describe("Sections to return; every section when left out."),
+      }),
+    },
+    async ({ subsector, shape, entity, include }) => {
+      if (entity) {
+        const one = comparableById(entity);
+        if (!one) return errorResult(`No comparable named ${entity}. Call get_comparables with a subsector or shape to list the ids.`);
+        return jsonResult({ note: COMPARABLES_NOTE, source: COMPARABLES_SOURCE, total: 1, subsectors: one.subsectors, entities: [pickSections(one, include)] });
+      }
+      const subs: Subsector[] = subsector ? [subsector] : shape ? subsectorsForShape(shape) : [];
+      const list = comparablesForSubsectors(subs);
+      return jsonResult({ note: COMPARABLES_NOTE, source: COMPARABLES_SOURCE, total: list.length, subsectors: subs.length ? subs : [...SUBSECTOR_VALUES], entities: list.map((e) => pickSections(e, include)) });
+    },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_asset_types",
+    {
+      title: "Asset types, stablecoins and receipt tokens",
+      description:
+        "Stablecoins and receipt tokens as design patterns, from the canhav.co research store. A stablecoin's peg target, peg mechanism, asset subtype and issuing entity, a receipt token's receipt type, base asset and issuing entity, each with a short description where the store has a timeless one. No supplies, prices or dates on purpose. Filter by pegMechanism, receiptType or baseAsset; facets lists the distinct values. No sign-in needed.",
+      inputSchema: z.object({
+        pegMechanism: z.string().max(60).optional(),
+        receiptType: z.string().max(60).optional(),
+        baseAsset: z.string().max(60).optional(),
+      }),
+    },
+    async (filter) => {
+      const { stablecoins, receipts } = assetTypes(filter);
+      return jsonResult({ note: COMPARABLES_NOTE, source: COMPARABLES_SOURCE, facets: assetTypeFacets(), total: stablecoins.length + receipts.length, stablecoins, receipts });
     },
   );
 }

@@ -24,6 +24,8 @@ import {
 } from "@/lib/ideation";
 import { FIELD_PATCH_PATH, FIELD_TAB, openFields } from "@/lib/project-fields";
 import { tokenDesignOpenSections } from "@/lib/token-design-steps";
+import { COMPARABLES_NOTE, COMPARABLES_SOURCE, COMPARABLE_SECTIONS, type ComparableSection, comparablesForSubsectors, pickSections } from "@/lib/comparables";
+import { effectiveSubsectors } from "@/lib/kits";
 import {
   type ProjectRow,
   type TokenDesignRow,
@@ -1308,6 +1310,39 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         mode: agentStateOf(project).mode,
         session: session ? { ...session, view: sessionView(session), progress: planProgress(session.plan) } : null,
         changes,
+      });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "get_comparables",
+    {
+      title: "Comparables for this project's subsectors",
+      description:
+        "How existing protocols in this project's subsectors are built, how they differ from each other and what goes wrong with each design, from the canhav.co research store. Bound to the project's subsectors, the declared ones plus the ones its product shapes imply. Each entity carries components, contrasts, risks by category, dependencies with severity, links and templateIds into get_templates. Call it before you propose architecture, and read the risks before the security review passes. It carries no metrics, no dates and no rankings on purpose; read the linked docs for anything current. A protocol appearing here says nothing about whether it is deployed on this project's testnet; get_templates and the resource pack's environment block answer that. Narrow with include." + PREVIEW_NOTE,
+      inputSchema: z.object({
+        include: z.array(z.enum(COMPARABLE_SECTIONS as unknown as [ComparableSection, ...ComparableSection[]])).optional().describe("Sections to return; every section when left out."),
+        preview: previewField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const doc = loaded.value.project.draft_doc;
+      const subs = effectiveSubsectors(doc.kit, doc);
+      if (subs.length === 0)
+        return jsonResult({ ...stateOf(loaded.value), note: COMPARABLES_NOTE, subsectors: [], total: 0, entities: [], hint: "This project has no subsector yet. Send sectors and subsectors with update_project, or ask the owner to pick them under Decisions, then read again." });
+      const list = comparablesForSubsectors(subs);
+      return jsonResult({
+        ...stateOf(loaded.value),
+        note: COMPARABLES_NOTE,
+        source: COMPARABLES_SOURCE,
+        subsectors: subs,
+        total: list.length,
+        entities: list.map((e) => pickSections(e, args.include)),
+        templatesHint: "templateIds name contract templates in CanHav's catalog that belong to the protocol; read them with get_templates ids for repo, license and deployment status on this chain.",
       });
     },
     scope,

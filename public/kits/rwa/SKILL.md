@@ -20,6 +20,10 @@ memory.
   items are numbered in reading order and the Contract templates section
   carries the decisions.
 - Respect the flags on resources and the `availability` on templates.
+- Call `get_comparables` on the project's MCP server for how protocols in this
+  subsector are built, how they differ and what goes wrong with each design.
+  It carries no metrics or dates on purpose; read the linked docs for anything
+  current. Read its risks before the security review passes.
 
 ## Then, work in this order
 
