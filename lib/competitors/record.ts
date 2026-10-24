@@ -18,6 +18,16 @@ export interface Competitors {
 
 export const COMPETITOR_LIMITS = { differentiator: { max: 300 }, pinned: { max: 12 }, mapRows: 8, tableRows: 40 } as const;
 
+/** The map's default axes (M156): TVL across on a log scale, age up. */
+export const DEFAULT_AXES: { x: CompetitorAxis; y: CompetitorAxis } = { x: "tvl", y: "age" };
+
+/** Pick a metric for one axis (M156): the other axis takes the metric this one had, so both never hold the same one. */
+export function pickAxis(axes: { x: CompetitorAxis; y: CompetitorAxis }, which: "x" | "y", value: CompetitorAxis): { x: CompetitorAxis; y: CompetitorAxis } {
+  const other = which === "x" ? "y" : "x";
+  if (axes[other] === value) return { x: axes.y, y: axes.x };
+  return { ...axes, [which]: value };
+}
+
 const axis = z.enum(COMPETITOR_AXES);
 
 export const competitorsPatchSchema = z.strictObject({
@@ -33,8 +43,9 @@ export function normalizeCompetitors(raw: unknown): Competitors | null {
   const o = raw as Record<string, unknown>;
   const differentiator = typeof o.differentiator === "string" ? o.differentiator.trim().slice(0, COMPETITOR_LIMITS.differentiator.max) : "";
   const ax = o.axes as { x?: unknown; y?: unknown } | undefined;
+  // Both axes on the same metric (a stored state from before M156) falls back to the default.
   const axes =
-    ax && COMPETITOR_AXES.includes(ax.x as CompetitorAxis) && COMPETITOR_AXES.includes(ax.y as CompetitorAxis) ? { x: ax.x as CompetitorAxis, y: ax.y as CompetitorAxis } : undefined;
+    ax && COMPETITOR_AXES.includes(ax.x as CompetitorAxis) && COMPETITOR_AXES.includes(ax.y as CompetitorAxis) && ax.x !== ax.y ? { x: ax.x as CompetitorAxis, y: ax.y as CompetitorAxis } : undefined;
   const pinned = Array.isArray(o.pinned) ? o.pinned.filter((p): p is string => typeof p === "string" && p.length > 0).slice(0, COMPETITOR_LIMITS.pinned.max) : undefined;
   if (!differentiator && !axes && !pinned?.length) return null;
   return { differentiator, ...(axes ? { axes } : {}), ...(pinned?.length ? { pinned } : {}) };

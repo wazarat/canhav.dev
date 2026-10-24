@@ -5,15 +5,14 @@ import { useEffect, useState } from "react";
 import { DraftControl, type DraftMeta } from "@/components/build/DraftControl";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
-import { PositioningMap } from "@/components/build/PositioningMap";
+import { PositioningPanel } from "@/components/build/PositioningPanel";
 import { TextField } from "@/components/ideation/TextField";
-import { Segmented } from "@/components/ui/Segmented";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { draftCompetitorsPrompt } from "@/lib/agent-prompts-draft";
 import { chainInfo } from "@/lib/chains";
 import type { Landscape } from "@/lib/competitors/landscape";
 import { formatTvl } from "@/lib/competitors/tvl";
-import { COMPETITOR_AXES, COMPETITOR_LIMITS, type CompetitorAxis, type Competitors, ageMonths } from "@/lib/competitors/record";
+import { COMPETITOR_LIMITS, type Competitors, ageMonths } from "@/lib/competitors/record";
 
 /**
  * The competitor landscape on Decisions (M115): the table of protocols in
@@ -46,7 +45,6 @@ export function CompetitorsSection({
   const [landscape, setLandscape] = useState<Landscape | null>(null);
   const [failed, setFailed] = useState(false);
   const current: Competitors = value ?? { differentiator: "" };
-  const axes = current.axes ?? { x: "age", y: "tvl" };
   const pinned = new Set(current.pinned ?? []);
 
   useEffect(() => {
@@ -70,10 +68,7 @@ export function CompetitorsSection({
     else if (next.size < COMPETITOR_LIMITS.pinned.max) next.add(slug);
     onChange({ ...current, pinned: [...next] });
   };
-  const setAxis = (which: "x" | "y", v: CompetitorAxis) => onChange({ ...current, axes: { ...axes, [which]: v } });
-
   const rows = landscape?.rows ?? [];
-  const mapRows = [...rows.filter((r) => pinned.has(r.slug)), ...rows.filter((r) => !pinned.has(r.slug))].slice(0, Math.max(COMPETITOR_LIMITS.mapRows, pinned.size));
   const projectAge = Math.max(0, Math.round((Date.now() - new Date(createdAt).getTime()) / (30 * 86_400_000)));
   const facts = landscape
     ? [
@@ -135,21 +130,7 @@ export function CompetitorsSection({
               </tbody>
             </table>
           </div>
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs font-medium text-ink-200">
-                {C.mapTitle} <span className="font-normal text-ink-500">· {C.pinned(pinned.size)}</span>
-              </p>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-ink-400">
-                <span>{C.axisX}</span>
-                <Segmented value={axes.x} onChange={(v) => setAxis("x", v)} ariaLabel={C.axisX} options={COMPETITOR_AXES.map((a) => ({ value: a, label: C.axes[a] }))} />
-                <span>{C.axisY}</span>
-                <Segmented value={axes.y} onChange={(v) => setAxis("y", v)} ariaLabel={C.axisY} options={COMPETITOR_AXES.map((a) => ({ value: a, label: C.axes[a] }))} />
-              </div>
-            </div>
-            <PositioningMap rows={mapRows} axes={axes} projectAgeMonths={projectAge} />
-            <p className="text-[11px] text-ink-500">{C.mapHint}</p>
-          </div>
+          <PositioningPanel rows={rows} value={current} onChange={onChange} projectAgeMonths={projectAge} projectName={name} />
         </>
       )}
       <div className="space-y-3">
