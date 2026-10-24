@@ -212,6 +212,14 @@ export interface ContractEntry {
   why: string;
 }
 
+/** One admin function with why it exists (M154, F12), the contract it lives on and who can call it. */
+export interface AdminFunctionEntry extends ContractEntry {
+  /** The name of a contracts row it lives on, optional. */
+  contract?: string;
+  /** Who can call it, free text such as "Team Safe 2 of 3" or "Timelock, 1 day". */
+  holder?: string;
+}
+
 /**
  * Rows of name and why (M153): trimmed, cut at a word, a row without a name
  * or a why drops, capped. A string (the answer from before M153) is not
@@ -345,8 +353,12 @@ export interface ProjectDoc {
     /** Gate: oracles text is required only when "uses". Optional field. */
     oracleUse: OracleUse | "";
     oracles: string;
-    /** Admin functions and why they exist. "None" is a valid answer. */
-    adminFunctions: string;
+    /** One row per admin function with why it exists (M154). */
+    adminFunctions: AdminFunctionEntry[];
+    /** The explicit choice that the contracts are immutable and have no admin functions (M154), a strength on the public page. */
+    adminFunctionsNone: boolean;
+    /** The free text answer from before M154, kept readable until split into rows. Optional, never injected. */
+    adminFunctionsLegacy?: string;
     upgradeability: Upgradeability | "";
   };
   /** What's the worst thing a bug could do? Scales the security section. */
@@ -559,6 +571,8 @@ export const PROJECT_LIMITS = {
   whyEntries: { max: 30 },
   whyEntryName: { min: 2, max: 80 },
   whyEntryWhy: { min: 10, max: 300 },
+  /** The holder of an admin function (M154). */
+  adminHolder: { max: 80 },
   externalDepName: { min: 2, max: 80 },
   externalDepUrl: { max: 200 },
   firstHundredUsers: { min: 40, max: 600 },
@@ -617,7 +631,7 @@ export function isWaivableField(value: unknown): value is WaivableField {
  */
 export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
   const doc = raw as ProjectDoc & {
-    architecture: ProjectDoc["architecture"] & { externalDeps: ExternalDep[] | string; contracts: ContractEntry[] | string };
+    architecture: ProjectDoc["architecture"] & { externalDeps: ExternalDep[] | string; contracts: ContractEntry[] | string; adminFunctions: AdminFunctionEntry[] | string };
   };
   const a = doc.architecture ?? ({} as (typeof doc)["architecture"]);
 
@@ -632,6 +646,21 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
         : undefined;
   const contracts = normalizeWhyEntries<ContractEntry>(rawArchContracts, PROJECT_LIMITS.whyEntries.max);
   const contractsNone = a.contractsNone === true && contracts.length === 0;
+
+  // Admin functions (M154): the same shape, plus the contract it lives on and who holds it.
+  const rawAdmin = a.adminFunctions;
+  const adminFunctionsLegacy =
+    typeof rawAdmin === "string" && rawAdmin.trim()
+      ? cutAtWord(rawAdmin.trim(), PROJECT_LIMITS.architectureField.max)
+      : typeof a.adminFunctionsLegacy === "string" && a.adminFunctionsLegacy.trim()
+        ? cutAtWord(a.adminFunctionsLegacy.trim(), PROJECT_LIMITS.architectureField.max)
+        : undefined;
+  const adminFunctions = normalizeWhyEntries<AdminFunctionEntry>(rawAdmin, PROJECT_LIMITS.whyEntries.max, (row, o) => {
+    const contract = typeof o.contract === "string" && o.contract.trim() ? o.contract.trim().slice(0, PROJECT_LIMITS.whyEntryName.max) : undefined;
+    const holder = typeof o.holder === "string" && o.holder.trim() ? o.holder.trim().slice(0, PROJECT_LIMITS.adminHolder.max) : undefined;
+    return { ...row, ...(contract ? { contract } : {}), ...(holder ? { holder } : {}) };
+  });
+  const adminFunctionsNone = a.adminFunctionsNone === true && adminFunctions.length === 0;
 
   let externalDeps: ExternalDep[];
   const rawDeps = a.externalDeps;
@@ -935,6 +964,9 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
       contracts,
       contractsNone,
       ...(contractsLegacy ? { contractsLegacy } : {}),
+      adminFunctions,
+      adminFunctionsNone,
+      ...(adminFunctionsLegacy ? { adminFunctionsLegacy } : {}),
       externalDeps,
       externalDepsNone: a.externalDepsNone === true,
       oracleUse,
@@ -943,6 +975,7 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
   };
   // A string answer became rows and legacy text (M153); the key must not linger.
   if (!contractsLegacy) delete (out.architecture as { contractsLegacy?: string }).contractsLegacy;
+  if (!adminFunctionsLegacy) delete (out.architecture as { adminFunctionsLegacy?: string }).adminFunctionsLegacy;
   return out;
 }
 
@@ -1330,8 +1363,19 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (a.oracleUse && !ORACLE_USE_VALUES.includes(a.oracleUse)) return "Unknown oracle answer.";
   p = checkText("Oracles", a.oracles, { max: L.architectureField.max });
   if (p) return p;
-  p = checkText("Admin functions", a.adminFunctions, { max: L.architectureField.max });
-  if (p) return p;
+  if (a.adminFunctions.length > L.whyEntries.max) return `At most ${L.whyEntries.max} admin functions.`;
+  for (const row of a.adminFunctions) {
+    p = checkText("Admin function name", row.name, L.whyEntryName);
+    if (p) return p;
+    p = checkText("Admin function why", row.why, { max: L.whyEntryWhy.max });
+    if (p) return p;
+    if (row.contract && row.contract.length > L.whyEntryName.max) return `An admin function's contract name is over ${L.whyEntryName.max} characters.`;
+    if (row.holder && row.holder.length > L.adminHolder.max) return `An admin function's holder is over ${L.adminHolder.max} characters.`;
+  }
+  if (a.adminFunctionsLegacy !== undefined) {
+    p = checkText("Admin functions", a.adminFunctionsLegacy, { max: L.architectureField.max });
+    if (p) return p;
+  }
   if (a.upgradeability && !UPGRADEABILITY_VALUES.includes(a.upgradeability)) return "Unknown upgradeability answer.";
   if (doc.worstCase && !WORST_CASE_VALUES.includes(doc.worstCase)) return "Unknown worst-case answer.";
 
@@ -1684,7 +1728,8 @@ export function emptyProjectDoc(name = ""): ProjectDoc {
       externalDepsNone: false,
       oracleUse: "",
       oracles: "",
-      adminFunctions: "",
+      adminFunctions: [],
+      adminFunctionsNone: false,
       upgradeability: "",
     },
     worstCase: "",

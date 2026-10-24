@@ -4,7 +4,7 @@ import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { FieldWaiver } from "@/components/build/FieldWaiver";
 import { ChainField } from "@/components/ideation/ChainField";
-import { TAB_WIDTH } from "@/components/build/layout";
+import { FIELD_GRID, TAB_WIDTH } from "@/components/build/layout";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import type { AgentWriteMode } from "@/lib/agent-writes";
@@ -17,6 +17,7 @@ import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
 import { TextField } from "@/components/ideation/TextField";
 import { Card, CardSection } from "@/components/ui/Card";
+import { Field, Input } from "@/components/ui/Input";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { SegmentedField } from "@/components/ui/Segmented";
 import { SelectField } from "@/components/ui/Select";
@@ -36,7 +37,7 @@ import { WORST_CASE_WHY } from "@/content/ideation";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { type ProjectChain, projectChainOf } from "@/lib/chains";
-import { PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, testnetContractRows } from "@/lib/ideation";
+import { type AdminFunctionEntry, PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, testnetContractRows } from "@/lib/ideation";
 import { type ProjectKit, emptyProjectKit, setTemplateDecision } from "@/lib/kits";
 import { kitsForDoc } from "@/content/kits";
 
@@ -221,15 +222,49 @@ export function DecisionsTab({
             </div>
           </FieldWaiver>
           <FieldWaiver field="adminFunctions" doc={doc} patch={patch}>
-            <TextField
-              label="Admin functions, and why they exist"
-              info='"None" is a valid and strong answer for immutable contracts. Say so explicitly.'
-              value={a.adminFunctions}
-              onChange={(v) => patchSection("architecture", { adminFunctions: v })}
-              min={PROJECT_LIMITS.architectureField.min}
-              max={PROJECT_LIMITS.architectureField.max}
-              rows={3}
-            />
+            <div className="space-y-3">
+              {a.adminFunctionsLegacy ? (
+                <div className="space-y-2 rounded-lg border border-ink-700/40 p-3">
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.adminFunctionsLegacy}</p>
+                  <p className="text-xs text-ink-400">
+                    {D.adminRows.legacy}{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const { adminFunctionsLegacy: _l, ...rest } = a;
+                        patch({ architecture: rest });
+                      }}
+                      className="text-ink-300 transition-colors hover:text-ink-50 hover:underline"
+                    >
+                      {D.adminRows.legacyRemove}
+                    </button>
+                  </p>
+                </div>
+              ) : null}
+              <WhyRowsEditor
+                rows={a.adminFunctions}
+                none={a.adminFunctionsNone}
+                onChange={(adminFunctions, adminFunctionsNone) => patchSection("architecture", { adminFunctions, adminFunctionsNone })}
+                max={PROJECT_LIMITS.whyEntries.max}
+                copy={D.adminRows}
+                empty={(): AdminFunctionEntry => ({ name: "", why: "" })}
+                extra={(row, update) => (
+                  <div className={FIELD_GRID}>
+                    <SelectField
+                      label={D.adminRows.contractField}
+                      value={row.contract ?? ""}
+                      onChange={(v) => update({ contract: v || undefined })}
+                      options={a.contracts.filter((c) => c.name.trim()).map((c) => ({ value: c.name.trim(), label: c.name.trim() }))}
+                      placeholder={D.adminRows.contractNone}
+                      clearable
+                    />
+                    <Field label={D.adminRows.holderField}>
+                      <Input value={row.holder ?? ""} onChange={(e) => update({ holder: e.target.value || undefined })} maxLength={PROJECT_LIMITS.adminHolder.max} placeholder={D.adminRows.holderPlaceholder} />
+                    </Field>
+                  </div>
+                )}
+              />
+            </div>
           </FieldWaiver>
           <FieldWaiver field="upgradeability" doc={doc} patch={patch}>
             <SelectField

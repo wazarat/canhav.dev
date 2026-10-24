@@ -239,7 +239,20 @@ export const projectPatchSchema = z
         externalDepsNone: z.boolean(),
         oracleUse: z.enum(["none", "uses"]),
         oracles: z.string().max(L.architectureField.max),
-        adminFunctions: z.string().max(L.architectureField.max),
+        // One row per admin function (M154), with the contract it lives on and who can call it; the list replaces the stored list.
+        adminFunctions: z
+          .array(
+            z.strictObject({
+              name: z.string().min(L.whyEntryName.min).max(L.whyEntryName.max),
+              why: z.string().min(L.whyEntryWhy.min).max(L.whyEntryWhy.max),
+              contract: z.string().max(L.whyEntryName.max).optional(),
+              holder: z.string().max(L.adminHolder.max).optional(),
+            }),
+          )
+          .max(L.whyEntries.max),
+        adminFunctionsNone: z.boolean(),
+        /** Only null, to drop the answer from before M154 once it is split into rows. */
+        adminFunctionsLegacy: z.null(),
         upgradeability: z.enum(["immutable", "upgradeable_proxy", "partially", "undecided"]),
       })
       .partial(),
@@ -754,6 +767,10 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.architecture?.contractsNone === true) a.contracts = [];
   else if (patch.architecture?.contracts?.length) a.contractsNone = false;
   if (patch.architecture && "contractsLegacy" in patch.architecture) delete (a as { contractsLegacy?: string }).contractsLegacy;
+  // Admin functions (M154): the same rules.
+  if (patch.architecture?.adminFunctionsNone === true) a.adminFunctions = [];
+  else if (patch.architecture?.adminFunctions?.length) a.adminFunctionsNone = false;
+  if (patch.architecture && "adminFunctionsLegacy" in patch.architecture) delete (a as { adminFunctionsLegacy?: string }).adminFunctionsLegacy;
   next = { ...next, architecture: a };
   // Classification in the order the editor asks for it, each with its cascade.
   if (sectors) next = { ...next, ...sectorsChange(next, sectors) };
@@ -1177,6 +1194,9 @@ const PATH_LABELS: Record<string, string> = {
   "architecture.contracts": "Contracts",
   "architecture.contractsNone": "Contracts, none yet",
   "architecture.contractsLegacy": "Contracts, the earlier answer",
+  "architecture.adminFunctions": "Admin functions",
+  "architecture.adminFunctionsNone": "Admin functions, none",
+  "architecture.adminFunctionsLegacy": "Admin functions, the earlier answer",
   references: "Project files",
   waived: "Not applicable",
   "kit.shapes": "Product shapes",

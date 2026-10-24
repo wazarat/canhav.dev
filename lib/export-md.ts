@@ -139,6 +139,21 @@ function personaTable<T extends { [K in keyof T]: string }>(
  * why it exists; the earlier free text answer as a paragraph; else the
  * field's state in words (None yet, Not stated, Not applicable).
  */
+/** The admin functions as markdown (M154): one line per row with the contract and holder, the explicit None, the legacy paragraph, or the state. */
+function adminFunctionLines(doc: ProjectDoc, label: string): string[] {
+  const a = doc.architecture;
+  if (a.adminFunctions.length)
+    return [
+      `- **${label}:**`,
+      ...a.adminFunctions.map((f) => {
+        const tail = [f.contract ? `on ${f.contract}` : "", f.holder ? `held by ${f.holder}` : ""].filter(Boolean).join(", ");
+        return `  - **${f.name}.** ${f.why}${tail ? ` (${tail})` : ""}`;
+      }),
+    ];
+  if (a.adminFunctionsLegacy?.trim() && !a.adminFunctionsNone) return [`- **${label}:** ${a.adminFunctionsLegacy.trim()}`];
+  return [`- **${label}:** ${fieldText(doc, "adminFunctions")}`];
+}
+
 function contractsLines(doc: ProjectDoc): string[] {
   const a = doc.architecture;
   if (a.contracts.length) return [`- **Contracts:**`, ...a.contracts.map((c) => `  - **${c.name}.** ${c.why}`)];
@@ -513,7 +528,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     ...contractsLines(doc),
     `- **External dependencies:** ${a.externalDeps.length ? externalDepsLine(a) : fieldText(doc, "externalDeps")}`,
     `- **Oracles:** ${fieldText(doc, "oracles")}`,
-    `- **Admin functions:** ${fieldText(doc, "adminFunctions")}`,
+    ...adminFunctionLines(doc, "Admin functions"),
     `- **Upgradeability:** ${fieldText(doc, "upgradeability")}`,
     `- **Worst thing a bug could do:** ${fieldText(doc, "worstCase")}`,
     "",
@@ -851,7 +866,7 @@ export function buildAgentsMd(input: {
       ...contractsLines(project),
       `- **External dependencies:** ${a.externalDeps.length ? externalDepsLine(a) : fieldText(project, "externalDeps")}`,
       `- **Oracles:** ${fieldText(project, "oracles")}`,
-      `- **Admin functions (and why):** ${fieldText(project, "adminFunctions")}`,
+      ...adminFunctionLines(project, "Admin functions (and why)"),
       `- **Upgradeability:** ${fieldText(project, "upgradeability")}`,
       `- **Worst-case bug impact:** ${fieldText(project, "worstCase")}`,
       "",

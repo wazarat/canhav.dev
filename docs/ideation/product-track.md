@@ -91,7 +91,7 @@ None.
 
 | Field | Notes |
 |-------|-------|
-| Admin functions and why they exist | Free text. Explain every privileged path and why it is needed. |
+| Admin functions and why they exist | One row per privileged function, the name on top and why it exists under it, with the contract it lives on (picked from the contracts rows) and who can call it ("Team Safe 2 of 3", "Timelock, 1 day"). "None, the contracts are immutable and have no admin functions" is a checkbox and publishes as a strength. An answer written before rows existed stays readable above the list until split (`update_project` `architecture.adminFunctions` with `adminFunctionsLegacy` null). The security review pass on keys reads this list. |
 
 ### Computed / warnings
 

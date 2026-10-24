@@ -84,7 +84,10 @@ function statedText(doc: ProjectDoc, key: WaivableField): string | null {
       if (a.oracleUse === "uses") return long(a.oracles, L.architectureField.min);
       return null;
     case "adminFunctions":
-      return long(a.adminFunctions, L.architectureField.min);
+      // Rows, the explicit None (immutable contracts, a strength), or the answer from before M154.
+      if (a.adminFunctions.length) return a.adminFunctions.map((f) => f.name).join(", ");
+      if (a.adminFunctionsNone) return FIELD_STATE_COPY.adminNone;
+      return a.adminFunctionsLegacy?.trim() ? a.adminFunctionsLegacy.trim() : null;
     case "upgradeability":
       return a.upgradeability ? optionLabel(UPGRADEABILITY_OPTIONS, a.upgradeability) : null;
     case "worstCase":
@@ -139,7 +142,7 @@ export const FIELD_PATCH_PATH: Record<WaivableField, string> = {
   contracts: "architecture.contracts as rows of name and why, or architecture.contractsNone true",
   externalDeps: "architecture.externalDeps, or architecture.externalDepsNone true",
   oracles: "architecture.oracleUse none or uses, with architecture.oracles",
-  adminFunctions: "architecture.adminFunctions",
+  adminFunctions: "architecture.adminFunctions as rows of name and why with optional contract and holder, or architecture.adminFunctionsNone true",
   upgradeability: "architecture.upgradeability",
   worstCase: "worstCase",
   audit: "security.audit",

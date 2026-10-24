@@ -1166,6 +1166,8 @@ export const FIELD_STATE_COPY = {
   notStated: "Not stated",
   none: "None",
   noneYet: "None yet",
+  /** The explicit choice for admin functions (M154), stated as a strength. */
+  adminNone: "None. The contracts are immutable and have no admin functions.",
   notApplicable: (reason: string) => `Not applicable, ${reason}`,
   /** The link under a recommended field. */
   markNa: "Does not apply",

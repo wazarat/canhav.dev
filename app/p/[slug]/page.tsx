@@ -355,7 +355,26 @@ export default async function ProjectPublicPage({
               )}
             </div>
             <Prose label="Oracles" text={fieldText(doc, "oracles")} />
-            <Prose label="Admin functions" text={fieldText(doc, "adminFunctions")} />
+            {doc.architecture.adminFunctions.length ? (
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-ink-500">Admin functions</p>
+                <ul className="mt-1 space-y-1.5">
+                  {doc.architecture.adminFunctions.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="text-sm leading-relaxed text-ink-200">
+                      <span className="font-medium text-ink-50">{f.name}.</span> {f.why}
+                      {f.contract || f.holder ? (
+                        <span className="text-ink-400">
+                          {" "}
+                          {[f.contract ? `On ${f.contract}` : "", f.holder ? `held by ${f.holder}` : ""].filter(Boolean).join(", ")}.
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <Prose label="Admin functions" text={doc.architecture.adminFunctionsLegacy?.trim() && !doc.architecture.adminFunctionsNone ? doc.architecture.adminFunctionsLegacy.trim() : fieldText(doc, "adminFunctions")} />
+            )}
             <PropertyList>
               <Property label="Upgradeability" value={fieldText(doc, "upgradeability")} />
               <Property label="Worst case" value={fieldText(doc, "worstCase")} />
