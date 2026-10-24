@@ -20,7 +20,7 @@ A project whose token has launched leaves the list and shows under Launches, wit
 
 ### Starting a project
 
-The new project pop up opens from the **Studio** card, from **New project** in the command menu and in the switcher, and at `/studio/new` as a deep link. It stays on the page you are on. Five short steps, and only the first is required:
+The new project pop up opens from the **Studio** card, from **New project** in the command menu and in the switcher, and at `/studio/new` as a deep link. It stays on the page you are on. Five short steps; the name and the chain are required, the rest can wait:
 
 | Step | Asks |
 |------|------|

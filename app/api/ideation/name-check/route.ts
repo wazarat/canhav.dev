@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain, isProjectChain } from "@/lib/chains";
 import { authGate } from "@/lib/ideation-api";
 import { findPublishedDesignsByNameOrTicker } from "@/lib/ideation-db";
 import { findTokensByNameOrSymbol } from "@/lib/indexer";
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
  * GET /api/ideation/name-check?name=…&ticker=…&exclude=<designId>
  *
  * Identity check for the token design form: exact matches against deployed
- * factory tokens (Robinhood Chain, via the indexer) and published CanHav
+ * factory tokens (the design's chain, via its indexer, M139) and published CanHav
  * designs, and exact matches on CoinGecko and DexScreener (M116).
  * Informational only; duplicates are legal and nothing here gates publish.
  * Results are worded "not found", never "available".
@@ -24,9 +25,12 @@ export async function GET(req: Request) {
   const name = (url.searchParams.get("name") ?? "").slice(0, 60);
   const ticker = (url.searchParams.get("ticker") ?? "").slice(0, 10).toUpperCase();
   const exclude = url.searchParams.get("exclude") ?? undefined;
+  // The chain the design launches on (M139), the default for designs with no linked project.
+  const chainParam = url.searchParams.get("chain");
+  const chainKey: ProjectChain = isProjectChain(chainParam) ? chainParam : DEFAULT_PROJECT_CHAIN;
 
   const [chain, canhav, external] = await Promise.all([
-    findTokensByNameOrSymbol(name, ticker),
+    findTokensByNameOrSymbol(name, ticker, chainKey),
     findPublishedDesignsByNameOrTicker(name, ticker, exclude),
     // The wider market (M116): CoinGecko and DexScreener, a warning only.
     externalNameMatches(name, ticker),
@@ -40,6 +44,7 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
+    chain: chainKey,
     indexerOk: chain !== null,
     chainMatches,
     canhavMatches: canhav ?? [],

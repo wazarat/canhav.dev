@@ -66,7 +66,8 @@ field. Limits come from their single source of truth (e.g. `JOURNEY_LIMITS` in
 
 A project builds on one of two chains, `robinhood_testnet` or
 `arbitrum_sepolia` (`lib/chains.ts`). `ProjectDoc.chain` is optional and never
-injected, so read it with `projectChainOf()`; absent means Robinhood. A token
+injected, so read it with `projectChainOf()`; absent means Robinhood for
+documents from before M139, new projects store it. A token
 lives on its project's chain. Never reach for a single global chain:
 
 - Launch config comes from `launchChain(chain)` in `content/launch.ts`. A chain

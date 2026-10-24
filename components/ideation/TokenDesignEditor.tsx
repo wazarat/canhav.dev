@@ -59,7 +59,7 @@ import {
   UNDERSUBSCRIPTION_OPTIONS,
 } from "@/content/ideation";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, LAUNCH_TARGET_OPTIONS, launchTargetLabel } from "@/content/launch-targets";
-import type { ProjectChain } from "@/lib/chains";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { launchTargetChainBound } from "@/lib/launch-targets";
 import {
@@ -338,7 +338,7 @@ export function TokenDesignEditor({
                   placeholder="TOKEN"
                 />
               </Field>
-              <NameTickerCheck designId={id} name={doc.name} ticker={doc.ticker} />
+              <NameTickerCheck designId={id} name={doc.name} ticker={doc.ticker} chain={linkedChain ?? DEFAULT_PROJECT_CHAIN} />
               <NumberField
                 label="Total supply"
                 required
@@ -679,7 +679,7 @@ export function TokenDesignEditor({
                     ))}
                   </ul>
                   <a
-                    href={explorerAddressUrl(launchChain().factoryAddress)}
+                    href={explorerAddressUrl(launchChain(linkedChain ?? DEFAULT_PROJECT_CHAIN).factoryAddress)}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-2 block text-xs text-electric-300 transition-colors hover:text-electric-200"

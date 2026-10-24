@@ -20,6 +20,7 @@ import { usePlan } from "@/components/studio/PlanContext";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import {
   FIELD_STATE_COPY,
+  FIRST_HUNDRED_LABEL,
   LOGO_COPY,
   PAYER_OPTIONS,
   PERSONA_COPY,
@@ -206,8 +207,9 @@ export function PublishTab({
             rows={3}
           />
           <FieldWaiver field="firstHundredUsers" doc={doc} patch={patch}>
+            {chainKey === "robinhood_testnet" ? <p className="text-xs text-ink-400">{ROBINHOOD_MYTH.followUp}</p> : null}
             <TextField
-              label={ROBINHOOD_MYTH.followUp}
+              label={FIRST_HUNDRED_LABEL}
               value={doc.firstHundredUsers}
               onChange={(v) => patch({ firstHundredUsers: v })}
               min={PROJECT_LIMITS.firstHundredUsers.min}

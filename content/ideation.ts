@@ -619,8 +619,12 @@ export const ROBINHOOD_MYTH = {
     "CanHav is an independent project with no affiliation with Robinhood " +
     "Markets, Inc.; listing here is not a channel to its users either.",
   ack: "I understand there is no built-in distribution and no Robinhood affiliation.",
+  /** The lead above the first hundred users field on a Robinhood project only (M139). */
   followUp: "So where will your first hundred users actually come from?",
 } as const;
+
+/** The first hundred users field on every chain (M139); the Robinhood lead sits above it where it applies. */
+export const FIRST_HUNDRED_LABEL = "Where will your first hundred users come from?";
 
 // ---------------------------------------------------------------------------
 // Token track
@@ -852,6 +856,12 @@ export const MARKET_FACTS = [
 
 /** The market name check (M116), plain text under a name or ticker field. */
 export const NAME_CHECK_COPY = {
+  /** The chain lines (M139) name the design's mainnet, not Robinhood by default. */
+  notFound: (label: string, mainnet: string) => `${label} not found on ${mainnet} or CanHav.`,
+  notFoundUnavailable: (label: string, mainnet: string) => `${label} not found on CanHav. The ${mainnet} check is unavailable right now.`,
+  inUse: (mainnet: string) => `Already in use on ${mainnet} by`,
+  inUseTail: ". Duplicates are legal on a permissionless chain, but buyers will have to tell them apart.",
+  unavailable: (mainnet: string) => `The ${mainnet} check is unavailable right now.`,
   listed: (name: string, symbol: string, source: string) => `A coin named ${name} (${symbol}) is listed on ${source}.`,
   sources: { coingecko: "CoinGecko", dexscreener: "DexScreener" },
   open: "Open",
@@ -1141,7 +1151,7 @@ export const WAIVABLE_FIELD_LABELS: Record<WaivableField, string> = {
   monitoring: "Monitoring",
   incidentResponse: "Incident response",
   keyCustody: "Key custody",
-  firstHundredUsers: "First hundred users",
+  firstHundredUsers: FIRST_HUNDRED_LABEL,
 };
 
 /** How a recommended field reads when it is empty or waived. Commas, never a colon. */

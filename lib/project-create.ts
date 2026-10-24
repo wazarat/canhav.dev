@@ -34,8 +34,8 @@ export function projectDocFromCreate(body: unknown): { doc: ProjectDoc; withToke
     const shapes = b.shapes.filter((s): s is ProductShape => PRODUCT_SHAPE_VALUES.includes(s as ProductShape) && offered.includes(s as ProductShape));
     if (shapes.length) doc = { ...doc, ...shapesChange(doc, [...new Set([...(doc.kit?.shapes ?? []), ...shapes])]) };
   }
-  // Only a non default chain is stored, so the key is never injected (M52).
-  if (isProjectChain(b.chain) && b.chain !== DEFAULT_PROJECT_CHAIN) doc.chain = b.chain;
+  // A new project stores its chain explicitly (M139); only documents from before carry none and read as Robinhood.
+  doc.chain = isProjectChain(b.chain) ? b.chain : DEFAULT_PROJECT_CHAIN;
   if (typeof b.whatItDoes === "string") doc.whatItDoes = b.whatItDoes.trim().slice(0, PROJECT_LIMITS.whatItDoes.max);
   if (typeof b.logo === "string" && isStoredImageUrl(b.logo.trim())) doc.logo = b.logo.trim();
   return { doc, withTokenDesign: b.withTokenDesign === true };

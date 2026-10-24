@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { StatusChip } from "@/components/ui/StatusChip";
 import { NAME_CHECK_COPY } from "@/content/ideation";
+import { type ProjectChain, chainInfo } from "@/lib/chains";
 
 interface CheckResult {
   indexerOk: boolean;
@@ -23,11 +24,15 @@ export function NameTickerCheck({
   designId,
   name,
   ticker,
+  chain,
 }: {
   designId: string;
   name: string;
   ticker: string;
+  /** The chain the design launches on (M139), the linked project's or the default. */
+  chain: ProjectChain;
 }) {
+  const mainnet = chainInfo(chain).mainnetName;
   const [result, setResult] = useState<CheckResult | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -48,6 +53,7 @@ export function NameTickerCheck({
           name: nameTrim,
           ticker: ticker.trim(),
           exclude: designId,
+          chain,
         });
         const res = await fetch(`/api/ideation/name-check?${params}`, {
           signal: controller.signal,
@@ -59,7 +65,7 @@ export function NameTickerCheck({
       }
     }, 600);
     return () => clearTimeout(timer);
-  }, [active, nameTrim, ticker, designId]);
+  }, [active, nameTrim, ticker, designId, chain]);
 
   if (!active || !result) return null;
 
@@ -71,9 +77,7 @@ export function NameTickerCheck({
     return (
       <div className="space-y-2">
         <StatusChip tone="neutral" variant="block">
-          {result.indexerOk
-            ? `${label} not found on Robinhood Chain or CanHav.`
-            : `${label} not found on CanHav. The Robinhood Chain check is unavailable right now.`}
+          {result.indexerOk ? NAME_CHECK_COPY.notFound(label, mainnet) : NAME_CHECK_COPY.notFoundUnavailable(label, mainnet)}
         </StatusChip>
         {external(result)}
       </div>
@@ -84,15 +88,14 @@ export function NameTickerCheck({
     <div className="space-y-2">
       {result.chainMatches.map((t) => (
         <StatusChip key={t.address} tone="warning" variant="block">
-          Already in use on Robinhood Chain by{" "}
+          {NAME_CHECK_COPY.inUse(mainnet)}{" "}
           <a
             href={`/launch/t/${t.address}`}
             className="text-electric-300 transition-colors hover:text-electric-200"
           >
             {t.name} (${t.symbol})
           </a>
-          . Duplicates are legal on a permissionless chain, but buyers will
-          have to tell them apart.
+          {NAME_CHECK_COPY.inUseTail}
         </StatusChip>
       ))}
       {result.canhavMatches.map((m, i) => (
@@ -113,7 +116,7 @@ export function NameTickerCheck({
       ))}
       {!result.indexerOk && (
         <StatusChip tone="neutral" variant="block">
-          The Robinhood Chain check is unavailable right now.
+          {NAME_CHECK_COPY.unavailable(mainnet)}
         </StatusChip>
       )}
       {external(result)}

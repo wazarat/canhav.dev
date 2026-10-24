@@ -47,6 +47,7 @@ import {
   TESTNET_COPY,
   STATUS_DECL_LABELS,
   FIELD_STATE_COPY,
+  FIRST_HUNDRED_LABEL,
 } from "@/content/ideation";
 import {
   ENVIRONMENT_COPY,
@@ -484,9 +485,9 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     // The acknowledgement is about Robinhood Chain, so only a project there carries it (M52).
     ...(projectChainOf(doc) === "robinhood_testnet"
-      ? [`Acknowledged by the team: ${ROBINHOOD_MYTH.body}`, ""]
+      ? [`Acknowledged by the team: ${ROBINHOOD_MYTH.body} ${ROBINHOOD_MYTH.followUp}`, ""]
       : []),
-    `**${ROBINHOOD_MYTH.followUp}**`,
+    `**${FIRST_HUNDRED_LABEL}**`,
     "",
     fieldText(doc, "firstHundredUsers"),
     "",

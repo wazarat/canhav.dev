@@ -9,6 +9,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import {
   AUDIENCE_OPTIONS,
   FIELD_STATE_COPY,
+  FIRST_HUNDRED_LABEL,
   PERSONA_COPY,
   audiencePersonaCards,
   PROJECT_SECURITY_FIELDS,
@@ -303,10 +304,10 @@ export default async function ProjectPublicPage({
         <Section title="Distribution reality">
           {projectChainOf(doc) === "robinhood_testnet" ? (
             <p className="text-sm leading-relaxed text-ink-400">
-              The team has acknowledged this. {ROBINHOOD_MYTH.body}
+              The team has acknowledged this. {ROBINHOOD_MYTH.body} {ROBINHOOD_MYTH.followUp}
             </p>
           ) : null}
-          <Prose label={ROBINHOOD_MYTH.followUp} text={fieldText(doc, "firstHundredUsers")} />
+          <Prose label={FIRST_HUNDRED_LABEL} text={fieldText(doc, "firstHundredUsers")} />
         </Section>
 
         <Section title="Contract architecture">

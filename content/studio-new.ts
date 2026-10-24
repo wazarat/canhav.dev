@@ -38,6 +38,11 @@ export const NEW_PROJECT_COPY = {
     subsectorHint: "Pick what fits. Each subsector brings its own build steps and research, and the chosen shape fills the Build tab from day one.",
     agentHint: "No sector yet, so the subsector and shape wait. Your agent can classify the project from the description over MCP, or pick them under Decisions.",
   },
+  chain: {
+    /** The chain step (M139) has no preselection; the project stores what you pick. */
+    problem: "Pick a chain",
+    hint: "Where the project builds and tests, and where a token launched from it goes. Nothing is picked for you.",
+  },
   finish: {
     uploadsOff: "Logo upload is not set up on this deployment. Add a logo later from the editor.",
     tokenLabel: "Do you want a native token?",
