@@ -12,7 +12,9 @@
     "check:templates": "node scripts/gen-templates.mjs --check",
     "check:fly": "node scripts/fly-cost-check.mjs",
     "gen:comparables": "node scripts/gen-comparables.mjs",
-    "check:comparables": "node scripts/gen-comparables.mjs --check"
+    "check:comparables": "node scripts/gen-comparables.mjs --check",
+    "gen:workflows": "node scripts/gen-workflow-templates.mjs",
+    "check:workflows": "node scripts/gen-workflow-templates.mjs --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

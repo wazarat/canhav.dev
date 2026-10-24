@@ -1,10 +1,12 @@
-# CanHav checks (Studio+). Copy to .github/workflows/canhav-checks.yml. On
-# every push it runs Slither on the Foundry project, asks Sourcify whether
+# CanHav checks (Studio+). Download it filled in from the project page
+# (Deployments, GitHub setup), or copy this file to
+# .github/workflows/canhav-checks.yml. On every push it runs Slither on the Foundry project, asks Sourcify whether
 # the deployed addresses in the broadcast files are verified, and posts one
 # run per tool to CanHav, where the Review milestone shows the result as
 # proof beside the team's own verdict. Needs the secret CANHAV_PROJECT_KEY
-# (a write key) and the variable CANHAV_CHAIN_ID. Set CANHAV_ADERYN to 1 to
-# run Aderyn instead of Slither.
+# (a write key); the downloaded file carries the chain id and the CanHav
+# address, this copy reads the variables CANHAV_CHAIN_ID and CANHAV_URL.
+# Set the variable CANHAV_ADERYN to 1 to run Aderyn instead of Slither.
 name: CanHav checks
 on:
   push:

@@ -4,9 +4,14 @@
 
 ## Setup
 
-1. On the project page, Deployments, make a **write** project key (see [Project keys](export-and-mcp.md#project-keys)) and store it in the repository as the secret `CANHAV_PROJECT_KEY`.
-2. Set the repository variable `CANHAV_CHAIN_ID` to the project's chain, `46630` for Robinhood Chain testnet or `421614` for Arbitrum Sepolia.
-3. Copy `.github-templates/canhav-sync.yml` from the CanHav repository to `.github/workflows/canhav-sync.yml`.
+The project page, Deployments, **GitHub setup** walks through it (M144):
+
+1. Make a **write** project key (see [Project keys](export-and-mcp.md#project-keys)); the card counts the live ones.
+2. Download the **Sync workflow** and save it at `.github/workflows/canhav-sync.yml`. The download carries the project's chain id and the CanHav address, so no repository variables are needed.
+3. Add the repository secret `CANHAV_PROJECT_KEY` with the write key as its value; the card links to the repository's secrets page when the project records its GitHub repository.
+4. Push a commit. The card shows the last sync and the newest check run, with **Check again** to refresh.
+
+The plain template is still `.github-templates/canhav-sync.yml` in the CanHav repository; that copy reads the variables `CANHAV_CHAIN_ID` (`46630` for Robinhood Chain testnet, `421614` for Arbitrum Sepolia) and `CANHAV_URL`.
 
 ## What it sends
 

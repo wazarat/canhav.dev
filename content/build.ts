@@ -197,7 +197,27 @@ export const BUILD_COPY = {
       line: (sha: string, date: string, contracts: number, steps: number) => `Synced from GitHub, commit ${sha}, ${date}, ${contracts} contracts, ${steps} steps.`,
       proposed: "Waiting for you under Agent changes.",
       open: "Open the commit",
-      none: "Studio+ teams can add the CanHav sync workflow to their repository so deployed addresses and ticked steps arrive from each commit. See the docs for the workflow file.",
+    },
+    /** Guided GitHub setup (M144, Studio+). */
+    setup: {
+      title: "GitHub setup",
+      intro: "Four steps, once per repository. The two workflows send deployed addresses, ticked build steps and check results to this project on every push.",
+      step1: "Create a write key",
+      keysUnknown: "Reading the keys.",
+      keysHint: "A write key from the section above.",
+      keyCount: (n: number) => (n === 1 ? "1 write key exists." : `${n} write keys exist.`),
+      noKey: "No write key yet.",
+      keysLink: "Project keys",
+      step2: "Download the workflows",
+      downloadHint: "Both come with this project's chain id and the CanHav address filled in. Save each at the path beside it.",
+      download: { sync: "Sync workflow", checks: "Checks workflow" } as const,
+      step3: "Add the secret",
+      secretLabel: "Repository secret",
+      secretHint: "In the repository, Settings, Secrets and variables, Actions, New repository secret. Paste the write key as its value. No variables are needed.",
+      openSecrets: "Open the repository's secrets page",
+      step4: "Push a commit",
+      noRun: "No run yet. Push a commit and this line updates.",
+      checkAgain: "Check again",
     },
     /** The throwaway deployer key (M102). */
     deployer: {
@@ -477,10 +497,10 @@ export const BUILD_COPY = {
     open: "Open the run",
     evidenceLabel: "Evidence",
     evidencePlaceholder: "A run link, a test name, a commit",
-    evidenceHint: "Where the proof lives. Any account can record it; Studio+ teams get it filled by the checks workflow.",
+    evidenceHint: "Where the proof lives. Any account can record it; Studio+ teams get it filled by the checks workflow set up under Deployments, GitHub setup.",
     selfReported: "Self reported",
     sourcify: (verified: number, total: number, date: string) => `Source verified on Sourcify for ${verified} of ${total} recorded contracts, run ${date}.`,
-    none: "Studio+ teams can add the CanHav checks workflow to their repository so Slither or Aderyn and Sourcify post their results here. See the docs for the workflow file.",
+    none: "Set up the checks workflow under Deployments, GitHub setup, so Slither or Aderyn and Sourcify post their results here.",
   },
   /** Project keys (M111). */
   keys: {

@@ -4,8 +4,7 @@
 
 ## Setup
 
-1. A **write** project key in the repository secret `CANHAV_PROJECT_KEY` and the variable `CANHAV_CHAIN_ID` (see [GitHub sync](github-sync.md), the same two).
-2. Copy `.github-templates/canhav-checks.yml` from the CanHav repository to `.github/workflows/canhav-checks.yml`. Set the variable `CANHAV_ADERYN` to `1` to run Aderyn instead of Slither.
+The same **GitHub setup** card on Deployments (see [GitHub sync](github-sync.md)): the write key in the repository secret `CANHAV_PROJECT_KEY`, and the **Checks workflow** downloaded with the project's chain id and the CanHav address filled in, saved at `.github/workflows/canhav-checks.yml`. Set the repository variable `CANHAV_ADERYN` to `1` to run Aderyn instead of Slither. The plain template is `.github-templates/canhav-checks.yml` in the CanHav repository and reads the variables `CANHAV_CHAIN_ID` and `CANHAV_URL` instead.
 
 ## What it posts
 

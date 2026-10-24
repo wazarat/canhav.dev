@@ -1,11 +1,13 @@
-# CanHav GitHub sync (Studio+). Copy to .github/workflows/canhav-sync.yml in
-# your repository. On every push and pull request it reads the Foundry
+# CanHav GitHub sync (Studio+). Download it filled in from the project page
+# (Deployments, GitHub setup), or copy this file to
+# .github/workflows/canhav-sync.yml in your repository. On every push and pull request it reads the Foundry
 # broadcast files for your project's chain, sends the deployed contracts
 # to Deployments, and ticks build steps named in commit messages or the PR
 # body as "canhav: <stepId>" lines. Needs one secret, CANHAV_PROJECT_KEY,
-# a write key from the project page (Deployments, Project keys), and one
-# variable, CANHAV_CHAIN_ID (46630 for Robinhood Chain testnet, 421614 for
-# Arbitrum Sepolia). Writes ride the project's agent write mode, so in
+# a write key from the project page (Deployments, Project keys). The
+# downloaded file carries the chain id and the CanHav address; this copy
+# reads them from the variables CANHAV_CHAIN_ID (46630 for Robinhood Chain
+# testnet, 421614 for Arbitrum Sepolia) and CANHAV_URL. Writes ride the project's agent write mode, so in
 # propose mode they wait for the owner in the studio.
 name: CanHav sync
 on:

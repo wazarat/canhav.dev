@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 import { DeployerSection } from "@/components/build/DeployerSection";
+import { GithubSetupCard } from "@/components/build/GithubSetupCard";
 import { AlertsSection } from "@/components/build/AlertsSection";
 import { AnalyticsSection } from "@/components/build/AnalyticsSection";
 import { KeysSection } from "@/components/build/KeysSection";
@@ -94,9 +95,16 @@ export function DeploymentsTab({
         </CardSection>
 
         {paid ? (
-          <CardSection className="space-y-4">
+          <CardSection id="project-keys" className="scroll-mt-24 space-y-4">
             <Heading>{BUILD_COPY.keys.title}</Heading>
             <KeysSection projectId={id} />
+          </CardSection>
+        ) : null}
+
+        {paid ? (
+          <CardSection id="github-setup" className="scroll-mt-24 space-y-4">
+            <Heading>{D.setup.title}</Heading>
+            <GithubSetupCard projectId={id} doc={doc} checks={checks} />
           </CardSection>
         ) : null}
 
@@ -113,8 +121,6 @@ export function DeploymentsTab({
                 {D.sync.open}
               </a>
             </p>
-          ) : paid ? (
-            <p className="text-xs text-ink-500">{D.sync.none}</p>
           ) : null}
           {sourcify ? (
             <p className="text-xs text-ink-400">
