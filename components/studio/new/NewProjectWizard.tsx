@@ -9,6 +9,7 @@ import { LogoField } from "@/components/ideation/LogoField";
 import { NameWarning } from "@/components/ideation/NameWarning";
 import { StepNav } from "@/components/ideation/StepNav";
 import { TextField } from "@/components/ideation/TextField";
+import { BuildingStep } from "@/components/studio/new/BuildingStep";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
 import { PlanWord } from "@/components/studio/PlanWord";
 import { Button } from "@/components/ui/Button";
@@ -18,24 +19,28 @@ import { CHAIN_COPY, LOGO_COPY } from "@/content/ideation";
 import { NEW_PROJECT_COPY } from "@/content/studio-new";
 import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { PROJECT_LIMITS } from "@/lib/ideation";
+import { type ProductShape, impliedShapesFor } from "@/lib/kits";
+import type { Subsector } from "@/lib/sectors";
 
 interface Draft {
   name: string;
   sector: SectorChoice;
+  subsectors: Subsector[];
+  shapes: ProductShape[];
   chain: ProjectChain;
   whatItDoes: string;
   logo?: string;
   wantsToken: "yes" | "no" | "unsure" | "";
 }
 
-const STEP_KEYS = ["name", "sector", "chain", "finish"] as const;
+const STEP_KEYS = ["name", "sector", "building", "chain", "finish"] as const;
 
 /**
- * The new project flow (M91), the content of the studio pop up. Four
- * steps held in client state and one POST at the end, so an abandoned
- * flow leaves nothing behind. Only the name is required; the other steps
- * can be skipped by clicking ahead, as the step pills allow, and the
- * editor asks for the rest later.
+ * The new project flow (M91, a building step since M130), the content of
+ * the studio pop up. Five steps held in client state and one POST at the
+ * end, so an abandoned flow leaves nothing behind. Only the name is
+ * required; the other steps can be skipped by clicking ahead, as the step
+ * pills allow, and the editor or the agent fills the rest later.
  */
 export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolean; onClose: () => void }) {
   const C = NEW_PROJECT_COPY;
@@ -44,6 +49,8 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
   const [draft, setDraft] = useState<Draft>({
     name: "",
     sector: "",
+    subsectors: [],
+    shapes: [],
     chain: DEFAULT_PROJECT_CHAIN,
     whatItDoes: "",
     wantsToken: "",
@@ -74,6 +81,8 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
         body: JSON.stringify({
           name: draft.name.trim(),
           sectors: draft.sector && draft.sector !== "undecided" ? [draft.sector] : [],
+          subsectors: draft.subsectors,
+          shapes: [...new Set([...impliedShapesFor(draft.subsectors), ...draft.shapes])],
           chain: draft.chain,
           whatItDoes: draft.whatItDoes.trim(),
           logo: draft.logo,
@@ -146,29 +155,22 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
               <p className="text-xs font-medium text-ink-200">{C.sector.label}</p>
               <p className="mt-1 text-xs text-ink-500">{C.sector.hint}</p>
             </div>
-            <SectorCards value={draft.sector} onChange={(sector) => patch({ sector })} />
+            <SectorCards value={draft.sector} onChange={(sector) => patch({ sector, subsectors: [], shapes: [] })} />
           </div>
         )}
 
+        {current === "building" && (
+          <BuildingStep sector={draft.sector} subsectors={draft.subsectors} shapes={draft.shapes} whatItDoes={draft.whatItDoes} onChange={(p) => patch(p)} />
+        )}
+
         {current === "chain" && (
-          <>
-            <SegmentedField
-              label={CHAIN_COPY.label}
-              info={CHAIN_COPY.hint}
-              value={draft.chain}
-              onChange={(v) => patch({ chain: v as ProjectChain })}
-              options={CHAIN_COPY.options}
-            />
-            <TextField
-              label={C.chain.whatItDoesLabel}
-              hint={C.chain.whatItDoesHint}
-              value={draft.whatItDoes}
-              onChange={(v) => patch({ whatItDoes: v })}
-              max={PROJECT_LIMITS.whatItDoes.max}
-              rows={3}
-              placeholder={C.chain.whatItDoesPlaceholder}
-            />
-          </>
+          <SegmentedField
+            label={CHAIN_COPY.label}
+            info={CHAIN_COPY.hint}
+            value={draft.chain}
+            onChange={(v) => patch({ chain: v as ProjectChain })}
+            options={CHAIN_COPY.options}
+          />
         )}
 
         {current === "finish" && (

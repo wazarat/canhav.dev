@@ -8,7 +8,7 @@ import { investorPackPatchSchema, mergeInvestorPack } from "@/lib/investor-pack"
 import { UPDATE_CADENCES } from "@/lib/updates";
 import { kindsForFields, withDrafted, withoutRequest } from "@/lib/draft/requests";
 
-import { SECTOR_OPTIONS } from "@/content/ideation";
+import { SECTOR_OPTIONS, WAIVABLE_FIELD_LABELS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { templateById } from "@/content/templates";
 import { featuresFor } from "@/content/kits/features";
@@ -29,6 +29,7 @@ import {
   REVENUE_RANGE_VALUES,
   TEAM_SIZE_PATTERN,
   TOKEN_DESIGN_LIMITS,
+  WAIVABLE_FIELDS,
   type ProjectDoc,
   type TokenDesignDoc,
   type MainnetRecord,
@@ -163,10 +164,14 @@ export interface AgentChange {
 const L = PROJECT_LIMITS;
 const T = TOKEN_DESIGN_LIMITS;
 
-const statusDecl = z.strictObject({
-  status: z.enum(["in_place", "legal_ops", "planned_before_mainnet", "not_yet"]),
-  note: z.string().max(200).optional(),
-});
+const statusDecl = z
+  .strictObject({
+    status: z.enum(["in_place", "legal_ops", "planned_before_mainnet", "not_yet"]),
+    note: z.string().max(200).optional(),
+  })
+  // The validator accepts a note only beside "already in place", so refusing
+  // it here keeps an agent write from blocking publish later (M130).
+  .refine((d) => !d.note || d.status === "in_place", 'A note goes with "in_place" only');
 
 const persona = z.strictObject({
   teamSize: z
@@ -198,6 +203,9 @@ export const projectPatchSchema = z
     whatItDoes: z.string().max(L.whatItDoes.max),
     audience: z.enum(AUDIENCE_VALUES),
     personas: z.array(persona).max(L.personas.max),
+    // Recommended fields marked not applicable with a reason (M130). A key
+    // sent as null clears that waiver; a stated value always wins over one.
+    waived: z.partialRecord(z.enum(WAIVABLE_FIELDS), z.string().min(L.waiver.min).max(L.waiver.max).nullable()),
     consumerPersonas: z.array(consumerPersona).max(L.personas.max),
     payer: z.enum(["", "user", "third_party"]),
     whoPays: z.string().max(L.whoPays.max),
@@ -694,6 +702,14 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.waived) {
+    const cur: Record<string, string> = { ...(doc.waived ?? {}) };
+    for (const [k, v] of Object.entries(patch.waived)) {
+      if (v === null) delete cur[k];
+      else if (typeof v === "string") cur[k] = v.trim();
+    }
+    next = Object.keys(cur).length ? { ...next, waived: cur as ProjectDoc["waived"] } : dropKey(next, "waived");
+  }
   if (patch.brand === null) next = dropKey(next, "brand");
   else if (patch.brand) {
     const cur = next.brand ?? DEFAULT_BRAND;
@@ -1044,6 +1060,7 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
 /** Paths whose field name would read oddly (M51). */
 const PATH_LABELS: Record<string, string> = {
   references: "Project files",
+  waived: "Not applicable",
   "kit.shapes": "Product shapes",
   "kit.startingPoint": "Starting point",
   "kit.existingProduct": "Existing product",
@@ -1129,6 +1146,11 @@ export function newChangeCounts(
 /** architecture.externalDeps reads as "Architecture, external deps". */
 export function pathLabel(path: string): string {
   if (path in PATH_LABELS) return PATH_LABELS[path];
+  // One line per waiver (M130), named after the field.
+  if (path.startsWith("waived.")) {
+    const key = path.slice("waived.".length) as keyof typeof WAIVABLE_FIELD_LABELS;
+    return `Not applicable, ${WAIVABLE_FIELD_LABELS[key] ?? key}`;
+  }
   // One line per template decision (M63), named after the template.
   if (path.startsWith("kit.templates.")) {
     const id = path.slice("kit.templates.".length);

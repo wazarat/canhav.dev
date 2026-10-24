@@ -28,7 +28,7 @@ import {
   type Subsector,
   docSectors,
   sectorOfSubsector,
-  withSectors, requiresSubsector } from "@/lib/sectors";
+  withSectors } from "@/lib/sectors";
 import { LAUNCH_FORM } from "@/content/launch";
 
 export {
@@ -89,12 +89,15 @@ export type ProjectStage =
   | "live_elsewhere";
 
 export type Upgradeability = "immutable" | "upgradeable_proxy" | "partially" | "undecided";
+export const UPGRADEABILITY_VALUES: readonly Upgradeability[] = ["immutable", "upgradeable_proxy", "partially", "undecided"];
 
 export type WorstCase = "lose_funds" | "lock_funds" | "misprice" | "nothing_serious";
+export const WORST_CASE_VALUES: readonly WorstCase[] = ["lose_funds", "lock_funds", "misprice", "nothing_serious"];
 
 export type Payer = "user" | "third_party";
 
 export type OracleUse = "none" | "uses";
+export const ORACLE_USE_VALUES: readonly OracleUse[] = ["none", "uses"];
 
 export const REVENUE_RANGE_VALUES = [
   "pre_revenue",
@@ -325,8 +328,14 @@ export interface ProjectDoc {
    * CanHav has no affiliation with Robinhood.
    */
   mythAck: boolean;
-  /** So where will the first hundred users actually come from? */
+  /** Where the first hundred users come from. */
   firstHundredUsers: string;
+  /**
+   * Recommended fields the team marked not applicable, with the reason
+   * (M130). Optional and never injected; published as plain text. A stated
+   * value wins over a waiver. Read with fieldState() in lib/project-fields.
+   */
+  waived?: Partial<Record<WaivableField, string>>;
   githubRepo?: string;
   /** The product's website, https only (M78). Shown on the public page. */
   website?: string;
@@ -482,7 +491,37 @@ export const PROJECT_LIMITS = {
   referenceLocation: { min: 1, max: 300 },
   referenceNote: { max: 200 },
   referenceEvidence: { max: 120 },
+  /** The reason a recommended field does not apply (M130). */
+  waiver: { min: 3, max: 200 },
 } as const;
+
+/**
+ * The recommended fields (M130): everything that blocked publishing before
+ * M130 except the name, the sector, what it does, the stage and the
+ * Robinhood acknowledgement. Each can be waived with a short reason.
+ */
+export const WAIVABLE_FIELDS = [
+  "subsectors",
+  "sectorOther",
+  "contracts",
+  "externalDeps",
+  "oracles",
+  "adminFunctions",
+  "upgradeability",
+  "worstCase",
+  "audit",
+  "bugBounty",
+  "monitoring",
+  "incidentResponse",
+  "keyCustody",
+  "firstHundredUsers",
+] as const;
+
+export type WaivableField = (typeof WAIVABLE_FIELDS)[number];
+
+export function isWaivableField(value: unknown): value is WaivableField {
+  return typeof value === "string" && (WAIVABLE_FIELDS as readonly string[]).includes(value);
+}
 
 /**
  * Bring a stored ProjectDoc (possibly written by an older client) up to the
@@ -731,6 +770,19 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = typeof v === "string" ? v.trim().toLowerCase() : "";
     if (ADDRESS.test(clean)) (rest as { deployer?: string }).deployer = clean;
     else delete (rest as { deployer?: unknown }).deployer;
+  }
+  // Waivers (M130): known fields with a trimmed reason, dropped when empty, never invented.
+  if ("waived" in rest) {
+    const raw = (rest as { waived?: unknown }).waived;
+    const clean: Partial<Record<WaivableField, string>> = {};
+    if (raw && typeof raw === "object" && !Array.isArray(raw))
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+        if (!isWaivableField(k) || typeof v !== "string") continue;
+        const reason = v.trim().slice(0, PROJECT_LIMITS.waiver.max);
+        if (reason) clean[k] = reason;
+      }
+    if (Object.keys(clean).length) (rest as { waived?: unknown }).waived = clean;
+    else delete (rest as { waived?: unknown }).waived;
   }
   // Chain (M52): kept when it is a known chain, dropped when it is garbage, never invented.
   if ("chain" in rest && !isProjectChain((rest as { chain?: unknown }).chain))
@@ -1034,7 +1086,8 @@ function checkText(
 
 function checkStatusDecl(label: string, decl: StatusDecl): string | null {
   const valid = ["in_place", "legal_ops", "planned_before_mainnet", "not_yet"];
-  if (!valid.includes(decl.status)) return `${label} needs a status.`;
+  // An empty status is "not stated" since M130; a value has to be one of the four.
+  if (decl.status && !valid.includes(decl.status)) return `${label} has an unknown status.`;
   if (decl.note && decl.status !== "in_place")
     return `${label} accepts a note only for "already in place".`;
   if (decl.note && decl.note.length > 200) return `${label} note is over 200 characters.`;
@@ -1058,9 +1111,7 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (sectors.includes("other")) {
     // Other may describe itself or pick a subsector (M62). A doc folded from a
     // retired sector id carries the old label in sectorOther and stays valid.
-    const described = Boolean(doc.sectorOther?.trim());
-    if (!described && !subsectors.some((v) => SECTOR_SUBSECTORS.other.includes(v)))
-      return "Describe the sector or pick a subsector.";
+    // Describing the sector or picking a subsector is recommended since M130, not required.
     if ((doc.sectorOther?.length ?? 0) > L.sectorOther.max)
       return `Sector description is over ${L.sectorOther.max} characters.`;
   }
@@ -1070,8 +1121,8 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   for (const sector of sectors) {
     const own = SECTOR_SUBSECTORS[sector];
     if (own.length === 0) continue;
+    // A subsector per sector is recommended since M130; only the maximum is checked here.
     const n = subsectors.filter((v) => own.includes(v)).length;
-    if (n < L.subsectors.min && requiresSubsector(sector)) return "Pick at least one subsector.";
     if (n > L.subsectors.max) return `At most ${L.subsectors.max} subsectors.`;
   }
   if (doc.chain !== undefined && !isProjectChain(doc.chain)) return "Unknown chain.";
@@ -1122,11 +1173,11 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (p) return p;
   if (!doc.stage) return "Pick a current stage.";
 
+  // The contract and security fields are recommended since M130 (see
+  // lib/project-fields.ts); only their bounds and shapes are checked here.
   const a = doc.architecture;
-  p = checkText("Contracts", a.contracts, L.architectureField);
+  p = checkText("Contracts", a.contracts, { max: L.architectureField.max });
   if (p) return p;
-  if (!a.externalDepsNone && a.externalDeps.length === 0)
-    return "List external dependencies, or mark that there are none.";
   if (a.externalDeps.length > L.externalDeps.max)
     return `At most ${L.externalDeps.max} external dependencies.`;
   for (const dep of a.externalDeps) {
@@ -1137,15 +1188,13 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
       if (p) return p;
     }
   }
-  if (!a.oracleUse) return "Answer the oracle question, or pick none.";
-  if (a.oracleUse === "uses") {
-    p = checkText("Oracles", a.oracles, L.architectureField);
-    if (p) return p;
-  }
-  p = checkText("Admin functions", a.adminFunctions, L.architectureField);
+  if (a.oracleUse && !ORACLE_USE_VALUES.includes(a.oracleUse)) return "Unknown oracle answer.";
+  p = checkText("Oracles", a.oracles, { max: L.architectureField.max });
   if (p) return p;
-  if (!a.upgradeability) return "Pick an upgradeability answer.";
-  if (!doc.worstCase) return "Answer the worst-case question.";
+  p = checkText("Admin functions", a.adminFunctions, { max: L.architectureField.max });
+  if (p) return p;
+  if (a.upgradeability && !UPGRADEABILITY_VALUES.includes(a.upgradeability)) return "Unknown upgradeability answer.";
+  if (doc.worstCase && !WORST_CASE_VALUES.includes(doc.worstCase)) return "Unknown worst-case answer.";
 
   const s = doc.security;
   p =
@@ -1159,8 +1208,16 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   // The acknowledgement is about Robinhood Chain, so only a project there owes it (M52).
   if (projectChainOf(doc) === "robinhood_testnet" && doc.mythAck !== true)
     return "Acknowledge the Robinhood distribution reality before publishing.";
-  p = checkText("First hundred users", doc.firstHundredUsers, L.firstHundredUsers);
+  p = checkText("First hundred users", doc.firstHundredUsers, { max: L.firstHundredUsers.max });
   if (p) return p;
+  if (doc.waived !== undefined) {
+    if (!doc.waived || typeof doc.waived !== "object" || Array.isArray(doc.waived)) return "Waivers must be a map of field to reason.";
+    for (const [k, v] of Object.entries(doc.waived)) {
+      if (!isWaivableField(k)) return `${k} is not a field that can be marked not applicable.`;
+      if (typeof v !== "string" || v.trim().length < L.waiver.min) return `The reason ${k} does not apply needs at least ${L.waiver.min} characters.`;
+      if (v.length > L.waiver.max) return `The reason ${k} does not apply is over ${L.waiver.max} characters.`;
+    }
+  }
 
   if (doc.githubRepo && !/^[\w.-]+\/[\w.-]+$/.test(doc.githubRepo))
     return "GitHub repo must be owner/name.";

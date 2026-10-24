@@ -5,12 +5,11 @@ import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import { type ProblemArea, type ProjectProblems, tabOfArea } from "@/lib/build-readiness";
 
-const AREAS: ReadonlyArray<Exclude<ProblemArea, "overall">> = ["basics", "architecture", "security", "reality"];
+const AREAS: ReadonlyArray<Exclude<ProblemArea, "overall">> = ["building", "basics", "reality"];
 
 /**
  * What stops publishing, shown only when Publish is pressed (2026-10-19).
@@ -47,11 +46,7 @@ export function PublishBlockedDialog({
           </button>
         </div>
         <div className="space-y-4 px-5 py-5">
-          {problems.overall ? (
-            <StatusChip tone="warning" variant="block">
-              {problems.overall}
-            </StatusChip>
-          ) : null}
+          {problems.overall ? <p className="text-sm leading-relaxed text-ink-300">{problems.overall}</p> : null}
           <ul className="space-y-2">
             {areas.map((area) => {
               const tab = tabOfArea(area);

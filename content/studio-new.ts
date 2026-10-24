@@ -1,18 +1,19 @@
 /**
- * The new project flow at /studio/new (M91). Four steps, one required
- * field. No colons before whitespace and no em dashes (check:copy scans
+ * The new project flow at /studio/new (M91, five steps since M130). One
+ * required field. No colons before whitespace and no em dashes (check:copy scans
  * this file).
  */
 export const NEW_PROJECT_COPY = {
   kicker: "Studio",
   title: "Start a project",
-  lead: "Four short steps. Only the name is needed now, the rest can wait for the editor.",
+  lead: "Five short steps. Only the name is needed now, the rest can wait for the editor or your agent.",
   /** Under the body on every step. */
   editableLater: "Everything here can be changed later, at any point while you ideate and build.",
   cancel: "Cancel",
   steps: {
     name: "Name",
     sector: "Sector",
+    building: "Building",
     chain: "Chain",
     finish: "Logo and token",
   },
@@ -29,10 +30,13 @@ export const NEW_PROJECT_COPY = {
     undecidedSentence: "I want to start with a name and pick a sector later.",
     selected: "Chosen",
   },
-  chain: {
-    whatItDoesLabel: "Short description of your project",
-    whatItDoesHint: "One line is enough here. The full description comes later in the editor.",
+  /** The building step (M130): the description, the subsector and the shape, so Build has steps on day one. */
+  building: {
+    whatItDoesLabel: "What are you building?",
+    whatItDoesHint: "One line is enough here. The full description comes later, or your agent writes it from this over MCP.",
     whatItDoesPlaceholder: "A vault that lends idle treasury into fixed rate markets.",
+    subsectorHint: "Pick what fits. Each subsector brings its own build steps and research, and the chosen shape fills the Build tab from day one.",
+    agentHint: "No sector yet, so the subsector and shape wait. Your agent can classify the project from the description over MCP, or pick them under Decisions.",
   },
   finish: {
     uploadsOff: "Logo upload is not set up on this deployment. Add a logo later from the editor.",

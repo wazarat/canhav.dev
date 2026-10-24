@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 
 import { DomainSection } from "@/components/build/DomainSection";
+import { FieldWaiver } from "@/components/build/FieldWaiver";
 import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { KitHandoff } from "@/components/ideation/kit/KitHandoff";
 import { LogoField } from "@/components/ideation/LogoField";
@@ -16,17 +17,14 @@ import { SegmentedField } from "@/components/ui/Segmented";
 import { SelectField } from "@/components/ui/Select";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { usePlan } from "@/components/studio/PlanContext";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import {
+  FIELD_STATE_COPY,
   LOGO_COPY,
   PAYER_OPTIONS,
   PERSONA_COPY,
-  PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
-  STATUS_DECL_LABELS,
-  WORST_CASE_OPTIONS,
   audiencePersonaCards,
   optionLabel,
   sectorLabel,
@@ -38,6 +36,7 @@ import { launchTargetHandoffLine } from "@/content/launch-targets";
 import { projectChainOf } from "@/lib/chains";
 import { type ProblemArea, type ProjectProblems, tabOfArea } from "@/lib/build-readiness";
 import { PROJECT_LIMITS, type ProjectDoc } from "@/lib/ideation";
+import { fieldViews } from "@/lib/project-fields";
 import { type LaunchTarget, launchTargetFit } from "@/lib/launch-targets";
 import { PRIVATE_FREE_ALLOWANCE } from "@/lib/plan-shared";
 import type { AgentWriteMode } from "@/lib/agent-writes";
@@ -103,7 +102,7 @@ function Row({ term, detail }: { term: string; detail: string }) {
   );
 }
 
-const AREAS: ReadonlyArray<Exclude<ProblemArea, "overall">> = ["basics", "architecture", "security", "reality"];
+const AREAS: ReadonlyArray<Exclude<ProblemArea, "overall">> = ["building", "basics", "reality"];
 
 /**
  * The Publish tab (M96): the fields of the public record that no other tab
@@ -147,6 +146,8 @@ export function PublishTab({
   const kit = doc.kit;
   const build = buildProgress(kit);
   const open = AREAS.filter((area) => problems[area] !== null);
+  // The recommended fields as they stand, each a row of the readiness list (M130).
+  const fields = fieldViews(doc);
 
   return (
     <div className="max-w-2xl">
@@ -200,16 +201,17 @@ export function PublishTab({
             rows={3}
           />
           <SelectField label="Current stage" required value={doc.stage} onChange={(v) => patch({ stage: v })} options={STAGE_OPTIONS} />
-          <TextField
-            label={ROBINHOOD_MYTH.followUp}
-            required
-            value={doc.firstHundredUsers}
-            onChange={(v) => patch({ firstHundredUsers: v })}
-            min={PROJECT_LIMITS.firstHundredUsers.min}
-            max={PROJECT_LIMITS.firstHundredUsers.max}
-            rows={3}
-            placeholder="Names of communities, channels, waitlists. The concrete plan."
-          />
+          <FieldWaiver field="firstHundredUsers" doc={doc} patch={patch}>
+            <TextField
+              label={ROBINHOOD_MYTH.followUp}
+              value={doc.firstHundredUsers}
+              onChange={(v) => patch({ firstHundredUsers: v })}
+              min={PROJECT_LIMITS.firstHundredUsers.min}
+              max={PROJECT_LIMITS.firstHundredUsers.max}
+              rows={3}
+              placeholder="Names of communities, channels, waitlists. The concrete plan."
+            />
+          </FieldWaiver>
           <Field label="GitHub repo" hint="owner/name" info="Linking it adds commit history to your public page.">
             <Input
               value={doc.githubRepo ?? ""}
@@ -227,12 +229,10 @@ export function PublishTab({
           </Field>
           {chainKey === "robinhood_testnet" ? (
             <>
-              <StatusChip tone="warning" variant="block">
-                <span className="inline-flex items-center gap-1 font-medium text-ink-100">
-                  {ROBINHOOD_MYTH.title}
-                  <InfoTip>{ROBINHOOD_MYTH.body}</InfoTip>
-                </span>
-              </StatusChip>
+              <p className="inline-flex items-center gap-1 text-sm font-medium text-ink-100">
+                {ROBINHOOD_MYTH.title}
+                <InfoTip>{ROBINHOOD_MYTH.body}</InfoTip>
+              </p>
               <label className="flex items-start gap-2.5 text-sm text-ink-200">
                 <input
                   type="checkbox"
@@ -272,24 +272,20 @@ export function PublishTab({
             {audiencePersonaCards(doc).map((cells, i) => (
               <Row key={i} term={PERSONA_COPY.column(i + 1)} detail={cells.map((c) => `${c.label} ${c.value}`).join(" · ")} />
             ))}
-            <Row term="Worst case" detail={optionLabel(WORST_CASE_OPTIONS, doc.worstCase)} />
-            <Row
-              term="Security"
-              detail={PROJECT_SECURITY_FIELDS.map(({ key, label }) => {
-                const v = doc.security[key].status ? STATUS_DECL_LABELS[doc.security[key].status] : "Not set";
-                return `${label} ${v.charAt(0).toLowerCase()}${v.slice(1)}`;
-              }).join(" · ")}
-            />
+            {fields
+              .filter((f) => !(f.key === "subsectors" && f.state === "stated"))
+              .map((f) => (
+                <Row key={f.key} term={f.label} detail={f.text} />
+              ))}
           </dl>
+          <p className="text-xs text-ink-400">{FIELD_STATE_COPY.recommended(fields.filter((f) => f.state === "missing").length)}</p>
           {open.length === 0 && problems.overall === null ? (
-            <StatusChip tone="success" variant="block">
-              {P.readinessLine}
-            </StatusChip>
+            <p className="text-sm leading-relaxed text-ink-300">{P.readinessLine}</p>
           ) : (
             <div className="space-y-2">
-              <StatusChip tone="warning" variant="block">
+              <p className="text-sm leading-relaxed text-ink-300">
                 {P.notReady} {problems.overall}
-              </StatusChip>
+              </p>
               <ul className="space-y-1.5">
                 {open.map((area) => {
                   const tab = tabOfArea(area);

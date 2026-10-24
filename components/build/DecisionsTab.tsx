@@ -2,6 +2,7 @@
 
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
+import { FieldWaiver } from "@/components/build/FieldWaiver";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import type { AgentWriteMode } from "@/lib/agent-writes";
@@ -84,6 +85,8 @@ export function DecisionsTab({
         <CardSection id="decisions-building" className="space-y-4">
           <Heading>{D.building}</Heading>
           <ShapeChooser doc={doc} patch={patch} />
+          <FieldWaiver field="subsectors" doc={doc} patch={patch} />
+          <FieldWaiver field="sectorOther" doc={doc} patch={patch} />
         </CardSection>
 
         <CardSection id="decisions-customers" className="space-y-5">
@@ -153,80 +156,85 @@ export function DecisionsTab({
 
         <CardSection id="decisions-contracts" className="space-y-6">
           <Heading>{D.contracts}</Heading>
-          <TextField
-            label="What contracts exist"
-            required
-            hint='"None yet" is an honest answer.'
-            value={a.contracts}
-            onChange={(v) => patchSection("architecture", { contracts: v })}
-            min={PROJECT_LIMITS.architectureField.min}
-            max={PROJECT_LIMITS.architectureField.max}
-            rows={3}
-          />
-          <ExternalDepsEditor
-            deps={a.externalDeps}
-            none={a.externalDepsNone}
-            onChange={(deps, none) => patchSection("architecture", { externalDeps: deps, externalDepsNone: none })}
-          />
-          <SelectField
-            label="Oracles"
-            required
-            hint="Anything that feeds prices or data into your contracts."
-            value={a.oracleUse}
-            onChange={(v) => patchSection("architecture", { oracleUse: v })}
-            options={ORACLE_USE_OPTIONS}
-          />
-          {a.oracleUse === "uses" && (
+          <FieldWaiver field="contracts" doc={doc} patch={patch}>
             <TextField
-              label="Which oracles, and for what?"
-              required
-              value={a.oracles}
-              onChange={(v) => patchSection("architecture", { oracles: v })}
+              label="What contracts exist"
+              hint='"None yet" is an honest answer.'
+              value={a.contracts}
+              onChange={(v) => patchSection("architecture", { contracts: v })}
               min={PROJECT_LIMITS.architectureField.min}
               max={PROJECT_LIMITS.architectureField.max}
-              rows={2}
+              rows={3}
             />
-          )}
-          <TextField
-            label="Admin functions, and why they exist"
-            required
-            info='"None" is a valid and strong answer for immutable contracts. Say so explicitly.'
-            value={a.adminFunctions}
-            onChange={(v) => patchSection("architecture", { adminFunctions: v })}
-            min={PROJECT_LIMITS.architectureField.min}
-            max={PROJECT_LIMITS.architectureField.max}
-            rows={3}
-          />
-          <SelectField
-            label="Upgradeability"
-            required
-            value={a.upgradeability}
-            onChange={(v) => patchSection("architecture", { upgradeability: v })}
-            options={UPGRADEABILITY_OPTIONS}
-          />
+          </FieldWaiver>
+          <FieldWaiver field="externalDeps" doc={doc} patch={patch}>
+            <ExternalDepsEditor
+              deps={a.externalDeps}
+              none={a.externalDepsNone}
+              onChange={(deps, none) => patchSection("architecture", { externalDeps: deps, externalDepsNone: none })}
+            />
+          </FieldWaiver>
+          <FieldWaiver field="oracles" doc={doc} patch={patch}>
+            <div className="space-y-6">
+              <SelectField
+                label="Oracles"
+                hint="Anything that feeds prices or data into your contracts."
+                value={a.oracleUse}
+                onChange={(v) => patchSection("architecture", { oracleUse: v })}
+                options={ORACLE_USE_OPTIONS}
+              />
+              {a.oracleUse === "uses" && (
+                <TextField
+                  label="Which oracles, and for what?"
+                  value={a.oracles}
+                  onChange={(v) => patchSection("architecture", { oracles: v })}
+                  min={PROJECT_LIMITS.architectureField.min}
+                  max={PROJECT_LIMITS.architectureField.max}
+                  rows={2}
+                />
+              )}
+            </div>
+          </FieldWaiver>
+          <FieldWaiver field="adminFunctions" doc={doc} patch={patch}>
+            <TextField
+              label="Admin functions, and why they exist"
+              info='"None" is a valid and strong answer for immutable contracts. Say so explicitly.'
+              value={a.adminFunctions}
+              onChange={(v) => patchSection("architecture", { adminFunctions: v })}
+              min={PROJECT_LIMITS.architectureField.min}
+              max={PROJECT_LIMITS.architectureField.max}
+              rows={3}
+            />
+          </FieldWaiver>
+          <FieldWaiver field="upgradeability" doc={doc} patch={patch}>
+            <SelectField
+              label="Upgradeability"
+              value={a.upgradeability}
+              onChange={(v) => patchSection("architecture", { upgradeability: v })}
+              options={UPGRADEABILITY_OPTIONS}
+            />
+          </FieldWaiver>
         </CardSection>
 
         <CardSection id="decisions-security" className="space-y-5">
           <Heading>{D.security}</Heading>
-          <SelectField
-            label="What's the worst thing a bug could do?"
-            required
-            value={doc.worstCase}
-            onChange={(v) => patch({ worstCase: v })}
-            options={WORST_CASE_OPTIONS}
-          />
-          {doc.worstCase && (
-            <Collapsible summary={WORST_CASE_WHY}>
-              <p className="text-xs leading-relaxed text-ink-200">{WORST_CASE_PRESSURE[doc.worstCase]}</p>
-            </Collapsible>
-          )}
-          {PROJECT_SECURITY_FIELDS.map(({ key, label }) => (
-            <StatusDeclarationField
-              key={key}
-              label={label}
-              value={doc.security[key]}
-              onChange={(v) => patchSection("security", { [key]: v })}
+          <FieldWaiver field="worstCase" doc={doc} patch={patch}>
+            <SelectField
+              label="What's the worst thing a bug could do?"
+              value={doc.worstCase}
+              onChange={(v) => patch({ worstCase: v })}
+              options={WORST_CASE_OPTIONS}
             />
+            {doc.worstCase && (
+              <Collapsible summary={WORST_CASE_WHY}>
+                <p className="text-xs leading-relaxed text-ink-200">{WORST_CASE_PRESSURE[doc.worstCase]}</p>
+              </Collapsible>
+            )}
+          </FieldWaiver>
+          {PROJECT_SECURITY_FIELDS.map(({ key, label }) => (
+            <FieldWaiver key={key} field={key} doc={doc} patch={patch}>
+              <StatusDeclarationField label={label} value={doc.security[key]} onChange={(v) => patchSection("security", { [key]: v })} />
+            </FieldWaiver>
           ))}
         </CardSection>
 

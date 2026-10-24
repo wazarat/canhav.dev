@@ -1,14 +1,17 @@
 import { PROJECT_LIMITS, type ProjectDoc, validateProjectDoc } from "@/lib/ideation";
-import { SECTOR_SUBSECTORS, docSectors, requiresSubsector } from "@/lib/sectors";
+import { docSectors } from "@/lib/sectors";
 import { projectChainOf } from "@/lib/chains";
+import { FIELD_TAB, openFields } from "@/lib/project-fields";
 
 /**
- * What stops a project from publishing, by area (M93), kept here so the
- * Studio tabs and the readiness list read one source. `overall` is the
- * first problem validateProjectDoc reports, which is what the Publish
- * button shows.
+ * What stops a project from publishing, by area (M93, cut down in M130),
+ * kept here so the Studio tabs and the readiness list read one source. Since
+ * M130 only the name, a sector, what it does, the stage and the Robinhood
+ * acknowledgement block; the contract and security fields are recommended
+ * and counted by `recommendedOpen`. `overall` is the first problem
+ * validateProjectDoc reports, which is what the Publish button shows.
  */
-export type ProblemArea = "basics" | "architecture" | "security" | "reality" | "overall";
+export type ProblemArea = "building" | "basics" | "reality" | "overall";
 
 export type ProjectProblems = Record<ProblemArea, string | null>;
 
@@ -16,66 +19,32 @@ export type ProjectProblems = Record<ProblemArea, string | null>;
 export type ProblemTab = "decisions" | "publish";
 
 export const PROBLEM_COPY = {
-  basics: "Basics incomplete",
-  architecture: "Architecture incomplete",
-  security: "Security incomplete",
-  reality: "Reality check incomplete",
+  building: "Pick a sector",
+  basics: "Name, what it does or the stage is missing",
+  reality: "The distribution acknowledgement is missing",
 } as const;
 
 export function projectProblems(doc: ProjectDoc): ProjectProblems {
   const L = PROJECT_LIMITS;
   const short = (v: string, min: number) => v.trim().length < min;
 
-  const sectors = docSectors(doc);
-  const subsectors = doc.subsectors ?? [];
-  const basics =
-    short(doc.name, L.name.min) ||
-    sectors.length < L.sectors.min ||
-    (sectors.includes("other") &&
-      !doc.sectorOther?.trim() &&
-      !subsectors.some((v) => SECTOR_SUBSECTORS.other.includes(v))) ||
-    sectors.some(
-      (sec) =>
-        requiresSubsector(sec) &&
-        subsectors.filter((v) => SECTOR_SUBSECTORS[sec].includes(v)).length < L.subsectors.min,
-    ) ||
-    short(doc.whatItDoes, L.whatItDoes.min) ||
-    !doc.stage
-      ? PROBLEM_COPY.basics
-      : null;
+  const building = docSectors(doc).length < L.sectors.min ? PROBLEM_COPY.building : null;
+  const basics = short(doc.name, L.name.min) || short(doc.whatItDoes, L.whatItDoes.min) || !doc.stage ? PROBLEM_COPY.basics : null;
+  const reality = projectChainOf(doc) === "robinhood_testnet" && doc.mythAck !== true ? PROBLEM_COPY.reality : null;
 
-  const a = doc.architecture;
-  const architecture =
-    short(a.contracts, L.architectureField.min) ||
-    (!a.externalDepsNone &&
-      (a.externalDeps.length === 0 ||
-        a.externalDeps.some((d) => short(d.name, L.externalDepName.min)))) ||
-    !a.oracleUse ||
-    (a.oracleUse === "uses" && short(a.oracles, L.architectureField.min)) ||
-    short(a.adminFunctions, L.architectureField.min) ||
-    !a.upgradeability
-      ? PROBLEM_COPY.architecture
-      : null;
-
-  const decls = Object.values(doc.security);
-  const security =
-    !doc.worstCase ||
-    decls.some((d) => !["in_place", "legal_ops", "planned_before_mainnet", "not_yet"].includes(d.status))
-      ? PROBLEM_COPY.security
-      : null;
-
-  const reality =
-    (projectChainOf(doc) === "robinhood_testnet" && doc.mythAck !== true) ||
-    short(doc.firstHundredUsers, L.firstHundredUsers.min)
-      ? PROBLEM_COPY.reality
-      : null;
-
-  return { basics, architecture, security, reality, overall: validateProjectDoc(doc) };
+  return { building, basics, reality, overall: validateProjectDoc(doc) };
 }
 
-/** Which areas each tab owns. Decisions holds the architecture and security fields, Publish the record. */
+/** The recommended fields still open, by the tab that edits them (M130). */
+export function recommendedOpen(doc: ProjectDoc): Record<ProblemTab, number> {
+  const out: Record<ProblemTab, number> = { decisions: 0, publish: 0 };
+  for (const f of openFields(doc)) out[FIELD_TAB[f.key]] += 1;
+  return out;
+}
+
+/** Which areas each tab owns. Decisions holds the classification, Publish the record. */
 export const TAB_AREAS: Record<ProblemTab, readonly Exclude<ProblemArea, "overall">[]> = {
-  decisions: ["architecture", "security"],
+  decisions: ["building"],
   publish: ["basics", "reality"],
 };
 

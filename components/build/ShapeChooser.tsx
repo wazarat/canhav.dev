@@ -163,7 +163,6 @@ export function ShapeChooser({
       {sectors.includes("other") && (
         <TextField
           label={SECTOR_COPY.otherLabel}
-          required={!subsectors.some((v) => SECTOR_SUBSECTORS.other.includes(v))}
           hint={SECTOR_COPY.otherHint}
           value={doc.sectorOther ?? ""}
           onChange={(v) => patch({ sectorOther: v })}
@@ -173,7 +172,6 @@ export function ShapeChooser({
       {subsectorGroups.length > 0 && (
         <ChoiceCardGroups
           label={SECTOR_COPY.subsectorLabel}
-          required
           info={
             <>
               <span className="block">{SECTOR_COPY.subsectorHint}</span>

@@ -29,9 +29,7 @@ export function ExternalDepsEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-xs font-medium text-ink-200">
-          External dependencies <span className="text-rose-400">*</span>
-        </span>
+        <span className="text-xs font-medium text-ink-200">External dependencies</span>
         <span className="text-xs text-ink-500">One entry per contract or protocol.</span>
       </div>
       {!none && (

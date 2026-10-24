@@ -38,16 +38,15 @@ import {
   REFERENCES_COPY,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
-  STATUS_DECL_LABELS,
   UNDERSUBSCRIPTION_OPTIONS,
-  UPGRADEABILITY_OPTIONS,
-  WORST_CASE_OPTIONS,
   optionLabel,
   personaRows,
   sectorLabels,
   subsectorLabels,
   MAINNET_COPY,
   TESTNET_COPY,
+  STATUS_DECL_LABELS,
+  FIELD_STATE_COPY,
 } from "@/content/ideation";
 import {
   ENVIRONMENT_COPY,
@@ -72,7 +71,6 @@ import { KIT_PRIORITY_ORDER, type ProductShape } from "@/lib/kits";
 import {
   type ProjectDoc,
   referenceIsLink,
-  type StatusDecl,
   type TokenDesignDoc,
   docAudience,
   filledConsumerPersonas,
@@ -80,7 +78,9 @@ import {
   isSaleEvent,
   vestedCohorts,
   testnetContractRows,
+  type StatusDecl,
 } from "@/lib/ideation";
+import { fieldText, openFieldLines } from "@/lib/project-fields";
 import {
   DEPLOYABILITY_COPY,
   DEPLOYABILITY_TIER_LABELS,
@@ -159,12 +159,11 @@ function externalDepsLine(a: ProjectDoc["architecture"]): string {
   return a.externalDeps.map((d) => (d.url ? `[${d.name}](${d.url})` : d.name)).join(", ");
 }
 
-function oraclesLine(a: ProjectDoc["architecture"]): string {
-  return a.oracleUse === "none" ? "None" : a.oracles;
-}
 
+
+/** One status declaration line; an empty status reads as not stated (M130). */
 function decl(label: string, d: StatusDecl): string {
-  const status = STATUS_DECL_LABELS[d.status] ?? "Not set";
+  const status = d.status ? STATUS_DECL_LABELS[d.status] : FIELD_STATE_COPY.notStated;
   return `- **${label}:** ${status}${d.note ? ` (${d.note})` : ""}`;
 }
 
@@ -488,20 +487,20 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
       : []),
     `**${ROBINHOOD_MYTH.followUp}**`,
     "",
-    doc.firstHundredUsers,
+    fieldText(doc, "firstHundredUsers"),
     "",
     "## Contract architecture",
     "",
-    `- **Contracts:** ${a.contracts}`,
-    `- **External dependencies:** ${externalDepsLine(a)}`,
-    `- **Oracles:** ${oraclesLine(a)}`,
-    `- **Admin functions:** ${a.adminFunctions}`,
-    `- **Upgradeability:** ${optionLabel(UPGRADEABILITY_OPTIONS, a.upgradeability)}`,
-    `- **Worst thing a bug could do:** ${optionLabel(WORST_CASE_OPTIONS, doc.worstCase)}`,
+    `- **Contracts:** ${fieldText(doc, "contracts")}`,
+    `- **External dependencies:** ${a.externalDeps.length ? externalDepsLine(a) : fieldText(doc, "externalDeps")}`,
+    `- **Oracles:** ${fieldText(doc, "oracles")}`,
+    `- **Admin functions:** ${fieldText(doc, "adminFunctions")}`,
+    `- **Upgradeability:** ${fieldText(doc, "upgradeability")}`,
+    `- **Worst thing a bug could do:** ${fieldText(doc, "worstCase")}`,
     "",
     "## Security",
     "",
-    ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => decl(label, doc.security[key])),
+    ...PROJECT_SECURITY_FIELDS.map(({ key, label }) => `- **${label}:** ${fieldText(doc, key)}`),
   ];
   lines.push(...resourcePackSections(doc, "##"));
   if (doc.githubRepo || doc.website || doc.testnetContracts?.length || doc.addressBook || doc.verifyWallet || doc.deployer) {
@@ -828,16 +827,19 @@ export function buildAgentsMd(input: {
       ...positioningLines(project.competitors),
       "## Contract architecture",
       "",
-      `- **Contracts:** ${orNotSet(a.contracts)}`,
-      `- **External dependencies:** ${externalDepsLine(a)}`,
-      `- **Oracles:** ${orNotSet(oraclesLine(a))}`,
-      `- **Admin functions (and why):** ${orNotSet(a.adminFunctions)}`,
-      `- **Upgradeability:** ${optionLabel(UPGRADEABILITY_OPTIONS, a.upgradeability)}`,
-      `- **Worst-case bug impact:** ${optionLabel(WORST_CASE_OPTIONS, project.worstCase)}`,
+      `- **Contracts:** ${fieldText(project, "contracts")}`,
+      `- **External dependencies:** ${a.externalDeps.length ? externalDepsLine(a) : fieldText(project, "externalDeps")}`,
+      `- **Oracles:** ${fieldText(project, "oracles")}`,
+      `- **Admin functions (and why):** ${fieldText(project, "adminFunctions")}`,
+      `- **Upgradeability:** ${fieldText(project, "upgradeability")}`,
+      `- **Worst-case bug impact:** ${fieldText(project, "worstCase")}`,
       "",
       "Treat the worst-case answer as the review bar: changes touching value",
       "flows deserve scrutiny proportional to it.",
     );
+    // Recommended fields the team left open (M130): the agent states each or waives it.
+    const open = openFieldLines(project);
+    if (open.length) lines.push("", "## Open fields", "", "Recommended fields the team has not stated yet. Each publishes as Not stated until it is filled or marked not applicable.", "", ...open);
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
     // The brand kit (M118), when one is set.
     lines.push(...brandLines(project, token?.ticker ?? null));

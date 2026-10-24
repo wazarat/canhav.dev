@@ -8,14 +8,12 @@ import { CurveProgress } from "@/components/launch/CurveProgress";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import {
   AUDIENCE_OPTIONS,
+  FIELD_STATE_COPY,
   PERSONA_COPY,
   audiencePersonaCards,
   PROJECT_SECURITY_FIELDS,
   ROBINHOOD_MYTH,
   STAGE_OPTIONS,
-  STATUS_DECL_LABELS,
-  UPGRADEABILITY_OPTIONS,
-  WORST_CASE_OPTIONS,
   MAINNET_COPY,
   optionLabel,
   sectorLabels,
@@ -28,6 +26,7 @@ import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/
 import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
 import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
+import { fieldText, openFields } from "@/lib/project-fields";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
 import { listUpdates } from "@/lib/updates-db";
 import { periodLabel } from "@/lib/updates";
@@ -323,18 +322,19 @@ export default async function ProjectPublicPage({
               The team has acknowledged this. {ROBINHOOD_MYTH.body}
             </p>
           ) : null}
-          <Prose label={ROBINHOOD_MYTH.followUp} text={doc.firstHundredUsers} />
+          <Prose label={ROBINHOOD_MYTH.followUp} text={fieldText(doc, "firstHundredUsers")} />
         </Section>
 
         <Section title="Contract architecture">
+          {openFields(doc).length ? <p className="text-xs text-ink-500">{FIELD_STATE_COPY.publicNote}</p> : null}
           <div className="space-y-4">
-            <Prose label="Contracts" text={doc.architecture.contracts} />
+            <Prose label="Contracts" text={fieldText(doc, "contracts")} />
             <div>
               <p className="text-[11px] uppercase tracking-wide text-ink-500">
                 External dependencies
               </p>
               {doc.architecture.externalDepsNone || doc.architecture.externalDeps.length === 0 ? (
-                <p className="mt-1 text-sm leading-relaxed text-ink-200">None</p>
+                <p className="mt-1 text-sm leading-relaxed text-ink-200">{fieldText(doc, "externalDeps")}</p>
               ) : (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {doc.architecture.externalDeps.map((dep, i) => (
@@ -356,20 +356,16 @@ export default async function ProjectPublicPage({
                 </div>
               )}
             </div>
-            <Prose
-              label="Oracles"
-              text={doc.architecture.oracleUse === "none" ? "None" : doc.architecture.oracles}
-            />
-            <Prose label="Admin functions" text={doc.architecture.adminFunctions} />
+            <Prose label="Oracles" text={fieldText(doc, "oracles")} />
+            <Prose label="Admin functions" text={fieldText(doc, "adminFunctions")} />
             <div className="flex flex-wrap gap-2">
               <StatusChip
                 tone={doc.architecture.upgradeability === "immutable" ? "success" : "neutral"}
               >
-                {optionLabel(UPGRADEABILITY_OPTIONS, doc.architecture.upgradeability)}
+                <span className="text-ink-400">Upgradeability</span> {fieldText(doc, "upgradeability")}
               </StatusChip>
-              <StatusChip tone={doc.worstCase === "nothing_serious" ? "neutral" : "warning"}>
-                <span className="text-ink-400">Worst case</span>{" "}
-                {optionLabel(WORST_CASE_OPTIONS, doc.worstCase)}
+              <StatusChip tone={doc.worstCase === "nothing_serious" || !doc.worstCase ? "neutral" : "warning"}>
+                <span className="text-ink-400">Worst case</span> {fieldText(doc, "worstCase")}
               </StatusChip>
             </div>
           </div>
@@ -381,8 +377,7 @@ export default async function ProjectPublicPage({
               const decl = doc.security[key];
               return (
                 <StatusChip key={key} tone={declTone(decl, doc.worstCase)}>
-                  <span className="text-ink-400">{label}</span> {STATUS_DECL_LABELS[decl.status]}
-                  {decl.note ? ` (${decl.note})` : ""}
+                  <span className="text-ink-400">{label}</span> {fieldText(doc, key)}
                 </StatusChip>
               );
             })}

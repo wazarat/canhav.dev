@@ -28,6 +28,7 @@ import type {
 // Values, used only inside functions. lib/ideation reaches this file through
 // content/kits/copy, so nothing here may read them at module load.
 import { PROJECT_LIMITS, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
+import type { WaivableField } from "@/lib/ideation";
 import type { ProjectChain } from "@/lib/chains";
 import { docSectors } from "@/lib/sectors";
 import type { DesignWarning } from "@/lib/tokenDesign";
@@ -1121,3 +1122,48 @@ export const ALLOCATION_ENFORCEMENT_NOTE =
   "Allocations are recorded in the design and shown on your public page. " +
   "On-chain, the factory sends the entire supply to the deployer minus the " +
   "optional vesting slice; only vesting parameters are enforced by contract.";
+
+// ---------------------------------------------------------------------------
+// Recommended fields and waivers (M130)
+
+/** The recommended fields of the record, as the readiness list and the public page name them. */
+export const WAIVABLE_FIELD_LABELS: Record<WaivableField, string> = {
+  subsectors: "Subsector",
+  sectorOther: "Sector description",
+  contracts: "Contracts",
+  externalDeps: "External dependencies",
+  oracles: "Oracles",
+  adminFunctions: "Admin functions",
+  upgradeability: "Upgradeability",
+  worstCase: "Worst case",
+  audit: "Audit",
+  bugBounty: "Bug bounty",
+  monitoring: "Monitoring",
+  incidentResponse: "Incident response",
+  keyCustody: "Key custody",
+  firstHundredUsers: "First hundred users",
+};
+
+/** How a recommended field reads when it is empty or waived. Commas, never a colon. */
+export const FIELD_STATE_COPY = {
+  notStated: "Not stated",
+  none: "None",
+  notApplicable: (reason: string) => `Not applicable, ${reason}`,
+  /** The link under a recommended field. */
+  markNa: "Does not apply",
+  applies: "Applies after all",
+  edit: "Edit the reason",
+  reasonLabel: "Why it does not apply",
+  reasonPlaceholder: "One line. It publishes with the record.",
+  save: "Save",
+  cancel: "Cancel",
+  /** Above the readiness rows. */
+  recommended: (n: number) =>
+    n === 0
+      ? "Every recommended field is stated or marked not applicable."
+      : n === 1
+        ? "1 recommended field is not stated. It publishes as Not stated."
+        : `${n} recommended fields are not stated. Each publishes as Not stated.`,
+  /** The sentence on a public page under a field the team did not state. */
+  publicNote: "Recommended fields the team left open read as Not stated.",
+} as const;
