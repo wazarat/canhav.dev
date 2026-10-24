@@ -255,7 +255,7 @@ export function ProjectBuildPage({
     decisions: (
       <DecisionsTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} patchSection={patchSection} chainLocked={chainLocked} earlier={agent.earlier} />
     ),
-    model: <ModelTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
+    model: <ModelTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} token={tokens[0] ? { name: tokens[0].name, symbol: tokens[0].symbol, address: tokens[0].address } : null} />,
     brand: <BrandTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
     deployments: (
       <DeploymentsTab

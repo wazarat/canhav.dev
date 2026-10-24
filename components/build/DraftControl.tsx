@@ -74,6 +74,9 @@ export function DraftControl<T>({
   variant = "button",
   gate = true,
   className,
+  serverDraft = true,
+  copyLabel,
+  copyHint,
 }: {
   projectId: string;
   kind: DraftKind;
@@ -94,6 +97,11 @@ export function DraftControl<T>({
   /** False to render the control alone, when a parent already gates. */
   gate?: boolean;
   className?: string;
+  /** False when CanHav does not draft this kind (M159, the pack): the menu has only the agent and the prompt, and the button queues or copies. */
+  serverDraft?: boolean;
+  /** The copy item's label and hint, when they differ from the default (M159, the prompt's length). */
+  copyLabel?: string;
+  copyHint?: string;
 }) {
   const C = STUDIO_PLUS_COPY.draft;
   const here = usePlusHere(DRAFT_KIND_FEATURES[kind]);
@@ -168,8 +176,12 @@ export function DraftControl<T>({
     if (action === "queue") queue(answers);
     else void server(answers);
   };
-  const primary = () => run(canQueue ? "queue" : "server");
-  const text = working ? C.working : (label ?? C.draft);
+  const primary = () => {
+    if (canQueue) run("queue");
+    else if (serverDraft) run("server");
+    else void copy();
+  };
+  const text = working ? C.working : copied && !canQueue && !serverDraft ? C.menu.copied : (label ?? C.draft);
 
   const menu = (trigger: (state: { open: boolean; toggle: () => void }) => React.ReactNode) => (
     <Menu align="left" width="w-72 max-w-[calc(100vw-2rem)]" className="inline-block" trigger={trigger}>
@@ -181,17 +193,19 @@ export function DraftControl<T>({
           </span>
         </MenuItem>
       ) : null}
-      <MenuItem onSelect={() => run("server")} disabled={working}>
-        <span className="flex flex-col items-start">
-          <span>{C.menu.canhav}</span>
-          {remaining !== null ? <span className="text-xs text-ink-500">{C.remaining(remaining)}</span> : null}
-        </span>
-      </MenuItem>
+      {serverDraft ? (
+        <MenuItem onSelect={() => run("server")} disabled={working}>
+          <span className="flex flex-col items-start">
+            <span>{C.menu.canhav}</span>
+            {remaining !== null ? <span className="text-xs text-ink-500">{C.remaining(remaining)}</span> : null}
+          </span>
+        </MenuItem>
+      ) : null}
       {agentPrompt ? (
         <MenuItem onSelect={() => void copy()}>
           <span className="flex flex-col items-start">
-            <span>{copied ? C.menu.copied : C.menu.copy}</span>
-            <span className="text-xs text-ink-500">{C.menu.copyHint}</span>
+            <span>{copied ? C.menu.copied : (copyLabel ?? C.menu.copy)}</span>
+            <span className="text-xs text-ink-500">{copyHint ?? C.menu.copyHint}</span>
           </span>
         </MenuItem>
       ) : null}

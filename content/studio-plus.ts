@@ -80,17 +80,42 @@ export const STUDIO_PLUS_COPY = {
     refresh: "If the studio still reads Studio, reload once.",
   },
   /** Brand identity kit (M118). */
-  /** The investor and grant pack on Publish (M126). */
+  /** The investor pack (M126, a prompt since M159). */
   pack: {
-    title: "Investor and grant pack",
-    intro: "A one pager, a short deck and draft grant answers, written from the record, the canvas, the profiles and the competitor line on this tab. Drafted by your agent or by CanHav, edited by you, exported as markdown. Never published.",
-    parts: { onepager: "One pager", deck: "Deck", grants: "Grant answers" } as const,
-    none: "Nothing drafted yet.",
-    have: (parts: string[], date: string) => `${parts.join(", ")} drafted · last change ${date}`,
+    title: "Investor pack",
+    intro: "Your agent or any AI builds the one pager and the deck from the full record and your brand kit. Nothing here is published.",
+    parts: { onepager: "One pager", deck: "Deck", grants: "Grant answers", onepagerFile: "One pager file", deckFile: "Deck file" } as const,
+    none: "Nothing built yet.",
+    have: (parts: string[], date: string) => `${parts.join(", ")} · last change ${date}`,
     draftOnepager: "Draft the one pager",
     draftDeck: "Draft the deck",
-    draftGrants: "Draft the answers",
-    programLabel: "Programme",
+    /** The menu's copy item names the prompt's length (M159). */
+    copyPrompt: (chars: number) => `Copy the prompt, ${chars.toLocaleString("en-US")} characters`,
+    copyPromptHint: "Paste it into any AI with the full record and the brand kit",
+    builtAt: (date: string, file: string) => `Built by your agent on ${date}, at ${file}`,
+    recordedAt: (file: string) => `Recorded at ${file}`,
+    removeFile: "Forget the file",
+    earlier: "Earlier draft, written in the studio before the pack became a prompt",
+    earlierGrants: "Earlier grant answers, no longer drafted",
+    filesOnly: (parts: string[]) => `The pack's ${parts.join(", ")} ${parts.length === 1 ? "is" : "are"} no longer written through update_project. Build the file from the draft_pack prompt and record where it lives with investorPack.files.`,
+    prompt: {
+      opening: (kind: "onepager" | "deck", name: string) =>
+        `Build the investor ${kind === "onepager" ? "one pager" : "deck"} for ${name}. Everything below is the project's record from CanHav Studio. Use only these facts and the repository you can see; where the record is silent, write what you assume in square brackets.`,
+      noBrand: "No brand kit is set yet. Use a plain, legible style and say so.",
+      noLogo: "No logo is uploaded yet.",
+      banners: "The social banners (X, Open Graph, square) download from the Brand tab of the studio; ask the team for them if the deck needs one.",
+      noToken: "No token is launched or linked yet.",
+      onepager: "A one pager, one page, in this order. The problem. The product. Who pays and why. Where it stands (what is built, on which chain, what is recorded). The market and the one or two names it is compared with. The ask. Short paragraphs, one or two facts each.",
+      deck: (slides: { min: number; max: number }) =>
+        `A deck of 8 to ${slides.max} slides, each a title and its content. The order a reviewer expects, title with the tagline, the problem, the product, how it works, who pays, where it stands, market and competition, the plan, the team, the ask. One fact per line.`,
+      rules: [
+        "Apply the brand kit, the palette's primary and accent for emphasis, the surface colour for backgrounds, the display font for titles and the body font for text, the tone words for the voice, the tagline on the first page or slide, the logo where a mark belongs.",
+        "Numbers only from the record and the repository. Mark anything assumed in square brackets.",
+        "Never mention CanHav as the author, the team is the author.",
+      ],
+      closing: (kind: "onepager" | "deck", alias: string) =>
+        `When the file exists, record where it lives on the project with the ${alias} MCP server, update_project investorPack.files.${kind} set to the path in the repository or its URL. If you have no MCP connection, tell the team the path and they record it in the studio.`,
+    },
     download: "Download",
     print: "Print the one pager",
     remove: "Remove",
@@ -368,8 +393,8 @@ export const STUDIO_PLUS_COPY = {
       teaser: "Holders, traders, daily volume and new wallets over 90 days. The curve itself is on every token page.",
     },
     investor_pack: {
-      title: "Investor and grant pack",
-      teaser: "A one pager, a short deck and draft grant answers generated from the record, canvas, ICP and competitors.",
+      title: "Investor pack",
+      teaser: "One prompt with the full record and the brand kit, for your agent or any AI to build the one pager and the deck.",
     },
     weekly_update: {
       title: "Team update",

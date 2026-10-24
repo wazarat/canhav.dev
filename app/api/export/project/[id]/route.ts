@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurve } from "@/lib/indexer";
 
 import { brandFile, buildAgentsMd, buildResourcesMd } from "@/lib/export-md";
-import { buildDeckMd, buildGrantsMd, buildOnepagerMd } from "@/lib/export-pack";
+import { buildDeckMd, buildOnepagerMd } from "@/lib/export-pack";
 import { exportOwner, markdownResponse } from "@/lib/export-route";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { stripPlusFields } from "@/lib/plan-fields";
@@ -36,7 +36,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   // the other files are built without the paid blocks (M134).
   const plus = await projectPlus(row);
   const draft = plus ? row.draft_doc : stripPlusFields(row.draft_doc);
-  if (!plus && (file === "brand" || file === "onepager" || file === "deck" || file === "grants"))
+  if (!plus && (file === "brand" || file === "onepager" || file === "deck"))
     return NextResponse.json({ error: STUDIO_PLUS_COPY.gate.project, code: "plus_required" }, { status: 404 });
   if (file === "resources") return markdownResponse("RESOURCES.md", buildResourcesMd(draft, true));
   // The brand kit as one file (M118) that the agent and the public page both read.
@@ -46,10 +46,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       headers: { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": 'attachment; filename="brand.json"', "Cache-Control": "no-store" },
     });
   }
-  // The investor and grant pack (M126) as three markdown files.
+  // The pack's text parts written before M159 as markdown, while the team keeps them; the grants export is gone (404).
   if (file === "onepager") return markdownResponse("ONEPAGER.md", buildOnepagerMd(row.draft_doc));
   if (file === "deck") return markdownResponse("DECK.md", buildDeckMd(row.draft_doc));
-  if (file === "grants") return markdownResponse("GRANTS.md", buildGrantsMd(row.draft_doc));
   if (file === "agents") {
     const linked = await getLinkedTokenDesign(row.id);
     return markdownResponse(

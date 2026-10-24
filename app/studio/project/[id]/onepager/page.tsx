@@ -32,8 +32,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!user) redirect("/studio");
   const row = await getProject(id, user.owner);
   if (!row) notFound();
-  // The pack is a Studio+ block of the project's team (M134).
+  // The pack is a Studio+ block of the project's team (M134). The page stays only while a one pager written before M159 exists.
   if (!(await projectPlus(row))) notFound();
+  if (!row.draft_doc.investorPack?.onepager) notFound();
   const C = STUDIO_PLUS_COPY.pack;
   const doc = row.draft_doc;
   return (

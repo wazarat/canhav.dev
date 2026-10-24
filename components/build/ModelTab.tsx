@@ -30,6 +30,7 @@ export function ModelTab({
   agentMode,
   doc,
   patch,
+  token,
 }: {
   id: string;
   /** ISO time the project was started, for the project's age on the competitor map (M115). */
@@ -37,6 +38,8 @@ export function ModelTab({
   agentMode: AgentWriteMode;
   doc: ProjectDoc;
   patch: (p: Partial<ProjectDoc>) => void;
+  /** The launched or linked token, for the pack prompt (M159). */
+  token?: { name: string; symbol: string | null; address: string } | null;
 }) {
   const M = BUILD_COPY.model;
   return (
@@ -80,7 +83,7 @@ export function ModelTab({
 
         <CardSection id="model-pack" className="space-y-4">
           <Heading>{STUDIO_PLUS_COPY.pack.title}</Heading>
-          <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} />
+          <InvestorPackSection projectId={id} doc={doc} patch={patch} agentMode={agentMode} token={token} />
         </CardSection>
       </Card>
     </div>

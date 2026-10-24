@@ -24,9 +24,9 @@ export const DRAFT_KIND_FEATURES = {
   value_canvas: "icp",
   competitors: "competitors",
   brand: "brand",
+  // The one pager and the deck (M159) are requests for the agent, or a prompt to copy; CanHav drafts neither.
   onepager: "investor_pack",
   deck: "investor_pack",
-  grants: "investor_pack",
   weekly: "weekly_update",
 } as const satisfies Record<string, PlusFeature>;
 
@@ -47,7 +47,6 @@ export const DRAFT_MODELS: Record<DraftKind, string> = {
   brand: "claude-haiku-5-5",
   onepager: "claude-sonnet-5-5",
   deck: "claude-sonnet-5-5",
-  grants: "claude-sonnet-5-5",
   weekly: "claude-haiku-5-5",
 };
 

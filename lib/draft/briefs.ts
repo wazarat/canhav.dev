@@ -68,7 +68,6 @@ export const BRIEF_QUESTIONS: Record<DraftKind, BriefQuestion[]> = {
   brand: [{ id: "toneWords", answered: (doc) => Boolean(doc.brand?.tone?.length) }, { id: "avoidLook" }, { id: "feel" }],
   onepager: PACK,
   deck: PACK,
-  grants: [...PACK, { id: "budget" }],
   weekly: [{ id: "landed" }, { id: "next" }, { id: "blocked" }],
 };
 

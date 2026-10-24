@@ -6,7 +6,7 @@ import { PROFILE_KEYS, VALUE_AREAS, type ValueCanvases, emptyValueCanvas, normal
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
-import { investorPackPatchSchema, mergeInvestorPack } from "@/lib/investor-pack";
+import { writtenPackParts, investorPackPatchSchema, mergeInvestorPack } from "@/lib/investor-pack";
 import { UPDATE_CADENCES } from "@/lib/updates";
 import { kindsForPatch, withDrafted, withoutRequest } from "@/lib/draft/requests";
 import { grantProgram } from "@/content/grants";
@@ -874,6 +874,8 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
  */
 export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): string | null {
   let next = doc;
+  // The pack's text parts are no longer written (M159); only where the built files live is recorded.
+  if (patch.investorPack && writtenPackParts(patch.investorPack).length) return STUDIO_PLUS_COPY.pack.filesOnly(writtenPackParts(patch.investorPack));
   if (patch.mainnet) {
     // The record as it would be stored, checked with the project's own rule (M70).
     const after = applyProjectPatch(doc, { ...patch, sectors: undefined, subsectors: undefined, kit: undefined });
@@ -1288,6 +1290,9 @@ const PATH_LABELS: Record<string, string> = {
   "investorPack.onepager": "One pager",
   "investorPack.deck": "Deck",
   "investorPack.grants": "Grant answers",
+  "investorPack.files": "Pack files",
+  "investorPack.files.onepager": "One pager, where it lives",
+  "investorPack.files.deck": "Deck, where it lives",
   updateCadence: "Team update cadence",
   "canvas.customerSegments": "Canvas, customer segments",
   "canvas.valueProposition": "Canvas, value proposition",

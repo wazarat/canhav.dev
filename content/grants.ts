@@ -1,10 +1,8 @@
-import type { ProjectChain } from "@/lib/chains";
-
 /**
- * Grant programmes the investor pack drafts answers for (M126, Studio+).
- * Each carries the questions a form of that style asks and the word
- * limit the drafts respect. Programmes change their forms; these are the
- * recurring questions, named by style so an answer transfers.
+ * Grant programmes the investor pack used to draft answers for (M126,
+ * retired in M159). Kept so answers a team drafted before M159 still read
+ * with their question labels under the pack until the team removes them;
+ * nothing drafts or exports them any more.
  */
 export interface GrantQuestion {
   id: string;
@@ -73,14 +71,3 @@ export function grantProgram(id: string): GrantProgram | null {
   const real = grantProgramId(id);
   return GRANT_PROGRAMS.find((p) => p.id === real) ?? null;
 }
-
-/** The programmes in the order the project's chain suggests (M143): the chain's own first where it has one. */
-export function grantProgramsFor(chain: ProjectChain): GrantProgram[] {
-  const order = chain === "arbitrum_sepolia" ? ["arbitrum", "gitcoin", "general"] : ["general", "gitcoin", "arbitrum"];
-  return order.map((id) => GRANT_PROGRAMS.find((p) => p.id === id)).filter((p): p is GrantProgram => Boolean(p));
-}
-
-/** One line under the programme picker where the chain has no programme of its own. */
-export const GRANT_CHAIN_NOTE: Partial<Record<ProjectChain, string>> = {
-  robinhood_testnet: "Robinhood Chain has no public grant programme today, so the general form stands in.",
-};

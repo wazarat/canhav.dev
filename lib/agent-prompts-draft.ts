@@ -61,15 +61,16 @@ export function draftCompetitorsPrompt(name: string, projectId: string, brief = 
   );
 }
 
+/** The pack (M159): the agent builds the file outside CanHav from the full record and records where it lives. */
 export function draftPackPrompt(name: string, projectId: string, brief = ""): string {
-  return draftFieldPrompt(
-    name,
-    projectId,
-    "investorPack",
-    "investor and grant pack",
-    "Three parts, any of them. onepager, markdown with the headings The problem, The product, Who pays and why, Where it stands, The market, The ask, at most 6000 characters. deck, five to twelve slides as title and up to six bullets. grants, per programme id (arbitrum, gitcoin or general; optimism is read as general) the answers per question id within the word limits the studio lists, the project's chain's own programme first. Numbers only from the record and this repository; mark gaps in square brackets.",
-    brief,
-  );
+  const alias = mcpAlias(name, projectId);
+  return [
+    `Use the ${alias} MCP server for my CanHav project.`,
+    `1. Call get_project_status and get_project, read the whole record (the product, the customers and profiles, the Business Model Canvas and the Value Proposition Canvas, the competitor line, the architecture, the recorded contracts and the brand kit with its palette hex values, fonts, tone, tagline and logo), and this repository.`,
+    `2. Build the part the open request names under draftRequests (the one pager, a single page with the sections The problem, The product, Who pays and why, Where it stands, The market, The ask; or the deck, eight to twelve slides with a title and content per slide), in this repository as markdown or a slide file, or in the design tool I use, in the brand's colours and fonts. Numbers only from the record and the repository; mark anything assumed in square brackets.`,
+    ...(brief ? [brief] : []),
+    `3. Call update_project with investorPack.files.onepager or investorPack.files.deck holding the path in the repository or the URL where the file lives, which clears the request, then tell me where it is and what you assumed.`,
+  ].join("\n\n");
 }
 
 /** The weekly update writes a row, not a field (M124), so its prompt ends on set_weekly_update. */
@@ -106,5 +107,4 @@ export const DRAFT_AGENT_PROMPTS: Partial<Record<DraftKind, (name: string, proje
   weekly: draftWeeklyPrompt,
   onepager: draftPackPrompt,
   deck: draftPackPrompt,
-  grants: draftPackPrompt,
 };

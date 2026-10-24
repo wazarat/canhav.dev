@@ -39,7 +39,6 @@ export const DRAFT_KIND_FIELDS: Record<DraftKind, string | null> = {
   brand: "brand",
   onepager: "investorPack",
   deck: "investorPack",
-  grants: "investorPack",
   weekly: null,
 };
 
@@ -48,13 +47,13 @@ export function draftWriteHint(kind: DraftKind, target?: string): string {
   const field = DRAFT_KIND_FIELDS[kind];
   if (kind === "canvas_block" && target) return `Write the ${target} block of the canvas field through update_project; that clears this request.`;
   if (kind === "value_canvas") return `Write valueCanvas.${target ?? "0"} (the six areas for profile ${Number(target ?? 0) + 1}) through update_project; that clears this request.`;
-  if (kind === "onepager" || kind === "deck" || kind === "grants") return `Write investorPack.${kind === "onepager" ? "onepager" : kind} through update_project; that clears this request.`;
+  if (kind === "onepager" || kind === "deck") return `Build the ${kind === "onepager" ? "one pager" : "deck"} outside CanHav from the full record and the brand kit (the draft_pack prompt has the brief), then record where the file lives with update_project investorPack.files.${kind}; that clears this request.`;
   return field ? `Write the ${field} field through update_project; that clears this request.` : "Write it with set_weekly_update; that clears this request.";
 }
 
 /** The MCP prompt a kind maps to, listed as a slash command by Claude Code. */
 export function draftPromptName(kind: DraftKind): string {
-  const base = kind === "canvas_block" ? "canvas" : kind === "onepager" || kind === "deck" || kind === "grants" ? "pack" : kind;
+  const base = kind === "canvas_block" ? "canvas" : kind === "onepager" || kind === "deck" ? "pack" : kind;
   return `draft_${base}`;
 }
 
@@ -136,13 +135,15 @@ export function kindsForPatch(patch: Record<string, unknown>): DraftKind[] {
   if (has("valueCanvas")) out.push("value_canvas");
   if (has("competitors")) out.push("competitors");
   if (has("brand")) out.push("brand");
+  // The pack (M159): recording where a file lives answers that part's request.
   const pack = patch.investorPack;
   if (pack && typeof pack === "object") {
-    const p = pack as Record<string, unknown>;
-    if (p.onepager !== undefined) out.push("onepager");
-    if (p.deck !== undefined) out.push("deck");
-    if (p.grants !== undefined) out.push("grants");
-  } else if (pack === null) out.push("onepager", "deck", "grants");
+    const files = (pack as { files?: Record<string, unknown> }).files;
+    if (files && typeof files === "object") {
+      if (files.onepager !== undefined) out.push("onepager");
+      if (files.deck !== undefined) out.push("deck");
+    }
+  } else if (pack === null) out.push("onepager", "deck");
   return out;
 }
 
