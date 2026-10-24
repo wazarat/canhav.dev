@@ -2,6 +2,7 @@ import { CANVAS_BLOCKS, CANVAS_LIMITS, type Canvas, normalizeCanvas } from "@/li
 import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
+import { type AgentRequest, normalizeAgentRequests } from "@/lib/agent-requests";
 import { type Briefs, normalizeBriefs } from "@/lib/draft/briefs";
 import { type Brand, normalizeBrand } from "@/lib/brand/record";
 import { type InvestorPack, normalizeInvestorPack } from "@/lib/investor-pack";
@@ -368,6 +369,8 @@ export interface ProjectDoc {
   githubSync?: GithubSync;
   /** Draft requests waiting for the agent (M117). Optional, never injected, never published. */
   draftRequests?: DraftRequest[];
+  /** Requests for the agent that are not drafts (M151): make the deployer key, work a build step. Optional, never injected, never published. */
+  agentRequests?: AgentRequest[];
   /** Who drafted each Studio+ field (M117). Optional, never injected, never published. */
   drafted?: Drafted;
   /** The team's answers before each draft (M142), per kind. Owner written, optional, never injected, never published. */
@@ -380,6 +383,8 @@ export interface ProjectDoc {
    * and never injected. One address serves both testnets.
    */
   deployer?: string;
+  /** Who recorded the deployer address (M151): the agent over MCP or the owner in the studio. Optional, never injected. */
+  deployerBy?: "agent" | "owner";
   /**
    * Where the deployer key lives in the repository (M138), relative to its
    * root, for example packages/contracts/.env. Optional and never injected;
@@ -787,6 +792,15 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeDraftRequests((rest as { draftRequests?: unknown }).draftRequests);
     if (clean) (rest as { draftRequests?: DraftRequest[] }).draftRequests = clean;
     else delete (rest as { draftRequests?: unknown }).draftRequests;
+  }
+  if ("agentRequests" in rest) {
+    const clean = normalizeAgentRequests((rest as { agentRequests?: unknown }).agentRequests);
+    if (clean) (rest as { agentRequests?: AgentRequest[] }).agentRequests = clean;
+    else delete (rest as { agentRequests?: unknown }).agentRequests;
+  }
+  if ("deployerBy" in rest) {
+    const v = (rest as { deployerBy?: unknown }).deployerBy;
+    if (v !== "agent" && v !== "owner") delete (rest as { deployerBy?: unknown }).deployerBy;
   }
   if ("drafted" in rest) {
     const clean = normalizeDrafted((rest as { drafted?: unknown }).drafted);

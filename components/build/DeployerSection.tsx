@@ -11,6 +11,9 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { useCopyToClipboard } from "@/components/ui/useCopy";
 import { BUILD_COPY } from "@/content/build";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
+import { deployerPastePrompt } from "@/lib/agent-prompts";
+import type { AgentRequest } from "@/lib/agent-requests";
+import type { AgentWriteMode } from "@/lib/agent-writes";
 import { chainInfo, chainIsBeta } from "@/lib/chains";
 import { DEPLOYER_ADDRESS, DEPLOYER_ENV_FILE_DEFAULT, type DeployerChainView, type DeployerView, deployerEnvLine } from "@/lib/deployer";
 import { PROJECT_LIMITS, type TestnetContract } from "@/lib/ideation";
@@ -27,14 +30,22 @@ import { PROJECT_LIMITS, type TestnetContract } from "@/lib/ideation";
  */
 export function DeployerSection({
   projectId,
+  projectName,
   deployer,
   funding,
   onAddress,
   envFile,
   onEnvFile,
   contracts = [],
+  agentMode = "propose",
+  agentConnected = false,
+  request = null,
+  onAsk,
+  onCancelAsk,
+  deployerBy,
 }: {
   projectId: string;
+  projectName: string;
   deployer: DeployerView | null;
   /** The balances the page polls (M103). */
   funding: DeployerFunding;
@@ -45,6 +56,16 @@ export function DeployerSection({
   onEnvFile: (path: string) => void;
   /** The recorded testnet contracts (M149): their creator is offered as the deployer when none is recorded. */
   contracts?: TestnetContract[];
+  /** The project's agent write mode (M151): off hides the ask. */
+  agentMode?: AgentWriteMode;
+  /** Whether an agent has worked on the project (a session row or any change), the studio's "Agent connected" rule. */
+  agentConnected?: boolean;
+  /** The open deployer request, when the owner asked the agent (M151). */
+  request?: AgentRequest | null;
+  onAsk?: () => void;
+  onCancelAsk?: () => void;
+  /** Who recorded the address (M151). */
+  deployerBy?: "agent" | "owner";
 }) {
   const C = BUILD_COPY.deployments.deployer;
   const file = envFile.trim() || DEPLOYER_ENV_FILE_DEFAULT;
@@ -194,6 +215,9 @@ export function DeployerSection({
   if (!address) {
     // With contracts already recorded, recording the key that deployed them leads (M149, P1); a fresh key is the second path.
     const leadWithExisting = hasContracts;
+    // With an agent on the project, asking it to make the key on the person's machine leads (M151, F8).
+    const canAsk = agentConnected && agentMode !== "off" && Boolean(onAsk);
+    const when = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     return (
       <div className="space-y-4">
         <p className="text-xs leading-relaxed text-ink-400">{C.intro}</p>
@@ -205,9 +229,26 @@ export function DeployerSection({
             </Button>
           </div>
         ) : null}
+        {canAsk ? (
+          request ? (
+            <p className="text-sm text-ink-300">
+              {C.askedSince(when(request.requestedAt))}{" "}
+              <button type="button" onClick={onCancelAsk} className="text-ink-400 transition-colors hover:text-ink-50 hover:underline">
+                {C.cancelAsk}
+              </button>
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <Button size="sm" variant={creator && creator !== "unknown" ? "outline" : "primary"} onClick={onAsk}>
+                {C.askAgent}
+              </Button>
+              <p className="text-xs leading-relaxed text-ink-400">{C.askedHint}</p>
+            </div>
+          )
+        ) : null}
         {leadWithExisting ? recordField : null}
-        <Button size="sm" variant={leadWithExisting ? "outline" : "primary"} onClick={() => void create()} disabled={working} aria-busy={working}>
-          <KeyRound aria-hidden className="h-3.5 w-3.5" /> {working ? C.creating : C.create}
+        <Button size="sm" variant={leadWithExisting || canAsk ? "outline" : "primary"} onClick={() => void create()} disabled={working} aria-busy={working}>
+          <KeyRound aria-hidden className="h-3.5 w-3.5" /> {working ? C.creating : canAsk ? C.createHere : C.create}
         </Button>
         {leadWithExisting ? null : recordField}
       </div>
@@ -231,6 +272,9 @@ export function DeployerSection({
               {C.saved}
             </Button>
           </div>
+          {agentConnected && agentMode !== "off" ? (
+            <CopyBlock label={C.agentPromptLabel} text={deployerPastePrompt(projectName, projectId, file)} hint={C.agentPromptHint} />
+          ) : null}
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -266,7 +310,7 @@ export function DeployerSection({
         ))}
       {freshKey ? null : envFileField}
       <p className="text-[11px] text-ink-500">
-        {C.whereLine(file)} {C.agentLine}
+        {deployerBy === "agent" ? C.madeByAgent(file) : C.whereLine(file)} {C.agentLine}
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="ghost" onClick={() => void load()} disabled={loading}>

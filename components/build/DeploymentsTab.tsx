@@ -20,6 +20,8 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { TESTNET_COPY } from "@/content/ideation";
 import { TEMPLATE_CATALOG } from "@/content/templates";
+import { findAgentRequest, withAgentRequest, withoutAgentRequest } from "@/lib/agent-requests";
+import type { AgentWriteMode } from "@/lib/agent-writes";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { deployerView } from "@/lib/deployer";
 import { explorerAddressUrl, explorerTokenUrl } from "@/lib/explorer";
@@ -55,8 +57,13 @@ export function DeploymentsTab({
   funding,
   checks = [],
   contractProvenance = {},
+  agentMode = "propose",
+  agentConnected = false,
 }: {
   id: string;
+  /** The agent write mode and whether an agent has worked on the project (M151). */
+  agentMode?: AgentWriteMode;
+  agentConnected?: boolean;
   /** The newest automated check run per tool (M121). */
   checks?: CheckRunView[];
   /** Address to ISO time from the agent change history (M150), for rows recorded before stamps existed. */
@@ -87,10 +94,23 @@ export function DeploymentsTab({
   };
 
   const deployer = deployerView(doc, chainKey);
+  // Recording the address here stamps it as the owner's and answers an open ask (M151); clearing drops both keys.
   const setDeployer = (address: string | null) => {
-    if (address) patch({ deployer: address });
+    if (address) {
+      const left = withoutAgentRequest(doc, "deployer");
+      const { agentRequests: _r, ...rest } = doc;
+      setDoc({ ...(rest as ProjectDoc), deployer: address, deployerBy: "owner", ...(left ? { agentRequests: left } : {}) });
+    } else {
+      const { deployer: _old, deployerBy: _by, ...rest } = doc;
+      setDoc(rest as ProjectDoc);
+    }
+  };
+  const askAgent = () => patch({ agentRequests: withAgentRequest(doc, "deployer") });
+  const cancelAsk = () => {
+    const left = withoutAgentRequest(doc, "deployer");
+    if (left) patch({ agentRequests: left });
     else {
-      const { deployer: _old, ...rest } = doc;
+      const { agentRequests: _r, ...rest } = doc;
       setDoc(rest as ProjectDoc);
     }
   };
@@ -104,7 +124,14 @@ export function DeploymentsTab({
           <Heading>{D.deployer.title}</Heading>
           <DeployerSection
             projectId={id}
+            projectName={doc.name}
             deployer={deployer}
+            agentMode={agentMode}
+            agentConnected={agentConnected}
+            request={findAgentRequest(doc, "deployer") ?? null}
+            onAsk={askAgent}
+            onCancelAsk={cancelAsk}
+            deployerBy={doc.deployerBy}
             funding={funding}
             onAddress={setDeployer}
             envFile={doc.deployerEnvFile ?? ""}

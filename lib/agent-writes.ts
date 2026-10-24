@@ -24,6 +24,7 @@ import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { PROJECT_CHAINS } from "@/lib/chains";
 import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { TOKEN_STEPS } from "@/content/token-steps";
+import { withoutAgentRequest } from "@/lib/agent-requests";
 import {
   AUDIENCE_VALUES,
   CRYPTO_EXPERIENCE_VALUES,
@@ -707,7 +708,13 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.testnetContracts)
     next = { ...next, testnetContracts: stampContracts(testnetContractRows(doc), testnetContractRows({ testnetContracts: patch.testnetContracts }), "agent") };
   if (patch.logo === null) next = dropKey(next, "logo");
-  if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.deployer === null) next = dropKey(dropKey(next, "deployer"), "deployerBy");
+  // A deployer the agent records is stamped as such and answers the owner's open key request (M151).
+  if (typeof patch.deployer === "string") {
+    const left = withoutAgentRequest(next, "deployer");
+    next = { ...next, deployerBy: "agent" };
+    next = left ? { ...next, agentRequests: left } : dropKey(next, "agentRequests");
+  }
   if (patch.deployerEnvFile === null) next = dropKey(next, "deployerEnvFile");
   if (patch.waived) {
     const cur: Record<string, string> = { ...(doc.waived ?? {}) };

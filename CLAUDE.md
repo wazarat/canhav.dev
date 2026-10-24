@@ -68,6 +68,15 @@ turns `signal-400`) props. Don't repeat the numbers in the `hint` below the
 field. Limits come from their single source of truth (e.g. `JOURNEY_LIMITS` in
 `lib/journey.ts`) — never inline new constants.
 
+## Security
+
+No MCP tool ever returns a private key, and no route or tool accepts one.
+Deployer keys are made on the person's machine (by the agent in the
+repository, or in the browser and pasted into the env file); CanHav stores
+the address, who recorded it and the env file path, nothing else (M102,
+M151). A request for the agent to make the key is queued on the draft
+(`lib/agent-requests.ts`) and answered by `update_project deployer`.
+
 ## Chains
 
 A project builds on one of two chains, `robinhood_testnet` or

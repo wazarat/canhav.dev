@@ -5,6 +5,7 @@ import { googleFontsUrl } from "@/content/brand-fonts";
 import { briefSummary } from "@/lib/draft/briefs";
 import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests } from "@/lib/draft/requests";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
+import { agentRequestHowTo, openAgentRequests } from "@/lib/agent-requests";
 import { type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
 import { type LaunchTarget, launchTargetOf } from "@/lib/launch-targets";
@@ -66,7 +67,7 @@ import {
   KIT_COPY,
 } from "@/content/kits/copy";
 import { launchChain } from "@/content/launch";
-import { DEPLOYER_ENV, deployerHint, deployerView } from "@/lib/deployer";
+import { deployerEnvFile, DEPLOYER_ENV, deployerHint, deployerView } from "@/lib/deployer";
 import { TOKEN_STEPS_COPY, TOKEN_STEP_LABELS } from "@/content/token-steps";
 import type { TokenBuildRow } from "@/lib/token-steps";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
@@ -853,6 +854,12 @@ export function buildAgentsMd(input: {
     if (project.githubRepo) lines.push("", `Repository: https://github.com/${project.githubRepo}`);
     // The brand kit (M118), when one is set.
     lines.push(...brandLines(project, token?.ticker ?? null));
+    // The owner's requests for the agent (M151): make the deployer key, work a step. Each says how.
+    const asks = openAgentRequests(project);
+    if (asks.length) {
+      lines.push("", "## Open requests", "", "The owner asked for these first. Answering each one clears it.", "");
+      for (const r of asks) lines.push(`- ${r.kind === "deployer" ? "Deployer key" : `Build step ${r.target}`}, asked ${r.requestedAt.slice(0, 10)}. ${agentRequestHowTo(r.kind, deployerEnvFile(project))}`);
+    }
     // Open draft requests (M117): the owner clicked Draft and waits on the agent.
     const requests = openRequests(project);
     if (requests.length) {

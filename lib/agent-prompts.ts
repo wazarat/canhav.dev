@@ -50,7 +50,24 @@ export function continueBuildPrompt(name: string, projectId: string, openSteps: 
     `These build steps are still open on the project page.`,
     list,
     `1. Call get_build_steps and get_comparables, then report_session with your plan for the first three.`,
-    `2. Work through them in this repository. Tick each one with set_build_steps as soon as it is done, with the file, test or address as evidence. Mark a step that does not fit this product notApplicable with the reason.`,
+    `2. Work through them in this repository. Before any deploy, make sure get_project_status shows the deployer key's address; when it does not, make the key on this machine and record its address with update_project deployer first, so the record matches what happened. Tick each one with set_build_steps as soon as it is done, with the file, test or address as evidence. Mark a step that does not fit this product notApplicable with the reason.`,
     `3. Call set_summary with the updated built and building lists, then tell me where things stand.`,
+  ].join("\n\n");
+}
+
+/**
+ * For a key made in the browser (M151, F8): the agent asks the owner to
+ * paste the env line into the file themselves. The key never goes into the
+ * chat, an MCP answer or a transcript.
+ */
+export function deployerPastePrompt(name: string, projectId: string, envFile: string): string {
+  const alias = mcpAlias(name, projectId);
+  return [
+    serverLine(alias),
+    `I made the project's deployer key in the CanHav studio and recorded its address there. The private key is only on my clipboard, so do not ask me to paste it into this chat.`,
+    `1. Ask me to paste the DEPLOYER_PRIVATE_KEY line into ${envFile} myself, and wait until I say it is there.`,
+    `2. Check that ${envFile} is ignored by git (git check-ignore ${envFile}); add it to .gitignore if it is not.`,
+    `3. Call get_project_status, confirm the deployer block shows the address, and record the real path with update_project deployerEnvFile if the file is somewhere else.`,
+    `4. Never print the key, and never send it through any MCP tool.`,
   ].join("\n\n");
 }

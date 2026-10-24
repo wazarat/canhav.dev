@@ -225,6 +225,17 @@ export const BUILD_COPY = {
       intro:
         "A throwaway key your agent deploys from on both testnets. CanHav never sees the private key. Make it here, paste it into your repository, fund the address from each faucet.",
       create: "Create a deployer key",
+      /** The second path once asking the agent leads (M151). */
+      createHere: "Create the key here",
+      /** Queues a request the agent reads first on get_project_status (M151, F8). */
+      askAgent: "Ask your agent to make the key",
+      askedSince: (time: string) => `Asked your agent to make the key, ${time}`,
+      cancelAsk: "Cancel",
+      askedHint: "Your agent makes the key on your machine, writes it to the env file, checks it is ignored by git and records the address here. The key never travels through CanHav.",
+      madeByAgent: (file: string) => `Made by your agent, saved in ${file} on your machine.`,
+      /** The prompt beside a key made in the browser (M151). */
+      agentPromptLabel: "Prompt for your agent",
+      agentPromptHint: "Tells your agent to ask you to paste the line into the env file yourself, not into the chat.",
       creating: "Creating",
       /** Shown when the explorer names who deployed a recorded contract (M149, P1). */
       creatorFound: (label: string, short: string) => `${label} was deployed by ${short}. Record it as the deployer so the record matches what happened.`,

@@ -242,7 +242,20 @@ export function ProjectBuildPage({
     ),
     model: <ModelTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
     brand: <BrandTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
-    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} checks={checks} contractProvenance={contractProvenance} />,
+    deployments: (
+      <DeploymentsTab
+        id={id}
+        doc={doc}
+        patch={patch}
+        setDoc={setDoc}
+        tokens={tokens}
+        funding={funding}
+        checks={checks}
+        contractProvenance={contractProvenance}
+        agentMode={agent.state?.mode ?? "propose"}
+        agentConnected={Boolean(session || agent.state?.changes.length)}
+      />
+    ),
     publish: (
       <PublishTab
         id={id}
