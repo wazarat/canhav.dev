@@ -394,11 +394,40 @@ export interface ProjectDoc {
   mainnet?: MainnetRecord;
 }
 
-/** One testnet contract, labelled by the team or its agent (M83). */
+/** Who recorded a testnet contract (M150): the team's agent over MCP, the owner in the studio, or the GitHub sync. */
+export const CONTRACT_RECORDED_BY = ["agent", "owner", "sync"] as const;
+export type ContractRecordedBy = (typeof CONTRACT_RECORDED_BY)[number];
+
+/** One testnet contract, labelled by the team or its agent (M83). CanHav deploys none of them. */
 export interface TestnetContract {
   /** Lowercase hex. */
   address: string;
   label?: string;
+  /** Provenance (M150), set by the server on the path that recorded the row, never accepted from outside. */
+  recordedBy?: ContractRecordedBy;
+  /** ISO time the row was first recorded (M150). */
+  recordedAt?: string;
+}
+
+function isRecordedBy(v: unknown): v is ContractRecordedBy {
+  return typeof v === "string" && (CONTRACT_RECORDED_BY as readonly string[]).includes(v);
+}
+
+/**
+ * Stamp incoming contract rows with their provenance (M150): a row whose
+ * address is already stored keeps the stamp it has, including none (it was
+ * recorded before stamps existed, by someone else), and only a new address
+ * is stamped with `by` and now. Pure; the agent apply, the studio and the
+ * sync call it. Stamps sent from outside are dropped.
+ */
+export function stampContracts(stored: readonly TestnetContract[], incoming: readonly TestnetContract[], by: ContractRecordedBy, now = new Date().toISOString()): TestnetContract[] {
+  const known = new Map(stored.map((r) => [r.address.toLowerCase(), r] as const));
+  return incoming.map((r) => {
+    const { recordedBy: _b, recordedAt: _a, ...rest } = r;
+    const cur = known.get(r.address.toLowerCase());
+    if (cur) return { ...rest, ...(cur.recordedBy ? { recordedBy: cur.recordedBy } : {}), ...(cur.recordedAt ? { recordedAt: cur.recordedAt } : {}) };
+    return { ...rest, recordedBy: by, recordedAt: now };
+  });
 }
 
 /** The testnet contracts as rows, whether the doc stores strings or rows. */
@@ -423,9 +452,13 @@ export function normalizeProjectSummary(raw: unknown): ProjectSummary | null {
 }
 
 export function testnetContractRows(doc: Pick<ProjectDoc, "testnetContracts">): TestnetContract[] {
-  return (doc.testnetContracts ?? []).map((c) =>
-    typeof c === "string" ? { address: c } : c.label?.trim() ? { address: c.address, label: c.label.trim() } : { address: c.address },
-  );
+  return (doc.testnetContracts ?? []).map((c) => {
+    if (typeof c === "string") return { address: c };
+    const row: TestnetContract = c.label?.trim() ? { address: c.address, label: c.label.trim() } : { address: c.address };
+    if (isRecordedBy(c.recordedBy)) row.recordedBy = c.recordedBy;
+    if (typeof c.recordedAt === "string" && c.recordedAt) row.recordedAt = c.recordedAt;
+    return row;
+  });
 }
 
 /** One deployed contract on the mainnet, labelled by the team. */
@@ -701,7 +734,10 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
       const c = v as Record<string, unknown>;
       if (typeof c.address !== "string" || !c.address.trim()) continue;
       const label = typeof c.label === "string" && c.label.trim() ? c.label.trim().slice(0, L.mainnetLabel.max) : undefined;
-      rows.push({ address: c.address.trim().toLowerCase(), ...(label ? { label } : {}) });
+      // Provenance (M150): a known author and a parseable time survive, anything else drops.
+      const recordedBy = isRecordedBy(c.recordedBy) ? c.recordedBy : undefined;
+      const recordedAt = typeof c.recordedAt === "string" && c.recordedAt.length <= 40 && !Number.isNaN(Date.parse(c.recordedAt)) ? c.recordedAt : undefined;
+      rows.push({ address: c.address.trim().toLowerCase(), ...(label ? { label } : {}), ...(recordedBy ? { recordedBy } : {}), ...(recordedAt ? { recordedAt } : {}) });
     }
     if (rows.length) (rest as { testnetContracts?: TestnetContract[] }).testnetContracts = rows;
     else delete (rest as { testnetContracts?: unknown }).testnetContracts;
@@ -1255,6 +1291,8 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
     for (const c of testnetContractRows(doc)) {
       if (!ADDRESS.test(c.address)) return "Testnet contract addresses must be lowercase hex.";
       if (c.label && c.label.length > L.mainnetLabel.max) return `A testnet contract label is over ${L.mainnetLabel.max} characters.`;
+      if (c.recordedBy !== undefined && !isRecordedBy(c.recordedBy)) return "A testnet contract's recordedBy is not agent, owner or sync.";
+      if (c.recordedAt !== undefined && (typeof c.recordedAt !== "string" || Number.isNaN(Date.parse(c.recordedAt)))) return "A testnet contract's recordedAt is not a date.";
     }
   }
   if (doc.addressBook) {

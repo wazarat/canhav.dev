@@ -36,6 +36,7 @@ import {
   type TokenDesignDoc,
   type MainnetRecord,
   mainnetRecordEmpty,
+  stampContracts,
   testnetContractRows,
   validateMainnetRecord,
 } from "@/lib/ideation";
@@ -702,7 +703,9 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   const { sectors, subsectors, kit: kitPatch, ...fields } = patch;
   let next = deepMerge(doc, fields);
   // Testnet contracts arrive as rows or plain addresses and are stored as rows (M83).
-  if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
+  // The rows are stamped with their provenance (M150): new addresses as recorded by the agent now, known ones keep their stamp.
+  if (patch.testnetContracts)
+    next = { ...next, testnetContracts: stampContracts(testnetContractRows(doc), testnetContractRows({ testnetContracts: patch.testnetContracts }), "agent") };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
   if (patch.deployerEnvFile === null) next = dropKey(next, "deployerEnvFile");

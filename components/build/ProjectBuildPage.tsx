@@ -59,6 +59,7 @@ export function ProjectBuildPage({
   initialSlug,
   createdAt = new Date().toISOString(),
   checks = [],
+  contractProvenance = {},
   initialVisibility = "public",
   initialShareToken = null,
   privateUsed = 0,
@@ -87,6 +88,8 @@ export function ProjectBuildPage({
   createdAt?: string;
   /** The newest automated check run per tool (M121). */
   checks?: CheckRunView[];
+  /** Where recorded contracts came from, from the agent change history (M150). */
+  contractProvenance?: Record<string, string>;
   /** Private keeps the published page off the listings (M109). */
   initialVisibility?: "public" | "private";
   initialShareToken?: string | null;
@@ -239,7 +242,7 @@ export function ProjectBuildPage({
     ),
     model: <ModelTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
     brand: <BrandTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
-    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} checks={checks} />,
+    deployments: <DeploymentsTab id={id} doc={doc} patch={patch} setDoc={setDoc} tokens={tokens} funding={funding} checks={checks} contractProvenance={contractProvenance} />,
     publish: (
       <PublishTab
         id={id}

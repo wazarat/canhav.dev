@@ -272,6 +272,16 @@ export const BUILD_COPY = {
       agentLine: "Your agent reads the address, the balances and the faucets on get_project_status and in AGENTS.md.",
     },
     testnet: "Testnet",
+    /** The recorded contracts (M150): where they came from, as plain text under each. */
+    contracts: {
+      intro: "Contracts this project deployed or relies on, recorded by your team or its agent. CanHav deploys none of them.",
+      recordedBy: {
+        agent: (date: string) => `Recorded by your agent, ${date}`,
+        owner: (date: string) => `Added by you, ${date}`,
+        sync: (date: string) => `Recorded by the GitHub sync, ${date}`,
+      },
+      recordedEarlier: "Recorded earlier",
+    },
     tokens: "Tokens",
     tokensEmpty: "No token is linked to this project yet.",
     mainnet: "Mainnet",

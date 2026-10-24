@@ -15,6 +15,7 @@ import { hasCommitment } from "@/lib/journey";
 import { projectChainLocked } from "@/lib/launch-project";
 import { type MyLaunch, getMyLaunches } from "@/lib/my-launches";
 import { countPrivateProjects, getLinkedTokenDesign, getMyTokenDesigns, getProject } from "@/lib/ideation-db";
+import { contractProvenance } from "@/lib/agent-writes-db";
 import { latestCheckRuns } from "@/lib/checks/db";
 import { projectPlus } from "@/lib/plan-project";
 
@@ -39,7 +40,7 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
   if (!row) notFound();
 
   // The project's team plan decides the Studio+ surfaces on the page (M134).
-  const [privateUsed, checks, plus] = await Promise.all([countPrivateProjects(user.owner, row.id), latestCheckRuns(row.id), projectPlus(row)]);
+  const [privateUsed, checks, plus, provenance] = await Promise.all([countPrivateProjects(user.owner, row.id), latestCheckRuns(row.id), projectPlus(row), contractProvenance(row.id)]);
   const designsRead = getMyTokenDesigns(user.owner);
   const [linked, myDesigns, chainLocked, myLaunches] = await Promise.all([
     getLinkedTokenDesign(row.id),
@@ -105,6 +106,7 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
       initialSlug={row.slug}
       createdAt={new Date(row.created_at).toISOString()}
       checks={checks}
+      contractProvenance={provenance}
       initialVisibility={row.visibility ?? "public"}
       initialShareToken={row.share_token ?? null}
       privateUsed={privateUsed}

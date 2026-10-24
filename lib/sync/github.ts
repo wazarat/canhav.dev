@@ -2,7 +2,8 @@ import { z } from "zod";
 
 import { chainInfo, type ProjectChain } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
-import { testnetContractRows } from "@/lib/ideation";
+import {
+  type TestnetContract, testnetContractRows } from "@/lib/ideation";
 
 /**
  * GitHub sync (M120, Studio+). The Action in .github-templates posts the
@@ -43,21 +44,23 @@ export interface GithubSync {
 }
 
 /** The contracts the payload adds or relabels on the project's chain, merged by address. */
-export function mergedContracts(doc: ProjectDoc, payload: GithubSyncPayload, chain: ProjectChain): Array<{ address: string; label?: string }> | null {
+export function mergedContracts(doc: ProjectDoc, payload: GithubSyncPayload, chain: ProjectChain): TestnetContract[] | null {
   const chainId = chainInfo(chain).chainId;
   const incoming = payload.broadcasts.filter((b) => b.chainId === chainId).flatMap((b) => b.contracts);
   if (incoming.length === 0) return null;
   const rows = testnetContractRows(doc);
   const byAddress = new Map(rows.map((r) => [r.address, r] as const));
+  const now = new Date().toISOString();
   let changed = false;
   for (const c of incoming) {
     const label = c.name.trim().slice(0, 60);
     const cur = byAddress.get(c.address);
     if (!cur) {
-      byAddress.set(c.address, label ? { address: c.address, label } : { address: c.address });
+      // A row the sync adds is stamped as such (M150); a relabel keeps the stamp the row has.
+      byAddress.set(c.address, { address: c.address, ...(label ? { label } : {}), recordedBy: "sync", recordedAt: now });
       changed = true;
     } else if (label && !cur.label) {
-      byAddress.set(c.address, { address: c.address, label });
+      byAddress.set(c.address, { ...cur, label });
       changed = true;
     }
   }

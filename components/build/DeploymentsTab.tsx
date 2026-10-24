@@ -23,7 +23,7 @@ import { TEMPLATE_CATALOG } from "@/content/templates";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { deployerView } from "@/lib/deployer";
 import { explorerAddressUrl, explorerTokenUrl } from "@/lib/explorer";
-import { type ProjectDoc, PROJECT_LIMITS, testnetContractRows } from "@/lib/ideation";
+import { type ProjectDoc, PROJECT_LIMITS, type TestnetContract, stampContracts, testnetContractRows } from "@/lib/ideation";
 import { kitShapes } from "@/lib/kits";
 import { templatesForShapes } from "@/lib/templates";
 
@@ -54,10 +54,13 @@ export function DeploymentsTab({
   tokens,
   funding,
   checks = [],
+  contractProvenance = {},
 }: {
   id: string;
   /** The newest automated check run per tool (M121). */
   checks?: CheckRunView[];
+  /** Address to ISO time from the agent change history (M150), for rows recorded before stamps existed. */
+  contractProvenance?: Record<string, string>;
   doc: ProjectDoc;
   /** The deployer key's balances, polled by the page (M103). */
   funding: DeployerFunding;
@@ -74,6 +77,14 @@ export function DeploymentsTab({
     .filter((t) => t.ponsFit && doc.kit?.templates?.[t.id] === "accepted")
     .map((t) => ({ value: t.id, label: t.name }));
   const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+  // Where a recorded contract came from (M150): the row's stamp, else the earliest agent change that carried it, else recorded earlier.
+  const provenanceLine = (row: TestnetContract): string => {
+    const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (row.recordedBy) return D.contracts.recordedBy[row.recordedBy](row.recordedAt ? day(row.recordedAt) : "");
+    const at = contractProvenance[row.address.toLowerCase()];
+    if (at) return D.contracts.recordedBy.agent(day(at));
+    return D.contracts.recordedEarlier;
+  };
 
   const deployer = deployerView(doc, chainKey);
   const setDeployer = (address: string | null) => {
@@ -140,35 +151,19 @@ export function DeploymentsTab({
               ) : null}
             </p>
           ) : null}
+          <p className="text-xs leading-relaxed text-ink-400">{D.contracts.intro}</p>
           <Field label={TESTNET_COPY.contractsLabel} info={TESTNET_COPY.contractsHint}>
             <ContractRowsEditor
               rows={testnetContractRows(doc)}
-              onChange={(rows) => patch({ testnetContracts: rows.length ? rows : undefined })}
+              onChange={(rows) => patch({ testnetContracts: rows.length ? stampContracts(testnetContractRows(doc), rows, "owner") : undefined })}
               max={PROJECT_LIMITS.testnetContracts.max}
               labelMax={PROJECT_LIMITS.mainnetLabel.max}
               copy={TESTNET_COPY}
               empty={() => ({ address: "" })}
+              linkFor={(a) => explorerAddressUrl(a, chainKey)}
+              meta={(row) => provenanceLine(row)}
             />
           </Field>
-          {testnetContractRows(doc).some((c) => /^0x[0-9a-f]{40}$/i.test(c.address)) ? (
-            <ul className="space-y-1 text-xs">
-              {testnetContractRows(doc)
-                .filter((c) => /^0x[0-9a-f]{40}$/i.test(c.address))
-                .map((c) => (
-                  <li key={c.address} className="flex flex-wrap items-center gap-2">
-                    <span className="text-ink-300">{c.label || short(c.address)}</span>
-                    <a
-                      href={explorerAddressUrl(c.address, chainKey)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 font-mono text-electric-300 transition-colors hover:text-electric-200"
-                    >
-                      {short(c.address)} <ExternalLink aria-hidden className="h-3 w-3" />
-                    </a>
-                  </li>
-                ))}
-            </ul>
-          ) : null}
           <Field label={TESTNET_COPY.addressBookLabel} info={TESTNET_COPY.addressBookHint}>
             <Input
               type="url"

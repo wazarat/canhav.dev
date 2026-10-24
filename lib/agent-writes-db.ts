@@ -319,3 +319,36 @@ export async function agentActivityByProjects(projectIds: string[]): Promise<Map
   }
   return out;
 }
+
+/**
+ * Where the recorded contracts came from before rows carried a stamp (M150):
+ * the earliest applied or accepted agent change that carried each address.
+ * Owner edits in the studio left no record, so an address missing here and
+ * unstamped reads as recorded earlier.
+ */
+export async function contractProvenance(projectId: string): Promise<Record<string, string>> {
+  const sql = getDb();
+  if (!sql) return {};
+  try {
+    const rows = (await sql`
+      select patch, created_at
+      from launchpad.agent_changes
+      where project_id = ${projectId} and status in ('applied', 'accepted') and patch ? 'testnetContracts'
+      order by created_at asc
+    `) as Array<{ patch: { testnetContracts?: unknown }; created_at: string | Date }>;
+    const out: Record<string, string> = {};
+    for (const row of rows) {
+      const list = Array.isArray(row.patch?.testnetContracts) ? (row.patch.testnetContracts as unknown[]) : [];
+      const at = new Date(row.created_at).toISOString();
+      for (const v of list) {
+        const address = typeof v === "string" ? v : v && typeof v === "object" ? (v as { address?: unknown }).address : undefined;
+        if (typeof address !== "string") continue;
+        const key = address.trim().toLowerCase();
+        if (key && !out[key]) out[key] = at;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
