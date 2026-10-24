@@ -14,9 +14,9 @@ import { ResourcesLine } from "@/components/build/ResourcesLine";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
+import { MetaLine, ProgressBar } from "@/components/ui/MetaLine";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { STAGE_OPTIONS, optionLabel } from "@/content/ideation";
@@ -127,21 +127,22 @@ export function OverviewTab({
       <Card>
         <CardSection className="space-y-3">
           {line ? <p className="text-sm leading-relaxed text-ink-200">{line}</p> : null}
-          <div className="flex flex-wrap items-center gap-2">
-            {shapes.map((s) => (
-              <Badge key={s} tone="neon">
-                {s}
-              </Badge>
-            ))}
-            <Badge>{chain.short}</Badge>
-            {doc.stage ? <Badge>{optionLabel(STAGE_OPTIONS, doc.stage)}</Badge> : null}
-            {progress.total ? (
-              <StatusChip tone={progress.done === progress.total ? "success" : "neutral"} onClick={() => setProgressOpen(true)}>
-                {BUILD_COPY.overview.progress(progress.done, progress.total)}
-              </StatusChip>
-            ) : null}
-            <DeployerChip deployer={deployer} funding={funding} onClick={onGoDeployments} />
-          </div>
+          <MetaLine
+            items={[
+              shapes.length ? shapes.join(" and ") : null,
+              chain.short,
+              doc.stage ? optionLabel(STAGE_OPTIONS, doc.stage) : null,
+              progress.total ? (
+                <>
+                  <ProgressBar done={progress.done} total={progress.total} />
+                  <StatusChip tone={progress.done === progress.total ? "success" : "neutral"} onClick={() => setProgressOpen(true)}>
+                    {BUILD_COPY.overview.progress(progress.done, progress.total)}
+                  </StatusChip>
+                </>
+              ) : null,
+              <DeployerChip key="deployer" deployer={deployer} funding={funding} onClick={onGoDeployments} />,
+            ]}
+          />
           {!kit?.shape ? <p className="text-xs text-ink-500">{BUILD_COPY.overview.noShape}</p> : null}
           <PlusLine />
           <div>

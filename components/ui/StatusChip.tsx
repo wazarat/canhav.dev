@@ -4,22 +4,25 @@ import { cn } from "@/lib/utils";
 
 export type StatusTone = "success" | "warning" | "error" | "info" | "neutral";
 
-/** Dot color is the only tonal element — the chip surface stays neutral glass. */
-const dotClasses: Record<StatusTone, string> = {
-  success: "bg-signal-400",
-  warning: "bg-amber-400/80",
-  error: "bg-rose-400",
-  info: "bg-electric-400",
-  neutral: "bg-ink-500",
-};
-
 /**
- * Unified status surface: a flat chip on a subtle ink fill with a hairline
- * border, neutral text, and a small colored status dot (flat since M74).
- * Use `pill` for one-line states (network, phase, tranche) and `block` for
- * multiline messages (tx results, callouts), which reads as a quiet inline
- * banner. Never hand-roll amber/emerald/rose boxes.
+ * Status as plain text (M137). The pill is an inline span of secondary
+ * text, a clickable one a text link, the block a quiet paragraph. The tone
+ * only colours error text, in rose; every other tone reads the same, so a
+ * state has to say what it means in words. Kept as the renderer behind the
+ * old call sites; new code writes the text itself, or uses MetaLine and
+ * Property. Surface classes passed by older callers (padding, borders,
+ * backgrounds, radii) are dropped so nothing draws a box again.
  */
+const SURFACE = /^(-?(px|py|p|pl|pr|pt|pb|bg|border|rounded|shadow|ring)(-|$)|(sm|md|lg):(px|py|p|bg|border|rounded|shadow)(-|$))/;
+
+function stripSurface(className?: string): string | undefined {
+  if (!className) return className;
+  return className
+    .split(/\s+/)
+    .filter((c) => c && !SURFACE.test(c))
+    .join(" ");
+}
+
 export function StatusChip({
   tone = "neutral",
   variant = "pill",
@@ -32,37 +35,25 @@ export function StatusChip({
   variant?: "pill" | "block";
   onClick?: () => void;
 } & React.HTMLAttributes<HTMLElement>) {
-  const classes = cn(
-    "border border-ink-700/60 bg-ink-800/50 text-ink-200",
-    variant === "pill"
-      ? "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-xs"
-      : "flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-xs leading-relaxed",
-    onClick && "transition-colors hover:bg-ink-800/90",
-    className,
-  );
-  const dot = (
-    <span
-      aria-hidden
-      className={cn(
-        "h-1.5 w-1.5 shrink-0 rounded-full",
-        variant === "block" && "mt-[5px]",
-        dotClasses[tone],
-      )}
-    />
-  );
+  const color = tone === "error" ? "text-rose-400" : variant === "block" ? "text-ink-300" : "text-ink-300";
+  const rest = stripSurface(className);
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={classes} {...props}>
-        {dot}
-        <span className="min-w-0">{children}</span>
+      <button type="button" onClick={onClick} className={cn("inline text-left text-xs underline-offset-2 transition-colors hover:text-ink-100 hover:underline", tone === "error" ? "text-rose-400" : "text-ink-200", rest)} {...props}>
+        {children}
       </button>
     );
   }
-  const Tag = variant === "pill" ? "span" : "div";
+  if (variant === "block") {
+    return (
+      <div className={cn("text-sm leading-relaxed", color, rest)} {...props}>
+        {children}
+      </div>
+    );
+  }
   return (
-    <Tag className={classes} {...props}>
-      {dot}
-      <span className="min-w-0">{children}</span>
-    </Tag>
+    <span className={cn("text-xs", color, rest)} {...props}>
+      {children}
+    </span>
   );
 }

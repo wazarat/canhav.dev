@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ExportButtons } from "@/components/ideation/ExportButtons";
 import { LinkedEntityCard } from "@/components/ideation/LinkedEntityCard";
 import { CurveProgress } from "@/components/launch/CurveProgress";
-import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
+import { StatusChip } from "@/components/ui/StatusChip";
 import {
   AUDIENCE_OPTIONS,
   FIELD_STATE_COPY,
@@ -25,8 +25,10 @@ import { buildProgress } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
-import { type ProjectDoc, type StatusDecl, docAudience, testnetContractRows } from "@/lib/ideation";
+import { type ProjectDoc, docAudience, testnetContractRows } from "@/lib/ideation";
 import { fieldText, openFields } from "@/lib/project-fields";
+import { MetaLine } from "@/components/ui/MetaLine";
+import { Property, PropertyList } from "@/components/ui/Property";
 import { stripPlusFields } from "@/lib/plan-fields";
 import { projectPlus } from "@/lib/plan-project";
 import { getLaunchesByProject, launchRowChain } from "@/lib/launches-db";
@@ -73,13 +75,6 @@ async function mayOpen(row: NonNullable<Awaited<ReturnType<typeof getProjectBySl
 
 export const dynamic = "force-dynamic";
 
-/** A "not yet" is a warning only when the declared blast radius earns it. */
-function declTone(decl: StatusDecl, worstCase: ProjectDoc["worstCase"]): StatusTone {
-  if (decl.status === "in_place") return "success";
-  if (decl.status === "not_yet")
-    return worstCase === "lose_funds" || worstCase === "lock_funds" ? "warning" : "neutral";
-  return "info";
-}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -170,33 +165,18 @@ export default async function ProjectPublicPage({
           ) : null}
           <span>{doc.name}</span>
         </h1>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {sectorLabels(doc).map((label) => (
-            <StatusChip key={`sector-${label}`} tone="neutral">
-              {label}
-            </StatusChip>
-          ))}
-          {subsectorLabels(doc).map((label) => (
-            <StatusChip key={label} tone="neutral">
-              {label}
-            </StatusChip>
-          ))}
-          {shapeLabels(doc.kit).map((label) => (
-            <StatusChip key={label} tone="neutral">
-              {label}
-            </StatusChip>
-          ))}
-          {doc.kit && buildProgress(doc.kit).total > 0 ? (
-            <StatusChip tone="info">
-              {CHECKLIST_COPY.rowChip(buildProgress(doc.kit).done, buildProgress(doc.kit).total)}
-            </StatusChip>
-          ) : null}
-          <StatusChip tone="info">{optionLabel(STAGE_OPTIONS, doc.stage)}</StatusChip>
-          <StatusChip tone="neutral">
-            v{doc.publishVersion} · {new Date(snapshot.created_at).toLocaleDateString("en-US")}
-          </StatusChip>
-          {isPrivate ? <StatusChip tone="warning">{BUILD_COPY.publish.visibility.pageChip}</StatusChip> : null}
-        </div>
+        <MetaLine
+          className="mt-4"
+          items={[
+            sectorLabels(doc).join(" and "),
+            subsectorLabels(doc).join(", "),
+            shapeLabels(doc.kit).join(" and "),
+            doc.kit && buildProgress(doc.kit).total > 0 ? CHECKLIST_COPY.rowChip(buildProgress(doc.kit).done, buildProgress(doc.kit).total) : null,
+            optionLabel(STAGE_OPTIONS, doc.stage),
+            `v${doc.publishVersion}, ${new Date(snapshot.created_at).toLocaleDateString("en-US")}`,
+            isPrivate ? BUILD_COPY.publish.visibility.pageChip : null,
+          ]}
+        />
         {doc.brand ? <div aria-hidden className="mt-6 h-0.5 w-24 rounded-full bg-brand-primary" /> : null}
         {doc.brand?.tagline ? <p className="mt-3 text-sm text-ink-300">{doc.brand.tagline}</p> : null}
         <div className="mt-4">
@@ -362,30 +342,19 @@ export default async function ProjectPublicPage({
             </div>
             <Prose label="Oracles" text={fieldText(doc, "oracles")} />
             <Prose label="Admin functions" text={fieldText(doc, "adminFunctions")} />
-            <div className="flex flex-wrap gap-2">
-              <StatusChip
-                tone={doc.architecture.upgradeability === "immutable" ? "success" : "neutral"}
-              >
-                <span className="text-ink-400">Upgradeability</span> {fieldText(doc, "upgradeability")}
-              </StatusChip>
-              <StatusChip tone={doc.worstCase === "nothing_serious" || !doc.worstCase ? "neutral" : "warning"}>
-                <span className="text-ink-400">Worst case</span> {fieldText(doc, "worstCase")}
-              </StatusChip>
-            </div>
+            <PropertyList>
+              <Property label="Upgradeability" value={fieldText(doc, "upgradeability")} />
+              <Property label="Worst case" value={fieldText(doc, "worstCase")} />
+            </PropertyList>
           </div>
         </Section>
 
         <Section title="Security">
-          <div className="flex flex-wrap gap-2">
-            {PROJECT_SECURITY_FIELDS.map(({ key, label }) => {
-              const decl = doc.security[key];
-              return (
-                <StatusChip key={key} tone={declTone(decl, doc.worstCase)}>
-                  <span className="text-ink-400">{label}</span> {fieldText(doc, key)}
-                </StatusChip>
-              );
-            })}
-          </div>
+          <PropertyList>
+            {PROJECT_SECURITY_FIELDS.map(({ key, label }) => (
+              <Property key={key} label={label} value={fieldText(doc, key)} />
+            ))}
+          </PropertyList>
         </Section>
 
         {(deploys || txCount !== null || github || contractChecks) && (

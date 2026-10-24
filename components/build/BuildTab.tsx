@@ -15,6 +15,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { TAB_WIDTH } from "@/components/build/layout";
+import { MetaLine, ProgressBar } from "@/components/ui/MetaLine";
 import { usePlan } from "@/components/studio/PlanContext";
 import { BUILD_COPY, type BuildTab as BuildTabName } from "@/content/build";
 import { removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
@@ -265,23 +266,18 @@ function MilestoneSection({
       <CardSection>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-base font-semibold text-ink-50">{M.label}</h2>
-          <span className="flex flex-wrap items-center gap-1.5">
-            {groups.length ? (
-              <StatusChip tone={progress.done === progress.total ? "success" : "neutral"} className="px-2 py-0.5 text-[11px]">
-                {CHECKLIST_COPY.progress(progress.done, progress.total)}
-              </StatusChip>
-            ) : null}
-            {review ? (
-              <StatusChip tone={review.fail > 0 ? "warning" : review.open > 0 ? "neutral" : "success"} className="px-2 py-0.5 text-[11px]">
-                {REVIEW_COPY.summary(review)}
-              </StatusChip>
-            ) : null}
-            {facts ? (
-              <StatusChip tone={launchDone === launchRows.length ? "success" : "neutral"} className="px-2 py-0.5 text-[11px]">
-                {CHECKLIST_COPY.progress(launchDone, launchRows.length)}
-              </StatusChip>
-            ) : null}
-          </span>
+          <MetaLine
+            items={[
+              groups.length ? (
+                <>
+                  <ProgressBar done={progress.done} total={progress.total} />
+                  {CHECKLIST_COPY.progress(progress.done, progress.total)}
+                </>
+              ) : null,
+              review ? REVIEW_COPY.summary(review) : null,
+              facts ? CHECKLIST_COPY.progress(launchDone, launchRows.length) : null,
+            ]}
+          />
         </div>
         <p className="mt-1 text-xs leading-relaxed text-ink-400">{M.blurb}</p>
       </CardSection>

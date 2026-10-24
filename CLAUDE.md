@@ -36,24 +36,23 @@ classes:
 - `Menu` and `MenuItem` (`Menu.tsx`) for dropdowns, `InfoTip` for helper
   copy behind an info icon, `Collapsible` for "Learn more" rows.
 
-### Status surfaces — always `StatusChip`
+### Status and facts are plain text (M137)
 
-Every status pill, badge, or message box (network state, sale phase, tranche
-state, tx success/error, callouts) uses `components/ui/StatusChip.tsx`: a
-flat chip on a subtle ink fill with a hairline border and neutral `ink-200`
-text, the **only** color is the small status dot.
-
-- `variant="pill"` for one-line states, `variant="block"` for multiline
-  messages. Pass `onClick` to get a `<button>` with hover state.
-- Tones: `success` (connected, live, executed, claimed, verified, tx success) ·
-  `warning` (wrong network, no wallet, RPC down, ready-to-execute) · `error`
-  (hash mismatch, tx failure, config error) · `info` (claimable,
-  executable-at-date) · `neutral` (ended, cancelled, starts/unlocks dates).
-- **Never hand-roll colored boxes** like
-  `border-amber-500/40 bg-amber-500/10 text-amber-300` (or the emerald/rose
-  equivalents). That pattern was removed platform-wide on 2026-08-06.
-- Exception: transient inline/field-level error *text* stays plain
-  `text-rose-400` (matches `Field`'s error line) — text only, never a box.
+Status and facts are written as text, never as a box. `MetaLine`
+(`components/ui/MetaLine.tsx`) lays facts on one line in secondary text
+joined by middle dots (the shapes, the chain, the stage); `ProgressBar`
+beside it is the thin bar and a count such as "10 of 17 steps done";
+`Property` and `PropertyList` (`Property.tsx`) are a label and value
+list. A state is a sentence with a time where it matters ("Last checked
+40 seconds ago", "Published on Oct 21"); a clickable state is a text link
+that underlines on hover; a multiline message is a plain paragraph. The
+only colour is error text in `text-rose-400`, so a state has to say what
+it means in words. `StatusChip` and `Badge` still exist as text renderers
+behind the old call sites and drop any surface classes passed to them; do
+not add new ones, and never hand-roll a coloured box
+(`border-amber-500/40 bg-amber-500/10 text-amber-300` or the emerald and
+rose equivalents). Pills (`rounded-full`) stay only for dots, progress
+bars and the nav Soon badge.
 
 ### Form fields — `Field` from `components/ui/Input.tsx`
 
