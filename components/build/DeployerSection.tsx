@@ -9,7 +9,8 @@ import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
-import { DEPLOYER_ADDRESS, type DeployerView, deployerEnvLine } from "@/lib/deployer";
+import { DEPLOYER_ADDRESS, DEPLOYER_ENV_FILE_DEFAULT, type DeployerView, deployerEnvLine } from "@/lib/deployer";
+import { PROJECT_LIMITS } from "@/lib/ideation";
 
 /**
  * The throwaway deployer key (M102). The key is generated in the browser
@@ -21,14 +22,25 @@ export function DeployerSection({
   deployer,
   funding,
   onAddress,
+  envFile,
+  onEnvFile,
 }: {
   deployer: DeployerView | null;
   /** The balances the page polls (M103). */
   funding: DeployerFunding;
   /** Stores a lowercase address on the draft, or clears it with null. */
   onAddress: (address: string | null) => void;
+  /** Where the key lives in the repository (M138), the recorded path or empty for the default. */
+  envFile: string;
+  onEnvFile: (path: string) => void;
 }) {
   const C = BUILD_COPY.deployments.deployer;
+  const file = envFile.trim() || DEPLOYER_ENV_FILE_DEFAULT;
+  const envFileField = (
+    <Field label={C.envFileLabel} hint={envFile.trim() ? C.envFileHint : `${C.envFileDefault} ${C.envFileHint}`}>
+      <Input value={envFile} onChange={(e) => onEnvFile(e.target.value)} placeholder={DEPLOYER_ENV_FILE_DEFAULT} maxLength={PROJECT_LIMITS.deployerEnvFile.max} className="font-mono text-xs" />
+    </Field>
+  );
   const [working, setWorking] = useState(false);
   /** The key just made, kept only in this component until the owner says it is saved. */
   const [freshKey, setFreshKey] = useState<string | null>(null);
@@ -99,7 +111,8 @@ export function DeployerSection({
           <StatusChip tone="warning" variant="block">
             {C.made}
           </StatusChip>
-          <CopyBlock label={C.envLabel} text={deployerEnvLine(freshKey)} hint={C.envHint} />
+          <CopyBlock label={C.envLabel(file)} text={deployerEnvLine(freshKey)} hint={C.envHint} />
+          {envFileField}
           <Button size="sm" variant="outline" onClick={() => setFreshKey(null)}>
             {C.saved}
           </Button>
@@ -134,8 +147,9 @@ export function DeployerSection({
           );
         })}
       </ul>
+      {freshKey ? null : envFileField}
       <p className="text-[11px] text-ink-500">
-        {C.whereLine} {C.agentLine}
+        {C.whereLine(file)} {C.agentLine}
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="ghost" onClick={() => void load()} disabled={loading}>
@@ -144,7 +158,7 @@ export function DeployerSection({
         <Button
           size="sm"
           variant="ghost"
-          title={C.replaceHint}
+          title={C.replaceHint(file)}
           onClick={() => {
             setFreshKey(null);
             onAddress(null);

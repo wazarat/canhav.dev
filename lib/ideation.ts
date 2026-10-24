@@ -378,6 +378,12 @@ export interface ProjectDoc {
    */
   deployer?: string;
   /**
+   * Where the deployer key lives in the repository (M138), relative to its
+   * root, for example packages/contracts/.env. Optional and never injected;
+   * absent reads as .env at the contracts root. Stripped at publish.
+   */
+  deployerEnvFile?: string;
+  /**
    * The mainnet deployment beside the testnet launch and the Pons pairing
    * (M70). Optional and never injected; a project without one hashes as
    * before. Published with the record, unlike `references`.
@@ -493,6 +499,8 @@ export const PROJECT_LIMITS = {
   referenceEvidence: { max: 120 },
   /** The reason a recommended field does not apply (M130). */
   waiver: { min: 3, max: 200 },
+  /** The deployer key's env file path (M138). */
+  deployerEnvFile: { max: 200 },
 } as const;
 
 /**
@@ -783,6 +791,13 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
       }
     if (Object.keys(clean).length) (rest as { waived?: unknown }).waived = clean;
     else delete (rest as { waived?: unknown }).waived;
+  }
+  // Deployer env file (M138): a relative path, trimmed, dropped when empty or climbing out of the repository.
+  if ("deployerEnvFile" in rest) {
+    const v = (rest as { deployerEnvFile?: unknown }).deployerEnvFile;
+    const clean = typeof v === "string" ? v.trim().replace(/^\/+/, "").slice(0, PROJECT_LIMITS.deployerEnvFile.max) : "";
+    if (clean && !clean.split("/").includes("..")) (rest as { deployerEnvFile?: string }).deployerEnvFile = clean;
+    else delete (rest as { deployerEnvFile?: unknown }).deployerEnvFile;
   }
   // Chain (M52): kept when it is a known chain, dropped when it is garbage, never invented.
   if ("chain" in rest && !isProjectChain((rest as { chain?: unknown }).chain))
@@ -1241,6 +1256,8 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
   if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
+  if (doc.deployerEnvFile !== undefined && (typeof doc.deployerEnvFile !== "string" || doc.deployerEnvFile.length > L.deployerEnvFile.max || doc.deployerEnvFile.startsWith("/") || doc.deployerEnvFile.split("/").includes("..")))
+    return `The deployer env file is a relative path of at most ${L.deployerEnvFile.max} characters.`;
   if (doc.icp && !icpListSchema.safeParse(doc.icp).success) return "An ideal customer profile is over its limits.";
   if (doc.canvas) {
     for (const b of CANVAS_BLOCKS) {

@@ -90,7 +90,7 @@ export function DeploymentsTab({
       <Card>
         <CardSection className="space-y-4">
           <Heading>{D.deployer.title}</Heading>
-          <DeployerSection deployer={deployer} funding={funding} onAddress={setDeployer} />
+          <DeployerSection deployer={deployer} funding={funding} onAddress={setDeployer} envFile={doc.deployerEnvFile ?? ""} onEnvFile={(v) => patch({ deployerEnvFile: v.trim() ? v : undefined })} />
         </CardSection>
 
         {paid ? (

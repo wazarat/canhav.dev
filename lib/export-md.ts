@@ -63,7 +63,7 @@ import {
   KIT_COPY,
 } from "@/content/kits/copy";
 import { launchChain } from "@/content/launch";
-import { DEPLOYER_ENV, DEPLOYER_ENV_FILE, DEPLOYER_HINT, deployerView } from "@/lib/deployer";
+import { DEPLOYER_ENV, deployerHint, deployerView } from "@/lib/deployer";
 import { TOKEN_STEPS_COPY, TOKEN_STEP_LABELS } from "@/content/token-steps";
 import type { TokenBuildRow } from "@/lib/token-steps";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
@@ -867,11 +867,11 @@ export function buildAgentsMd(input: {
     if (deployer) {
       lines.push(
         `- Address: ${deployer.address}`,
-        `- The private key is in ${DEPLOYER_ENV_FILE} as ${DEPLOYER_ENV}. Never paste it anywhere else and never commit it.`,
+        `- The private key is in ${deployer.envFile} as ${DEPLOYER_ENV}. Never paste it anywhere else and never commit it.`,
         ...deployer.chains.map((c) => `- ${c.name} (chain id ${c.chainId}): faucet ${c.faucetUrl}, balance at ${c.explorerUrl}${deployer.address}`),
       );
     } else {
-      lines.push(DEPLOYER_HINT);
+      lines.push(deployerHint(project));
     }
     lines.push(...resourcePackSections(project, "##", token ? launchTargetOf(token) : null));
     lines.push(...mainnetSections(project, "##"));

@@ -601,7 +601,8 @@ export async function publishEntity(
   // the team's machine, which have no place on a public page.
   // The agent's summary (M104) stays on the draft as well.
   // Draft requests and drafted marks (M117) stay on the draft too.
-  const { references: refs, summary: sum, draftRequests: dr, drafted: dm, githubSync: gs, investorPack: ip, updateCadence: uc, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown; draftRequests?: unknown; drafted?: unknown; githubSync?: unknown; investorPack?: unknown; updateCadence?: unknown };
+  // The deployer env file (M138) is a path on the team's machine, so it stays on the draft too.
+  const { references: refs, summary: sum, draftRequests: dr, drafted: dm, githubSync: gs, investorPack: ip, updateCadence: uc, deployerEnvFile: def, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown; draftRequests?: unknown; drafted?: unknown; githubSync?: unknown; investorPack?: unknown; updateCadence?: unknown; deployerEnvFile?: unknown };
   // Competitors (M115): the public record keeps the line, not the map's state.
   const pc = publishedCompetitors((projectBody as ProjectDoc).competitors);
   if (table === "projects") {
@@ -623,7 +624,7 @@ export async function publishEntity(
       : stamped;
   const draftOut =
     table === "projects"
-      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }), ...(uc === undefined ? {} : { updateCadence: uc }) }
+      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }), ...(uc === undefined ? {} : { updateCadence: uc }), ...(def === undefined ? {} : { deployerEnvFile: def }) }
       : ticks === undefined
         ? stamped
         : { ...stamped, checklist: ticks };

@@ -10,7 +10,14 @@ import { launchChain } from "@/content/launch";
  * the studio, the MCP tools and the exports.
  */
 export const DEPLOYER_ENV = "DEPLOYER_PRIVATE_KEY";
-export const DEPLOYER_ENV_FILE = "packages/contracts/.env";
+/** Where the key lives when the project records nothing else (M138): the .env of the contracts package. */
+export const DEPLOYER_ENV_FILE_DEFAULT = ".env";
+
+/** The env file the project records, or the default. */
+export function deployerEnvFile(doc: { deployerEnvFile?: string }): string {
+  const v = doc.deployerEnvFile?.trim();
+  return v || DEPLOYER_ENV_FILE_DEFAULT;
+}
 
 export const DEPLOYER_ADDRESS = /^0x[0-9a-f]{40}$/;
 
@@ -26,7 +33,10 @@ export interface DeployerView {
   /** Lowercase hex. */
   address: string;
   envVar: string;
+  /** The env file path relative to the repository root (M138). */
   envFile: string;
+  /** True while the project records no path of its own. */
+  envFileDefault: boolean;
   chains: DeployerChainView[];
 }
 
@@ -45,10 +55,10 @@ export function deployerChains(projectChain: ProjectChain): DeployerChainView[] 
   });
 }
 
-export function deployerView(doc: { deployer?: string; chain?: unknown }, projectChain: ProjectChain): DeployerView | null {
+export function deployerView(doc: { deployer?: string; deployerEnvFile?: string; chain?: unknown }, projectChain: ProjectChain): DeployerView | null {
   const address = doc.deployer?.trim().toLowerCase();
   if (!address || !DEPLOYER_ADDRESS.test(address)) return null;
-  return { address, envVar: DEPLOYER_ENV, envFile: DEPLOYER_ENV_FILE, chains: deployerChains(projectChain) };
+  return { address, envVar: DEPLOYER_ENV, envFile: deployerEnvFile(doc), envFileDefault: !doc.deployerEnvFile?.trim(), chains: deployerChains(projectChain) };
 }
 
 /** The line that goes into the env file. The key never leaves the machine it was made on. */
@@ -56,8 +66,18 @@ export function deployerEnvLine(privateKey: string): string {
   return `${DEPLOYER_ENV}=${privateKey}`;
 }
 
-/** What an agent reads when the project has no deployer key yet. */
-export const DEPLOYER_HINT =
-  `No deployer key is recorded. Generate a throwaway key in the repository (cast wallet new, or viem's generatePrivateKey), ` +
-  `write it to ${DEPLOYER_ENV_FILE} as ${DEPLOYER_ENV}=0x..., never send the key here, and record its address with update_project deployer. ` +
-  `The owner funds the address from each testnet's faucet; the balances show on get_project_status.`;
+/** What an agent reads when the project has no deployer key yet (M138): the file follows the repository's layout. */
+export function deployerHint(doc: { deployerEnvFile?: string } = {}): string {
+  const file = deployerEnvFile(doc);
+  const where = doc.deployerEnvFile?.trim()
+    ? `write it to ${file} as ${DEPLOYER_ENV}=0x...`
+    : `write it to the .env of the contracts package as ${DEPLOYER_ENV}=0x... (packages/contracts/.env in a monorepo, .env beside foundry.toml otherwise) and record that path with update_project deployerEnvFile`;
+  return (
+    `No deployer key is recorded. Generate a throwaway key in the repository (cast wallet new, or viem's generatePrivateKey), ` +
+    `${where}, never send the key here, and record its address with update_project deployer. ` +
+    `The owner funds the address from each testnet's faucet; the balances show on get_project_status.`
+  );
+}
+
+/** The hint for a project that records no path, kept for callers without a document. */
+export const DEPLOYER_HINT = deployerHint();

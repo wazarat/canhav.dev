@@ -264,6 +264,8 @@ export const projectPatchSchema = z
     verifyWallet: z.string().regex(/^0x[0-9a-f]{40}$/),
     // The deployer key's address (M102), never the key; null clears it.
     deployer: z.string().regex(/^0x[0-9a-f]{40}$/).nullable(),
+    // Where the deployer key lives in the repository (M138), relative, null for the default.
+    deployerEnvFile: z.string().max(L.deployerEnvFile.max).regex(/^(?!\/)(?!.*(^|\/)\.\.(\/|$))[\w./@ -]+$/, "A relative path inside the repository").nullable(),
     // The brand kit (M118): palette, fonts, tone and tagline merge over the stored kit; null clears it.
     brand: brandPatchSchema.nullable(),
     // The investor pack (M126): onepager, deck and grants merge over the stored pack; null clears it.
@@ -702,6 +704,7 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.testnetContracts) next = { ...next, testnetContracts: testnetContractRows({ testnetContracts: patch.testnetContracts }) };
   if (patch.logo === null) next = dropKey(next, "logo");
   if (patch.deployer === null) next = dropKey(next, "deployer");
+  if (patch.deployerEnvFile === null) next = dropKey(next, "deployerEnvFile");
   if (patch.waived) {
     const cur: Record<string, string> = { ...(doc.waived ?? {}) };
     for (const [k, v] of Object.entries(patch.waived)) {
@@ -1076,6 +1079,7 @@ const PATH_LABELS: Record<string, string> = {
   testnetContracts: "Testnet contracts",
   addressBook: "Address book",
   deployer: "Deployer address",
+  deployerEnvFile: "Deployer env file",
   icp: "Ideal customers",
   brand: "Brand",
   "brand.palette": "Brand palette",
