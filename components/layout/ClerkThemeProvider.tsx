@@ -2,13 +2,16 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 
+import { ThemeAuthSync } from "@/components/layout/ThemeAuthSync";
 import { useTheme } from "@/lib/theme";
 import type { Theme } from "@/lib/theme-constants";
 
 /**
  * ClerkProvider with an appearance that follows the site theme (M73).
  * Appearance is a prop, so toggling restyles mounted SignIn and SignUp
- * cards without a remount. The dark values are the ones the site shipped
+ * cards without a remount. ThemeAuthSync inside it flips the default to
+ * light once a session exists (M146), so sign in screens stay dark and
+ * Clerk components in the studio turn light. The dark values are the ones the site shipped
  * with; light mirrors the Pons canvas used by html.light in globals.css.
  */
 const CLERK_APPEARANCE: Record<Theme, { variables: Record<string, string> }> = {
@@ -41,6 +44,7 @@ export function ClerkThemeProvider({ children }: { children: React.ReactNode }) 
   const theme = useTheme();
   return (
     <ClerkProvider signInUrl="/studio" signUpUrl="/sign-up" appearance={CLERK_APPEARANCE[theme]}>
+      <ThemeAuthSync />
       {children}
     </ClerkProvider>
   );

@@ -2,16 +2,23 @@
 
 import { useSyncExternalStore } from "react";
 
-import { THEME_COLOR, THEME_STORAGE_KEY, type Theme } from "@/lib/theme-constants";
+import {
+  CLERK_SESSION_COOKIE,
+  THEME_COLOR,
+  THEME_STORAGE_KEY,
+  defaultThemeFor,
+  type Theme,
+} from "@/lib/theme-constants";
 
 export { THEME_COLOR, THEME_STORAGE_KEY, type Theme };
 
 /**
- * Theme runtime (M73). Dark is the default and what the server renders;
- * the inline ThemeScript applies the stored choice before first paint, and
- * this store keeps React in step with the html class afterwards. The
- * choice lives in localStorage so marketing routes stay static (no cookie
- * read in the root layout).
+ * Theme runtime (M73, M146). The server renders dark on every route so the
+ * marketing pages stay static (no cookie read in the root layout); the
+ * inline ThemeScript applies the right theme before first paint, and this
+ * store keeps React in step with the html class afterwards. The default is
+ * light for a signed in person and dark for a visitor; a choice made with
+ * the nav toggle is stored and wins. There is no OS fallback.
  */
 
 const listeners = new Set<() => void>();
@@ -34,6 +41,17 @@ export function storedTheme(): Theme | null {
   } catch {
     return null;
   }
+}
+
+/** Whether Clerk's session cookie says a session exists (the ThemeScript rule). */
+export function signedInFromCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((part) => {
+    const c = part.trim();
+    if (!c.startsWith(CLERK_SESSION_COOKIE)) return false;
+    const v = c.slice(c.indexOf("=") + 1);
+    return v !== "" && v !== "0" && !Number.isNaN(Number(v));
+  });
 }
 
 function setMetaThemeColor(theme: Theme) {
@@ -63,17 +81,20 @@ export function applyTheme(theme: Theme, { remember = true }: { remember?: boole
   listeners.forEach((fn) => fn());
 }
 
+/**
+ * Apply the default for this sign in state when nothing is stored, so a
+ * sign in or sign out without a full reload still lands on the right theme.
+ */
+export function syncThemeToAuth(signedIn: boolean) {
+  if (storedTheme() !== null) return;
+  const next = defaultThemeFor(signedIn);
+  if (readTheme() !== next) applyTheme(next, { remember: false });
+}
+
 function subscribe(fn: () => void) {
   listeners.add(fn);
-  // Follow the OS only while the visitor has not chosen.
-  const media = window.matchMedia("(prefers-color-scheme: light)"); // copy-ok, a media query
-  const onMedia = (e: MediaQueryListEvent) => {
-    if (storedTheme() === null) applyTheme(e.matches ? "light" : "dark", { remember: false });
-  };
-  media.addEventListener("change", onMedia);
   return () => {
     listeners.delete(fn);
-    media.removeEventListener("change", onMedia);
   };
 }
 

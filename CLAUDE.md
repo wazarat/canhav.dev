@@ -1,7 +1,11 @@
 # canhav.dev — internal conventions
 
-Next.js app router + Tailwind 3.4. Dark is the default theme and a light theme
-(the ponsfamily.com canvas, M73) switches from the nav toggle. Palette is the
+Next.js app router + Tailwind 3.4. Two themes, dark and light (the
+ponsfamily.com canvas, M73). Dark is the default signed out and light the
+default signed in (M146): the server renders `dark` on every route, the
+pre paint script in `components/layout/ThemeScript.tsx` reads Clerk's
+`__client_uat` cookie and a stored choice (`canhav-theme-v2`) made with the
+nav toggle wins; there is no OS fallback. Palette is the
 custom `ink` scale plus `electric` (blue), `neon` (violet), `signal` (cyan)
 accents from `tailwind.config.ts`; every colour is a CSS variable triplet in
 `app/globals.css` (`:root` dark, `html.light` light), so the same utility class

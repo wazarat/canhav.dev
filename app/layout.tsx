@@ -79,8 +79,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Dark is the server class; ThemeScript swaps it before paint, hence the
-    // hydration warning suppression on this one element (M73).
+    // Dark is the server class on every route so marketing stays static;
+    // ThemeScript swaps it before paint (light once signed in, M146), hence
+    // the hydration warning suppression on this one element (M73).
     <html
       lang="en"
       className={`${sans.variable} ${display.variable} ${mono.variable} dark`}
