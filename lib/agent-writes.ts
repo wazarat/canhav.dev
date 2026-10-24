@@ -24,7 +24,7 @@ import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { PROJECT_CHAINS } from "@/lib/chains";
 import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { TOKEN_STEPS } from "@/content/token-steps";
-import { withoutAgentRequest } from "@/lib/agent-requests";
+import { withoutAgentRequest, withoutStepRequests } from "@/lib/agent-requests";
 import {
   AUDIENCE_VALUES,
   CRYPTO_EXPERIENCE_VALUES,
@@ -989,6 +989,20 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   }
   // Keys set to undefined by the helpers must not be stored.
   const clean = Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as ProjectDoc["kit"];
+  // A step ticked, marked not applicable or removed answers the owner's request for it (M152). The request's target is the group key.
+  const touched = [...(patch.done ?? []), ...(patch.remove ?? []), ...(patch.notApplicable ?? []).map((e) => e.id)];
+  if (touched.length && doc.agentRequests?.some((r) => r.kind === "step")) {
+    const groups = groupsFor(kitShapes(doc.kit), doc.kit);
+    const targets = new Set<string>();
+    for (const id of touched) {
+      targets.add(id);
+      const g = groups.find((x) => x.ids.includes(id));
+      if (g) targets.add(g.key);
+    }
+    const left = withoutStepRequests(doc, targets);
+    const { agentRequests: _r, ...rest } = doc;
+    return { ...rest, kit: clean, ...(left ? { agentRequests: left } : {}) };
+  }
   return { ...doc, kit: clean };
 }
 

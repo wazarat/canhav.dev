@@ -234,6 +234,21 @@ export function ProjectBuildPage({
         onPatchKit={patchKit}
         onGoTab={setTab}
         checks={checks}
+        agent={{
+          projectId: id,
+          projectName: doc.name,
+          mode: agent.state?.mode ?? "propose",
+          connected: Boolean(session || agent.state?.changes.length),
+          requests: doc.agentRequests ?? [],
+          onRequests: (next) => {
+            if (next) patch({ agentRequests: next });
+            else {
+              const { agentRequests: _r, ...rest } = doc;
+              setDoc(rest as ProjectDoc);
+            }
+          },
+          changes: agent.state?.changes ?? [],
+        }}
         testerKit={<TesterKitSection projectId={id} />}
       />
     ),

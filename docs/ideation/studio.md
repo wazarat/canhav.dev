@@ -99,7 +99,7 @@ Edits save on their own a moment after you stop typing, and the save state (Savi
 
 ### Build
 
-Build lists every step of every chosen shape as one list under four milestones. **Now** shows the next three open steps; **All steps** shows the milestones in full, and the sidebar's Design, Testnet, Review and Launch items open one milestone at a time (`?tab=build&milestone=testnet`). With more than one shape a shape filter narrows the list.
+Build lists every step of every chosen shape as one list under four milestones. **Now** shows the next three open steps; **All steps** shows the milestones in full, and the sidebar's Design, Testnet, Review and Launch items open one milestone at a time (`?tab=build&milestone=testnet`). With more than one shape a shape filter narrows the list. The milestone row sits right above the milestone sections it filters, under the "What this product includes" folds. Every open step carries **Send to agent**, a small menu with **Queue it for your agent** (when an agent has worked on the project and writes are on, it queues the step on the project; your agent reads it first on `get_project_status` with the step's title, detail, resources and templates, works it, adds evidence and ticks it, which clears the request; the row reads "Queued for your agent since 4:30 PM" with Cancel, and "Done by your agent, 4:52 PM" afterwards) and **Copy the prompt** (a prompt for that one step to paste into your IDE). Each milestone heading has the same for all its open steps. At most ten steps can be queued at once.
 
 | On a step | What it does |
 |-----------|--------------|

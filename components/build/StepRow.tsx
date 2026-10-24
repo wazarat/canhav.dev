@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { Input } from "@/components/ui/Input";
 import { Menu, MenuItem } from "@/components/ui/Menu";
+import { SendToAgent } from "@/components/build/SendToAgent";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -187,16 +188,34 @@ function StepStatusControl({
  * labels, the evidence line, the first suggested template with its
  * decision and the rest behind a fold, the Read menu and remove.
  */
+/** What a row needs to hand its step to the agent (M152). */
+export interface StepSend {
+  prompt: string;
+  canQueue: boolean;
+  full: boolean;
+  /** When the owner queued it, ISO, or null. */
+  queuedAt: string | null;
+  /** When an agent change ticked it, ISO, or null. */
+  doneByAgentAt: string | null;
+  onQueue: () => void;
+  onCancel: () => void;
+}
+
+const when = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
 export function StepRow({
   group,
   kit,
   chain,
   onPatchKit,
+  send,
 }: {
   group: StepGroup;
   kit: ProjectKit;
   chain: ProjectChain;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  /** Send to agent (M152); absent on rows that cannot be handed over. */
+  send?: StepSend;
 }) {
   const R = BUILD_COPY.row;
   const state = groupState(group, kit);
@@ -229,7 +248,18 @@ export function StepRow({
           ))}
           {group.custom ? <Badge className="px-2 py-0 text-[10px]">{R.yourStep}</Badge> : null}
           <ReadMenu ids={group.resources} />
+          {send && !done && !na ? <SendToAgent prompt={send.prompt} canQueue={send.canQueue} full={send.full} onQueue={send.onQueue} /> : null}
         </div>
+        {send?.queuedAt && !done && !na ? (
+          <p className="text-[11px] text-ink-400">
+            {R.queuedSince(when(send.queuedAt))}{" "}
+            <button type="button" onClick={send.onCancel} className="text-ink-400 transition-colors hover:text-ink-50 hover:underline">
+              {R.cancelQueue}
+            </button>
+          </p>
+        ) : send?.doneByAgentAt && done ? (
+          <p className="text-[11px] text-ink-400">{R.doneByAgent(when(send.doneByAgentAt))}</p>
+        ) : null}
         {!na ? (
           <Input
             value={evidence}

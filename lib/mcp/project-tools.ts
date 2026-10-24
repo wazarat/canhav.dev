@@ -90,6 +90,7 @@ import { type PendingView, createLinkedDesign, projectedContext, submitAgentChan
 import { AGENT_COPY, CHAIN_COPY } from "@/content/ideation";
 import { agentRequestHowTo, openAgentRequests } from "@/lib/agent-requests";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
+import { groupsFor } from "@/content/kits/checklists";
 import { latestAgentSession, reportAgentSession } from "@/lib/agent-sessions-db";
 import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
 import { featuresFor } from "@/content/kits/features";
@@ -386,12 +387,18 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       // Recommended fields the team has not stated (M130); the agent states each or waives it.
       const open = openFields(project.draft_doc);
       // The owner's requests for the agent (M151) come before everything else.
-      const agentRequests = openAgentRequests(project.draft_doc).map((r) => ({
-        kind: r.kind,
-        target: r.target ?? null,
-        requestedAt: r.requestedAt,
-        howTo: agentRequestHowTo(r.kind, deployerEnvFile(project.draft_doc)),
-      }));
+      const stepGroups = project.draft_doc.kit ? groupsFor(kitShapes(project.draft_doc.kit), project.draft_doc.kit) : [];
+      const agentRequests = openAgentRequests(project.draft_doc).map((r) => {
+        const g = r.kind === "step" ? stepGroups.find((x) => x.key === r.target) : undefined;
+        return {
+          kind: r.kind,
+          target: r.target ?? null,
+          requestedAt: r.requestedAt,
+          howTo: agentRequestHowTo(r.kind, deployerEnvFile(project.draft_doc)),
+          // The step itself (M152): id, title, what done means, what to read, which templates to decide.
+          ...(g ? { step: { id: g.key, ids: g.ids, title: g.title, detail: g.detail, milestone: milestoneOf(g), resources: g.resources, templates: g.templates, shapes: g.shapes } } : {}),
+        };
+      });
       const nextAction = agentRequests.length
         ? `The owner asked for ${agentRequests.length === 1 ? "one thing" : `${agentRequests.length} things`} first, listed under agentRequests. ${agentRequests[0].howTo}`
         : projectProblem
@@ -946,7 +953,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_build_steps",
     {
       title: "Tick, add, remove or restore build steps",
-      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES}`,
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {

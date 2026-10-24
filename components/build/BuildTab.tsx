@@ -4,8 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Plus } from "lucide-react";
 
 import { ReviewPassRow } from "@/components/build/ReviewPassRow";
+import { SendToAgent } from "@/components/build/SendToAgent";
+import type { AgentChangeRow } from "@/components/build/useAgentChanges";
+import { stepPrompt } from "@/lib/agent-prompts";
+import { type AgentRequest, agentRequestsFull, findAgentRequest, withAgentRequest, withoutAgentRequest, withoutStepRequests } from "@/lib/agent-requests";
+import type { AgentWriteMode, BuildStepsPatch } from "@/lib/agent-writes";
 import { type CheckRunView, latestFor } from "@/lib/checks/schema";
-import { StepRow } from "@/components/build/StepRow";
+import { type StepSend, StepRow } from "@/components/build/StepRow";
 import { FeaturesBlock } from "@/components/ideation/kit/FeaturesBlock";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
@@ -24,6 +29,7 @@ import { featuresFor } from "@/content/kits/features";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { MILESTONES, type Milestone, groupsByMilestone, nowSteps } from "@/lib/build-milestones";
 import type { ProjectChain } from "@/lib/chains";
+import type { ProjectDoc } from "@/lib/ideation";
 import {
   KIT_LIMITS,
   type ProductShape,
@@ -31,11 +37,36 @@ import {
   type StepGroup,
   addCustomStep,
   groupProgress,
+  groupState,
   kitShapes,
   restoreSteps,
   reviewPassesFor,
   reviewProgress,
 } from "@/lib/kits";
+
+/** What the Build tab needs to hand steps to the agent (M152). */
+export interface BuildAgent {
+  projectId: string;
+  projectName: string;
+  mode: AgentWriteMode;
+  /** An agent has worked on the project (a session row or any change). */
+  connected: boolean;
+  /** The open requests on the draft and how to change them. */
+  requests: AgentRequest[];
+  onRequests: (next: AgentRequest[] | undefined) => void;
+  /** The agent changes list, to say when an agent ticked a step. */
+  changes: AgentChangeRow[];
+}
+
+/** When an applied or accepted agent change ticked any id of the group, the newest, else null. */
+function doneByAgentAt(group: StepGroup, changes: AgentChangeRow[]): string | null {
+  for (const c of changes) {
+    if (c.kind !== "build_steps" || (c.status !== "applied" && c.status !== "accepted")) continue;
+    const p = (c.appliedPatch ?? c.patch) as Partial<BuildStepsPatch> | null;
+    if (p?.done?.some((id) => group.ids.includes(id))) return c.resolvedAt ?? c.createdAt;
+  }
+  return null;
+}
 
 /** What the derived Launch rows read from the record. */
 export interface LaunchFacts {
@@ -64,9 +95,12 @@ export function BuildTab({
   onGoTab,
   checks = [],
   testerKit,
+  agent,
 }: {
   /** The tester kit block under the Testnet milestone (M125). */
   testerKit?: React.ReactNode;
+  /** Send to agent (M152). */
+  agent?: BuildAgent;
   kit: ProjectKit | undefined;
   chain: ProjectChain;
   facts: LaunchFacts;
@@ -93,6 +127,28 @@ export function BuildTab({
 
   const sections = useMemo(() => sectionsFor(shapes, kit ?? {}), [shapesKey, kit]); // eslint-disable-line react-hooks/exhaustive-deps
   const byMilestone = useMemo(() => groupsByMilestone(sections), [sections]);
+  // A step the owner ticked or marked not applicable here answers its own request (M152).
+  const requestsDoc = useMemo(() => ({ agentRequests: agent?.requests }), [agent?.requests]);
+  useEffect(() => {
+    if (!agent || !kit || !agent.requests.some((r) => r.kind === "step")) return;
+    const settled = new Set<string>();
+    for (const s of sections) for (const g of s.groups) if (groupState(g, kit) === "done" || groupState(g, kit) === "na") settled.add(g.key);
+    const left = withoutStepRequests(requestsDoc, settled);
+    if ((left?.length ?? 0) !== agent.requests.length) agent.onRequests(left);
+  }, [kit, sections, agent, requestsDoc]);
+  const sendFor = (g: StepGroup, m: Milestone): StepSend | undefined => {
+    if (!agent) return undefined;
+    const prompt = stepPrompt(agent.projectName, agent.projectId, { id: g.key, title: g.title, detail: g.detail, milestone: BUILD_COPY.milestones[m].label, resources: g.resources, templates: g.templates });
+    return {
+      prompt,
+      canQueue: agent.connected && agent.mode !== "off",
+      full: agentRequestsFull(requestsDoc),
+      queuedAt: findAgentRequest(requestsDoc, "step", g.key)?.requestedAt ?? null,
+      doneByAgentAt: doneByAgentAt(g, agent.changes),
+      onQueue: () => agent.onRequests(withAgentRequest(requestsDoc, "step", g.key)),
+      onCancel: () => agent.onRequests(withoutAgentRequest(requestsDoc, "step", g.key)),
+    };
+  };
   const passes = useMemo(() => reviewPassesFor(REVIEW_PASSES, shapes), [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const removed = useMemo(() => [...removedGroupsFor(kit).values()].flat(), [kit]);
 
@@ -140,18 +196,6 @@ export function BuildTab({
             options={[{ value: "", label: F.everyShape }, ...shapes.map((s) => ({ value: s, label: shapeLabel(s) ?? s }))]}
           />
         ) : null}
-        {view === "all" ? (
-          <Segmented<Milestone | "">
-            size="sm"
-            ariaLabel={F.everyMilestone}
-            value={milestone}
-            onChange={setMilestone}
-            options={[
-              { value: "", label: F.everyMilestone },
-              ...MILESTONES.map((m) => ({ value: m, label: BUILD_COPY.milestones[m].label })),
-            ]}
-          />
-        ) : null}
       </div>
 
       {shapes.map((s) => {
@@ -164,6 +208,20 @@ export function BuildTab({
         );
       })}
 
+      {/* The milestone row sits right above the sections it filters (M152, F9); the view and shape rows stay at the top. */}
+      {view === "all" ? (
+        <Segmented<Milestone | "">
+          size="sm"
+          ariaLabel={F.everyMilestone}
+          value={milestone}
+          onChange={setMilestone}
+          options={[
+            { value: "", label: F.everyMilestone },
+            ...MILESTONES.map((m) => ({ value: m, label: BUILD_COPY.milestones[m].label })),
+          ]}
+        />
+      ) : null}
+
       {now ? (
         <Card>
           <CardSection>
@@ -173,7 +231,7 @@ export function BuildTab({
             ) : (
               <ul className="mt-2">
                 {now.map((g) => (
-                  <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} />
+                  <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} send={sendFor(g, MILESTONES.find((m) => filtered[m].includes(g)) ?? "design")} />
                 ))}
               </ul>
             )}
@@ -193,6 +251,27 @@ export function BuildTab({
             onGoTab={onGoTab}
             checks={checks}
             testerKit={m === "testnet" ? testerKit : undefined}
+            sendFor={(g) => sendFor(g, m)}
+            sendOpen={
+              agent && m !== "launch"
+                ? (() => {
+                    const open = filtered[m].filter((g) => groupState(g, kit) !== "done" && groupState(g, kit) !== "na");
+                    if (!open.length) return null;
+                    const prompt = open.map((g) => sendFor(g, m)!.prompt).join("\n\n---\n\n");
+                    return {
+                      count: open.length,
+                      prompt,
+                      canQueue: agent.connected && agent.mode !== "off",
+                      full: agentRequestsFull(requestsDoc),
+                      onQueue: () => {
+                        let next: { agentRequests?: AgentRequest[] } = requestsDoc;
+                        for (const g of open) next = { agentRequests: withAgentRequest(next, "step", g.key) };
+                        agent.onRequests(next.agentRequests);
+                      },
+                    };
+                  })()
+                : null
+            }
           />
         ))
       )}
@@ -233,8 +312,13 @@ function MilestoneSection({
   onGoTab,
   checks = [],
   testerKit,
+  sendFor,
+  sendOpen,
 }: {
   testerKit?: React.ReactNode;
+  /** Send to agent per row and for the whole milestone (M152). */
+  sendFor?: (g: StepGroup) => StepSend | undefined;
+  sendOpen?: { count: number; prompt: string; canQueue: boolean; full: boolean; onQueue: () => void } | null;
   milestone: Milestone;
   groups: StepGroup[];
   passes: ReturnType<typeof reviewPassesFor>;
@@ -265,7 +349,20 @@ function MilestoneSection({
     <Card>
       <CardSection>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-base font-semibold text-ink-50">{M.label}</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="font-display text-base font-semibold text-ink-50">{M.label}</h2>
+            {sendOpen ? (
+              <SendToAgent
+                label={BUILD_COPY.row.sendOpen(M.label)}
+                queueLabel={BUILD_COPY.row.queueOpen(sendOpen.count)}
+                copyLabel={BUILD_COPY.row.copyOpenPrompt}
+                prompt={sendOpen.prompt}
+                canQueue={sendOpen.canQueue}
+                full={sendOpen.full}
+                onQueue={sendOpen.onQueue}
+              />
+            ) : null}
+          </div>
           <MetaLine
             items={[
               groups.length ? (
@@ -290,7 +387,7 @@ function MilestoneSection({
               <ReviewPassRow key={p.id} pass={p} kit={kit} onPatchKit={onPatchKit} run={latestFor(p.id, checks)} />
             ))}
             {groups.map((g) => (
-              <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} />
+              <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} send={sendFor?.(g)} />
             ))}
             {launchRows.map((r) => (
               <li key={r.key} className="flex items-start gap-3 border-t border-ink-800/60 py-3 first:border-t-0">

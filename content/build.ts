@@ -94,6 +94,19 @@ export const BUILD_COPY = {
     addStepDetail: "What done looks like, optional",
     addStepShape: "Shape",
     add: "Add",
+    /** Hand a step to the agent (M152, F10). Plain text states, M137. */
+    sendToAgent: "Send to agent",
+    queueIt: "Queue it for your agent",
+    copyPrompt: "Copy the prompt",
+    copied: "Copied",
+    queuedSince: (time: string) => `Queued for your agent since ${time}`,
+    cancelQueue: "Cancel",
+    doneByAgent: (time: string) => `Done by your agent, ${time}`,
+    capReached: "Ten steps are already queued. Cancel one or let your agent work through them first.",
+    sendOpen: (milestone: string) => `Send the open ${milestone} steps`,
+    queueOpen: (n: number) => (n === 1 ? "Queue the 1 open step for your agent" : `Queue the ${n} open steps for your agent`),
+    copyOpenPrompt: "Copy a prompt for all of them",
+    nothingOpen: "Every step here is done.",
   },
   /** The derived rows under the Launch milestone, each opening its tab. */
   launchRows: {

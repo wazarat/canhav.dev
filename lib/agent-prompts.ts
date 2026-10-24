@@ -71,3 +71,30 @@ export function deployerPastePrompt(name: string, projectId: string, envFile: st
     `4. Never print the key, and never send it through any MCP tool.`,
   ].join("\n\n");
 }
+
+/**
+ * One build step for the agent (M152, F10): what the step is, what done
+ * means, what to read, which templates to decide, how to record it. Pasted
+ * by people without a connected agent, or copied beside the queue option.
+ */
+export function stepPrompt(
+  name: string,
+  projectId: string,
+  step: { id: string; title: string; detail: string; milestone: string; resources: readonly string[]; templates: readonly string[] },
+): string {
+  const alias = mcpAlias(name, projectId);
+  return [
+    serverLine(alias),
+    `Work this one build step of the project, under its ${step.milestone} milestone, and nothing else.`,
+    `Step ${step.id}, ${step.title}${step.detail ? `\n${step.detail}` : ""}`,
+    `1. Call get_build_steps and read this step's entry; call report_session with a plan that names it.`,
+    step.resources.length
+      ? `2. Read the resources it points at through get_resource_pack (${step.resources.join(", ")}) before you change anything.`
+      : `2. Call get_resource_pack if you need background on this project's kit.`,
+    step.templates.length
+      ? `3. Decide on the templates it lists (${step.templates.join(", ")}) with set_template_decisions, and say why in the note.`
+      : `3. There are no templates to decide on for this step.`,
+    `4. Do the work in this repository. When it is done, record the file, test or address as evidence and tick the step with set_build_steps (done and evidence for ${step.id}). If the step does not fit this product, mark it notApplicable with the reason instead. Ticking it clears the owner's request for it.`,
+    `5. Respect the project's agent write mode. In propose mode the owner accepts your change on the project page; never work around it.`,
+  ].join("\n\n");
+}
