@@ -6,7 +6,7 @@
 * [What CanHav is](general/what-canhav-is.md)
 * [Glossary](general/glossary.md)
 * [Litepaper](general/litepaper.md)
-* [The two ideation tracks](ideation/two-tracks.md)
+* [The two Studio tracks](ideation/two-tracks.md)
 * [The three answer types](ideation/three-answer-types.md)
 
 ## Token Launch
@@ -44,7 +44,7 @@
 
 * [Product track](ideation/product-track.md)
 
-## Token track (ideation)
+## Token track
 
 * [Token track](ideation/token-track.md)
 * [Computed outputs](ideation/computed-outputs.md)

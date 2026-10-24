@@ -3,18 +3,16 @@ import { SECTOR_SUBSECTORS, docSectors, requiresSubsector } from "@/lib/sectors"
 import { projectChainOf } from "@/lib/chains";
 
 /**
- * What stops a project from publishing, by area (M93). The same rules the
- * old editor's step dots follow, kept here so the BUILD tabs and the
- * readiness list read one source. `overall` is the first problem
- * validateProjectDoc reports, which is what the Publish button shows.
- *
- * The old editor keeps its own copy of these rules until Phase 7 removes it.
+ * What stops a project from publishing, by area (M93), kept here so the
+ * Studio tabs and the readiness list read one source. `overall` is the
+ * first problem validateProjectDoc reports, which is what the Publish
+ * button shows.
  */
 export type ProblemArea = "basics" | "architecture" | "security" | "reality" | "overall";
 
 export type ProjectProblems = Record<ProblemArea, string | null>;
 
-/** The two BUILD tabs that hold publish gated fields. */
+/** The two Studio tabs that hold publish gated fields. */
 export type ProblemTab = "decisions" | "publish";
 
 export const PROBLEM_COPY = {

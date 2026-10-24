@@ -42,10 +42,10 @@ import { type ProjectKit, emptyProjectKit } from "@/lib/kits";
 import type { LaunchTarget } from "@/lib/launch-targets";
 
 /**
- * The project page (M94 onwards): five fixed tabs over one draft. This
- * root owns the draft, saving, publishing, the agent poll and the tab in
- * the URL; the tabs only read the doc and patch it, so switching tabs never
- * loses an unsaved edit. Replaces ProjectEditor once every tab is in.
+ * The Studio project page (M94 onwards): seven fixed tabs over one draft,
+ * two of them Studio+. This root owns the draft, saving, publishing, the
+ * agent poll and the tab in the URL; the tabs only read the doc and patch
+ * it, so switching tabs never loses an unsaved edit.
  */
 export function ProjectBuildPage({
   id,

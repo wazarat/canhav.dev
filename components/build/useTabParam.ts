@@ -23,7 +23,7 @@ const atAgentHash = () => window.location.hash === AGENT_HASH;
 const neverOnServer = () => false;
 
 /**
- * The BUILD page's tab (M93), read from `?tab=`. Overview is the default
+ * The Studio project page's tab (M93), read from `?tab=`. Overview is the default
  * and what an unknown value falls back to. A `#agent-changes` hash (the
  * studio list, the guide modal and the agent's review link) lands on
  * Overview, where the feed lives. Setting a tab replaces the URL in place

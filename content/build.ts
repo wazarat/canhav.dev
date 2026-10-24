@@ -2,9 +2,9 @@ import type { Milestone } from "@/lib/build-milestones";
 import type { ProblemTab } from "@/lib/build-readiness";
 
 /**
- * Copy for the BUILD project page (M93 onwards). Five fixed tabs, four
- * build milestones, the agent status line and the drawer. Code may say
- * BUILD; product copy says Studio. No em dashes, no colons before a space.
+ * Copy for the Studio project page (M93 onwards). Seven fixed tabs, two of
+ * them Studio+, four build milestones, the agent status line and the drawer.
+ * No em dashes, no colons before a space.
  */
 export const BUILD_TABS = ["overview", "build", "decisions", "model", "brand", "deployments", "publish"] as const;
 
@@ -533,9 +533,5 @@ export const BUILD_COPY = {
     publishedTitle: "Published versions",
     publishedRow: (version: number, date: string) => `Version ${version}, published ${date}`,
     publishedNone: "Not published yet.",
-  },
-  classic: {
-    placeholder: "This tab is on its way.",
-    link: "Open the classic editor",
   },
 } as const;

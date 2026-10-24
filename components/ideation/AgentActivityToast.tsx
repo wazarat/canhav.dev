@@ -11,8 +11,8 @@ const HIDE_MS = 10_000;
 
 /**
  * The small notice at the bottom right of the project editor when an agent
- * proposed or wrote something (M79). Fed by AgentChangesPanel's poll; the
- * panel itself sits at the bottom of the page, so Review scrolls there.
+ * proposed or wrote something (M79). Fed by useAgentChanges on the Studio
+ * project page; the agent feed sits on Overview, so Review goes there.
  * Hides on its own after ten seconds unless the pointer is over it.
  */
 export function AgentActivityToast({ activity, onDismiss }: { activity: AgentActivity; onDismiss: () => void }) {

@@ -24,9 +24,9 @@ import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { ManageTeamButton } from "@/components/studio/PlusCheckout";
 import { getPlan } from "@/lib/plan";
 
-// Intentionally unlinked from navigation while the ideation tracks are
-// developed incrementally — URL-only, like /launch.
+// The studio home, reached from the Studio link in the navigation.
 export const metadata: Metadata = {
+  title: "Studio",
   robots: { index: false, follow: false },
 };
 
@@ -51,9 +51,8 @@ export default async function StudioPage({
 }) {
   const header = (
     <div className="max-w-2xl">
-      <p className="kicker"><PlanWord /></p>
-      <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
-        {STUDIO_COPY.title}
+      <h1 className="font-display text-4xl font-semibold tracking-tight text-ink-50 md:text-5xl">
+        <PlanWord />
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-ink-400">{STUDIO_COPY.subtitle}</p>
     </div>

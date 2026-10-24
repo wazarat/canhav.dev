@@ -44,7 +44,7 @@ const ACTIVE = "bg-ink-800/60 text-ink-50";
 
 /**
  * The project page's left rail on wide screens (2026-10-18), after the
- * dashboards builders already use: the five sections, Build opening into
+ * dashboards builders already use: the seven sections, Build opening into
  * its four milestones, then the agent and the public page. On phones the
  * tab strip takes its place.
  */

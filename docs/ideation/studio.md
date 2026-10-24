@@ -47,13 +47,15 @@ A launch appears here when it was made while you were signed in. A launch that r
 
 ## The project page
 
-A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's five sections, the navigation's logo and breadcrumb line up above the project name in it, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
+A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's seven sections, two of them with Studio+, the navigation's logo and breadcrumb line up above the project name in it, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
 
 | Section | Holds |
 |---------|-------|
 | Overview | What the project is in one strip, the agent, how to connect one, the resource pack, the linked token design and the token launch panel |
 | Build | Every build step under four milestones, Design, Testnet, Review and Launch |
 | Decisions | What you are building, the chain, the contract templates you decided on, the contract architecture, the security declarations and your project files |
+| Business model | With Studio+, the Business Model Canvas, the ideal customer profiles and the competitor landscape |
+| Brand | With Studio+, the brand kit |
 | Deployments | Testnet contracts, the tokens linked to the project, the mainnet record |
 | Publish | The rest of the public record, the readiness list and the hand off to your agent |
 
@@ -134,7 +136,7 @@ One card for the project's chain. It opens with the **Deployer key**, a throwawa
 
 ### Publish
 
-The fields of the public record that no other section holds: name, logo, what it does, who you sell to and the personas, who pays, why this chain, the stage, where the first hundred users come from, the GitHub repo, the website and, on a Robinhood project, the distribution acknowledgement. Above the readiness list, **Who can see it** chooses Public or Private for the next publish (see [Public pages](public-pages.md), free accounts keep one private project). With Studio+, **Custom domain** under it connects a host you own: enter it, set the records shown at your DNS host, **Check again** until it reads live, **Disconnect** to release it (see [Public pages](public-pages.md)). Under them the readiness list summarises the record and names what is still missing, with an **Open Decisions** button where the field lives there. Once everything checks out, publish from the header; a private project shows a Private chip there and a **Copy share link** button. The hand off block offers `RESOURCES.md` and `AGENTS.md` built from the draft, the link to launch a token from the project and the prompt that makes an agent load the resource pack.
+The fields of the public record that no other section holds: name, logo, what it does, who pays, why this chain, the stage, where the first hundred users come from, the GitHub repo, the website and, on a Robinhood project, the distribution acknowledgement. Above the readiness list, **Who can see it** chooses Public or Private for the next publish (see [Public pages](public-pages.md), free accounts keep one private project). With Studio+, **Custom domain** under it connects a host you own: enter it, set the records shown at your DNS host, **Check again** until it reads live, **Disconnect** to release it (see [Public pages](public-pages.md)). Under them the readiness list summarises the record and names what is still missing, with an **Open Decisions** button where the field lives there. Once everything checks out, publish from the header; a private project shows a Private chip there and a **Copy share link** button. The hand off block offers `RESOURCES.md` and `AGENTS.md` built from the draft, the link to launch a token from the project and the prompt that makes an agent load the resource pack.
 
 With Studio+, an **Investor and grant pack** section sits above the hand off: **Draft the one pager**, **Draft the deck** and, with a programme picked (Arbitrum Foundation, Gitcoin, an Optimism style builder grant), **Draft the answers**, each by your agent or by CanHav; the parts render under the buttons, download as `ONEPAGER.md`, `DECK.md` and `GRANTS.md`, and **Print the one pager** opens a page to print to PDF. The pack stays on the draft and is never published.
 

@@ -4,7 +4,7 @@
 
 The Product track is a design document for what you are building. A product with no token is a legitimate published outcome.
 
-The project page has five sections, Overview, Build, Decisions, Deployments and Publish, in a left sidebar on wide screens and a row of tabs on phones. The sections never change with the product shapes. Decisions holds what is being built, the chain, the template decisions, the contract architecture and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list. Build holds the build steps.
+The project page has seven sections, Overview, Build, Decisions, Business model and Brand (both Studio+), Deployments and Publish, in a left sidebar on wide screens and a row of tabs on phones. The sections never change with the product shapes. Decisions holds what is being built, the chain, the template decisions, the contract architecture and the security declarations. Deployments holds the testnet contracts, the tokens and the mainnet record. Publish holds the rest of the public record and the readiness list. Build holds the build steps.
 
 ---
 

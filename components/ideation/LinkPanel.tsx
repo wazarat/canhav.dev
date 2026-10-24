@@ -40,7 +40,7 @@ export function LinkPanel({
   selfName?: string;
   linked: LinkedSummary | null;
   candidates: LinkCandidate[];
-  /** Replaces the default outer surface and margin (the BUILD page passes its own, M94). */
+  /** Replaces the default outer surface and margin (the Studio project page passes its own, M94). */
   className?: string;
 }) {
   const router = useRouter();

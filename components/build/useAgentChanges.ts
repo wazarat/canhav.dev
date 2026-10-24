@@ -81,9 +81,8 @@ export interface AgentChangesHandle {
 /**
  * The owner's side of agent writes (M93): one poll of the project's agent
  * endpoint, the write mode switch and accept or reject. Lifted out of the
- * old editor's panel so the old editor and the BUILD page share one poll
- * until the old editor goes. The per line editing stays in the panel; it
- * hands its decision in here.
+ * old editor's panel (removed in M129); AgentFeed on the Studio project page
+ * is its one user and hands each decision in here.
  */
 export function useAgentChanges({
   projectId,

@@ -46,9 +46,9 @@ export function ProjectLaunchPanel({
   venueLine?: string | null;
   /** The mainnet contracts and the Pons pairing the project records (M70). */
   mainnet?: MainnetView | null;
-  /** Replaces the default outer surface and margin (the BUILD page passes its own, M94). */
+  /** Replaces the default outer surface and margin (the Studio project page passes its own, M94). */
   className?: string;
-  /** False on the BUILD page, where Deployments owns the mainnet record. */
+  /** False on the Studio project page, where Deployments owns the mainnet record. */
   showMainnet?: boolean;
 }) {
   const router = useRouter();

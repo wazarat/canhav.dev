@@ -7,7 +7,7 @@ import {
 } from "@/lib/kits";
 
 /**
- * The four build milestones of the BUILD page (M93). Every build step sits
+ * The four build milestones of the Studio project page (M93). Every build step sits
  * under one of them, decided by the editor step the catalog gave it, so the
  * Build tab, the MCP tools and the exports all group the same way. Pure,
  * no React and no content, so the server tools can import it.

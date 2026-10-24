@@ -859,7 +859,6 @@ export const NAME_CHECK_COPY = {
 
 export const STUDIO_COPY = {
   kicker: "Studio",
-  title: "Launch projects",
   /** The drafts list on the studio home (M91). The track itself is called Studio, so the list is not. */
   inProgress: "In progress",
   /** The nav switcher on studio routes (M92). The plan word is the product name, Studio or Studio+. */

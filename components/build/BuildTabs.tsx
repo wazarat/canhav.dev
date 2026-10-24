@@ -6,10 +6,10 @@ import type { ProblemTab } from "@/lib/build-readiness";
 import { cn } from "@/lib/utils";
 
 /**
- * The five fixed tabs of the project page (M94). One tablist that never
- * grows with the product shapes; a dot on Decisions and Publish marks open
- * publish gated fields. Five options is one over the usual two to four for
- * Segmented, which is fine for the one tablist on the page.
+ * The fixed tabs of the Studio project page on phones (M94). One tablist
+ * that never grows with the product shapes; a dot on Decisions and Publish
+ * marks open publish gated fields. Seven options is over the usual two to
+ * four for Segmented, which is fine for the one tablist on the page.
  */
 export function BuildTabs({
   tab,

@@ -51,7 +51,7 @@ import { SECTOR_SUBSECTORS, type Sector, type Subsector, docSectors, sectorOfSub
 import { templateChainCounts, templatesForShapes } from "@/lib/templates";
 
 /**
- * What the project is classed as (M96, moved out of the classic editor's
+ * What the project is classed as (M96, moved out of the old editor's
  * Basics): sectors, subsectors, the product shapes, the starting point.
  * The gate notes name the protocols missing on the project's testnet and
  * never block a pick. The ideas list and the overlap dialog left the UI;
