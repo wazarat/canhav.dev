@@ -38,16 +38,31 @@ interface ChannelRow {
 let rules: RuleRow[] = [];
 let channels: ChannelRow[] = [];
 
+let offPlan = -1;
+
+/**
+ * Rules of projects whose team is on Studio+ (M135). The plan is the
+ * subscription mirror the app writes (launchpad.subscriptions, active, or
+ * past due before the period end); a personal project has no team and is
+ * never watched. Rules of a team off the plan are kept, not polled.
+ */
 async function reload() {
   const r = (await sql`
     select r.id, r.project_id, r.chain_id, r.address, r.label, r.kinds, r.threshold_wei, r.decimals, p.draft_doc->>'name' as name
-    from launchpad.alert_rules r join launchpad.projects p on p.id = r.project_id
+    from launchpad.alert_rules r
+    join launchpad.projects p on p.id = r.project_id
+    join launchpad.subscriptions s on s.org_id = p.org_id and s.plan = 'studio_plus'
+      and (s.status = 'active' or (s.status = 'past_due' and s.period_end > now()))
     where r.enabled
   `) as Array<{ id: string; project_id: string; chain_id: number; address: string; label: string | null; kinds: AlertRuleShape["kinds"]; threshold_wei: string | null; decimals: number | null; name: string | null }>;
   const next = r.map((x) => ({ id: x.id, projectId: x.project_id, projectName: x.name ?? "", chainId: Number(x.chain_id), address: x.address, label: x.label, kinds: x.kinds, thresholdWei: x.threshold_wei, decimals: x.decimals ?? 18 }));
   const c = (await sql`select id, project_id, kind, config_enc from launchpad.alert_channels where enabled`) as Array<{ id: string; project_id: string; kind: ChannelKind; config_enc: string }>;
   const nextChannels = c.map((x) => ({ id: x.id, projectId: x.project_id, kind: x.kind, configEnc: x.config_enc }));
-  if (next.length !== rules.length || nextChannels.length !== channels.length) console.log(`[alerts] ${next.length} rules, ${nextChannels.length} channels`);
+  const all = (await sql`select count(*)::int as n from launchpad.alert_rules where enabled`) as Array<{ n: number }>;
+  const skipped = Math.max(0, (all[0]?.n ?? 0) - next.length);
+  if (next.length !== rules.length || nextChannels.length !== channels.length || skipped !== offPlan)
+    console.log(`[alerts] ${next.length} rules, ${nextChannels.length} channels${skipped ? `, ${skipped} rules on teams off the plan` : ""}`);
+  offPlan = skipped;
   rules = next;
   channels = nextChannels;
 }

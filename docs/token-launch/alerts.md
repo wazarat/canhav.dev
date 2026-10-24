@@ -75,7 +75,8 @@ test. Channels are connected by the owner in the studio.
 ## How it runs
 
 A small worker polls both testnets every minute and reloads the rules
-every minute, reads at most two thousand blocks a poll, and catches up a
+every minute (only the rules of projects whose team is on Studio+; a team
+off the plan keeps its rules and is watched again when the plan is active), reads at most two thousand blocks a poll, and catches up a
 window a minute after a pause. The cursor per chain follows the head while
 nothing is watched, so a rule starts from now; nothing from before it is
 alerted. Public RPCs can rate limit; a failed poll is retried from the same

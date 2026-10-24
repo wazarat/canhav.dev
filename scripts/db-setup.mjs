@@ -676,6 +676,12 @@ await sql`
   )
 `;
 
+// The alerts worker and the custom domain lookup join projects to the
+// subscription mirror by team (M135).
+await sql`
+  create index if not exists projects_org_id_idx on launchpad.projects (org_id)
+`;
+
 const tables = await sql`
   select table_name from information_schema.tables where table_schema = 'launchpad' order by 1
 `;

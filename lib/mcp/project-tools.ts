@@ -1480,7 +1480,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "This project's alert rules, channels, events and status",
       description:
-        "Studio+. Whether the project is watched (the Watch switch creates a rule per recorded testnet contract and per launched or linked token), the rules with their kinds (ownership, pause, large_transfer with a threshold in the token's base units and its decimals, graduation) and source (watch or manual), the channels with their masked targets, the last ten events (kind test is a test alert sent from the studio, with no transaction) each with the line sent and what was delivered, and status, the worker's last check per chain. Turn watching on with set_alert_watch; channels (email, Telegram, Discord) are connected by the owner in the studio under Deployments.",
+        "Studio+. Whether the project is watched (the Watch switch creates a rule per recorded testnet contract and per launched or linked token), the rules with their kinds (ownership, pause, large_transfer with a threshold in the token's base units and its decimals, graduation) and source (watch or manual), the channels with their masked targets, the last ten events (kind test is a test alert sent from the studio, with no transaction) each with the line sent and what was delivered, and status, the worker's last check per chain. Turn watching on with set_alert_watch; channels (email, Telegram, Discord) are connected by the owner in the studio under Deployments. The project must belong to a team on Studio+; the worker only watches those projects' contracts and keeps a lapsed team's rules for when the plan is active again.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {
@@ -1498,7 +1498,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Watch this project's contracts",
       description:
-        "Studio+. Turn the Watch switch on or off (M128). On creates an alert rule for every recorded testnet contract (ownership changes, pauses) and every launched or linked token (those plus large transfers at one percent of the supply and curve graduation), kept in line with the record on every read; off removes those rules and leaves any the owner added by address. The worker picks the change up within a minute. Where alerts go is the owner's choice in the studio; when the project has no channel yet, say so and point them to Deployments, Alerts. Immediate in propose and direct mode, since it reverses. Refused when agent writes are off.",
+        "Studio+. Turn the Watch switch on or off (M128). On creates an alert rule for every recorded testnet contract (ownership changes, pauses) and every launched or linked token (those plus large transfers at one percent of the supply and curve graduation), kept in line with the record on every read; off removes those rules and leaves any the owner added by address. The worker picks the change up within a minute. Where alerts go is the owner's choice in the studio; when the project has no channel yet, say so and point them to Deployments, Alerts. Immediate in propose and direct mode, since it reverses. Refused when agent writes are off, and when the project's team is not on Studio+.",
       inputSchema: z.object({ enabled: z.boolean() }),
     },
     async (args, ctx) => {
@@ -1530,7 +1530,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Send a test alert",
       description:
-        "Studio+. Send one synthetic alert through every channel the project has, right now, and record it under the last events as kind test (M128). Proves delivery without a transaction. One a minute per project.",
+        "Studio+. Send one synthetic alert through every channel the project has, right now, and record it under the last events as kind test (M128). Proves delivery without a transaction. One a minute per project. The project must belong to a team on Studio+.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {

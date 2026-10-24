@@ -1,7 +1,9 @@
 # Alerts worker
 
 Monitoring and alerts for Studio+ (M123, made simple in M128). Every
-minute the worker reloads the enabled rules and channels, so a change in
+minute the worker reloads the enabled rules of projects whose team is on
+Studio+ (the subscription mirror, M135; rules of a team off the plan are
+kept and polled again when it is active) and the channels, so a change in
 the studio is live within a minute, then for each testnet reads the logs
 of the addresses the rules name from the chain's cursor, decodes ownership
 changes, pauses and unpauses, large token transfers (at or above a rule's
