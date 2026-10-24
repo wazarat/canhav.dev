@@ -3,6 +3,7 @@
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { FieldWaiver } from "@/components/build/FieldWaiver";
+import { ChainField } from "@/components/ideation/ChainField";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
@@ -19,7 +20,6 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import {
   AUDIENCE_OPTIONS,
-  CHAIN_COPY,
   ORACLE_USE_OPTIONS,
   PERSONA_COPY,
   personaRows,
@@ -108,16 +108,7 @@ export function DecisionsTab({
 
         <CardSection id="decisions-chain" className="space-y-4">
           <Heading>{D.chain}</Heading>
-          <SegmentedField
-            label={CHAIN_COPY.label}
-            hint={chainLocked ? CHAIN_COPY.locked : undefined}
-            info={CHAIN_COPY.hint}
-            value={chainKey}
-            onChange={(v) => {
-              if (!chainLocked) patch({ chain: v as ProjectChain });
-            }}
-            options={CHAIN_COPY.options.map((o) => (chainLocked && o.value !== chainKey ? { ...o, disabled: true } : o))}
-          />
+          <ChainField value={chainKey} onChange={(chain) => patch({ chain })} locked={chainLocked} />
         </CardSection>
 
         <CardSection id="decisions-templates" className="space-y-3">

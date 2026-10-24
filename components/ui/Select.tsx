@@ -47,6 +47,7 @@ export function SelectField<V extends string>({
   options,
   placeholder = "Choose…",
   clearable = false,
+  disabled = false,
 }: {
   label: string;
   required?: boolean;
@@ -58,10 +59,12 @@ export function SelectField<V extends string>({
   placeholder?: string;
   /** Optional answers can go back to unset, so the blank choice stays selectable. */
   clearable?: boolean;
+  /** A locked decision (M148, the chain after a launch): the value shows, nothing else can be picked. */
+  disabled?: boolean;
 }) {
   return (
     <Field label={label} required={required} hint={hint} info={info}>
-      <Select value={value} muted={!value} onChange={(e) => onChange(e.target.value as V | "")}>
+      <Select value={value} muted={!value} disabled={disabled} onChange={(e) => onChange(e.target.value as V | "")}>
         <option value="" disabled={!clearable}>
           {placeholder}
         </option>

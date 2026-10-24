@@ -32,6 +32,8 @@ export interface DeployerChainView {
 export interface DeployerView {
   /** Lowercase hex. */
   address: string;
+  /** The project's chain (M148): the funding row that leads; the other testnet folds away. */
+  projectChain: ProjectChain;
   envVar: string;
   /** The env file path relative to the repository root (M138). */
   envFile: string;
@@ -58,7 +60,7 @@ export function deployerChains(projectChain: ProjectChain): DeployerChainView[] 
 export function deployerView(doc: { deployer?: string; deployerEnvFile?: string; chain?: unknown }, projectChain: ProjectChain): DeployerView | null {
   const address = doc.deployer?.trim().toLowerCase();
   if (!address || !DEPLOYER_ADDRESS.test(address)) return null;
-  return { address, envVar: DEPLOYER_ENV, envFile: deployerEnvFile(doc), envFileDefault: !doc.deployerEnvFile?.trim(), chains: deployerChains(projectChain) };
+  return { address, projectChain, envVar: DEPLOYER_ENV, envFile: deployerEnvFile(doc), envFileDefault: !doc.deployerEnvFile?.trim(), chains: deployerChains(projectChain) };
 }
 
 /** The line that goes into the env file. The key never leaves the machine it was made on. */

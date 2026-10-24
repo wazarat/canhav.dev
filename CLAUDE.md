@@ -30,9 +30,11 @@ classes:
   card the thirdweb way. `.glass` still exists for old call sites and
   renders the same flat surface; do not use it in new code.
 - `Select` and `SelectField` (`Select.tsx`) for every native select, with
-  `optionClasses` on the options.
+  `optionClasses` on the options. The chain pick is a select since M148
+  (`components/ideation/ChainField.tsx`, Robinhood testnet first and the
+  default, Arbitrum Sepolia marked beta with its note under the field).
 - `Segmented` and `SegmentedField` (`Segmented.tsx`) for two to four
-  exclusive options: chain, project mode, steppers, view toggles and
+  exclusive options: project mode, steppers, view toggles and
   tablists (`role="tablist"`). Options with `href` render as links.
 - `ChoiceCardGroups` (`ChoiceCard.tsx`) for full width choice rows
   (sectors, subsectors). `ChipMultiSelect` and `ChipRadioGroup` stay for

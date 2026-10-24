@@ -29,6 +29,11 @@ export interface ProjectChainInfo {
   family: "robinhood" | "arbitrum";
   /** Where a deployer key gets testnet ETH (M102). */
   faucetUrl: string;
+  /**
+   * A beta chain (M148): listed second, labelled "(beta)", and the pick shows
+   * a note on what is still in progress there. Nothing is blocked.
+   */
+  beta?: true;
 }
 
 export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
@@ -53,8 +58,26 @@ export const PROJECT_CHAIN_INFO: Record<ProjectChain, ProjectChainInfo> = {
     short: "Arbitrum Sepolia",
     family: "arbitrum",
     faucetUrl: "https://www.alchemy.com/faucets/arbitrum-sepolia",
+    beta: true,
   },
 };
+
+/** Whether a chain is in beta (M148). */
+export function chainIsBeta(chain: ProjectChain): boolean {
+  return PROJECT_CHAIN_INFO[chain].beta === true;
+}
+
+/**
+ * The chain pick's options in list order, the default first, a beta chain
+ * labelled as such (M148). One source for the wizard, Decisions and the
+ * launch form.
+ */
+export function chainOptions(): Array<{ value: ProjectChain; label: string }> {
+  return PROJECT_CHAINS.map((c) => ({
+    value: c,
+    label: PROJECT_CHAIN_INFO[c].beta ? `${PROJECT_CHAIN_INFO[c].short} (beta)` : PROJECT_CHAIN_INFO[c].short,
+  }));
+}
 
 export function isProjectChain(v: unknown): v is ProjectChain {
   return PROJECT_CHAINS.includes(v as ProjectChain);

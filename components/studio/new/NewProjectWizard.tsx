@@ -13,11 +13,12 @@ import { BuildingStep } from "@/components/studio/new/BuildingStep";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
 import { PlanWord } from "@/components/studio/PlanWord";
 import { Button } from "@/components/ui/Button";
+import { ChainField } from "@/components/ideation/ChainField";
 import { SegmentedField } from "@/components/ui/Segmented";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { CHAIN_COPY, LOGO_COPY } from "@/content/ideation";
+import { LOGO_COPY } from "@/content/ideation";
 import { NEW_PROJECT_COPY } from "@/content/studio-new";
-import type { ProjectChain } from "@/lib/chains";
+import { DEFAULT_PROJECT_CHAIN, type ProjectChain } from "@/lib/chains";
 import { PROJECT_LIMITS } from "@/lib/ideation";
 import { type ProductShape, impliedShapesFor } from "@/lib/kits";
 import type { Subsector } from "@/lib/sectors";
@@ -27,8 +28,8 @@ interface Draft {
   sector: SectorChoice;
   subsectors: Subsector[];
   shapes: ProductShape[];
-  /** Empty until the chain step is answered (M139). */
-  chain: ProjectChain | "";
+  /** Robinhood testnet from the start (M148); the project stores what is picked. */
+  chain: ProjectChain;
   whatItDoes: string;
   logo?: string;
   wantsToken: "yes" | "no" | "unsure" | "";
@@ -52,7 +53,7 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
     sector: "",
     subsectors: [],
     shapes: [],
-    chain: "",
+    chain: DEFAULT_PROJECT_CHAIN,
     whatItDoes: "",
     wantsToken: "",
   });
@@ -62,18 +63,17 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
   const [skipped, setSkipped] = useState<string | null>(null);
 
   const nameOk = draft.name.trim().length >= PROJECT_LIMITS.name.min;
-  const chainOk = draft.chain !== "";
   const steps = STEP_KEYS.map((key) => ({
     key,
     label: C.steps[key],
-    problem: key === "name" && !nameOk ? C.name.problem : key === "chain" && !chainOk ? C.chain.problem : null,
+    problem: key === "name" && !nameOk ? C.name.problem : null,
   }));
   const last = step === STEP_KEYS.length - 1;
   const patch = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const go = (i: number) => setStep(Math.max(0, Math.min(STEP_KEYS.length - 1, i)));
 
   async function create() {
-    if (!nameOk || !chainOk || working) return;
+    if (!nameOk || working) return;
     setWorking(true);
     setError(null);
     try {
@@ -166,15 +166,7 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
         )}
 
         {current === "chain" && (
-          <SegmentedField
-            label={CHAIN_COPY.label}
-            required
-            hint={C.chain.hint}
-            info={CHAIN_COPY.hint}
-            value={draft.chain}
-            onChange={(v) => patch({ chain: v as ProjectChain })}
-            options={CHAIN_COPY.options}
-          />
+          <ChainField value={draft.chain} onChange={(chain) => patch({ chain })} hint={C.chain.hint} />
         )}
 
         {current === "finish" && (
@@ -225,7 +217,7 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
           {step === 0 ? C.cancel : C.actions.back}
         </Button>
         {last ? (
-          <Button type="submit" size="sm" disabled={!nameOk || !chainOk || working} aria-busy={working}>
+          <Button type="submit" size="sm" disabled={!nameOk || working} aria-busy={working}>
             {working ? C.actions.creating : C.actions.create}
           </Button>
         ) : (

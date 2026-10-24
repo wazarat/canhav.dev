@@ -243,6 +243,11 @@ export const BUILD_COPY = {
       funded: "Funded",
       empty: "Not funded",
       fund: "Fund from the faucet",
+      /** The other testnet folds under this title (M148); the project's chain leads. */
+      alsoOn: (name: string) => `Also use this key on ${name}`,
+      /** Under the funding row of a beta chain (M148). */
+      betaFunding: (name: string) =>
+        `${name} is in beta. Most faucets need mainnet ETH on the address, so you may need to fund this key from a wallet you already have.`,
       refresh: "Refresh balances",
       replace: "Replace the key",
       replaceHint: (file: string) => `Clears the address here. Make a new key and paste it over the old line in ${file}.`,

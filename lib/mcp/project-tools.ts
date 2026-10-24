@@ -87,7 +87,7 @@ import { linkLaunch } from "@/lib/launch-project";
 import { storeImageFromBase64, storeImageFromUrl } from "@/lib/images";
 import { milestoneOf, milestoneOfStep } from "@/lib/build-milestones";
 import { type PendingView, createLinkedDesign, projectedContext, submitAgentChange } from "@/lib/agent-writes-server";
-import { AGENT_COPY } from "@/content/ideation";
+import { AGENT_COPY, CHAIN_COPY } from "@/content/ideation";
 import { planProgress, reportSessionSchema, sessionView } from "@/lib/agent-sessions";
 import { latestAgentSession, reportAgentSession } from "@/lib/agent-sessions-db";
 import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
@@ -96,7 +96,7 @@ import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, PACK_SECTIONS, buildResourcePack, buildReviewView, packSections, packSummary, templatesRead } from "@/lib/kit-pack";
-import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { deployerEnvFile, deployerHint, deployerView } from "@/lib/deployer";
 import { getDeployerBalances } from "@/lib/deployer-server";
 import { launchTargetLabel } from "@/content/launch-targets";
@@ -410,17 +410,29 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const deployer = deployerAddress
         ? await (async () => {
             const balances = await getDeployerBalances(deployerAddress.address);
+            const chains = deployerAddress.chains.map((c) => {
+              const b = balances.find((x) => x.chain === c.chain);
+              return { ...c, explorerUrl: `${c.explorerUrl}${deployerAddress.address}`, balanceEth: b?.eth ?? null, funded: b?.funded ?? false };
+            });
             return {
               ...deployerAddress,
-              chains: deployerAddress.chains.map((c) => {
-                const b = balances.find((x) => x.chain === c.chain);
-                return { ...c, explorerUrl: `${c.explorerUrl}${deployerAddress.address}`, balanceEth: b?.eth ?? null, funded: b?.funded ?? false };
-              }),
+              // Only the project's chain counts (M148); the other testnet is listed for completeness.
+              fundedOnProjectChain: chains.find((c) => c.chain === deployerAddress.projectChain)?.funded ?? false,
+              chains,
             };
           })()
-        : { address: null, hint: deployerHint(project.draft_doc), envFile: deployerEnvFile(project.draft_doc) };
+        : { address: null, projectChain: projectChainOf(project.draft_doc), hint: deployerHint(project.draft_doc), envFile: deployerEnvFile(project.draft_doc) };
+      const chainKey = projectChainOf(project.draft_doc);
       return jsonResult({
         plus,
+        // The chain the project builds on, with the beta note when it applies (M148), so the agent promises no path that does not exist there.
+        chain: {
+          key: chainKey,
+          name: chainInfo(chainKey).name,
+          chainId: chainInfo(chainKey).chainId,
+          beta: chainIsBeta(chainKey),
+          note: chainIsBeta(chainKey) ? CHAIN_COPY.betaNote(chainInfo(chainKey).name) : null,
+        },
         // Open draft requests come first (M117): the owner clicked Draft and waits on the agent.
         draftRequests: (plus ? openRequests(project.draft_doc) : []).map((r) => ({
           kind: r.kind,

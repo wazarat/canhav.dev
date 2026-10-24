@@ -39,9 +39,8 @@ export const NEW_PROJECT_COPY = {
     agentHint: "No sector yet, so the subsector and shape wait. Your agent can classify the project from the description over MCP, or pick them under Decisions.",
   },
   chain: {
-    /** The chain step (M139) has no preselection; the project stores what you pick. */
-    problem: "Pick a chain",
-    hint: "Where the project builds and tests, and where a token launched from it goes. Nothing is picked for you.",
+    /** Robinhood testnet is picked from the start (M148); the project stores what is picked. */
+    hint: "Where the project builds and tests, and where a token launched from it goes. Robinhood testnet is picked for you; change it here if you build on Arbitrum Sepolia.",
   },
   finish: {
     uploadsOff: "Logo upload is not set up on this deployment. Add a logo later from the editor.",

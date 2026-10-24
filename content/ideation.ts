@@ -30,6 +30,7 @@ import type {
 import { PROJECT_LIMITS, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
 import type { WaivableField } from "@/lib/ideation";
 import type { ProjectChain } from "@/lib/chains";
+import { chainOptions } from "@/lib/chains";
 import { docSectors } from "@/lib/sectors";
 import type { DesignWarning } from "@/lib/tokenDesign";
 
@@ -584,15 +585,19 @@ export const MAINNET_COPY = {
   exportTitle: "Mainnet and Pons pairing",
 } as const;
 
-/** The chain a project builds on (M52). Its token launch follows it. */
+/**
+ * The chain a project builds on (M52). Its token launch follows it. Picked
+ * from a dropdown since M148, Robinhood testnet first and the default,
+ * Arbitrum Sepolia second and marked beta with the note below it.
+ */
 export const CHAIN_COPY = {
   label: "Chain",
   hint: "Where you build and test. A token launched from this project goes on the same chain.",
   locked: "A token has launched from this project, so its chain is fixed.",
-  options: [
-    { value: "robinhood_testnet", label: "Robinhood testnet" },
-    { value: "arbitrum_sepolia", label: "Arbitrum Sepolia" },
-  ] satisfies Array<{ value: ProjectChain; label: string }>,
+  options: chainOptions(),
+  /** Under the field while a beta chain is picked, and in get_project_status and AGENTS.md for the agent. */
+  betaNote: (name: string) =>
+    `${name} is in beta. Funding the deployer key is harder there, since most faucets want mainnet ETH on the address first. Pons and Pools run on Robinhood Chain mainnet only. Some protocols in the kits have no ${name} deployment, so your team or its agent deploys or mocks them. Expect to fix a few things yourselves.`,
 } as const;
 
 /** The misconception this platform refuses to let stand quietly. */

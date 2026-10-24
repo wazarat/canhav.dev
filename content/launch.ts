@@ -6,7 +6,7 @@
 import { formatEther } from "viem";
 
 import type { AgentWriteMode } from "@/lib/agent-writes";
-import { DEFAULT_PROJECT_CHAIN, PROJECT_CHAINS, PROJECT_CHAIN_INFO, type ProjectChain } from "@/lib/chains";
+import { DEFAULT_PROJECT_CHAIN, PROJECT_CHAINS, PROJECT_CHAIN_INFO, type ProjectChain, chainOptions } from "@/lib/chains";
 
 /**
  * One chain the launchpad runs on (M54). The same contracts are deployed on
@@ -107,7 +107,7 @@ export const LIVE_LAUNCH_CHAINS: readonly ProjectChain[] = PROJECT_CHAINS.filter
 export const LAUNCH_CHAIN_COPY = {
   label: "Chain",
   hint: "Where the token launches. A launch started from a project goes on the project's chain.",
-  options: PROJECT_CHAINS.map((c) => ({ value: c, label: PROJECT_CHAIN_INFO[c].short })),
+  options: chainOptions(),
 };
 
 /** Shown where a launch would start on a chain whose contracts are not deployed yet. */

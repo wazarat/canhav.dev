@@ -5,7 +5,7 @@ import { googleFontsUrl } from "@/content/brand-fonts";
 import { briefSummary } from "@/lib/draft/briefs";
 import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests } from "@/lib/draft/requests";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
-import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
+import { type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
 import { type LaunchTarget, launchTargetOf } from "@/lib/launch-targets";
 import { mainnetView } from "@/lib/mainnet-view";
@@ -18,6 +18,7 @@ import {
   TEMPLATE_KIND_LABELS,
 } from "@/content/templates/copy";
 import {
+  CHAIN_COPY,
   ALLOCATION_FIELDS,
   ANTI_SNIPING_OPTIONS,
   COUNSEL_OPTIONS,
@@ -187,6 +188,8 @@ function kitLines(doc: ProjectDoc): string[] {
   const shapes = shapeLabels(kit);
   if (shapes.length) out.push(`- **Building:** ${shapes.join(", ")}`);
   out.push(`- **Chain:** ${chainInfo(projectChainOf(doc)).name}`);
+  // A beta chain says what is still in progress there (M148), so the agent does not promise a path that does not exist.
+  if (chainIsBeta(projectChainOf(doc))) out.push(`- **Chain note:** ${CHAIN_COPY.betaNote(chainInfo(projectChainOf(doc)).name)}`);
   const start = startingPointLabel(kit);
   if (start) out.push(`- **Starting from:** ${start}`);
   return out;
@@ -810,6 +813,8 @@ export function buildAgentsMd(input: {
           `- CanHav AMM: ${net.ammAddress}`,
         ]
       : ["- CanHav launch contracts: not deployed on this chain yet, so a token cannot launch here for now."]),
+    // A beta chain says what is still in progress there (M148), so the agent does not promise a path that does not exist.
+    ...(project && chainIsBeta(projectChainOf(project)) ? [`- Note: ${CHAIN_COPY.betaNote(net.name)}`] : []),
   ];
 
   if (project) {

@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/Card";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { Field, Input, TextArea, inputClasses } from "@/components/ui/Input";
+import { ChainField } from "@/components/ideation/ChainField";
 import { Segmented, SegmentedField } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -634,13 +635,7 @@ export function LaunchForm({
 
         {fixedChain ? null : (
           <div className="mb-5">
-            <SegmentedField
-              label={LAUNCH_CHAIN_COPY.label}
-              info={LAUNCH_CHAIN_COPY.hint}
-              value={chain}
-              onChange={(v) => setPickedChain(v)}
-              options={LAUNCH_CHAIN_COPY.options}
-            />
+            <ChainField label={LAUNCH_CHAIN_COPY.label} info={LAUNCH_CHAIN_COPY.hint} value={chain} onChange={(v) => setPickedChain(v)} />
           </div>
         )}
         {open ? null : (

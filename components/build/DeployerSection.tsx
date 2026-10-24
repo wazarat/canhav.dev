@@ -4,12 +4,14 @@ import { useState } from "react";
 import { ExternalLink, KeyRound, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { Collapsible } from "@/components/ui/Collapsible";
 import { CopyBlock } from "@/components/ui/CopyBlock";
 import { Field, Input } from "@/components/ui/Input";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
-import { DEPLOYER_ADDRESS, DEPLOYER_ENV_FILE_DEFAULT, type DeployerView, deployerEnvLine } from "@/lib/deployer";
+import { chainInfo, chainIsBeta } from "@/lib/chains";
+import { DEPLOYER_ADDRESS, DEPLOYER_ENV_FILE_DEFAULT, type DeployerChainView, type DeployerView, deployerEnvLine } from "@/lib/deployer";
 import { PROJECT_LIMITS } from "@/lib/ideation";
 
 /**
@@ -64,6 +66,30 @@ export function DeployerSection({
 
   const typedClean = typed.trim().toLowerCase();
   const canRecord = DEPLOYER_ADDRESS.test(typedClean);
+
+  function fundingRow(c: DeployerChainView) {
+    const b = balances?.find((x) => x.chain === c.chain);
+    return (
+      <li key={c.chain} className="flex flex-wrap items-center gap-3 text-xs">
+        <span className="w-40 shrink-0 text-ink-300">{c.name}</span>
+        {b ? (
+          <StatusChip tone={b.funded ? "success" : "warning"} className="px-2 py-0.5 text-[11px]">
+            {b.eth === null ? C.balanceUnknown : `${b.funded ? C.funded : C.empty}, ${Number(b.eth).toFixed(4)} ETH`}
+          </StatusChip>
+        ) : (
+          <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
+            {loading ? "…" : C.balanceUnknown}
+          </StatusChip>
+        )}
+        <a href={c.faucetUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-electric-300 transition-colors hover:text-electric-200">
+          {C.fund} <ExternalLink aria-hidden className="h-3 w-3" />
+        </a>
+        <a href={`${c.explorerUrl}${address}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-ink-400 transition-colors hover:text-ink-100">
+          {BUILD_COPY.deployments.explorer} <ExternalLink aria-hidden className="h-3 w-3" />
+        </a>
+      </li>
+    );
+  }
 
   if (!address) {
     return (
@@ -122,31 +148,21 @@ export function DeployerSection({
         <span className="text-xs text-ink-400">{C.address}</span>
         <span className="font-mono text-xs text-ink-100">{address}</span>
       </div>
+      {/* The project's chain leads (M148); the other testnet folds away so nobody is nudged toward a faucet they do not need. */}
       <ul className="space-y-2">
-        {deployer!.chains.map((c) => {
-          const b = balances?.find((x) => x.chain === c.chain);
-          return (
-            <li key={c.chain} className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="w-40 shrink-0 text-ink-300">{c.name}</span>
-              {b ? (
-                <StatusChip tone={b.funded ? "success" : "warning"} className="px-2 py-0.5 text-[11px]">
-                  {b.eth === null ? C.balanceUnknown : `${b.funded ? C.funded : C.empty}, ${Number(b.eth).toFixed(4)} ETH`}
-                </StatusChip>
-              ) : (
-                <StatusChip tone="neutral" className="px-2 py-0.5 text-[11px]">
-                  {loading ? "…" : C.balanceUnknown}
-                </StatusChip>
-              )}
-              <a href={c.faucetUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-electric-300 transition-colors hover:text-electric-200">
-                {C.fund} <ExternalLink aria-hidden className="h-3 w-3" />
-              </a>
-              <a href={`${c.explorerUrl}${address}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-ink-400 transition-colors hover:text-ink-100">
-                {BUILD_COPY.deployments.explorer} <ExternalLink aria-hidden className="h-3 w-3" />
-              </a>
-            </li>
-          );
-        })}
+        {deployer!.chains.filter((c) => c.chain === deployer!.projectChain).map((c) => fundingRow(c))}
       </ul>
+      {chainIsBeta(deployer!.projectChain) ? (
+        <p className="text-xs leading-relaxed text-ink-400">{C.betaFunding(chainInfo(deployer!.projectChain).name)}</p>
+      ) : null}
+      {deployer!.chains
+        .filter((c) => c.chain !== deployer!.projectChain)
+        .map((c) => (
+          <Collapsible key={c.chain} summary={C.alsoOn(c.name)}>
+            <ul className="space-y-2">{fundingRow(c)}</ul>
+            {chainIsBeta(c.chain) ? <p className="mt-2 text-xs leading-relaxed text-ink-400">{C.betaFunding(c.name)}</p> : null}
+          </Collapsible>
+        ))}
       {freshKey ? null : envFileField}
       <p className="text-[11px] text-ink-500">
         {C.whereLine(file)} {C.agentLine}
