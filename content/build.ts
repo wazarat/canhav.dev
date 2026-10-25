@@ -188,6 +188,15 @@ export const BUILD_COPY = {
       promptHint: "Lists the open steps. The agent works through them in the repository and ticks each one with evidence.",
     },
     noShape: "Pick what you are building under Decisions to get build steps.",
+    /** What it does, edited in place on the Overview (owner feedback 2026-10-25). */
+    description: {
+      edit: "Edit",
+      editLabel: "What it does",
+      editPlaceholder: "One paragraph. What does it actually do?",
+      save: "Save",
+      cancel: "Cancel",
+      empty: "No description yet.",
+    },
   },
   decisions: {
     title: "Decisions",

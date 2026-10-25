@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ListChecks } from "lucide-react";
+import { ListChecks, Pencil } from "lucide-react";
 
 import { AgentFeed } from "@/components/build/AgentFeed";
 import { deployerState } from "@/components/build/deployer-state";
@@ -13,6 +13,7 @@ import { usePlan } from "@/components/studio/PlanContext";
 import { useProjectPlan } from "@/components/studio/ProjectPlanContext";
 import { PlusLine } from "@/components/studio/PlusLine";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
+import { TextField } from "@/components/ideation/TextField";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
@@ -27,7 +28,7 @@ import { shapeLabels } from "@/content/kits/copy";
 import { buildProgress } from "@/content/kits/checklists";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import type { DeployerView } from "@/lib/deployer";
-import type { ProjectDoc } from "@/lib/ideation";
+import { PROJECT_LIMITS, type ProjectDoc } from "@/lib/ideation";
 import type { ProjectKit } from "@/lib/kits";
 
 const ONE_LINE = 140;
@@ -102,6 +103,9 @@ export function OverviewTab({
   const progress = buildProgress(kit);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
+  /** The description being edited in place, null while it is read (owner feedback 2026-10-25). */
+  const [editing, setEditing] = useState<string | null>(null);
+  const O = BUILD_COPY.overview.description;
   const shapes = shapeLabels(kit);
   const line = oneLine(doc.whatItDoes);
   // Studio+ surfaces show for a Studio+ session only (M136); a free account gets one sentence.
@@ -111,7 +115,43 @@ export function OverviewTab({
     <div className={`${TAB_WIDTH} space-y-6`}>
       <Card>
         <CardSection className="space-y-3">
-          {line ? <p className="max-w-3xl text-sm leading-relaxed text-ink-200">{line}</p> : null}
+          {/* What it does, edited in place (owner feedback 2026-10-25); the full field is also on Publish. */}
+          {editing !== null ? (
+            <div className="max-w-3xl space-y-3">
+              <TextField
+                label={O.editLabel}
+                required
+                value={editing}
+                onChange={setEditing}
+                min={PROJECT_LIMITS.whatItDoes.min}
+                max={PROJECT_LIMITS.whatItDoes.max}
+                rows={5}
+                placeholder={O.editPlaceholder}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={editing.trim().length < PROJECT_LIMITS.whatItDoes.min}
+                  onClick={() => {
+                    patch({ whatItDoes: editing.trim() });
+                    setEditing(null);
+                  }}
+                >
+                  {O.save}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                  {O.cancel}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-4">
+              {line ? <p className="max-w-3xl text-sm leading-relaxed text-ink-200">{line}</p> : <p className="text-sm text-ink-500">{O.empty}</p>}
+              <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setEditing(doc.whatItDoes)}>
+                <Pencil aria-hidden className="h-3.5 w-3.5" /> {O.edit}
+              </Button>
+            </div>
+          )}
           {/* The rail carries these facts on wide screens (M173). */}
           <MetaLine
             className="2xl:hidden"
