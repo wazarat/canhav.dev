@@ -7,6 +7,7 @@ import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { Field, Input } from "@/components/ui/Input";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { Segmented } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
 import { TextField } from "@/components/ideation/TextField";
@@ -156,39 +157,41 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
         {periodLabel(cadence, week)} · {state}
         {updates && updateDue(cadence, updates) ? ` · ${C.due}` : ""}
       </p>
-      <div className="space-y-1.5">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-medium text-ink-200">{C.cadenceLabel}</span>
-          <Segmented
-            value={pendingCadence}
-            onChange={(v) => {
-              setPendingCadence(v);
-              setCadenceSaved(false);
+      <div className="flex flex-wrap items-center gap-3">
+        {/* The helper copy sits behind the info icon (owner feedback 2026-10-25). */}
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
+          {C.cadenceLabel}
+          <InfoTip title={C.title}>
+            <span className="block">{C.intro}</span>
+            <span className="mt-2 block">{C.cadenceHint}</span>
+            {current ? <span className="mt-2 block">{C.written}</span> : null}
+          </InfoTip>
+        </span>
+        <Segmented
+          value={pendingCadence}
+          onChange={(v) => {
+            setPendingCadence(v);
+            setCadenceSaved(false);
+          }}
+          options={UPDATE_CADENCES.map((c) => ({ value: c, label: C.cadences[c] }))}
+          ariaLabel={C.cadenceLabel}
+        />
+        {pendingCadence !== cadence ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              patch({ updateCadence: pendingCadence });
+              setCadenceSaved(true);
             }}
-            options={UPDATE_CADENCES.map((c) => ({ value: c, label: C.cadences[c] }))}
-            ariaLabel={C.cadenceLabel}
-          />
-          {pendingCadence !== cadence ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                patch({ updateCadence: pendingCadence });
-                setCadenceSaved(true);
-              }}
-            >
-              {C.cadenceSave}
-            </Button>
-          ) : cadenceSaved ? (
-            <span className="text-xs text-ink-400">{C.cadenceSaved}</span>
-          ) : null}
-        </div>
-        <span className="block text-xs text-ink-500">{C.cadenceHint}</span>
+          >
+            {C.cadenceSave}
+          </Button>
+        ) : cadenceSaved ? (
+          <span className="text-xs text-ink-400">{C.cadenceSaved}</span>
+        ) : null}
       </div>
-      <p className="max-w-3xl text-xs text-ink-500">{C.intro}</p>
       {/* One update per period (M174): once this period's row exists the team edits it below instead of drafting again. */}
-      {current ? (
-        <p className="text-xs text-ink-400">{C.written}</p>
-      ) : (
+      {current ? null : (
         <DraftControl<WeeklyDraft>
           projectId={projectId}
           kind="weekly"
