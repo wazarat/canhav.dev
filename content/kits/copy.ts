@@ -230,6 +230,21 @@ export const CHECKLIST_COPY = {
   featuresTitle: "What this product includes",
   featuresHint: "Tick what applies. A ticked feature adds its own steps below and moves the templates it suits to the top. Nothing is removed.",
   featuresProgress: (on: number, total: number) => `${on} of ${total} ticked`,
+  /** Your own lines and the steps behind each line (M179). */
+  featuresOwn: (n: number) => (n === 1 ? "1 of your own" : `${n} of your own`),
+  featureSteps: "Steps",
+  featureNoSteps: "No steps yet.",
+  featureWhenTicked: "Adds when ticked",
+  featureAddStep: "Add a step for this",
+  featureStepPlaceholder: "What has to be true",
+  featureAddOwn: "Add something new",
+  featureOwnTitle: "What it includes",
+  featureOwnTitlePlaceholder: "Strategy rebalancing on a schedule",
+  featureOwnDetail: "One line, optional",
+  featureAdd: "Add",
+  featureCancel: "Cancel",
+  featureRemove: (title: string) => `Remove ${title}`,
+  featureYours: "Yours",
   featureAdds: (steps: number, templates: number) =>
     [
       steps ? `Adds ${steps} ${steps === 1 ? "step" : "steps"}` : "",

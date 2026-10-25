@@ -21,7 +21,7 @@ import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { SECTOR_OPTIONS, WAIVABLE_FIELD_LABELS } from "@/content/ideation";
 import { KIT_CATALOG } from "@/content/kits/catalog";
 import { templateById } from "@/content/templates";
-import { featuresFor } from "@/content/kits/features";
+import { FEATURE_IDS, featuresFor } from "@/content/kits/features";
 import { LAUNCH_TARGETS, PAIR_VENUES } from "@/lib/launch-targets";
 import { TEMPLATE_ID } from "@/lib/templates";
 import { reachableTemplateIds } from "@/lib/template-reach";
@@ -90,6 +90,10 @@ import {
   editOwnShape,
   isOwnShapeId,
   isProductShape,
+  OWN_FEATURE_ID,
+  addOwnFeature,
+  removeOwnFeature,
+  setCustomStepFeature,
   setCustomStepShapes,
   setOwnShapeSteps,
   setShapeLane,
@@ -158,7 +162,7 @@ export interface BuildStepsPatch {
   done: string[];
   undone: string[];
   /** Steps to add under a shape (M50). Project build steps only. A milestone lands it under Testnet or Review (M163), design when left out. */
-  add?: Array<{ shape: string; shapes?: string[]; title: string; detail?: string; milestone?: "design" | "testnet" | "review" }>;
+  add?: Array<{ shape: string; shapes?: string[]; title: string; detail?: string; milestone?: "design" | "testnet" | "review"; feature?: string }>;
   /** Step ids to remove from the sections. A catalog id hides its whole shared group. */
   remove?: string[];
   /** Removed catalog step ids to bring back. */
@@ -171,6 +175,8 @@ export interface BuildStepsPatch {
   applicable?: string[];
   /** The shapes of steps the team added (M176), each list replacing the stored one. */
   shapes?: Array<{ id: string; shapes: string[] }>;
+  /** The feature each added step delivers (M179); null unlinks. */
+  featureLinks?: Array<{ id: string; feature: string | null }>;
 }
 
 /** One recorded agent change, as the studio and the MCP tools see it. */
@@ -504,6 +510,21 @@ export const projectPatchSchema = z
         shapeLanes: z
           .record(z.string().max(60), z.enum(SHAPE_LANES))
           .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
+        // Lines added to what a shape includes (M179): add under a shape, remove by id.
+        ownFeatures: z
+          .strictObject({
+            add: z
+              .array(
+                z.strictObject({
+                  shape: SHAPE_REF,
+                  title: z.string().trim().min(KIT_LIMITS.ownFeatures.titleMin).max(KIT_LIMITS.ownFeatures.titleMax),
+                  detail: z.string().max(KIT_LIMITS.ownFeatures.detailMax).default(""),
+                }),
+              )
+              .max(20),
+            remove: z.array(z.string().regex(OWN_FEATURE_ID)).max(KIT_LIMITS.ownFeatures.max),
+          })
+          .partial(),
         // The team's definition of one of our shapes (M178); empty restores ours. An own shape's goes through ownShapes.edit detail.
         shapeParagraphs: z
           .record(z.string().max(60), z.string().max(KIT_LIMITS.ownShapes.detailMax))
@@ -658,6 +679,8 @@ export const buildStepsPatchSchema = z.strictObject({
         shape: z.string().max(60),
         // Further shapes the step serves (M176), ours or own.
         shapes: z.array(z.string().max(60)).max(KIT_LIMITS.shapes.maxPlus).optional(),
+        // The feature the step delivers (M179), a catalog feature id or an own line id.
+        feature: z.string().max(120).optional(),
         title: z.string().min(KIT_LIMITS.customSteps.titleMin).max(KIT_LIMITS.customSteps.titleMax),
         detail: z.string().max(KIT_LIMITS.customSteps.detailMax).default(""),
         // The milestone the added step lands under (M163); design when left out.
@@ -668,6 +691,11 @@ export const buildStepsPatchSchema = z.strictObject({
     .default([]),
   remove: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
   restore: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
+  // Link a step the team added to the feature it delivers, or unlink it with null (M179).
+  featureLinks: z
+    .array(z.strictObject({ id: z.string().max(120), feature: z.string().max(120).nullable() }))
+    .max(AGENT_CHANGE_LIMITS.buildSteps.max)
+    .default([]),
   // Put a step the team added on these shapes (M176), replacing its list; at least one.
   shapes: z
     .array(z.strictObject({ id: z.string().max(120), shapes: z.array(z.string().max(60)).min(1).max(KIT_LIMITS.shapes.maxPlus) }))
@@ -705,6 +733,7 @@ export function buildStepKeys(patch: BuildStepsPatch): string[] {
     ...(patch.notApplicable ?? []).map((e) => `na:${e.id}`),
     ...(patch.applicable ?? []).map((id) => `applicable:${id}`),
     ...(patch.shapes ?? []).map((e) => `shapes:${e.id}`),
+    ...(patch.featureLinks ?? []).map((e) => `feature:${e.id}`),
   ];
 }
 
@@ -976,6 +1005,8 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
       kit = { ...kit, ...(i.from ? editIdea(kit, i.shape as ShapeId, i.from, i.text, true) : toggleIdea(kit, i.shape as ShapeId, i.text, true)) };
     for (const [shape, lane] of Object.entries(kitPatch.shapeLanes ?? {})) kit = { ...kit, ...setShapeLane(kit, shape as ShapeId, lane) };
     for (const [shape, text] of Object.entries(kitPatch.shapeParagraphs ?? {})) kit = { ...kit, ...setShapeParagraph(kit, shape as ShapeId, text) };
+    for (const id of kitPatch.ownFeatures?.remove ?? []) kit = { ...kit, ...removeOwnFeature(kit, id) };
+    for (const f of kitPatch.ownFeatures?.add ?? []) kit = { ...kit, ...addOwnFeature(kit, f.shape as ShapeId, f.title, f.detail).patch };
     for (const [shape, st] of Object.entries(kitPatch.shapeStyles ?? {}))
       kit = { ...kit, ...setShapeStyle(kit, shape as ShapeId, { icon: st.icon === null ? undefined : (st.icon ?? kit.shapeStyles?.[shape]?.icon), color: st.color === null ? undefined : (st.color ?? kit.shapeStyles?.[shape]?.color) }) };
     // Keys set to undefined by the helpers must not be stored.
@@ -1102,7 +1133,10 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     const stray = ideaLines.filter((i) => !allNames.has(i.shape));
     if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}), so a line cannot name it.`;
   }
-  const named = [...Object.keys(k.shapeLanes ?? {}), ...Object.keys(k.shapeStyles ?? {}), ...Object.keys(k.shapeParagraphs ?? {})];
+  const named = [...Object.keys(k.shapeLanes ?? {}), ...Object.keys(k.shapeStyles ?? {}), ...Object.keys(k.shapeParagraphs ?? {}), ...(k.ownFeatures?.add ?? []).map((f) => f.shape)];
+  const unknownLine = (k.ownFeatures?.remove ?? []).find((id) => !(next.kit?.ownFeatures ?? []).some((f) => f.id === id));
+  if (unknownLine) return `${unknownLine} is not a line this project added. Read ownFeatures on get_build_steps.`;
+  if ((next.kit?.ownFeatures?.length ?? 0) + (k.ownFeatures?.add?.length ?? 0) > KIT_LIMITS.ownFeatures.max) return `At most ${KIT_LIMITS.ownFeatures.max} lines of your own across the shapes.`;
   const ownPara = Object.keys(k.shapeParagraphs ?? {}).find((x) => isOwnShapeId(x));
   if (ownPara) return `${ownPara} is a shape the team made; change its definition with ownShapes.edit detail.`;
   if (named.length) {
@@ -1168,6 +1202,12 @@ export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): stri
   const badShape = [...add.flatMap((a) => [a.shape, ...(a.shapes ?? [])]), ...(patch.shapes ?? []).flatMap((e) => e.shapes)].find((x) => !shapes.includes(x));
   if (badShape)
     return `${badShape} is not one of this project's shapes (${shapes.join(", ")}). A step goes on a shape the project builds; add one with add_shape.`;
+  // A feature a step names must be ours or a line this project added (M179).
+  const knownFeature = (f: string) => FEATURE_IDS.has(f) || (doc.kit?.ownFeatures ?? []).some((o) => o.id === f);
+  const badFeature = [...add.map((a) => a.feature), ...(patch.featureLinks ?? []).map((e) => e.feature)].find((f): f is string => Boolean(f) && !knownFeature(f!));
+  if (badFeature) return `Unknown feature ${badFeature}. Read features and ownFeatures on get_build_steps.`;
+  const notLinkable = (patch.featureLinks ?? []).find((e) => !(doc.kit?.customSteps ?? []).some((c) => c.id === e.id));
+  if (notLinkable) return `${notLinkable.id} is not a step the team added. Only added steps link to a feature; a catalog step's feature comes from the catalog.`;
   const notAdded = (patch.shapes ?? []).find((e) => !(doc.kit?.customSteps ?? []).some((c) => c.id === e.id));
   if (notAdded) return `${notAdded.id} is not a step the team added. Only added steps change shapes; a catalog step follows its shapes.`;
   const room = KIT_LIMITS.customSteps.max - (doc.kit.customSteps?.length ?? 0);
@@ -1182,7 +1222,8 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   if (!doc.kit) return doc;
   let kit = doc.kit;
   for (const a of patch.add ?? [])
-    kit = { ...kit, ...addCustomStep(kit, [a.shape, ...(a.shapes ?? [])] as ShapeId[], a.title, a.detail ?? "", a.milestone ? { milestone: a.milestone } : {}) };
+    kit = { ...kit, ...addCustomStep(kit, [a.shape, ...(a.shapes ?? [])] as ShapeId[], a.title, a.detail ?? "", { ...(a.milestone ? { milestone: a.milestone } : {}), ...(a.feature ? { feature: a.feature } : {}) }) };
+  for (const e of patch.featureLinks ?? []) kit = { ...kit, ...setCustomStepFeature(kit, e.id, e.feature) };
   for (const e of patch.shapes ?? []) kit = { ...kit, ...setCustomStepShapes(kit, e.id, e.shapes as ShapeId[]) };
   if (patch.remove?.length) {
     // A catalog id takes its whole shared group with it, the same as the studio's remove.
@@ -1611,6 +1652,7 @@ export function buildStepLines(patch: BuildStepsPatch): ChangeLine[] {
     ...(patch.notApplicable ?? []).map((e) => ({ path: `na:${e.id}`, before: "Listed", after: `Not applicable, because ${e.reason.trim()}` })),
     ...(patch.applicable ?? []).map((id) => ({ path: `applicable:${id}`, before: "Not applicable", after: "Listed" })),
     ...(patch.shapes ?? []).map((e) => ({ path: `shapes:${e.id}`, before: "", after: e.shapes.join(", ") })),
+    ...(patch.featureLinks ?? []).map((e) => ({ path: `feature:${e.id}`, before: "", after: e.feature ?? "Unlinked" })),
   ];
 }
 
@@ -1698,6 +1740,7 @@ export function subsetBuildSteps(patch: BuildStepsPatch, keep: ReadonlySet<strin
     notApplicable: (patch.notApplicable ?? []).filter((e) => keep.has(`na:${e.id}`)),
     applicable: (patch.applicable ?? []).filter((id) => keep.has(`applicable:${id}`)),
     shapes: (patch.shapes ?? []).filter((e) => keep.has(`shapes:${e.id}`)),
+    featureLinks: (patch.featureLinks ?? []).filter((e) => keep.has(`feature:${e.id}`)),
   };
 }
 
@@ -1714,7 +1757,8 @@ export function buildStepsNarrow(stored: BuildStepsPatch, decided: BuildStepsPat
     (decided.evidence ?? []).every((e) => (stored.evidence ?? []).some((b) => sameAdd(e, b))) &&
     (decided.notApplicable ?? []).every((e) => (stored.notApplicable ?? []).some((b) => sameAdd(e, b))) &&
     (decided.applicable ?? []).every((id) => (stored.applicable ?? []).includes(id)) &&
-    (decided.shapes ?? []).every((e) => (stored.shapes ?? []).some((b) => sameAdd(e, b)))
+    (decided.shapes ?? []).every((e) => (stored.shapes ?? []).some((b) => sameAdd(e, b))) &&
+    (decided.featureLinks ?? []).every((e) => (stored.featureLinks ?? []).some((b) => sameAdd(e, b)))
   );
 }
 
@@ -1838,6 +1882,7 @@ export function buildStepDecisionLines(patch: BuildStepsPatch, applied: BuildSte
     ...(applied.notApplicable ?? []).map((e) => `na:${e.id}`),
     ...(applied.applicable ?? []).map((id) => `applicable:${id}`),
     ...(applied.shapes ?? []).map((e) => `shapes:${e.id}`),
+    ...(applied.featureLinks ?? []).map((e) => `feature:${e.id}`),
   ]);
   return buildStepLines(patch).map((l) => ({ ...l, applied: kept.has(l.path) }));
 }

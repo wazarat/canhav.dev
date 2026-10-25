@@ -130,6 +130,7 @@ export const BUILD_COPY = {
     /** The shape's section (M178). */
     definition: "Definition",
     editDefinition: "Edit",
+    editLane: "Change the lane",
     addFeatures: "What this product includes",
     /** The Add a shape pop-up (M177). */
     dialogTitle: "Add a shape",

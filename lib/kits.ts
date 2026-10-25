@@ -373,7 +373,24 @@ export interface ProjectKit {
    * `detail`.
    */
   shapeParagraphs?: Record<string, string>;
+  /**
+   * What a shape includes beyond our catalog features (M179): lines the team
+   * or its agent added under a shape's "What this product includes". A step
+   * the team added may name one in `feature`, so the line lists its steps.
+   */
+  ownFeatures?: OwnFeature[];
 }
+
+/** A line the team added to what a shape includes (M179), id "of.<n>". */
+export interface OwnFeature {
+  id: string;
+  shape: ShapeId;
+  title: string;
+  /** One line on what it means. May be empty. */
+  detail: string;
+}
+
+export const OWN_FEATURE_ID = /^of\.[0-9]{1,4}$/;
 
 /** The colours a shape can take (M177), theme tokens --shape-<name> in app/globals.css. */
 export const SHAPE_COLORS = ["grey", "slate", "indigo", "cyan", "green", "yellow", "orange", "pink", "red"] as const;
@@ -431,6 +448,8 @@ export interface CustomStep {
   shape: ShapeId;
   /** Further shapes the step serves (M176), beyond `shape`. */
   shapes?: ShapeId[];
+  /** The feature it delivers (M179), a catalog feature id or an own feature id, so the feature lists it. */
+  feature?: string;
   title: string;
   /** What done looks like. May be empty. */
   detail: string;
@@ -452,6 +471,8 @@ export const KIT_LIMITS = {
   shapes: { max: 3, maxPlus: 10 },
   /** A shape the team makes (M176). */
   ownShapes: { titleMin: 3, titleMax: 60, detailMax: 400, steps: 200 },
+  /** Lines the team adds to what a shape includes (M179). */
+  ownFeatures: { max: 60, titleMin: 3, titleMax: 80, detailMax: 200 },
   /** Cap on each id list, well above any catalog size. */
   ids: { max: 400 },
   /** Cap on stored checklist entries. */
@@ -562,9 +583,9 @@ export function setOwnShapeSteps(kit: Pick<ProjectKit, "ownShapes">, id: OwnShap
  * serves other shapes stays on them; a step on this shape alone goes.
  */
 export function withoutShape(
-  kit: Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes" | "shapeParagraphs">,
+  kit: Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes" | "shapeParagraphs" | "ownFeatures">,
   id: ShapeId,
-): Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes" | "shapeParagraphs"> {
+): Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes" | "shapeParagraphs" | "ownFeatures"> {
   const own = (kit.ownShapes ?? []).filter((o) => o.id !== id);
   const ideas = (kit.ideas ?? []).filter((i) => i.shape !== id);
   const steps: CustomStep[] = [];
@@ -581,6 +602,41 @@ export function withoutShape(
     ...setShapeStyle(kit, id, { icon: undefined, color: undefined }),
     ...setShapeLane(kit, id, "core"),
     ...setShapeParagraph(kit, id, ""),
+    ownFeatures: (kit.ownFeatures ?? []).filter((f) => f.shape !== id).length ? (kit.ownFeatures ?? []).filter((f) => f.shape !== id) : undefined,
+  };
+}
+
+/** Add a line to what a shape includes (M179). The id is "of.<n>", one past the highest in use. */
+export function addOwnFeature(kit: Pick<ProjectKit, "ownFeatures">, shape: ShapeId, title: string, detail = ""): { patch: Pick<ProjectKit, "ownFeatures">; id: string } {
+  const L = KIT_LIMITS.ownFeatures;
+  const existing = kit.ownFeatures ?? [];
+  const n = existing.map((f) => Number(f.id.slice(3)) || 0).reduce((a, b) => Math.max(a, b), 0) + 1;
+  const id = `of.${n}`;
+  if (existing.length >= L.max) return { patch: { ownFeatures: existing }, id: "" };
+  return { patch: { ownFeatures: [...existing, { id, shape, title: title.trim().slice(0, L.titleMax), detail: detail.trim().slice(0, L.detailMax) }] }, id };
+}
+
+/** Remove a line the team added (M179); the steps that named it keep working, unlinked. */
+export function removeOwnFeature(kit: Pick<ProjectKit, "ownFeatures" | "customSteps">, id: string): Pick<ProjectKit, "ownFeatures" | "customSteps"> {
+  const left = (kit.ownFeatures ?? []).filter((f) => f.id !== id);
+  return {
+    ownFeatures: left.length ? left : undefined,
+    customSteps: kit.customSteps?.map((c) => {
+      if (c.feature !== id) return c;
+      const { feature: _f, ...rest } = c;
+      return rest;
+    }),
+  };
+}
+
+/** Link an added step to the feature it delivers, or unlink it with null (M179). */
+export function setCustomStepFeature(kit: Pick<ProjectKit, "customSteps">, stepId: string, feature: string | null): Pick<ProjectKit, "customSteps"> {
+  return {
+    customSteps: (kit.customSteps ?? []).map((c) => {
+      if (c.id !== stepId) return c;
+      const { feature: _f, ...rest } = c;
+      return feature ? { ...rest, feature } : rest;
+    }),
   };
 }
 
@@ -735,6 +791,7 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
         detail: typeof c.detail === "string" ? c.detail.slice(0, L.detailMax) : "",
         ...(CUSTOM_STEP_MILESTONES.includes(c.milestone as CustomStepMilestone) ? { milestone: c.milestone as CustomStepMilestone } : {}),
         ...(c.source === "dependency" ? { source: "dependency" as const } : {}),
+        ...(typeof c.feature === "string" && (FEATURE_ID.test(c.feature) || OWN_FEATURE_ID.test(c.feature)) ? { feature: c.feature } : {}),
       });
     }
     if (steps.length) kit.customSteps = steps;
@@ -783,6 +840,19 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     for (const [k, v] of Object.entries(r.shapeParagraphs as Record<string, unknown>))
       if (isProductShape(k) && typeof v === "string" && v.trim()) paras[k] = v.trim().slice(0, KIT_LIMITS.ownShapes.detailMax);
     if (Object.keys(paras).length) kit.shapeParagraphs = paras;
+  }
+  if (Array.isArray(r.ownFeatures)) {
+    const L = KIT_LIMITS.ownFeatures;
+    const out: OwnFeature[] = [];
+    for (const raw of r.ownFeatures as unknown[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const f = raw as Record<string, unknown>;
+      if (typeof f.id !== "string" || !OWN_FEATURE_ID.test(f.id) || out.some((x) => x.id === f.id)) continue;
+      if (!isShape(f.shape) || typeof f.title !== "string" || f.title.trim().length < L.titleMin) continue;
+      if (out.length >= L.max) break;
+      out.push({ id: f.id, shape: f.shape, title: f.title.trim().slice(0, L.titleMax), detail: typeof f.detail === "string" ? f.detail.trim().slice(0, L.detailMax) : "" });
+    }
+    if (out.length) kit.ownFeatures = out;
   }
   if (r.shapeStyles && typeof r.shapeStyles === "object" && !Array.isArray(r.shapeStyles)) {
     const styles: Record<string, ShapeStyle> = {};
@@ -1563,7 +1633,7 @@ export function addCustomStep(
   shapeOrShapes: ShapeId | readonly ShapeId[],
   title: string,
   detail = "",
-  opts: { milestone?: CustomStepMilestone; source?: CustomStepSource } = {},
+  opts: { milestone?: CustomStepMilestone; source?: CustomStepSource; feature?: string } = {},
 ): Pick<ProjectKit, "customSteps"> {
   const L = KIT_LIMITS.customSteps;
   const existing = kit.customSteps ?? [];
@@ -1587,6 +1657,7 @@ export function addCustomStep(
         detail: detail.trim().slice(0, L.detailMax),
         ...(opts.milestone ? { milestone: opts.milestone } : {}),
         ...(opts.source ? { source: opts.source } : {}),
+        ...(opts.feature ? { feature: opts.feature } : {}),
       },
     ],
   };

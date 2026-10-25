@@ -68,8 +68,8 @@ export function ShapePanel({
   // Our features are per catalog shape; an own shape copied from one shows that shape's.
   const featureShape = isProductShape(shape) ? shape : own?.basedOn;
   const features = featureShape ? featuresFor([featureShape]) : [];
-  // The list shows once a feature is ticked (M178); until then one link opens it.
-  const ticked = features.filter((f) => kit.features?.includes(f.id)).length;
+  // The list shows once a feature is ticked or a line added (M178, M179); until then one link opens it.
+  const ticked = features.filter((f) => kit.features?.includes(f.id)).length + (kit.ownFeatures ?? []).filter((f) => f.shape === shape).length;
   const [showFeatures, setShowFeatures] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(para);
@@ -83,18 +83,12 @@ export function ShapePanel({
   return (
     <Card>
       <CardSection className="space-y-3">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           <ShapeIconPicker kit={kit} shape={shape} onPatchKit={onPatchKit} />
           <div className="min-w-0 flex-1">
             <OwnShapeHeader kit={kit} shape={shape} onPatchKit={onPatchKit} onRemoveShape={onRemoveShape} />
           </div>
-          <Segmented<ShapeLane>
-            size="sm"
-            ariaLabel={LANE_COPY.title}
-            value={laneOf(kit, shape)}
-            onChange={(l) => onPatchKit(setShapeLane(kit, shape, l))}
-            options={SHAPE_LANES.map((l) => ({ value: l, label: LANE_COPY.lanes[l].label }))}
-          />
+          <LaneControl lane={laneOf(kit, shape)} onSave={(l) => onPatchKit(setShapeLane(kit, shape, l))} />
         </div>
         {editing ? (
           <div className="max-w-3xl space-y-2">
@@ -132,7 +126,7 @@ export function ShapePanel({
             </Button>
           </div>
         )}
-        {featureShape && features.length && !ticked && !showFeatures ? (
+        {!ticked && !showFeatures ? (
           <button type="button" onClick={() => setShowFeatures(true)} className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-ink-100">
             <Plus aria-hidden className="h-3.5 w-3.5" /> {S.addFeatures}
           </button>
@@ -146,9 +140,9 @@ export function ShapePanel({
           </p>
         ) : null}
       </CardSection>
-      {featureShape && features.length && (ticked || showFeatures) ? (
+      {ticked || showFeatures ? (
         <CardSection>
-          <FeaturesBlock shape={featureShape} features={features} kit={kit} onPatchKit={onPatchKit} />
+          <FeaturesBlock shape={shape} features={features} kit={kit} onPatchKit={onPatchKit} />
         </CardSection>
       ) : null}
       {own ? (
@@ -157,6 +151,60 @@ export function ShapePanel({
         </CardSection>
       ) : null}
     </Card>
+  );
+}
+
+/**
+ * Where the shape sits (M179): the lane as a word with an edit control;
+ * editing shows the three lanes and Save, so the choice is deliberate.
+ */
+function LaneControl({ lane, onSave }: { lane: ShapeLane; onSave: (lane: ShapeLane) => void }) {
+  const S = BUILD_COPY.shapes;
+  const [editing, setEditing] = useState(false);
+  const [pick, setPick] = useState<ShapeLane>(lane);
+  if (!editing)
+    return (
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-xs text-ink-500">{LANE_COPY.title}</span>
+        <span className="text-sm font-medium text-ink-100" title={LANE_COPY.lanes[lane].hint}>
+          {LANE_COPY.lanes[lane].label}
+        </span>
+        <button
+          type="button"
+          aria-label={S.editLane}
+          title={S.editLane}
+          onClick={() => {
+            setPick(lane);
+            setEditing(true);
+          }}
+          className="rounded p-1 text-ink-400 transition-colors hover:bg-ink-800/60 hover:text-ink-100"
+        >
+          <Pencil aria-hidden className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <Segmented<ShapeLane>
+        size="sm"
+        ariaLabel={LANE_COPY.title}
+        value={pick}
+        onChange={setPick}
+        options={SHAPE_LANES.map((l) => ({ value: l, label: LANE_COPY.lanes[l].label, title: LANE_COPY.lanes[l].hint }))}
+      />
+      <Button
+        size="sm"
+        onClick={() => {
+          if (pick !== lane) onSave(pick);
+          setEditing(false);
+        }}
+      >
+        {S.save}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+        {S.cancel}
+      </Button>
+    </div>
   );
 }
 
@@ -200,9 +248,9 @@ function OwnShapeHeader({
       </div>
     );
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="font-display text-base font-semibold text-ink-50">{shapeName(kit, shape)}</h2>
+        <h2 className="font-display text-base font-semibold leading-8 text-ink-50">{shapeName(kit, shape)}</h2>
         {own ? <p className="mt-0.5 text-xs text-ink-500">{[S.yours, own.basedOn ? S.basedOn(shapeLabel(own.basedOn) ?? own.basedOn) : null].filter(Boolean).join(" · ")}</p> : null}
       </div>
       {own && onRemoveShape ? (

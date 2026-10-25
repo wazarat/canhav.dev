@@ -63,6 +63,7 @@ export async function GET(_req: Request, { params }: Ctx) {
       return `New step (${[a?.shape, ...(a?.shapes ?? [])].filter((x): x is string => Boolean(x)).map((x) => shapeName(project.draft_doc.kit, x as ShapeId)).join(", ")})`;
     }
     if (key.startsWith("shapes:")) return `Shapes. ${titles.get(key.slice(7)) ?? key.slice(7)}`; // copy-ok
+    if (key.startsWith("feature:")) return `Feature. ${titles.get(key.slice(8)) ?? key.slice(8)}`; // copy-ok
     if (key.startsWith("remove:")) return `Remove. ${titles.get(key.slice(7)) ?? key.slice(7)}`; // copy-ok
     if (key.startsWith("restore:")) return `Restore. ${titles.get(key.slice(8)) ?? key.slice(8)}`; // copy-ok
     if (key.startsWith("evidence:")) return `Evidence. ${titles.get(key.slice(9)) ?? key.slice(9)}`; // copy-ok

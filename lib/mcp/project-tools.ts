@@ -851,6 +851,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           definition: kit.ownShapes?.find((o) => o.id === id)?.detail ?? kit.shapeParagraphs?.[id] ?? (isProductShape(id) ? (shapeBlurb(id) ?? "") : ""),
           ...(kit.shapeStyles?.[id] ?? {}),
         })),
+        // Lines the team added to what a shape includes (M179), each with the added steps linked to it.
+        ownFeatures: (kit.ownFeatures ?? []).map((f) => ({ ...f, steps: (kit.customSteps ?? []).filter((c) => c.feature === f.id).map((c) => c.id) })),
         ownShapes: (kit.ownShapes ?? []).map((o) => ({ id: o.id, title: o.title, detail: o.detail, ...(o.basedOn ? { copiedFrom: o.basedOn } : {}), steps: o.steps })),
         features: features.map((f) => ({
           id: f.id,
@@ -897,6 +899,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             custom: true,
             sharedWith: [] as string[],
             templates: [] as string[],
+            ...(c.feature ? { feature: c.feature } : {}),
           })),
         ],
         removed: items.filter((i) => hidden.has(i.id)).map((i) => ({ id: i.id, title: i.title })),
@@ -912,17 +915,23 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_features",
     {
       title: "Tick or untick features",
-      description: `Change what this project's product includes (M64). tick and untick take feature ids from get_build_steps (the features block). A ticked feature lists the build steps it gates and ranks the templates it suggests first on get_templates; unticking hides those steps again without losing their ticks. ${WRITE_RULES}`,
+      description: `Change what this project's product includes (M64). addOwn adds lines of the team's own under a shape (shape, title, optional detail) and removeOwn removes them by id (M179); link a step to a line with set_build_steps. tick and untick take feature ids from get_build_steps (the features block). A ticked feature lists the build steps it gates and ranks the templates it suggests first on get_templates; unticking hides those steps again without losing their ticks. ${WRITE_RULES}`,
       inputSchema: z.object({
         tick: z.array(z.string().max(120).regex(FEATURE_ID)).max(KIT_LIMITS_FEATURES).default([]),
         untick: z.array(z.string().max(120).regex(FEATURE_ID)).max(KIT_LIMITS_FEATURES).default([]),
+        // Lines of the team's own under a shape's What this product includes (M179).
+        addOwn: z
+          .array(z.object({ shape: z.string().max(60), title: z.string().min(KIT_LIMITS.ownFeatures.titleMin).max(KIT_LIMITS.ownFeatures.titleMax), detail: z.string().max(KIT_LIMITS.ownFeatures.detailMax).default("") }))
+          .max(20)
+          .default([]),
+        removeOwn: z.array(z.string().max(20)).max(KIT_LIMITS.ownFeatures.max).default([]),
         note: noteField,
       }),
     },
     async (args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
-      if (args.tick.length + args.untick.length === 0) return errorResult("Name at least one feature.");
+      if (args.tick.length + args.untick.length + args.addOwn.length + args.removeOwn.length === 0) return errorResult("Name at least one feature, or a line to add or remove.");
       const both = args.tick.filter((id) => args.untick.includes(id));
       if (both.length) return errorResult(`${both[0]} is in both tick and untick.`);
       const { project, design } = loaded.value;
@@ -934,7 +943,16 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         project,
         design,
         ownerOf(project),
-        { target: "project", kind: "fields", patch: { kit: { features } } },
+        {
+          target: "project",
+          kind: "fields",
+          patch: {
+            kit: {
+              ...(Object.keys(features).length ? { features } : {}),
+              ...(args.addOwn.length || args.removeOwn.length ? { ownFeatures: { ...(args.addOwn.length ? { add: args.addOwn } : {}), ...(args.removeOwn.length ? { remove: args.removeOwn } : {}) } } : {}),
+            },
+          },
+        },
         args.note,
       );
       if (!result.ok) return errorResult(result.message);
@@ -1010,7 +1028,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_build_steps",
     {
       title: "Tick, add, remove or restore build steps",
-      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's shapes (shape, title, optional detail on what done looks like, optional shapes for further shapes it serves, ours or own ids from get_build_steps, and an optional milestone, design, testnet or review, design when left out; the dependency check's suggested steps carry theirs). shapes takes id and shapes pairs to put a step the team added on other shapes, each list replacing the old one, at least one (M176). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's shapes (shape, title, optional detail on what done looks like, optional shapes for further shapes it serves, ours or own ids from get_build_steps, and an optional milestone, design, testnet or review, design when left out; the dependency check's suggested steps carry theirs). shapes takes id and shapes pairs to put a step the team added on other shapes, each list replacing the old one, at least one (M176). An added step may name the feature it delivers with feature (a catalog feature id or an own line id from get_build_steps), and featureLinks takes id and feature pairs to link or, with null, unlink a step the team added, so the feature lists its steps (M179). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {
@@ -1034,6 +1052,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             notApplicable: args.notApplicable,
             applicable: args.applicable,
             shapes: args.shapes,
+            featureLinks: args.featureLinks,
           },
         },
         args.note,
