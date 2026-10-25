@@ -123,13 +123,14 @@ export const BUILD_COPY = {
     colorLabel: (c: string) => `Colour ${c}`,
     iconSearch: "Search icons",
     iconNone: "No icon matches.",
-    fold: "Hide the shapes",
-    unfold: "Show the shapes",
-    folded: (core: number, exploring: number, later: number) => `${core} core · ${exploring} exploring · ${later} later`,
     queued: (time: string) => `Queued for your agent to ideate since ${time}.`,
     cancelQueue: "Cancel",
     filter: "Filter",
     removeFromShape: "Remove",
+    /** The shape's section (M178). */
+    definition: "Definition",
+    editDefinition: "Edit",
+    addFeatures: "What this product includes",
     /** The Add a shape pop-up (M177). */
     dialogTitle: "Add a shape",
     dialogIntro: "Pick one of ours by sector and subsector, or describe your own and let your agent ideate it.",

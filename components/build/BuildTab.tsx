@@ -5,7 +5,7 @@ import { ArrowRight, Plus } from "lucide-react";
 
 import { AddShape } from "@/components/build/AddShape";
 import { ReviewPassRow } from "@/components/build/ReviewPassRow";
-import { ShapeLanes, ShapePanel } from "@/components/build/ShapeLanes";
+import { ShapePanel } from "@/components/build/ShapePanel";
 import { ShapeGlyph } from "@/components/build/shape-icons";
 import { SendToAgent } from "@/components/build/SendToAgent";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
@@ -38,9 +38,11 @@ import {
   type GroupState,
   type ProductShape,
   type ShapeId,
+  type ShapeLane,
   addOwnShape,
   allShapes,
   ownShapeOf,
+  setShapeLane,
   shapeCap,
   withoutShape,
   type ProjectKit,
@@ -107,7 +109,7 @@ export function BuildTab({
   /** The project's sectors, picked first in the Add a shape pop-up (M177). */
   sectors?: readonly Sector[];
   /** Adds one of our shapes through the record's classification, with its sector and subsector when new (M176, M177). */
-  onAddShape?: (shape: ProductShape, sector: Sector, subsector: Subsector) => void;
+  onAddShape?: (shape: ProductShape, sector: Sector, subsector: Subsector, lane: ShapeLane) => void;
   /** The tester kit block under the Testnet milestone (M125). */
   testerKit?: React.ReactNode;
   /** Send to agent (M152). */
@@ -133,6 +135,14 @@ export function BuildTab({
   const cap = shapeCap(plus);
   const [view, setView] = useState<"now" | "all">(milestone ? "all" : "now");
   const [status, setStatus] = useState<StatusFilter>("all");
+  // A picked shape shows its four milestones (M178), every one until the team narrows it.
+  const pickShape = (s: ShapeId | "") => {
+    setShape(s);
+    if (s) {
+      setView("all");
+      if (milestone) onMilestone("");
+    }
+  };
   // A shape that left the kit must leave the filter too; a new one opens on its board.
   const prevShapes = useRef(shapesKey);
   useEffect(() => {
@@ -140,6 +150,7 @@ export function BuildTab({
     prevShapes.current = shapesKey;
     const added = before.length ? shapes.find((s) => !before.includes(s)) : undefined;
     setShape((cur) => added ?? (cur && shapes.includes(cur) ? cur : ""));
+    if (added) setView("all");
   }, [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // Picking a milestone (the sidebar, the filter) means seeing every step of it.
   useEffect(() => {
@@ -184,10 +195,10 @@ export function BuildTab({
       plus={plus}
       canAsk={canAsk}
       prompt={(title, detail) => ideateShapePrompt(agent?.projectName ?? "", agent?.projectId ?? "", { title, detail })}
-      onAddOurs={(s, sector, sub) => onAddShape?.(s, sector, sub)}
-      onCreateOwn={({ title, detail, basedOn }, ask) => {
+      onAddOurs={(s, sector, sub, lane) => onAddShape?.(s, sector, sub, lane)}
+      onCreateOwn={({ title, detail, basedOn }, ask, lane) => {
         const made = addOwnShape(kit, { title, detail, basedOn, steps: basedOn ? catalogStepIds(basedOn) : [] });
-        onPatchKit(made.patch);
+        onPatchKit({ ...made.patch, ...setShapeLane(kit, made.id, lane) });
         // The team's agent ideates it over MCP (M177): a request on the new shape, read first on get_project_status.
         if (ask && agent) agent.onRequests(withAgentRequest(requestsDoc, "shape", made.id));
       }}
@@ -225,9 +236,6 @@ export function BuildTab({
 
   return (
     <div className={`${TAB_WIDTH} space-y-6`}>
-      {/* The shapes sorted into Core, Exploring and Later (M177); a card picks the shape below. */}
-      <ShapeLanes kit={kit} selected={shape} onSelect={setShape} onPatchKit={onPatchKit} projectId={agent?.projectId ?? ""} />
-
       <div className="flex flex-wrap items-center gap-3">
         <Segmented
           size="sm"
@@ -244,7 +252,7 @@ export function BuildTab({
           size="sm"
           ariaLabel={F.everyShape}
           value={shape}
-          onChange={setShape}
+          onChange={pickShape}
           options={[
             { value: "", label: F.everyShape },
             ...shapes.map((s) => ({

@@ -93,6 +93,7 @@ import {
   setCustomStepShapes,
   setOwnShapeSteps,
   setShapeLane,
+  setShapeParagraph,
   setShapeStyle,
   withoutShape,
 } from "@/lib/kits";
@@ -502,6 +503,10 @@ export const projectPatchSchema = z
         // Where each shape sits (M177), shape id to core, exploring or later.
         shapeLanes: z
           .record(z.string().max(60), z.enum(SHAPE_LANES))
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
+        // The team's definition of one of our shapes (M178); empty restores ours. An own shape's goes through ownShapes.edit detail.
+        shapeParagraphs: z
+          .record(z.string().max(60), z.string().max(KIT_LIMITS.ownShapes.detailMax))
           .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
         // Each shape's icon and colour (M177); null clears a field.
         shapeStyles: z
@@ -970,6 +975,7 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
     for (const i of kitPatch.addIdeas ?? [])
       kit = { ...kit, ...(i.from ? editIdea(kit, i.shape as ShapeId, i.from, i.text, true) : toggleIdea(kit, i.shape as ShapeId, i.text, true)) };
     for (const [shape, lane] of Object.entries(kitPatch.shapeLanes ?? {})) kit = { ...kit, ...setShapeLane(kit, shape as ShapeId, lane) };
+    for (const [shape, text] of Object.entries(kitPatch.shapeParagraphs ?? {})) kit = { ...kit, ...setShapeParagraph(kit, shape as ShapeId, text) };
     for (const [shape, st] of Object.entries(kitPatch.shapeStyles ?? {}))
       kit = { ...kit, ...setShapeStyle(kit, shape as ShapeId, { icon: st.icon === null ? undefined : (st.icon ?? kit.shapeStyles?.[shape]?.icon), color: st.color === null ? undefined : (st.color ?? kit.shapeStyles?.[shape]?.color) }) };
     // Keys set to undefined by the helpers must not be stored.
@@ -1096,7 +1102,9 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     const stray = ideaLines.filter((i) => !allNames.has(i.shape));
     if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}), so a line cannot name it.`;
   }
-  const named = [...Object.keys(k.shapeLanes ?? {}), ...Object.keys(k.shapeStyles ?? {})];
+  const named = [...Object.keys(k.shapeLanes ?? {}), ...Object.keys(k.shapeStyles ?? {}), ...Object.keys(k.shapeParagraphs ?? {})];
+  const ownPara = Object.keys(k.shapeParagraphs ?? {}).find((x) => isOwnShapeId(x));
+  if (ownPara) return `${ownPara} is a shape the team made; change its definition with ownShapes.edit detail.`;
   if (named.length) {
     const stray = named.find((x) => !allNames.has(x));
     if (stray) return `${stray} is not one of this project's shapes (${[...allNames].join(", ") || "none"}). Add it with add_shape first.`;

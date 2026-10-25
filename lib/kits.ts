@@ -367,6 +367,12 @@ export interface ProjectKit {
   shapeLanes?: Record<string, ShapeLane>;
   /** The icon and colour each shape shows with (M177), keyed by shape id, ours or own. */
   shapeStyles?: Record<string, ShapeStyle>;
+  /**
+   * The team's own definition of one of our shapes (M178), replacing the
+   * catalog blurb on this project. An own shape keeps its definition in its
+   * `detail`.
+   */
+  shapeParagraphs?: Record<string, string>;
 }
 
 /** The colours a shape can take (M177), theme tokens --shape-<name> in app/globals.css. */
@@ -556,9 +562,9 @@ export function setOwnShapeSteps(kit: Pick<ProjectKit, "ownShapes">, id: OwnShap
  * serves other shapes stays on them; a step on this shape alone goes.
  */
 export function withoutShape(
-  kit: Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes">,
+  kit: Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes" | "shapeParagraphs">,
   id: ShapeId,
-): Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes"> {
+): Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes" | "shapeParagraphs"> {
   const own = (kit.ownShapes ?? []).filter((o) => o.id !== id);
   const ideas = (kit.ideas ?? []).filter((i) => i.shape !== id);
   const steps: CustomStep[] = [];
@@ -574,7 +580,17 @@ export function withoutShape(
     customSteps: steps.length ? steps.map(({ shapes, ...c }) => (shapes?.length ? { ...c, shapes } : c)) : undefined,
     ...setShapeStyle(kit, id, { icon: undefined, color: undefined }),
     ...setShapeLane(kit, id, "core"),
+    ...setShapeParagraph(kit, id, ""),
   };
+}
+
+/** Set or clear the team's definition of one of our shapes (M178). Empty clears it. */
+export function setShapeParagraph(kit: Pick<ProjectKit, "shapeParagraphs">, shape: ShapeId, text: string): Pick<ProjectKit, "shapeParagraphs"> {
+  const next: Record<string, string> = { ...(kit.shapeParagraphs ?? {}) };
+  const clean = text.trim().slice(0, KIT_LIMITS.ownShapes.detailMax);
+  if (clean) next[shape] = clean;
+  else delete next[shape];
+  return { shapeParagraphs: Object.keys(next).length ? next : undefined };
 }
 
 /** The lane a shape sits in (M177); core when none is set. */
@@ -761,6 +777,12 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     for (const [k, v] of Object.entries(r.shapeLanes as Record<string, unknown>))
       if (isShape(k) && (v === "exploring" || v === "later")) lanes[k] = v;
     if (Object.keys(lanes).length) kit.shapeLanes = lanes;
+  }
+  if (r.shapeParagraphs && typeof r.shapeParagraphs === "object" && !Array.isArray(r.shapeParagraphs)) {
+    const paras: Record<string, string> = {};
+    for (const [k, v] of Object.entries(r.shapeParagraphs as Record<string, unknown>))
+      if (isProductShape(k) && typeof v === "string" && v.trim()) paras[k] = v.trim().slice(0, KIT_LIMITS.ownShapes.detailMax);
+    if (Object.keys(paras).length) kit.shapeParagraphs = paras;
   }
   if (r.shapeStyles && typeof r.shapeStyles === "object" && !Array.isArray(r.shapeStyles)) {
     const styles: Record<string, ShapeStyle> = {};

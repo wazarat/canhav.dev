@@ -107,7 +107,7 @@ import { buildProgress, checklistFor, checklistItemById, gatedStepsFor, sections
 import { featuresFor } from "@/content/kits/features";
 import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
-import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels, shapeName } from "@/content/kits/copy";
+import { REVIEW_VERDICT_LABELS, shapeBlurb, shapeLabel, shapeLabels, shapeName } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, PACK_SECTIONS, buildResourcePack, buildReviewView, packSections, packSummary, templatesRead } from "@/lib/kit-pack";
 import { PROJECT_CHAINS, type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { SECTOR_VALUES, type Sector } from "@/lib/sectors";
@@ -842,7 +842,15 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         ...stateOf(loaded.value),
         progress: buildProgress(kit),
         // Every shape, ours then own (M176), with its lane, icon and colour (M177); the cap is 3 on Studio and 10 on Studio+, ours and own together.
-        shapes: allShapes(kit).map((id) => ({ id, name: shapeName(kit, id), own: isOwnShapeId(id), lane: laneOf(kit, id), ...(kit.shapeStyles?.[id] ?? {}) })),
+        shapes: allShapes(kit).map((id) => ({
+          id,
+          name: shapeName(kit, id),
+          own: isOwnShapeId(id),
+          lane: laneOf(kit, id),
+          // The definition (M178): the team's words, an own shape's detail, else our blurb.
+          definition: kit.ownShapes?.find((o) => o.id === id)?.detail ?? kit.shapeParagraphs?.[id] ?? (isProductShape(id) ? (shapeBlurb(id) ?? "") : ""),
+          ...(kit.shapeStyles?.[id] ?? {}),
+        })),
         ownShapes: (kit.ownShapes ?? []).map((o) => ({ id: o.id, title: o.title, detail: o.detail, ...(o.basedOn ? { copiedFrom: o.basedOn } : {}), steps: o.steps })),
         features: features.map((f) => ({
           id: f.id,
@@ -1106,23 +1114,29 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Place a shape and style it",
       description:
-        `Sort a shape into a lane and give it an icon and colour (M177). lane is core (part of the product), exploring (being ideated) or later (to add and test later); a shape with no lane reads as core. icon is one of ${SHAPE_ICON_NAMES.join(", ")}; color is one of ${SHAPE_COLORS.join(", ")}; null clears either. shape is one of ours or an own id from get_build_steps. ` +
+        `Sort a shape into a lane, give it an icon and colour (M177) and write its definition (M178). definition is the team's paragraph on what the shape is in this product, up to 400 characters, empty restoring ours. lane is core (part of the product), exploring (being ideated) or later (to add and test later); a shape with no lane reads as core. icon is one of ${SHAPE_ICON_NAMES.join(", ")}; color is one of ${SHAPE_COLORS.join(", ")}; null clears either. shape is one of ours or an own id from get_build_steps. ` +
         WRITE_RULES,
       inputSchema: z.object({
         shape: z.string().max(60),
         lane: z.enum(SHAPE_LANES).optional(),
         icon: z.enum(SHAPE_ICON_NAMES).nullable().optional(),
         color: z.enum(SHAPE_COLORS).nullable().optional(),
+        definition: z.string().max(400).optional(),
         note: noteField,
       }),
     },
     async (args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
-      if (!args.lane && args.icon === undefined && args.color === undefined) return errorResult("Send a lane, an icon or a colour.");
+      if (!args.lane && args.icon === undefined && args.color === undefined && args.definition === undefined) return errorResult("Send a lane, an icon, a colour or a definition.");
       const { project, design } = loaded.value;
       const kit = {
         ...(args.lane ? { shapeLanes: { [args.shape]: args.lane } } : {}),
+        ...(args.definition !== undefined
+          ? isOwnShapeId(args.shape)
+            ? { ownShapes: { edit: [{ id: args.shape, detail: args.definition }] } }
+            : { shapeParagraphs: { [args.shape]: args.definition } }
+          : {}),
         ...(args.icon !== undefined || args.color !== undefined ? { shapeStyles: { [args.shape]: { ...(args.icon !== undefined ? { icon: args.icon } : {}), ...(args.color !== undefined ? { color: args.color } : {}) } } } : {}),
       };
       const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "fields", patch: { kit } }, args.note);

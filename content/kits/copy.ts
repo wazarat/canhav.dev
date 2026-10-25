@@ -172,14 +172,12 @@ export const RAIL_COPY = {
 
 /** The shape lanes (M177): every shape sits in Core, Exploring or Later. */
 export const LANE_COPY = {
-  title: "Shapes",
+  title: "Lane",
   lanes: {
     core: { label: "Core", hint: "Part of the product" },
     exploring: { label: "Exploring", hint: "Being ideated" },
     later: { label: "Later", hint: "Add and test later" },
   },
-  moveTo: (lane: string) => `Move to ${lane}`,
-  empty: "Nothing here yet.",
   noParagraph: "No description yet.",
   export: "Shapes by lane",
   exportLine: (lane: string, items: string) => `${lane}. ${items}`,

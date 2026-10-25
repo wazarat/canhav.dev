@@ -12,8 +12,8 @@ import { Select, optionClasses } from "@/components/ui/Select";
 import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { BUILD_COPY } from "@/content/build";
 import { SECTOR_OPTIONS, subsectorLabel } from "@/content/ideation";
-import { shapeBlurb, shapeLabel } from "@/content/kits/copy";
-import { KIT_LIMITS, PRODUCT_SHAPE_VALUES, type ProductShape, shapesFor } from "@/lib/kits";
+import { LANE_COPY, shapeBlurb, shapeLabel } from "@/content/kits/copy";
+import { KIT_LIMITS, PRODUCT_SHAPE_VALUES, type ProductShape, SHAPE_LANES, type ShapeLane, shapesFor } from "@/lib/kits";
 import { SECTOR_SUBSECTORS, type Sector, type Subsector } from "@/lib/sectors";
 import { cn } from "@/lib/utils";
 
@@ -47,8 +47,8 @@ export function AddShape({
   canAsk: boolean;
   /** The ideate prompt for a shape of this name and description. */
   prompt: (title: string, detail: string) => string;
-  onAddOurs: (shape: ProductShape, sector: Sector, subsector: Subsector) => void;
-  onCreateOwn: (input: { title: string; detail: string; basedOn?: ProductShape }, ask: boolean) => void;
+  onAddOurs: (shape: ProductShape, sector: Sector, subsector: Subsector, lane: ShapeLane) => void;
+  onCreateOwn: (input: { title: string; detail: string; basedOn?: ProductShape }, ask: boolean, lane: ShapeLane) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -74,8 +74,8 @@ export function AddShape({
             onAddOurs(...a);
             setOpen(false);
           }}
-          onCreateOwn={(input, ask) => {
-            onCreateOwn(input, ask);
+          onCreateOwn={(input, ask, lane) => {
+            onCreateOwn(input, ask, lane);
             setOpen(false);
           }}
         />
@@ -104,8 +104,8 @@ function AddShapeDialog({
   plus: boolean;
   canAsk: boolean;
   prompt: (title: string, detail: string) => string;
-  onAddOurs: (shape: ProductShape, sector: Sector, subsector: Subsector) => void;
-  onCreateOwn: (input: { title: string; detail: string; basedOn?: ProductShape }, ask: boolean) => void;
+  onAddOurs: (shape: ProductShape, sector: Sector, subsector: Subsector, lane: ShapeLane) => void;
+  onCreateOwn: (input: { title: string; detail: string; basedOn?: ProductShape }, ask: boolean, lane: ShapeLane) => void;
 }) {
   const S = BUILD_COPY.shapes;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,6 +121,8 @@ function AddShapeDialog({
   const [detail, setDetail] = useState("");
   const [from, setFrom] = useState<ProductShape | "">("");
   const [ask, setAsk] = useState(canAsk);
+  // Where the new shape sits (M178), core unless the team says otherwise.
+  const [lane, setLane] = useState<ShapeLane>("core");
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label={S.dialogTitle} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 md:py-14">
@@ -149,6 +151,17 @@ function AddShapeDialog({
                 { value: "own", label: S.tabOwn },
               ]}
             />
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-medium text-ink-200">{LANE_COPY.title}</span>
+              <Segmented<ShapeLane>
+                size="sm"
+                value={lane}
+                onChange={setLane}
+                ariaLabel={LANE_COPY.title}
+                options={SHAPE_LANES.map((l) => ({ value: l, label: LANE_COPY.lanes[l].label }))}
+              />
+              <span className="text-xs text-ink-500">{LANE_COPY.lanes[lane].hint}</span>
+            </div>
             {tab === "ours" ? (
               <div className="space-y-4">
                 <Field label={S.sector}>
@@ -201,7 +214,7 @@ function AddShapeDialog({
                               <Check aria-hidden className="h-3.5 w-3.5" /> {S.onProject}
                             </span>
                           ) : (
-                            <Button size="sm" variant="outline" className="shrink-0" onClick={() => onAddOurs(s, sector, sub)}>
+                            <Button size="sm" variant="outline" className="shrink-0" onClick={() => onAddOurs(s, sector, sub, lane)}>
                               {S.addThis}
                             </Button>
                           )}
@@ -254,7 +267,7 @@ function AddShapeDialog({
                   <p className="text-xs text-ink-500">{S.noAgent}</p>
                 )}
                 <div className="flex gap-2">
-                  <Button size="sm" disabled={title.trim().length < L.titleMin} onClick={() => onCreateOwn({ title, detail, ...(from ? { basedOn: from } : {}) }, canAsk && ask)}>
+                  <Button size="sm" disabled={title.trim().length < L.titleMin} onClick={() => onCreateOwn({ title, detail, ...(from ? { basedOn: from } : {}) }, canAsk && ask, lane)}>
                     {S.create}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={onClose}>
