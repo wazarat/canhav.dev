@@ -31,11 +31,11 @@ const LISTED_AT_ROWS = 12;
 /** Take one category's snapshot for one chain this month. Returns the rows. */
 export async function refreshCategory(category: string, chain: ProjectChain, all?: LlamaProtocol[]): Promise<LlamaProtocol[]> {
   const protocols = all ?? (await fetchLlamaProtocols());
-  const { rows } = pickProtocols(protocols, [category], chain, COMPETITOR_LIMITS.tableRows);
+  const { rows, total } = pickProtocols(protocols, [category], chain, COMPETITOR_LIMITS.tableRows);
   const withDates = await Promise.all(
     rows.map(async (r, i) => (i < LISTED_AT_ROWS && r.listedAt === null ? { ...r, listedAt: await fetchLlamaListedAt(r.slug) } : r)),
   );
-  await upsertCompetitorSnapshot(category, chain, snapshotMonth(), withDates);
+  await upsertCompetitorSnapshot(category, chain, snapshotMonth(), withDates, total);
   return withDates;
 }
 

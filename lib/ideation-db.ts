@@ -5,6 +5,7 @@ import { getDb } from "@/lib/db";
 import type { JourneyDoc } from "@/lib/journey";
 import { type Owner, ownedBy } from "@/lib/owner";
 import { publishedCompetitors } from "@/lib/competitors/record";
+import { publishedExperiments } from "@/lib/experiments";
 import { recordRevision } from "@/lib/revisions-db";
 import { revisionAuthor } from "@/lib/revisions";
 import {
@@ -256,6 +257,26 @@ export async function getPublishedProjects(limit = 60): Promise<ProjectRow[] | n
     limit ${limit}
   `;
   return (rows as ProjectRow[]).map((r) => mapProjectRow(r) as ProjectRow);
+}
+
+/**
+ * The published public projects on a chain (M164), for the gap map, with
+ * how many tokens each launched. Reads the draft document like the public
+ * page does; the chain is read from the document, absent reads as
+ * Robinhood.
+ */
+export async function getPublishedProjectsOnChain(chain: string): Promise<Array<{ row: ProjectRow; launches: number }> | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  const rows = await sql`
+    select p.*, (select count(*)::int from launchpad.launches l where l.project_id = p.id) as launches
+    from launchpad.projects p
+    where p.status = 'published' and p.visibility = 'public'
+      and coalesce(p.draft_doc->>'chain', 'robinhood_testnet') = ${chain}
+    order by p.updated_at desc
+    limit 500
+  `;
+  return (rows as Array<ProjectRow & { launches: number }>).map(({ launches, ...r }) => ({ row: mapProjectRow(r) as ProjectRow, launches }));
 }
 
 /** The owner's published private projects other than one (M109), for the free allowance. */
@@ -602,13 +623,16 @@ export async function publishEntity(
   // The agent's summary (M104) stays on the draft as well.
   // Draft requests and drafted marks (M117) stay on the draft too.
   // The deployer env file (M138) is a path on the team's machine, so it stays on the draft too.
-  // Agent requests (M151) stay on the draft too.
-  const { references: refs, summary: sum, draftRequests: dr, drafted: dm, briefs: br, githubSync: gs, investorPack: ip, updateCadence: uc, deployerEnvFile: def, agentRequests: ar, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown; draftRequests?: unknown; drafted?: unknown; briefs?: unknown; githubSync?: unknown; investorPack?: unknown; updateCadence?: unknown; deployerEnvFile?: unknown; agentRequests?: unknown };
+  // Agent requests (M151) stay on the draft too. The unit economics model (M166) too, a model is never a public claim.
+  const { references: refs, summary: sum, draftRequests: dr, drafted: dm, briefs: br, githubSync: gs, investorPack: ip, updateCadence: uc, deployerEnvFile: def, agentRequests: ar, economics: ec, reach: rc, reachProtocols: rp, experiments: ex, ...projectBody } = row.draft_doc as ProjectDoc & { references?: unknown; summary?: unknown; draftRequests?: unknown; drafted?: unknown; briefs?: unknown; githubSync?: unknown; investorPack?: unknown; updateCadence?: unknown; deployerEnvFile?: unknown; agentRequests?: unknown; economics?: unknown; reach?: unknown; reachProtocols?: unknown; experiments?: unknown };
   // Competitors (M115): the public record keeps the line, not the map's state.
   const pc = publishedCompetitors((projectBody as ProjectDoc).competitors);
   if (table === "projects") {
     if (pc) (projectBody as ProjectDoc).competitors = pc;
     else delete (projectBody as { competitors?: unknown }).competitors;
+    // Experiments (M170): the finished ones publish with their result; the draft keeps every one.
+    const pe = publishedExperiments(ex as ProjectDoc["experiments"]);
+    if (pe.length) (projectBody as ProjectDoc).experiments = pe;
   }
   const base = table === "projects" ? (projectBody as IdeationDoc) : (draftBody as IdeationDoc);
   const stamped = { ...base, slug, publishVersion: version } as IdeationDoc;
@@ -618,14 +642,14 @@ export async function publishEntity(
   const published: IdeationDoc =
     table === "projects" && opts.plus === false
       ? (() => {
-          const { canvas: _c, icp: _i, valueCanvas: _v, brand: _b, competitors: _k, ...rest } = stamped as ProjectDoc;
-          void _c; void _i; void _v; void _b; void _k;
+          const { canvas: _c, icp: _i, valueCanvas: _v, brand: _b, competitors: _k, assets: _s, experiments: _e, ...rest } = stamped as ProjectDoc;
+          void _c; void _i; void _v; void _b; void _k; void _s; void _e;
           return rest as IdeationDoc;
         })()
       : stamped;
   const draftOut =
     table === "projects"
-      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(br === undefined ? {} : { briefs: br }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }), ...(uc === undefined ? {} : { updateCadence: uc }), ...(def === undefined ? {} : { deployerEnvFile: def }), ...(ar === undefined ? {} : { agentRequests: ar }) }
+      ? { ...stamped, ...(refs === undefined ? {} : { references: refs }), ...(sum === undefined ? {} : { summary: sum }), ...(dr === undefined ? {} : { draftRequests: dr }), ...(dm === undefined ? {} : { drafted: dm }), ...(br === undefined ? {} : { briefs: br }), ...(gs === undefined ? {} : { githubSync: gs }), ...(ip === undefined ? {} : { investorPack: ip }), ...(uc === undefined ? {} : { updateCadence: uc }), ...(def === undefined ? {} : { deployerEnvFile: def }), ...(ar === undefined ? {} : { agentRequests: ar }), ...(ec === undefined ? {} : { economics: ec }), ...(rc === undefined ? {} : { reach: rc }), ...(rp === undefined ? {} : { reachProtocols: rp }), ...(ex === undefined ? {} : { experiments: ex }) }
       : ticks === undefined
         ? stamped
         : { ...stamped, checklist: ticks };

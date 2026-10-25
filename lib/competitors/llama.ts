@@ -72,14 +72,21 @@ export function categoriesFor(subsectors: readonly Subsector[]): string[] {
 /**
  * Protocols in the given categories, on the project's chain when at
  * least LLAMA_MIN_ROWS are there, else on any chain. Largest first.
+ * `total` is how many the categories hold on the chain itself (M164),
+ * whatever the fallback picked.
  */
-export function pickProtocols(all: LlamaProtocol[], categories: readonly string[], chain: ProjectChain, limit = 40): { rows: LlamaProtocol[]; onChain: boolean } {
-  if (categories.length === 0) return { rows: [], onChain: false };
+export function pickProtocols(all: LlamaProtocol[], categories: readonly string[], chain: ProjectChain, limit = 40): { rows: LlamaProtocol[]; onChain: boolean; total: number } {
+  if (categories.length === 0) return { rows: [], onChain: false, total: 0 };
   const inCategory = all.filter((p) => categories.includes(p.category));
   const chainName = LLAMA_CHAIN[chain];
   const onChain = inCategory.filter((p) => p.chains.includes(chainName));
-  const picked = onChain.length >= LLAMA_MIN_ROWS ? onChain : inCategory;
-  return { rows: [...picked].sort((a, b) => b.tvl - a.tvl).slice(0, limit), onChain: onChain.length >= LLAMA_MIN_ROWS };
+  const byTvl = (a: LlamaProtocol, b: LlamaProtocol) => b.tvl - a.tvl;
+  // Below the minimum the list falls back to every chain, but the chain's own rows stay in front so a reader of the snapshot still sees them (M164).
+  const picked =
+    onChain.length >= LLAMA_MIN_ROWS
+      ? [...onChain].sort(byTvl)
+      : [...[...onChain].sort(byTvl), ...inCategory.filter((p) => !onChain.includes(p)).sort(byTvl)];
+  return { rows: picked.slice(0, limit), onChain: onChain.length >= LLAMA_MIN_ROWS, total: onChain.length };
 }
 
 /** The listing date of one protocol, for the positioning map's age axis. */
