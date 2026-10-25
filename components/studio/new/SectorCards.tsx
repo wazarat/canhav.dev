@@ -5,6 +5,8 @@ import { Check, CircleDashed, Coins, Droplets, Landmark, Layers, Scale, Trending
 import { TrackCardShell, type TrackTint, trackCardSurface } from "@/components/studio/TrackCardShell";
 import { SECTOR_OPTIONS } from "@/content/ideation";
 import { NEW_PROJECT_COPY } from "@/content/studio-new";
+import { VIABILITY_COPY } from "@/content/viability";
+import type { GapMap } from "@/lib/gaps";
 import type { Sector } from "@/lib/sectors";
 import { cn } from "@/lib/utils";
 
@@ -59,8 +61,16 @@ function IconGraphic({ icon: Icon, tint }: { icon: React.ComponentType<{ classNa
  * yet", as one optional radio group. Clicking the chosen one again clears
  * it.
  */
-export function SectorCards({ value, onChange }: { value: SectorChoice; onChange: (v: SectorChoice) => void }) {
+export function SectorCards({ value, onChange, gaps }: { value: SectorChoice; onChange: (v: SectorChoice) => void; gaps?: GapMap | null }) {
   const C = NEW_PROJECT_COPY.sector;
+  // The compact gap line (M165), Studio+ only: how many protocols are live in the sector on the chain, and which subsectors are open.
+  const gapLine = (sector: Sector): string | null => {
+    const s = gaps?.sectors.find((x) => x.sector === sector);
+    if (!s) return null;
+    const live = s.subsectors.reduce((n, x) => n + x.count, 0);
+    const open = s.subsectors.filter((x) => x.count === 0).map((x) => x.label);
+    return `${VIABILITY_COPY.gaps.compactSector(live, gaps!.chainName)}${open.length && live ? `, ${VIABILITY_COPY.gaps.compactOpen(open)}` : ""}`;
+  };
   const cards: Array<{ value: Sector; title: string; sentence: string }> = SECTOR_OPTIONS.map((o) => ({
     value: o.value,
     title: o.title ?? o.label,
@@ -96,6 +106,7 @@ export function SectorCards({ value, onChange }: { value: SectorChoice; onChange
               graphic={<IconGraphic icon={ICONS[card.value]} tint={tint} />}
               title={card.title}
               description={card.sentence}
+              footer={gapLine(card.value) ? <p className="text-[11px] text-ink-400">{gapLine(card.value)}</p> : undefined}
             />
           </button>
         );

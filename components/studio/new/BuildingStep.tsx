@@ -7,6 +7,8 @@ import type { SectorChoice } from "@/components/studio/new/SectorCards";
 import { SECTOR_COPY, SECTOR_OPTIONS, optionLabel, subsectorOptionsFor } from "@/content/ideation";
 import { KIT_COPY, shapeBuildingPhrase, shapeGroupsFor } from "@/content/kits/copy";
 import { NEW_PROJECT_COPY } from "@/content/studio-new";
+import { VIABILITY_COPY } from "@/content/viability";
+import type { GapMap } from "@/lib/gaps";
 import { PROJECT_LIMITS } from "@/lib/ideation";
 import { KIT_LIMITS, type ProductShape, impliedShapesFor, shapesFor } from "@/lib/kits";
 import type { Subsector } from "@/lib/sectors";
@@ -25,16 +27,23 @@ export function BuildingStep({
   shapes,
   whatItDoes,
   onChange,
+  gaps,
 }: {
   sector: SectorChoice;
   subsectors: Subsector[];
   shapes: ProductShape[];
   whatItDoes: string;
   onChange: (p: Partial<{ subsectors: Subsector[]; shapes: ProductShape[]; whatItDoes: string }>) => void;
+  /** The gap map for a Studio+ session (M165), a line per subsector card. */
+  gaps?: GapMap | null;
 }) {
   const C = NEW_PROJECT_COPY.building;
   const chosen = sector && sector !== "undecided" ? sector : null;
-  const options = chosen ? subsectorOptionsFor(chosen) : [];
+  const gapNote = (sub: Subsector): string | undefined => {
+    const x = gaps?.sectors.flatMap((s) => s.subsectors).find((y) => y.subsector === sub);
+    return x ? VIABILITY_COPY.gaps.compactSector(x.count, gaps!.chainName) : undefined;
+  };
+  const options = (chosen ? subsectorOptionsFor(chosen) : []).map((o) => (gapNote(o.value) ? { ...o, note: gapNote(o.value) } : o));
   const implied = impliedShapesFor(subsectors);
   const groups = shapeGroupsFor(subsectors)
     .filter((g) => shapesFor([g.subsector]).length > 1)

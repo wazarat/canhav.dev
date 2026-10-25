@@ -12,6 +12,7 @@ import { TextField } from "@/components/ideation/TextField";
 import { BuildingStep } from "@/components/studio/new/BuildingStep";
 import { SectorCards, type SectorChoice } from "@/components/studio/new/SectorCards";
 import { usePlan } from "@/components/studio/PlanContext";
+import { useGapMap } from "@/components/build/GapMap";
 import { PlanWord } from "@/components/studio/PlanWord";
 import { BUILD_COPY } from "@/content/build";
 import { Button } from "@/components/ui/Button";
@@ -65,6 +66,8 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
   /** The project exists but its token design could not be made or linked. */
   const [skipped, setSkipped] = useState<string | null>(null);
 
+  // The gap map for a Studio+ session (M165): the counts under the sector and subsector cards. Free accounts fetch nothing.
+  const gaps = useGapMap((c) => `/api/studio/gaps?chain=${c}`, draft.chain, usePlanValue.plan === "studio_plus");
   const nameOk = draft.name.trim().length >= PROJECT_LIMITS.name.min;
   const steps = STEP_KEYS.map((key) => ({
     key,
@@ -160,12 +163,12 @@ export function NewProjectWizard({ logoUploads, onClose }: { logoUploads: boolea
               <p className="text-xs font-medium text-ink-200">{C.sector.label}</p>
               <p className="mt-1 text-xs text-ink-500">{C.sector.hint}</p>
             </div>
-            <SectorCards value={draft.sector} onChange={(sector) => patch({ sector, subsectors: [], shapes: [] })} />
+            <SectorCards value={draft.sector} onChange={(sector) => patch({ sector, subsectors: [], shapes: [] })} gaps={gaps.map} />
           </div>
         )}
 
         {current === "building" && (
-          <BuildingStep sector={draft.sector} subsectors={draft.subsectors} shapes={draft.shapes} whatItDoes={draft.whatItDoes} onChange={(p) => patch(p)} />
+          <BuildingStep sector={draft.sector} subsectors={draft.subsectors} shapes={draft.shapes} whatItDoes={draft.whatItDoes} onChange={(p) => patch(p)} gaps={gaps.map} />
         )}
 
         {current === "chain" && (
