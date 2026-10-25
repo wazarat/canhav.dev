@@ -1,6 +1,7 @@
 import { Activity, Boxes, Coins, Gem, Handshake, HeartHandshake, Megaphone, Receipt, Users } from "lucide-react";
 
 import { CANVAS_LAYOUT, type CanvasBlock } from "@/lib/canvas";
+import { VIABILITY_COPY } from "@/content/viability";
 import { cn } from "@/lib/utils";
 
 /** One small icon per block (M155), top right of its card. */
@@ -66,16 +67,46 @@ export function CanvasBlockFrame({
   );
 }
 
-/** The items of a block as short lines (M155); read only. */
-export function CanvasItemsList({ items, empty }: { items: ReadonlyArray<{ id: string; text: string }> | undefined; empty: string }) {
+/** The items of a block as short lines (M155); read only. A verdict (M170) reads as a small word after the item, a link to the experiment where `verdictHref` gives one. */
+export function CanvasItemsList({
+  items,
+  empty,
+  verdicts,
+  verdictHref,
+  testHref,
+}: {
+  items: ReadonlyArray<{ id: string; text: string }> | undefined;
+  empty: string;
+  verdicts?: ReadonlyMap<string, { verdict: "validated" | "invalidated"; experimentId: string }>;
+  verdictHref?: (experimentId: string) => string;
+  /** Test this (M171): the link that starts an experiment with the item as its assumption. */
+  testHref?: (itemId: string) => string;
+}) {
   if (!items?.length) return <p className="text-xs text-ink-500">{empty}</p>;
   return (
     <ul className="space-y-1">
-      {items.map((i) => (
-        <li key={i.id} className="text-sm leading-snug text-ink-200">
-          {i.text}
-        </li>
-      ))}
+      {items.map((i) => {
+        const v = verdicts?.get(i.id);
+        return (
+          <li key={i.id} className="text-sm leading-snug text-ink-200">
+            {i.text}
+            {v ? (
+              verdictHref ? (
+                <a href={verdictHref(v.experimentId)} className="ml-1.5 text-xs text-ink-400 underline-offset-2 hover:text-ink-50 hover:underline">
+                  {VIABILITY_COPY.experiments.verdicts[v.verdict]}
+                </a>
+              ) : (
+                <span className="ml-1.5 text-xs text-ink-400">{VIABILITY_COPY.experiments.verdicts[v.verdict]}</span>
+              )
+            ) : null}
+            {testHref && !v ? (
+              <a href={testHref(i.id)} className="ml-1.5 text-xs text-ink-500 underline-offset-2 hover:text-ink-50 hover:underline">
+                {VIABILITY_COPY.experiments.testThis}
+              </a>
+            ) : null}
+          </li>
+        );
+      })}
     </ul>
   );
 }
