@@ -23,11 +23,9 @@ import { Card, CardSection } from "@/components/ui/Card";
 import { Field, Input } from "@/components/ui/Input";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { InfoTip } from "@/components/ui/InfoTip";
-import { SegmentedField } from "@/components/ui/Segmented";
 import { SelectField } from "@/components/ui/Select";
 import { BUILD_COPY } from "@/content/build";
 import {
-  AUDIENCE_OPTIONS,
   ORACLE_USE_OPTIONS,
   PERSONA_COPY,
   personaRowsFor,
@@ -97,6 +95,8 @@ export function DecisionsTab({
   // A row whose name matches a recorded testnet contract shows its address (M153).
   const recordedByLabel = new Map(testnetContractRows(doc).filter((c) => c.label?.trim()).map((c) => [c.label!.trim().toLowerCase(), c.address.toLowerCase()] as const));
   const audience = docAudience(doc);
+  // The table in force (M188): the stored or inferred audience, else the individual rows.
+  const table = audience || "b2c";
 
   return (
     <div className={TAB_WIDTH}>
@@ -110,42 +110,32 @@ export function DecisionsTab({
 
         <CardSection id="decisions-customers" className="space-y-5">
           <Heading>{D.customers}</Heading>
-          {/* One choice, B2B or B2C, sets the default rows; the team then picks what each of the five rows records and names it (M187). */}
-          <SegmentedField
-            label={PERSONA_COPY.audienceLabel}
-            info={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
-            value={audience}
-            onChange={(v) => patch({ audience: v })}
-            options={AUDIENCE_OPTIONS}
-          />
-          {audience ? (
-            <>
-              {audience === "b2b" ? (
-                <PersonaTableEditor
-                  audience="b2b"
-                  rows={personaRowsFor(doc, "b2b")}
-                  fields={doc.personaFields?.b2b}
-                  onFields={(f) => patch({ personaFields: withAudienceFields(doc, "b2b", f) })}
-                  personas={doc.personas}
-                  onChange={(personas) => patch({ personas })}
-                  empty={emptyPersona}
-                  note={PERSONA_COPY.note}
-                />
-              ) : (
-                <PersonaTableEditor
-                  audience="b2c"
-                  rows={personaRowsFor(doc, "b2c")}
-                  fields={doc.personaFields?.b2c}
-                  onFields={(f) => patch({ personaFields: withAudienceFields(doc, "b2c", f) })}
-                  personas={doc.consumerPersonas}
-                  onChange={(consumerPersonas) => patch({ consumerPersonas })}
-                  empty={emptyConsumerPersona}
-                  note={PERSONA_COPY.note}
-                />
-              )}
-              <p className="text-xs text-ink-500">{PERSONA_COPY.rowsHint}</p>
-            </>
-          ) : null}
+          {/* No Who you sell to switch (M188): the rows are the team's to pick and name, so a project
+              that chose B2B keeps its business table and every other starts from the individual rows. */}
+          {table === "b2b" ? (
+            <PersonaTableEditor
+              audience="b2b"
+              rows={personaRowsFor(doc, "b2b")}
+              fields={doc.personaFields?.b2b}
+              onFields={(f) => patch({ personaFields: withAudienceFields(doc, "b2b", f) })}
+              personas={doc.personas}
+              onChange={(personas) => patch({ personas })}
+              empty={emptyPersona}
+              note={PERSONA_COPY.note}
+            />
+          ) : (
+            <PersonaTableEditor
+              audience="b2c"
+              rows={personaRowsFor(doc, "b2c")}
+              fields={doc.personaFields?.b2c}
+              onFields={(f) => patch({ personaFields: withAudienceFields(doc, "b2c", f), ...(audience ? {} : { audience: "b2c" as const }) })}
+              personas={doc.consumerPersonas}
+              onChange={(consumerPersonas) => patch({ consumerPersonas, ...(audience ? {} : { audience: "b2c" as const }) })}
+              empty={emptyConsumerPersona}
+              note={PERSONA_COPY.note}
+            />
+          )}
+          <p className="text-xs text-ink-500">{PERSONA_COPY.rowsHint}</p>
         </CardSection>
 
         <CardSection id="decisions-chain" className="space-y-4">
