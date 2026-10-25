@@ -3,6 +3,8 @@ import { buildProgress } from "@/content/kits/checklists";
 import { mcpAlias } from "@/content/launch";
 import { chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { itemTexts } from "@/lib/canvas-items";
+import { economicsLines } from "@/lib/economics";
+import { reachLine } from "@/lib/reach";
 import { briefLines } from "@/lib/draft/briefs";
 import { buildProjectMarkdown } from "@/lib/export-md";
 import { type ProjectDoc, testnetContractRows } from "@/lib/ideation";
@@ -55,6 +57,12 @@ function facts(input: PackPromptInput): string[] {
   if (contracts.length) out.push(`Recorded testnet contracts, ${contracts.map((c) => `${c.label ?? "unlabelled"} ${c.address}`).join("; ")}.`);
   if (input.token) out.push(`Token, ${input.token.name}${input.token.symbol ? ` (${input.token.symbol})` : ""} at ${input.token.address}.`);
   else out.push(C.noToken);
+  // The unit economics (M167): the chosen case and its break even, when the team stored a model.
+  if (doc.economics && doc.economics.family !== "governance") out.push(`Unit economics, ${economicsLines(doc.economics).slice(0, 3).join(" ")}`);
+  for (const k of PROFILE_KEYS) {
+    const r = doc.reach?.[k];
+    if (r) out.push(reachLine(doc.icp?.[Number(k)]?.name?.trim() || `profile ${Number(k) + 1}`, r));
+  }
   const vc = doc.valueCanvas;
   if (vc) {
     for (const k of PROFILE_KEYS) {
