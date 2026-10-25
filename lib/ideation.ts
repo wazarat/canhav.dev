@@ -139,6 +139,8 @@ export interface Persona {
   /** Role or title of the primary contact, not a named person. */
   primaryContact: string;
   revenueRange: RevenueRange | "";
+  /** Values of the rows the team picked that this table does not hold natively (M187), keyed by detail key. */
+  extra?: Record<string, string>;
 }
 
 /** Digits or a digit range, shared by team size (B2B) and age range (B2C). */
@@ -154,7 +156,53 @@ export interface ConsumerPersona {
   howTheyFindYou: string;
   /** What they hold today. ETH, stablecoins, stocks. */
   holdings: string;
+  /** Values of the rows the team picked that this table does not hold natively (M187), keyed by detail key. */
+  extra?: Record<string, string>;
 }
+
+/**
+ * The details a persona row can record (M187): every column of both tables,
+ * so a B2C project may record an industry and a B2B one what they hold, plus
+ * up to five of the team's own, keyed custom.<n>. A row's pick applies to
+ * every persona of the table.
+ */
+export const PERSONA_DETAIL_KEYS = ["teamSize", "geography", "industry", "primaryContact", "revenueRange", "ageRange", "cryptoExperience", "howTheyFindYou", "holdings"] as const;
+export type PersonaDetailKey = (typeof PERSONA_DETAIL_KEYS)[number];
+export const CUSTOM_PERSONA_KEY = /^custom\.[1-9]$/;
+
+/** One row of the persona table: the detail it records and the name the team gave it. */
+export interface PersonaField {
+  key: string;
+  label: string;
+}
+
+export function isPersonaFieldKey(key: string): boolean {
+  return (PERSONA_DETAIL_KEYS as readonly string[]).includes(key) || CUSTOM_PERSONA_KEY.test(key);
+}
+
+const NATIVE: Record<Audience, readonly string[]> = {
+  b2b: ["teamSize", "geography", "industry", "primaryContact", "revenueRange"],
+  b2c: ["ageRange", "geography", "cryptoExperience", "howTheyFindYou", "holdings"],
+};
+
+/** A persona's value for a row's detail (M187): its own column, else the extra map. */
+export function personaCell(p: object, key: string): string {
+  const own = (p as Record<string, unknown>)[key];
+  if (key !== "extra" && typeof own === "string") return own;
+  return (p as { extra?: Record<string, string> }).extra?.[key] ?? "";
+}
+
+/** The persona with one row's value written (M187), to its own column when the table has one. */
+export function withPersonaCell<T extends object>(p: T, key: string, value: string, audience: Audience): T {
+  if (NATIVE[audience].includes(key)) return { ...p, [key]: value };
+  const extra = { ...((p as { extra?: Record<string, string> }).extra ?? {}) };
+  if (value) extra[key] = value;
+  else delete extra[key];
+  const { extra: _e, ...rest } = p as T & { extra?: unknown };
+  return (Object.keys(extra).length ? { ...rest, extra } : rest) as T;
+}
+
+const extraFilled = (p: { extra?: Record<string, string> }) => Object.values(p.extra ?? {}).some((v) => v.trim());
 
 export function emptyConsumerPersona(): ConsumerPersona {
   return { ageRange: "", geography: "", cryptoExperience: "", howTheyFindYou: "", holdings: "" };
@@ -162,6 +210,7 @@ export function emptyConsumerPersona(): ConsumerPersona {
 
 export function isEmptyConsumerPersona(p: ConsumerPersona): boolean {
   return !(
+    extraFilled(p) ||
     p.ageRange.trim() ||
     p.geography.trim() ||
     p.cryptoExperience ||
@@ -194,6 +243,7 @@ export function emptyPersona(): Persona {
 /** True when no cell of the persona is filled. */
 export function isEmptyPersona(p: Persona): boolean {
   return !(
+    extraFilled(p) ||
     p.teamSize.trim() ||
     p.geography.trim() ||
     p.industry.trim() ||
@@ -350,6 +400,12 @@ export interface ProjectDoc {
    * never injects the key into older documents.
    */
   personas?: Persona[];
+  /**
+   * The rows of the persona table per audience (M187): which detail each of
+   * the five rows records and the name the team gave it. Absent means the
+   * audience's default rows. Optional, never injected.
+   */
+  personaFields?: Partial<Record<Audience, PersonaField[]>>;
   /**
    * Who the project sells to (M42). Optional and never injected. b2b shows
    * `personas`, b2c shows `consumerPersonas`; the other list stays stored
@@ -606,6 +662,8 @@ export const PROJECT_LIMITS = {
   whoPays: { max: 400 },
   whyThisChain: { max: 800 },
   personas: { min: 1, max: 3 },
+  /** The persona table's rows (M187): five, each named by the team. */
+  personaFields: { count: 5, labelMax: 40 },
   personaText: { max: 80 },
   personaTeamSize: { max: 12 },
   personaAgeRange: { max: 12 },
@@ -730,6 +788,37 @@ export function addCustomSubsector(doc: Pick<ProjectDoc, "customSubsectors">, in
   return {
     customSubsectors: [...list, { id: `csub.${n}`, sector: input.sector, title: input.title.trim().slice(0, L.titleMax), detail: (input.detail ?? "").trim().slice(0, L.detailMax), ...(closest ? { closest } : {}) }],
   };
+}
+
+/** A stored persona's extra map (M187): known detail keys the table does not hold natively, short strings. */
+function extraOf(v: Record<string, unknown>, audience: Audience): Pick<Persona, "extra"> {
+  if (!v.extra || typeof v.extra !== "object" || Array.isArray(v.extra)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v.extra as Record<string, unknown>))
+    if (isPersonaFieldKey(k) && !NATIVE[audience].includes(k) && typeof val === "string" && val.trim()) out[k] = val.slice(0, PROJECT_LIMITS.personaText.max);
+  return Object.keys(out).length ? { extra: out } : {};
+}
+
+/** The stored persona rows (M187), cleaned; absent or empty drops the key. */
+function personaFieldsOf(raw: unknown): Pick<ProjectDoc, "personaFields"> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Partial<Record<Audience, PersonaField[]>> = {};
+  for (const a of AUDIENCE_VALUES) {
+    const list = (raw as Record<string, unknown>)[a];
+    if (!Array.isArray(list)) continue;
+    const seen = new Set<string>();
+    const rows: PersonaField[] = [];
+    for (const f of list) {
+      if (!f || typeof f !== "object") continue;
+      const { key, label } = f as Record<string, unknown>;
+      if (typeof key !== "string" || !isPersonaFieldKey(key) || seen.has(key) || typeof label !== "string" || !label.trim()) continue;
+      seen.add(key);
+      rows.push({ key, label: label.trim().slice(0, PROJECT_LIMITS.personaFields.labelMax) });
+      if (rows.length >= PROJECT_LIMITS.personaFields.count) break;
+    }
+    if (rows.length) out[a] = rows;
+  }
+  return Object.keys(out).length ? { personaFields: out } : {};
 }
 
 export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
@@ -861,6 +950,7 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
           revenueRange: REVENUE_RANGE_VALUES.includes(v.revenueRange as RevenueRange)
             ? (v.revenueRange as RevenueRange)
             : "",
+          ...extraOf(v, "b2b"),
         })),
     };
   }
@@ -881,9 +971,12 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
             : "",
           howTheyFindYou: text(v.howTheyFindYou),
           holdings: text(v.holdings),
+          ...extraOf(v, "b2c"),
         })),
     };
   }
+  // The persona rows (M187): known detail keys only, each once, names cut, five at most per audience.
+  const fieldsPatch = personaFieldsOf((doc as { personaFields?: unknown }).personaFields);
   // Audience (M42): kept when it is one of the two values, dropped when it is garbage.
   const { audience: rawAudience, ...withoutAudience } = doc as ProjectDoc & { audience?: unknown };
   const audiencePatch = AUDIENCE_VALUES.includes(rawAudience as Audience)
@@ -1103,6 +1196,7 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     ...subsectorPatch,
     ...personasPatch,
     ...consumerPatch,
+    ...fieldsPatch,
     ...audiencePatch,
     payer,
     whoPays,

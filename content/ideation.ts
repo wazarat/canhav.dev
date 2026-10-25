@@ -27,7 +27,7 @@ import type {
 } from "@/lib/ideation";
 // Values, used only inside functions. lib/ideation reaches this file through
 // content/kits/copy, so nothing here may read them at module load.
-import { PROJECT_LIMITS, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
+import { PERSONA_DETAIL_KEYS, PROJECT_LIMITS, type PersonaField, docAudience, filledConsumerPersonas, filledPersonas, personaCell } from "@/lib/ideation";
 import type { WaivableField } from "@/lib/ideation";
 import type { ProjectChain } from "@/lib/chains";
 import { chainOptions } from "@/lib/chains";
@@ -417,6 +417,15 @@ export const PERSONA_COPY = {
   add: "Add persona",
   remove: (n: number) => `Remove persona ${n}`,
   legacyLabel: "Earlier description",
+  /** Each row records one detail and carries the team's name for it (M187). */
+  rowEdit: (label: string) => `Change the ${label} row`,
+  rowName: "Row name",
+  rowDetail: "What this row records",
+  rowGroups: { b2b: "Business details", b2c: "Individual details", own: "Your own" } as const,
+  rowOwn: (n: number) => `Your own detail ${n}`,
+  rowInUse: "In another row",
+  rowsHint: "Five rows for every persona. Click a row name to pick what it records or rename it.",
+  rowsReset: "Back to the default rows",
   rows: {
     teamSize: { label: "Team size", placeholder: "25 or 10-50" },
     geography: { label: "Geography", placeholder: "City, country, or continent" },
@@ -469,14 +478,37 @@ export function personaRows(
   ] satisfies ReadonlyArray<PersonaRowSpec<keyof ConsumerPersona>>;
 }
 
+/** Every detail a row can record (M187), with the copy and limits of the table that holds it natively. */
+export function personaDetailSpec(key: string): PersonaRowSpec<string> {
+  const own = [...personaRows("b2b"), ...personaRows("b2c")].find((r) => r.key === key);
+  if (own) return own;
+  const n = Number(key.slice(key.indexOf(".") + 1)) || 1;
+  return { key, label: PERSONA_COPY.rowOwn(n), placeholder: "", kind: "text", max: PROJECT_LIMITS.personaText.max };
+}
+
+/** The audience's default rows, as fields (M187). */
+export function defaultPersonaFields(audience: Audience): PersonaField[] {
+  return personaRows(audience as "b2b").map((r) => ({ key: r.key, label: r.label }));
+}
+
+/** The rows the team picked for the audience (M187), else its defaults, each with the team's name. */
+export function personaRowsFor(doc: Pick<ProjectDoc, "personaFields">, audience: Audience): Array<PersonaRowSpec<string>> {
+  const fields = doc.personaFields?.[audience]?.length ? doc.personaFields[audience]! : defaultPersonaFields(audience);
+  return fields.map((f) => ({ ...personaDetailSpec(f.key), label: f.label }));
+}
+
+/** The keys a row may pick, business details, then individual details, then the team's own. */
+export const PERSONA_PICKABLE: ReadonlyArray<{ group: "b2b" | "b2c" | "own"; keys: readonly string[] }> = [
+  { group: "b2b", keys: PERSONA_DETAIL_KEYS.slice(0, 5) },
+  { group: "b2c", keys: PERSONA_DETAIL_KEYS.slice(5) },
+  { group: "own", keys: ["custom.1", "custom.2", "custom.3", "custom.4", "custom.5"] },
+];
+
 /** The cells of one persona as label and value pairs, empty cells left out. Selects show their option label. */
-export function personaRowCells<T extends { [K in keyof T]: string }>(
-  rows: ReadonlyArray<PersonaRowSpec<keyof T & string>>,
-  p: T,
-): Array<{ label: string; value: string }> {
+export function personaRowCells(rows: ReadonlyArray<PersonaRowSpec<string>>, p: object): Array<{ label: string; value: string }> {
   return rows
     .map((row) => {
-      const raw = (p[row.key] as string).trim();
+      const raw = personaCell(p, row.key).trim();
       const value = row.kind === "select" && raw ? (row.options?.find((o) => o.value === raw)?.label ?? raw) : raw;
       return { label: row.label, value };
     })
@@ -491,13 +523,13 @@ export function consumerPersonaCells(p: ConsumerPersona): Array<{ label: string;
   return personaRowCells(personaRows("b2c"), p);
 }
 
-/** The filled persona cards for the audience in force, one cell list per card. */
+/** The filled persona cards for the audience in force, one cell list per card, in the team's rows (M187). */
 export function audiencePersonaCards(
-  doc: Pick<ProjectDoc, "audience" | "personas" | "consumerPersonas">,
+  doc: Pick<ProjectDoc, "audience" | "personas" | "consumerPersonas" | "personaFields">,
 ): Array<Array<{ label: string; value: string }>> {
   const audience = docAudience(doc);
-  if (audience === "b2c") return filledConsumerPersonas(doc).map(consumerPersonaCells);
-  if (audience === "b2b") return filledPersonas(doc).map(personaCells);
+  if (audience === "b2c") return filledConsumerPersonas(doc).map((p) => personaRowCells(personaRowsFor(doc, "b2c"), p));
+  if (audience === "b2b") return filledPersonas(doc).map((p) => personaRowCells(personaRowsFor(doc, "b2b"), p));
   return [];
 }
 

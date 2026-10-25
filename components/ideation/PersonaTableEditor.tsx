@@ -1,10 +1,12 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { Input, inputClasses } from "@/components/ui/Input";
-import { PERSONA_COPY, type PersonaRowSpec } from "@/content/ideation";
-import { PROJECT_LIMITS } from "@/lib/ideation";
+import { Menu, MenuItem } from "@/components/ui/Menu";
+import { PERSONA_COPY, PERSONA_PICKABLE, type PersonaRowSpec, defaultPersonaFields, personaDetailSpec } from "@/content/ideation";
+import { type Audience, PROJECT_LIMITS, type PersonaField, personaCell, withPersonaCell } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
 
 /** Literal classes so Tailwind sees each column count. */
@@ -22,16 +24,25 @@ const CELL = "sm:h-[42px]";
  * `rows` (the B2B and B2C tables share this component, M42). Starts with
  * one column, the plus adds up to three. Every cell is optional. From `sm`
  * up it reads as a table with the row labels on the left; on a phone each
- * persona stacks as its own card with the labels above the inputs.
+ * persona stacks as its own card with the labels above the inputs. Since
+ * M187 each of the five row names opens a menu to rename the row or pick
+ * the detail it records, the same for every persona.
  */
-export function PersonaTableEditor<T extends { [K in keyof T]: string }>({
+export function PersonaTableEditor<T extends object>({
+  audience,
   rows,
+  fields,
+  onFields,
   personas,
   onChange,
   empty,
   note,
 }: {
-  rows: ReadonlyArray<PersonaRowSpec<keyof T & string>>;
+  audience: Audience;
+  rows: ReadonlyArray<PersonaRowSpec<string>>;
+  /** The team's rows, or undefined for the audience's defaults. */
+  fields: PersonaField[] | undefined;
+  onFields: (fields: PersonaField[] | undefined) => void;
   /** Undefined until the builder first edits the table. */
   personas: T[] | undefined;
   onChange: (personas: T[]) => void;
@@ -41,23 +52,31 @@ export function PersonaTableEditor<T extends { [K in keyof T]: string }>({
 }) {
   const L = PROJECT_LIMITS.personas;
   const list = personas?.length ? personas : [empty()];
+  const current = fields?.length ? fields : defaultPersonaFields(audience);
 
-  const update = (i: number, key: keyof T & string, value: string) =>
-    onChange(list.map((p, j) => (j === i ? { ...p, [key]: value } : p)));
+  const update = (i: number, key: string, value: string) => onChange(list.map((p, j) => (j === i ? withPersonaCell(p, key, value, audience) : p)));
+  const setField = (i: number, next: PersonaField) => onFields(current.map((f, j) => (j === i ? next : f)));
 
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-xs font-medium text-ink-200">{PERSONA_COPY.label}</span>
-        <span className="text-xs text-ink-500">{note}</span>
+        <span className="text-xs text-ink-500">
+          {note}
+          {fields?.length ? (
+            <button type="button" onClick={() => onFields(undefined)} className="ml-2 text-ink-400 hover:text-ink-100 hover:underline">
+              {PERSONA_COPY.rowsReset}
+            </button>
+          ) : null}
+        </span>
       </div>
 
       <div className={cn("space-y-3 sm:grid sm:gap-x-3 sm:space-y-0", GRID_COLS[list.length])}>
         <div className="hidden sm:block sm:space-y-2">
           <div className="h-6" />
-          {rows.map((row) => (
+          {rows.map((row, i) => (
             <div key={row.key} className={cn("flex items-center text-xs text-ink-400", CELL)}>
-              {row.label}
+              <RowLabel field={current[i]} taken={current.map((f) => f.key)} onChange={(next) => setField(i, next)} />
             </div>
           ))}
         </div>
@@ -81,7 +100,7 @@ export function PersonaTableEditor<T extends { [K in keyof T]: string }>({
               ) : null}
             </div>
             {rows.map((row) => {
-              const value = persona[row.key] as string;
+              const value = personaCell(persona, row.key);
               return (
                 <label key={row.key} className="block space-y-1 sm:space-y-0">
                   <span className="text-[11px] text-ink-400 sm:sr-only">{row.label}</span>
@@ -131,5 +150,74 @@ export function PersonaTableEditor<T extends { [K in keyof T]: string }>({
         </button>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * One row's name as a menu (M187): rename it, or pick the detail it records
+ * from the business details, the individual details or the team's own. A
+ * detail already in another row is shown but cannot be picked twice.
+ */
+function RowLabel({ field, taken, onChange }: { field: PersonaField; taken: readonly string[]; onChange: (next: PersonaField) => void }) {
+  const C = PERSONA_COPY;
+  const [name, setName] = useState(field.label);
+  const commit = () => {
+    const v = name.trim().slice(0, PROJECT_LIMITS.personaFields.labelMax);
+    if (v && v !== field.label) onChange({ ...field, label: v });
+    else setName(field.label);
+  };
+  return (
+    <Menu
+      align="left"
+      width="w-72"
+      trigger={({ toggle, open }) => (
+        <button
+          type="button"
+          onClick={() => {
+            setName(field.label);
+            toggle();
+          }}
+          aria-expanded={open}
+          aria-label={C.rowEdit(field.label)}
+          className="inline-flex max-w-full items-center gap-1 truncate text-left text-ink-400 transition-colors hover:text-ink-100"
+        >
+          <span className="truncate">{field.label}</span>
+          <ChevronDown aria-hidden className="h-3 w-3 shrink-0" />
+        </button>
+      )}
+    >
+      <div className="space-y-1 px-3 pb-2 pt-2">
+        <p className="text-[11px] text-ink-500">{C.rowName}</p>
+        <Input
+          value={name}
+          maxLength={PROJECT_LIMITS.personaFields.labelMax}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+          }}
+          aria-label={C.rowName}
+          className="h-8 text-xs"
+        />
+      </div>
+      <div className="max-h-72 overflow-y-auto border-t border-ink-700/40 py-1">
+        <p className="px-3 pt-1 text-[11px] text-ink-500">{C.rowDetail}</p>
+        {PERSONA_PICKABLE.map((g) => (
+          <div key={g.group} className="py-1">
+            <p className="px-3 py-1 text-[11px] font-medium text-ink-400">{C.rowGroups[g.group]}</p>
+            {g.keys.map((k) => {
+              const spec = personaDetailSpec(k);
+              const elsewhere = k !== field.key && taken.includes(k);
+              return (
+                <MenuItem key={k} disabled={elsewhere} onSelect={() => onChange({ key: k, label: spec.label })} className={cn(k === field.key && "bg-ink-800/60")}>
+                  <span className="flex-1 truncate">{spec.label}</span>
+                  {elsewhere ? <span className="text-[11px] text-ink-500">{C.rowInUse}</span> : null}
+                </MenuItem>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </Menu>
   );
 }

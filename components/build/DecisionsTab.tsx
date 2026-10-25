@@ -1,7 +1,6 @@
 "use client";
 
 import { PersonaTableEditor } from "@/components/ideation/PersonaTableEditor";
-import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { FieldWaiver } from "@/components/build/FieldWaiver";
 import { ChainField } from "@/components/ideation/ChainField";
 import { FIELD_GRID, TAB_WIDTH } from "@/components/build/layout";
@@ -31,7 +30,7 @@ import {
   AUDIENCE_OPTIONS,
   ORACLE_USE_OPTIONS,
   PERSONA_COPY,
-  personaRows,
+  personaRowsFor,
   PROJECT_SECURITY_FIELDS,
   UPGRADEABILITY_OPTIONS,
   WORST_CASE_OPTIONS,
@@ -41,9 +40,17 @@ import { WORST_CASE_WHY } from "@/content/ideation";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { type ProjectChain, projectChainOf } from "@/lib/chains";
-import { type AdminFunctionEntry, type ContractEntry, PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, oracleRowsOf, oracleRowsText, testnetContractRows } from "@/lib/ideation";
+import { type AdminFunctionEntry, type ContractEntry, PROJECT_LIMITS, type PersonaField, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, oracleRowsOf, oracleRowsText, testnetContractRows } from "@/lib/ideation";
 import { type ProjectKit, emptyProjectKit, setTemplateDecision } from "@/lib/kits";
 import { kitsForDoc } from "@/content/kits";
+
+/** The persona rows with one audience's set replaced (M187), the key dropped when both are defaults. */
+function withAudienceFields(doc: ProjectDoc, audience: "b2b" | "b2c", fields: PersonaField[] | undefined): ProjectDoc["personaFields"] {
+  const next = { ...(doc.personaFields ?? {}) };
+  if (fields?.length) next[audience] = fields;
+  else delete next[audience];
+  return Object.keys(next).length ? next : undefined;
+}
 
 function Heading({ children }: { children: React.ReactNode }) {
   return <h2 className="font-display text-base font-semibold text-ink-50">{children}</h2>;
@@ -103,17 +110,41 @@ export function DecisionsTab({
 
         <CardSection id="decisions-customers" className="space-y-5">
           <Heading>{D.customers}</Heading>
-          <ChipRadioGroup
+          {/* One choice, B2B or B2C, sets the default rows; the team then picks what each of the five rows records and names it (M187). */}
+          <SegmentedField
             label={PERSONA_COPY.audienceLabel}
             info={audience ? PERSONA_COPY.audienceHints[audience] : PERSONA_COPY.audienceHint}
             value={audience}
             onChange={(v) => patch({ audience: v })}
             options={AUDIENCE_OPTIONS}
           />
-          {audience === "b2b" ? (
-            <PersonaTableEditor rows={personaRows("b2b")} personas={doc.personas} onChange={(personas) => patch({ personas })} empty={emptyPersona} note={PERSONA_COPY.note} />
-          ) : audience === "b2c" ? (
-            <PersonaTableEditor rows={personaRows("b2c")} personas={doc.consumerPersonas} onChange={(consumerPersonas) => patch({ consumerPersonas })} empty={emptyConsumerPersona} note={PERSONA_COPY.note} />
+          {audience ? (
+            <>
+              {audience === "b2b" ? (
+                <PersonaTableEditor
+                  audience="b2b"
+                  rows={personaRowsFor(doc, "b2b")}
+                  fields={doc.personaFields?.b2b}
+                  onFields={(f) => patch({ personaFields: withAudienceFields(doc, "b2b", f) })}
+                  personas={doc.personas}
+                  onChange={(personas) => patch({ personas })}
+                  empty={emptyPersona}
+                  note={PERSONA_COPY.note}
+                />
+              ) : (
+                <PersonaTableEditor
+                  audience="b2c"
+                  rows={personaRowsFor(doc, "b2c")}
+                  fields={doc.personaFields?.b2c}
+                  onFields={(f) => patch({ personaFields: withAudienceFields(doc, "b2c", f) })}
+                  personas={doc.consumerPersonas}
+                  onChange={(consumerPersonas) => patch({ consumerPersonas })}
+                  empty={emptyConsumerPersona}
+                  note={PERSONA_COPY.note}
+                />
+              )}
+              <p className="text-xs text-ink-500">{PERSONA_COPY.rowsHint}</p>
+            </>
           ) : null}
         </CardSection>
 

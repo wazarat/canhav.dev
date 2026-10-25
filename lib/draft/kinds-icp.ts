@@ -1,6 +1,6 @@
 import "server-only";
 
-import { AUDIENCE_OPTIONS, optionLabel } from "@/content/ideation";
+import { AUDIENCE_OPTIONS, optionLabel, audiencePersonaCards } from "@/content/ideation";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { categoriesFor, fetchLlamaProtocols, formatTvl, pickProtocols } from "@/lib/competitors/llama";
 import { DRAFT_VOICE } from "@/lib/draft/context";
@@ -8,14 +8,14 @@ import { registerDraftKind } from "@/lib/draft/kinds";
 import { reachLine } from "@/lib/reach";
 import { PROFILE_KEYS } from "@/lib/value-canvas";
 import { ICP_LIMITS, type Icp, icpDraftSchema, normalizeIcp } from "@/lib/icp";
-import { type ProjectDoc, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
+import { type ProjectDoc, docAudience } from "@/lib/ideation";
 
 /** The persona table as the model reads it. */
 function personaExtras(doc: ProjectDoc): string {
   const lines = ["## Personas"]; // copy-ok, model context
   lines.push(`Audience: ${optionLabel(AUDIENCE_OPTIONS, docAudience(doc))}.`); // copy-ok, model context
-  for (const p of filledPersonas(doc)) lines.push(`Business persona: team of ${p.teamSize || "?"}, ${p.geography || "?"}, ${p.industry || "?"}, contact ${p.primaryContact || "?"}, revenue ${p.revenueRange || "?"}.`); // copy-ok, model context
-  for (const p of filledConsumerPersonas(doc)) lines.push(`Consumer persona: age ${p.ageRange || "?"}, ${p.geography || "?"}, ${p.cryptoExperience || "?"}, found via ${p.howTheyFindYou || "?"}, holds ${p.holdings || "?"}.`); // copy-ok, model context
+  // The team's own rows and names (M187), one line per filled persona.
+  for (const cells of audiencePersonaCards(doc)) lines.push(`Persona: ${cells.map((c) => `${c.label} ${c.value}`).join(", ")}.`); // copy-ok, model context
   if (doc.whoPays) lines.push(`Who pays: ${doc.whoPays}`); // copy-ok, model context
   if (doc.firstHundredUsers) lines.push(`First hundred users: ${doc.firstHundredUsers}`); // copy-ok, model context
   return lines.join("\n");

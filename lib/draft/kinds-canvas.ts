@@ -1,20 +1,20 @@
 import "server-only";
 
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
-import { AUDIENCE_OPTIONS, PAYER_OPTIONS, optionLabel } from "@/content/ideation";
+import { AUDIENCE_OPTIONS, PAYER_OPTIONS, optionLabel, audiencePersonaCards } from "@/content/ideation";
 import { CANVAS_BLOCKS, CANVAS_LIMITS, type CanvasBlock, canvasBlockDraftSchema, canvasDraftSchema, isCanvasBlock } from "@/lib/canvas";
 import { itemTexts } from "@/lib/canvas-items";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
 import { cutAtWord } from "@/lib/text";
-import { type ProjectDoc, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
+import { type ProjectDoc, docAudience } from "@/lib/ideation";
 
 /** The customer and payer facts the canvas builds on, as an extra block. */
 function customerExtras(doc: ProjectDoc): string[] {
   const lines: string[] = ["## Customers and payer"]; // copy-ok, model context
   lines.push(`Audience: ${optionLabel(AUDIENCE_OPTIONS, docAudience(doc))}.`); // copy-ok, model context
-  for (const p of filledPersonas(doc)) lines.push(`Persona: team of ${p.teamSize || "?"}, ${p.geography || "?"}, ${p.industry || "?"}, contact ${p.primaryContact || "?"}, revenue ${p.revenueRange || "?"}.`); // copy-ok, model context
-  for (const p of filledConsumerPersonas(doc)) lines.push(`Consumer: age ${p.ageRange || "?"}, ${p.geography || "?"}, ${p.cryptoExperience || "?"}, found via ${p.howTheyFindYou || "?"}, holds ${p.holdings || "?"}.`); // copy-ok, model context
+  // The team's own rows and names (M187), one line per filled persona.
+  for (const cells of audiencePersonaCards(doc)) lines.push(`Persona: ${cells.map((c) => `${c.label} ${c.value}`).join(", ")}.`); // copy-ok, model context
   lines.push(`Payer: ${doc.payer ? optionLabel(PAYER_OPTIONS, doc.payer) : "not set"}${doc.whoPays ? `, ${doc.whoPays}` : ""}.`); // copy-ok, model context
   if (doc.firstHundredUsers) lines.push(`First hundred users: ${doc.firstHundredUsers}`); // copy-ok, model context
   if (doc.whyThisChain) lines.push(`Why this chain: ${doc.whyThisChain}`); // copy-ok, model context

@@ -51,6 +51,7 @@ import {
   stampContracts,
   testnetContractRows,
   validateMainnetRecord,
+  isPersonaFieldKey,
 } from "@/lib/ideation";
 import { JOURNEY_LIMITS } from "@/lib/journey";
 import {
@@ -224,6 +225,8 @@ const persona = z.strictObject({
   industry: z.string().max(L.personaText.max).default(""),
   primaryContact: z.string().max(L.personaText.max).default(""),
   revenueRange: z.enum(["", ...REVENUE_RANGE_VALUES]).default(""),
+  /** Values of rows the team picked that the table does not hold natively (M187), keyed by detail key. */
+  extra: z.record(z.string().refine(isPersonaFieldKey, "A persona detail key or custom.<n>"), z.string().max(L.personaText.max)).optional(),
 });
 
 const consumerPersona = z.strictObject({
@@ -236,6 +239,8 @@ const consumerPersona = z.strictObject({
   cryptoExperience: z.enum(["", ...CRYPTO_EXPERIENCE_VALUES]).default(""),
   howTheyFindYou: z.string().max(L.personaText.max).default(""),
   holdings: z.string().max(L.personaText.max).default(""),
+  /** Values of rows the team picked that the table does not hold natively (M187), keyed by detail key. */
+  extra: z.record(z.string().refine(isPersonaFieldKey, "A persona detail key or custom.<n>"), z.string().max(L.personaText.max)).optional(),
 });
 
 /** One of our shapes or one the team made (M176), checked against the project by projectPatchProblem. */
@@ -254,6 +259,15 @@ export const projectPatchSchema = z
     // sent as null clears that waiver; a stated value always wins over one.
     waived: z.partialRecord(z.enum(WAIVABLE_FIELDS), z.string().min(L.waiver.min).max(L.waiver.max).nullable()),
     consumerPersonas: z.array(consumerPersona).max(L.personas.max),
+    // The persona rows per audience (M187): which detail each of five rows records and its name; null clears one set.
+    personaFields: z.partialRecord(
+      z.enum(AUDIENCE_VALUES),
+      z
+        .array(z.strictObject({ key: z.string().refine(isPersonaFieldKey, "A persona detail key or custom.<n>"), label: z.string().trim().min(1).max(L.personaFields.labelMax) }))
+        .max(L.personaFields.count)
+        .refine((rows) => new Set(rows.map((r) => r.key)).size === rows.length, "Each detail once")
+        .nullable(),
+    ),
     payer: z.enum(["", "user", "third_party"]),
     whoPays: z.string().max(L.whoPays.max),
     whyThisChain: z.string().max(L.whyThisChain.max),

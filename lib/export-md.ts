@@ -50,7 +50,7 @@ import {
   STAGE_OPTIONS,
   UNDERSUBSCRIPTION_OPTIONS,
   optionLabel,
-  personaRows,
+  personaRowsFor,
   SECTOR_OPTIONS,
   sectorLabels,
   subsectorLabel,
@@ -89,6 +89,7 @@ import {
   docAudience,
   filledConsumerPersonas,
   filledPersonas,
+  personaCell,
   isSaleEvent,
   vestedCohorts,
   testnetContractRows,
@@ -128,13 +129,10 @@ function payerLine(doc: ProjectDoc): string {
 }
 
 /** One persona table, rows from the spec, selects shown as their option label. */
-function personaTable<T extends { [K in keyof T]: string }>(
-  rows: ReadonlyArray<PersonaRowSpec<keyof T & string>>,
-  personas: readonly T[],
-): string[] {
+function personaTable(rows: ReadonlyArray<PersonaRowSpec<string>>, personas: readonly object[]): string[] {
   const cell = (v: string) => v.trim().replace(/\|/g, "/") || " ";
-  const shown = (row: PersonaRowSpec<keyof T & string>, p: T) => {
-    const raw = (p[row.key] as string).trim();
+  const shown = (row: PersonaRowSpec<string>, p: object) => {
+    const raw = personaCell(p, row.key).trim();
     return row.kind === "select" && raw ? (row.options?.find((o) => o.value === raw)?.label ?? raw) : raw;
   };
   return [
@@ -177,9 +175,9 @@ function customerLines(doc: ProjectDoc): string[] {
   const audience = docAudience(doc);
   const table =
     audience === "b2c"
-      ? personaTable(personaRows("b2c"), filledConsumerPersonas(doc))
+      ? personaTable(personaRowsFor(doc, "b2c"), filledConsumerPersonas(doc))
       : audience === "b2b"
-        ? personaTable(personaRows("b2b"), filledPersonas(doc))
+        ? personaTable(personaRowsFor(doc, "b2b"), filledPersonas(doc))
         : [];
   if (table.length > 2) {
     out.push(`**Who the user is**`, "");
