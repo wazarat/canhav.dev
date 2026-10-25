@@ -634,8 +634,13 @@ export const BUILD_COPY = {
     properties: "Properties",
     status: "Status",
     draft: "Draft",
+    inProgress: "In progress",
+    readyStage: "Ready to publish",
     published: "Published",
     publishedPrivate: "Published privately",
+    live: "Live on mainnet",
+    stepOf: (n: number, total: number) => `${n} of ${total}`,
+    moreShapes: (n: number) => `+${n} more`,
     stage: "Stage",
     chain: "Chain",
     shapes: "Shapes",
@@ -647,7 +652,7 @@ export const BUILD_COPY = {
     milestones: "Milestones",
     noShape: "Pick what you are building under Decisions to get build steps.",
     readiness: "Publishing",
-    ready: "Ready to publish.",
+    readySentence: "Ready to publish.",
   },
   /** Automated checks (M121). The run line is plain text, the evidence field is for every account. */
   checks: {

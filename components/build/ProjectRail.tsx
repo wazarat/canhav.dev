@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AGENT_TONE_CLASS, type AgentTone } from "@/components/build/agent-tone";
 import { deployerState } from "@/components/build/deployer-state";
 import { type LaunchFacts, launchRows } from "@/components/build/launch-rows";
+import { progressFill } from "@/components/build/progress-tone";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { ProgressBar } from "@/components/ui/MetaLine";
 import { Property, PropertyList } from "@/components/ui/Property";
@@ -19,6 +20,17 @@ import { chainInfo, projectChainOf } from "@/lib/chains";
 import type { DeployerView } from "@/lib/deployer";
 import type { ProjectDoc } from "@/lib/ideation";
 import { groupProgress, kitShapes } from "@/lib/kits";
+
+/** The five steps a project moves through (M175), each read from the record. */
+type Stage = "draft" | "inProgress" | "ready" | "published" | "live";
+const STAGES: readonly Stage[] = ["draft", "inProgress", "ready", "published", "live"];
+
+function projectStage(facts: LaunchFacts, problems: ProjectProblems, started: boolean): Stage {
+  if (facts.hasMainnet) return "live";
+  if (facts.published) return "published";
+  if (problems.overall === null) return "ready";
+  return started ? "inProgress" : "draft";
+}
 
 const HEADING = "text-[10px] font-semibold uppercase tracking-wide text-ink-500";
 const LINK = "text-left text-ink-200 hover:underline";
@@ -67,7 +79,24 @@ export function ProjectRail({
   const progress = (m: Milestone) =>
     m === "launch" ? { done: launch.filter((r) => r.done).length, total: launch.length } : groupProgress(by[m], kit);
   const open = (Object.keys(tabProblems) as ProblemTab[]).filter((t) => tabProblems[t]);
-  const status = facts.published ? (publishedPrivate ? R.publishedPrivate : R.published) : R.draft;
+  const started = MILESTONES.some((m) => progress(m).done > 0);
+  const stage = projectStage(facts, problems, started);
+  const stageLabel: Record<Stage, string> = { draft: R.draft, inProgress: R.inProgress, ready: R.readyStage, published: publishedPrivate ? R.publishedPrivate : R.published, live: R.live };
+  const status = (
+    <>
+      {stageLabel[stage]}
+      <span className="text-ink-500"> · {R.stepOf(STAGES.indexOf(stage) + 1, STAGES.length)}</span>
+    </>
+  );
+  // More than two shapes read as the first two and a count, the full list on hover (M175).
+  const shapesValue = shapes.length ? (
+    <span title={shapes.length > 2 ? shapes.join(", ") : undefined}>
+      {shapes.slice(0, 2).join(", ")}
+      {shapes.length > 2 ? <span className="text-ink-500"> {R.moreShapes(shapes.length - 2)}</span> : null}
+    </span>
+  ) : (
+    R.none
+  );
 
   return (
     <div className="space-y-6 text-sm">
@@ -77,7 +106,7 @@ export function ProjectRail({
           <Property labelClassName={LABEL} label={R.status} value={status} />
           <Property labelClassName={LABEL} label={R.stage} value={doc.stage ? optionLabel(STAGE_OPTIONS, doc.stage) : R.none} />
           <Property labelClassName={LABEL} label={R.chain} value={chainInfo(projectChainOf(doc)).short} />
-          <Property labelClassName={LABEL} label={R.shapes} value={shapes.length ? shapes.join(", ") : R.none} />
+          <Property labelClassName={LABEL} label={R.shapes} value={shapesValue} />
           <Property labelClassName={LABEL} label={R.agent} value={<span className={AGENT_TONE_CLASS[agentTone]}>{agentLine}</span>} />
           <Property
             labelClassName={LABEL}
@@ -116,7 +145,7 @@ export function ProjectRail({
                     className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-800/60"
                   >
                     <span className="flex-1 truncate text-ink-200">{BUILD_COPY.milestones[m].label}</span>
-                    <ProgressBar done={p.done} total={p.total} className="w-10" />
+                    <ProgressBar done={p.done} total={p.total} className="w-10" fill={progressFill(p.done, p.total)} />
                     <span className="shrink-0 whitespace-nowrap text-right text-xs text-ink-400">{CHECKLIST_COPY.progress(p.done, p.total)}</span>
                   </button>
                 </li>
@@ -133,7 +162,7 @@ export function ProjectRail({
       <section className="space-y-2 border-t border-ink-700/40 pt-5">
         <h2 className={HEADING}>{R.readiness}</h2>
         {problems.overall === null ? (
-          <p className="text-xs text-ink-400">{R.ready}</p>
+          <p className="text-xs text-ink-400">{R.readySentence}</p>
         ) : open.length ? (
           <ul className="space-y-1.5">
             {open.map((t) => (

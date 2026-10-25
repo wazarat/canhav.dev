@@ -43,6 +43,10 @@
     --signal-400: 34 211 238;
     --signal-500: 6 182 212;
     --rose-400: 251 113 133;
+    /* The milestone bar's fill (M175): start, yellow, bright green by percent. */
+    --progress-start: 124 132 153;
+    --progress-mid: 250 204 21;
+    --progress-end: 34 197 94;
   }
 
   html.light {
@@ -75,6 +79,9 @@
     --signal-400: 14 116 144;
     --signal-500: 21 94 117;
     --rose-400: 225 29 72;
+    --progress-start: 12 21 0;
+    --progress-mid: 202 138 4;
+    --progress-end: 22 163 74;
   }
 
   html,

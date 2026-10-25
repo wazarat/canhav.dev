@@ -22,12 +22,12 @@ export function MetaLine({ items, className }: { items: ReadonlyArray<React.Reac
   );
 }
 
-/** A thin progress bar beside a count, the one shape that stays a pill (M137). */
-export function ProgressBar({ done, total, className }: { done: number; total: number; className?: string }) {
+/** A thin progress bar beside a count, the one shape that stays a pill (M137). `fill` colours the bar (M175, the rail's milestones). */
+export function ProgressBar({ done, total, className, fill }: { done: number; total: number; className?: string; fill?: string }) {
   const pct = total > 0 ? Math.round((Math.min(done, total) / total) * 100) : 0;
   return (
     <span aria-hidden className={cn("inline-block h-1 w-16 overflow-hidden rounded-full bg-ink-800 align-middle", className)}>
-      <span className="block h-1 rounded-full bg-ink-400" style={{ width: `${pct}%` }} />
+      <span className={cn("block h-1 rounded-full", !fill && "bg-ink-400")} style={{ width: `${pct}%`, ...(fill ? { backgroundColor: fill } : {}) }} />
     </span>
   );
 }
