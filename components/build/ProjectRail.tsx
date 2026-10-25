@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 
+import { AGENT_TONE_CLASS, type AgentTone } from "@/components/build/agent-tone";
 import { deployerState } from "@/components/build/deployer-state";
 import { type LaunchFacts, launchRows } from "@/components/build/launch-rows";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
@@ -35,6 +36,7 @@ export function ProjectRail({
   problems,
   tabProblems,
   agentLine,
+  agentTone,
   publicHref,
   publishedPrivate,
   deployer,
@@ -48,6 +50,7 @@ export function ProjectRail({
   tabProblems: Record<ProblemTab, string | null>;
   /** One of BUILD_COPY.agent. */
   agentLine: string;
+  agentTone: AgentTone;
   publicHref: string | null;
   publishedPrivate: boolean;
   deployer: DeployerView | null;
@@ -75,7 +78,7 @@ export function ProjectRail({
           <Property labelClassName={LABEL} label={R.stage} value={doc.stage ? optionLabel(STAGE_OPTIONS, doc.stage) : R.none} />
           <Property labelClassName={LABEL} label={R.chain} value={chainInfo(projectChainOf(doc)).short} />
           <Property labelClassName={LABEL} label={R.shapes} value={shapes.length ? shapes.join(", ") : R.none} />
-          <Property labelClassName={LABEL} label={R.agent} value={agentLine} />
+          <Property labelClassName={LABEL} label={R.agent} value={<span className={AGENT_TONE_CLASS[agentTone]}>{agentLine}</span>} />
           <Property
             labelClassName={LABEL}
             label={R.deployer}

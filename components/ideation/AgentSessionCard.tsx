@@ -4,8 +4,9 @@ import { ExternalLink } from "lucide-react";
 
 import { InfoTip } from "@/components/ui/InfoTip";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
+import { BUILD_COPY } from "@/content/build";
 import { AGENT_COPY } from "@/content/ideation";
-import { type AgentSession, type SessionView, planProgress, sessionView } from "@/lib/agent-sessions";
+import { type AgentSession, type SessionView, currentMilestone, planProgress, sessionView } from "@/lib/agent-sessions";
 import { cn } from "@/lib/utils";
 
 const VIEW_TONE: Record<SessionView, StatusTone> = {
@@ -38,6 +39,7 @@ export function AgentSessionCard({ session }: { session: AgentSession | null }) 
   const S = AGENT_COPY.session;
   const view = session ? sessionView(session) : null;
   const progress = session ? planProgress(session.plan) : null;
+  const now = session ? currentMilestone(session.plan) : null;
   return (
     <section className="rounded-xl border border-ink-800/70 bg-ink-950/40 p-4" aria-label={S.title}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -60,6 +62,7 @@ export function AgentSessionCard({ session }: { session: AgentSession | null }) 
               <p className="text-xs font-medium text-ink-200">
                 {S.plan}
                 {progress ? <span className="ml-1.5 text-ink-400">{S.planProgress(progress.done, progress.total)}</span> : null}
+                {now ? <span className="text-ink-400"> · {S.nowOn(BUILD_COPY.milestones[now].label)}</span> : null}
               </p>
               <ol className="mt-1.5 space-y-1">
                 {session.plan.map((item, i) => (
@@ -80,6 +83,7 @@ export function AgentSessionCard({ session }: { session: AgentSession | null }) 
                     <span className={item.status === "done" || item.status === "canceled" ? "text-ink-500 line-through decoration-ink-700" : "text-ink-200"}>
                       {item.content}
                     </span>
+                    {item.milestone ? <span className="shrink-0 text-ink-500">{BUILD_COPY.milestones[item.milestone].label}</span> : null}
                     <span className="sr-only">{S.planStatus[item.status]}</span>
                   </li>
                 ))}

@@ -77,6 +77,7 @@ export function DraftControl<T>({
   serverDraft = true,
   copyLabel,
   copyHint,
+  summarize,
 }: {
   projectId: string;
   kind: DraftKind;
@@ -102,6 +103,8 @@ export function DraftControl<T>({
   /** The copy item's label and hint, when they differ from the default (M159, the prompt's length). */
   copyLabel?: string;
   copyHint?: string;
+  /** Fills the brief's answers from the period's activity (M174, the team update). */
+  summarize?: () => Promise<{ answers: Record<string, string> } | { error: string }>;
 }) {
   const C = STUDIO_PLUS_COPY.draft;
   const here = usePlusHere(DRAFT_KIND_FEATURES[kind]);
@@ -223,7 +226,24 @@ export function DraftControl<T>({
     <p className="text-xs text-ink-500">{C.draftedBy[drafted.by](day(drafted.at))}</p>
   ) : null;
 
-  const briefCard = brief ? <DraftBrief questions={questions} initial={earlier?.answers} working={working} onDraft={(a) => finishBrief(a)} onSkip={() => finishBrief()} /> : null;
+  const briefCard = brief ? (
+    <DraftBrief
+      questions={questions}
+      initial={earlier?.answers}
+      working={working}
+      onDraft={(a) => finishBrief(a)}
+      onSkip={() => finishBrief()}
+      onSummarize={summarize}
+      onAgent={
+        summarize && canQueue && !open
+          ? (a) => {
+              setBrief(null);
+              queue(a);
+            }
+          : undefined
+      }
+    />
+  ) : null;
 
   if (variant === "link") {
     return (

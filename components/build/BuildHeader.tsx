@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { AGENT_TONE_CLASS, type AgentTone } from "@/components/build/agent-tone";
 import type { PublishStatus } from "@/components/ideation/usePublish";
 import { Button } from "@/components/ui/Button";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { PlanWord } from "@/components/studio/PlanWord";
 import { setStudioEntity } from "@/lib/studio-entity";
+import { cn } from "@/lib/utils";
 
 /**
  * The project page header (M94): kicker, logo and name, the agent status
@@ -41,6 +43,7 @@ export function BuildHeader({
   name,
   logo,
   agentLine,
+  agentTone = "live",
   initialStatus,
   initialSlug,
   publicHref,
@@ -57,6 +60,8 @@ export function BuildHeader({
   logo: string | null;
   /** One of BUILD_COPY.agent. */
   agentLine: string;
+  /** The line's colour (M174). */
+  agentTone?: AgentTone;
   initialStatus: "draft" | "published";
   initialSlug: string | null;
   /** The public page path, with the share token when private (M109). */
@@ -97,7 +102,7 @@ export function BuildHeader({
             ) : null}
             <span>{name || "Untitled"}</span>
           </h1>
-          <p className="mt-2 text-xs text-ink-400">{agentLine}</p>
+          <p className={cn("mt-2 text-xs font-medium", AGENT_TONE_CLASS[agentTone])}>{agentLine}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {headerActions}

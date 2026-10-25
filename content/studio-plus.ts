@@ -355,6 +355,11 @@ export const STUDIO_PLUS_COPY = {
     lead: "A sentence or two per question. The draft builds on your answers instead of assuming them, and they stay on the project for your agent.",
     draft: "Draft",
     skip: "Skip, draft anyway",
+    /** Auto-summarize on the team update brief (M174). */
+    summarize: "Auto-summarize",
+    summarizing: "Summarizing",
+    summarizeHint: "Auto-summarize reads this period's agent changes, sessions, checks and history and fills each answer in up to 300 characters. Edit them before you draft.",
+    askAgent: "Ask your agent",
     saved: (date: string) => `Brief from ${date}`,
     edit: "Edit the brief",
     questions: {

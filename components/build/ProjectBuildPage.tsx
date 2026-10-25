@@ -27,6 +27,7 @@ import { usePlan } from "@/components/studio/PlanContext";
 import { buildTabsFor } from "@/lib/build-tabs";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { ProjectRail } from "@/components/build/ProjectRail";
+import type { AgentTone } from "@/components/build/agent-tone";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
@@ -193,6 +194,7 @@ export function ProjectBuildPage({
         : session || agent.state?.changes.length
           ? BUILD_COPY.agent.connected
           : BUILD_COPY.agent.connect;
+  const agentTone: AgentTone = view === "awaiting_input" ? "waiting" : agentLine === BUILD_COPY.agent.connect ? "off" : "live";
 
   const published =
     publishStatus.kind === "published" || (initialStatus === "published" && publishStatus.kind !== "unpublished");
@@ -324,6 +326,7 @@ export function ProjectBuildPage({
         name={doc.name}
         logo={doc.logo ?? null}
         agentLine={agentLine}
+        agentTone={agentTone}
         initialStatus={initialStatus}
         initialSlug={initialSlug}
         publicHref={publicHref}
@@ -358,6 +361,7 @@ export function ProjectBuildPage({
             problems={problems}
             tabProblems={tabDots}
             agentLine={agentLine}
+            agentTone={agentTone}
             publicHref={publicHref}
             publishedPrivate={publishedVisibility === "private"}
             deployer={deployer}

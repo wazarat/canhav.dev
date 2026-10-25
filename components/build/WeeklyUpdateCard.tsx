@@ -1,19 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { type DraftMeta, DraftControl } from "@/components/build/DraftControl";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
-import { Field } from "@/components/ui/Input";
-import { SegmentedField } from "@/components/ui/Segmented";
+import { Field, Input } from "@/components/ui/Input";
+import { Segmented } from "@/components/ui/Segmented";
+import { Select, optionClasses } from "@/components/ui/Select";
 import { TextField } from "@/components/ideation/TextField";
 import { BUILD_COPY } from "@/content/build";
 import type { AgentWriteMode } from "@/lib/agent-writes";
+import { sectionsFor } from "@/content/kits/checklists";
 import { draftWeeklyPrompt } from "@/lib/agent-prompts-draft";
+import { type Milestone, groupsByMilestone } from "@/lib/build-milestones";
 import type { ProjectDoc } from "@/lib/ideation";
-import { DEFAULT_CADENCE, type ProjectUpdate, UPDATE_CADENCES, UPDATE_LIMITS, type UpdateCadence, type WeeklyDraft, periodLabel, periodOf, updateDue } from "@/lib/updates";
+import { kitShapes } from "@/lib/kits";
+import { DEFAULT_CADENCE, HIGHLIGHT_MILESTONES, type ProjectUpdate, UPDATE_CADENCES, UPDATE_LIMITS, type UpdateCadence, type UpdateHighlight, type WeeklyBrief, type WeeklyDraft, periodLabel, periodOf, updateDue } from "@/lib/updates";
+
+type UpdateDoc = DraftMeta & Pick<ProjectDoc, "updateCadence" | "kit">;
+
+/** A highlight row while it is edited; an empty milestone is none. */
+interface Row {
+  text: string;
+  milestone: Milestone | "";
+  step: string;
+}
+
+const toRows = (items: readonly UpdateHighlight[]): Row[] => items.map((h) => ({ text: h.text, milestone: h.milestone ?? "", step: h.step ?? "" }));
+const toItems = (rows: readonly Row[]): UpdateHighlight[] =>
+  rows
+    .map((r) => ({ text: r.text.trim(), milestone: r.milestone || null, ...(r.milestone && r.step ? { step: r.step } : {}) }))
+    .filter((h) => h.text)
+    .slice(0, UPDATE_LIMITS.highlights.max);
+/** One string per row set, to tell whether the editor differs from the saved row. */
+const sig = (items: readonly UpdateHighlight[]) => JSON.stringify(items.map((h) => [h.text, h.milestone, h.step ?? ""]));
 
 /**
  * This week's update on the Overview (M124, Studio+): the current week's
@@ -21,7 +43,7 @@ import { DEFAULT_CADENCE, type ProjectUpdate, UPDATE_CADENCES, UPDATE_LIMITS, ty
  * edited in place, saved as a draft and published to the public page;
  * earlier weeks as a short list. PlusGate for a free account.
  */
-export function WeeklyUpdateCard({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: DraftMeta & Pick<ProjectDoc, "updateCadence">; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
+export function WeeklyUpdateCard({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: UpdateDoc; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
   const C = BUILD_COPY.weekly;
   return (
     <Card>
@@ -35,17 +57,30 @@ export function WeeklyUpdateCard({ projectId, name, doc, patch, agentMode }: { p
   );
 }
 
-function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: DraftMeta & Pick<ProjectDoc, "updateCadence">; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
+function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; name: string; doc: UpdateDoc; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
   const C = BUILD_COPY.weekly;
   const cadence: UpdateCadence = doc.updateCadence ?? DEFAULT_CADENCE;
   const week = periodOf(cadence);
   const [updates, setUpdates] = useState<ProjectUpdate[] | null>(null);
   const [body, setBody] = useState("");
-  const [highlights, setHighlights] = useState("");
+  const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  /** The cadence picked but not saved yet (M174), and a short Saved after Save. */
+  const [pendingCadence, setPendingCadence] = useState<UpdateCadence>(cadence);
+  const [cadenceSaved, setCadenceSaved] = useState(false);
   const current = updates?.find((u) => u.weekOf === week) ?? null;
   const earlier = (updates ?? []).filter((u) => u.weekOf !== week && u.status === "published");
+  // The build steps per milestone, for the step pick on each highlight (M174).
+  const groups = useMemo(() => groupsByMilestone(sectionsFor(kitShapes(doc.kit), doc.kit ?? {})), [doc.kit]);
+  const stepKey = (m: Milestone, step: string) => groups[m].find((g) => g.key === step || g.ids.includes(step))?.key ?? "";
+
+  useEffect(() => setPendingCadence(cadence), [cadence]);
+  useEffect(() => {
+    if (!cadenceSaved) return;
+    const t = window.setTimeout(() => setCadenceSaved(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [cadenceSaved]);
 
   const load = async () => {
     const res = await fetch(`/api/ideation/projects/${projectId}/updates`);
@@ -58,7 +93,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
     const mine = list.find((u) => u.weekOf === week);
     if (mine) {
       setBody(mine.body);
-      setHighlights(mine.highlights.join("\n"));
+      setRows(toRows(mine.highlightItems ?? mine.highlights.map((text) => ({ text, milestone: null }))));
     }
   };
   useEffect(() => {
@@ -73,7 +108,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
       const res = await fetch(`/api/ideation/projects/${projectId}/updates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekOf: week, body: body.trim(), highlights: highlights.split("\n").map((h) => h.trim()).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max) }),
+        body: JSON.stringify({ weekOf: week, body: body.trim(), highlights: toItems(rows) }),
       });
       if (!res.ok) {
         setFailed(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? C.failed);
@@ -87,7 +122,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
     }
   };
   const publish = async () => {
-    const row = current && current.body === body.trim() ? current : await save();
+    const row = current && !dirty ? current : await save();
     if (!row) return;
     setBusy(true);
     try {
@@ -98,9 +133,22 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
       setBusy(false);
     }
   };
+  /** Auto-summarize on the brief (M174): the three answers from the period's activity. */
+  const summarize = async (): Promise<{ answers: Record<string, string> } | { error: string }> => {
+    try {
+      const res = await fetch(`/api/ideation/projects/${projectId}/updates/summarize`, { method: "POST" });
+      const data = (await res.json().catch(() => null)) as { value?: WeeklyBrief; error?: string } | null;
+      if (!res.ok || !data?.value) return { error: data?.error ?? C.failed };
+      return { answers: { ...data.value } };
+    } catch {
+      return { error: C.failed };
+    }
+  };
 
-  const dirty = body.trim() !== (current?.body ?? "") || highlights.split("\n").map((h) => h.trim()).filter(Boolean).join("\n") !== (current?.highlights ?? []).join("\n");
+  const savedItems = current ? (current.highlightItems ?? current.highlights.map((text) => ({ text, milestone: null }))) : [];
+  const dirty = body.trim() !== (current?.body ?? "") || sig(toItems(rows)) !== sig(savedItems);
   const state = !current ? C.none : current.status === "published" ? C.published(new Date(current.publishedAt ?? current.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })) : C.draft(current.author === "agent" ? C.byAgent : current.author === "canhav" ? C.byCanhav : C.byYou);
+  const setRow = (i: number, next: Partial<Row>) => setRows((all) => all.map((r, j) => (j === i ? { ...r, ...next } : r)));
 
   return (
     <div className="space-y-4">
@@ -108,38 +156,100 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
         {periodLabel(cadence, week)} · {state}
         {updates && updateDue(cadence, updates) ? ` · ${C.due}` : ""}
       </p>
-      <SegmentedField
-        label={C.cadenceLabel}
-        hint={C.cadenceHint}
-        value={cadence}
-        onChange={(v) => patch({ updateCadence: v })}
-        options={UPDATE_CADENCES.map((c) => ({ value: c, label: C.cadences[c] }))}
-      />
-      <p className="text-xs text-ink-500">{C.intro}</p>
-      <DraftControl<WeeklyDraft>
-        projectId={projectId}
-        kind="weekly"
-        body={{ projectId }}
-        label={C.draftButtons[cadence]}
-        gate={false}
-        doc={doc}
-        patch={patch}
-        agentMode={agentMode}
-        agentPrompt={draftWeeklyPrompt(name, projectId)}
-        onResult={(value) => {
-          setBody(value.body);
-          setHighlights(value.highlights.join("\n"));
-        }}
-      />
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-medium text-ink-200">{C.cadenceLabel}</span>
+          <Segmented
+            value={pendingCadence}
+            onChange={(v) => {
+              setPendingCadence(v);
+              setCadenceSaved(false);
+            }}
+            options={UPDATE_CADENCES.map((c) => ({ value: c, label: C.cadences[c] }))}
+            ariaLabel={C.cadenceLabel}
+          />
+          {pendingCadence !== cadence ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                patch({ updateCadence: pendingCadence });
+                setCadenceSaved(true);
+              }}
+            >
+              {C.cadenceSave}
+            </Button>
+          ) : cadenceSaved ? (
+            <span className="text-xs text-ink-400">{C.cadenceSaved}</span>
+          ) : null}
+        </div>
+        <span className="block text-xs text-ink-500">{C.cadenceHint}</span>
+      </div>
+      <p className="max-w-3xl text-xs text-ink-500">{C.intro}</p>
+      {/* One update per period (M174): once this period's row exists the team edits it below instead of drafting again. */}
+      {current ? (
+        <p className="text-xs text-ink-400">{C.written}</p>
+      ) : (
+        <DraftControl<WeeklyDraft>
+          projectId={projectId}
+          kind="weekly"
+          body={{ projectId }}
+          label={C.draftButtons[cadence]}
+          gate={false}
+          doc={doc}
+          patch={patch}
+          agentMode={agentMode}
+          agentPrompt={draftWeeklyPrompt(name, projectId)}
+          summarize={summarize}
+          onResult={(value) => {
+            setBody(value.body);
+            setRows(toRows(value.highlights.map((h) => ({ text: h.text, milestone: h.milestone ?? null }))));
+          }}
+        />
+      )}
       <TextField label={C.bodyLabel} value={body} onChange={setBody} max={UPDATE_LIMITS.body.max} rows={6} placeholder={C.bodyPlaceholder} />
       <Field label={C.highlightsLabel} hint={C.highlightsHint}>
-        <textarea
-          value={highlights}
-          onChange={(e) => setHighlights(e.target.value)}
-          rows={3}
-          className="w-full rounded-lg border border-ink-800 bg-ink-950 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:border-electric-500 focus:outline-none"
-          placeholder={C.highlightsPlaceholder}
-        />
+        <div className="space-y-2">
+          {rows.map((r, i) => (
+            <div key={i} className="grid gap-2 sm:grid-cols-[9rem_14rem_minmax(0,1fr)_auto] sm:items-center">
+              <Select value={r.milestone} aria-label={C.highlightMilestone} onChange={(e) => setRow(i, { milestone: e.target.value as Milestone | "", step: "" })}>
+                <option value="" className={optionClasses}>
+                  {C.noMilestone}
+                </option>
+                {HIGHLIGHT_MILESTONES.map((m) => (
+                  <option key={m} value={m} className={optionClasses}>
+                    {BUILD_COPY.milestones[m].label}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={r.milestone ? stepKey(r.milestone, r.step) : ""}
+                aria-label={C.highlightStep}
+                disabled={!r.milestone || groups[r.milestone].length === 0}
+                onChange={(e) => setRow(i, { step: e.target.value })}
+              >
+                <option value="" className={optionClasses}>
+                  {C.anyStep}
+                </option>
+                {r.milestone
+                  ? groups[r.milestone].map((g) => (
+                      <option key={g.key} value={g.key} className={optionClasses}>
+                        {g.title}
+                      </option>
+                    ))
+                  : null}
+              </Select>
+              <Input value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} maxLength={UPDATE_LIMITS.highlights.each} placeholder={C.highlightsPlaceholder} aria-label={C.highlightsLabel} />
+              <button type="button" onClick={() => setRows((all) => all.filter((_, j) => j !== i))} className="justify-self-start text-xs text-ink-400 hover:text-ink-100 hover:underline">
+                {C.removeHighlight}
+              </button>
+            </div>
+          ))}
+          {rows.length < UPDATE_LIMITS.highlights.max ? (
+            <button type="button" onClick={() => setRows((all) => [...all, { text: "", milestone: "", step: "" }])} className="text-xs text-ink-300 hover:text-ink-100 hover:underline">
+              {C.addHighlight}
+            </button>
+          ) : null}
+        </div>
       </Field>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" disabled={busy || !body.trim() || !dirty} onClick={() => void save()}>

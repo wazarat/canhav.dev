@@ -22,7 +22,8 @@ import {
   LOGO_COPY,
   TESTNET_COPY,
 } from "@/content/ideation";
-import { buildProgress } from "@/content/kits/checklists";
+import { buildProgress, sectionsFor } from "@/content/kits/checklists";
+import { kitShapes } from "@/lib/kits";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
@@ -147,6 +148,9 @@ export default async function ProjectPublicPage({
   ]);
   // The team's published team updates (M124), live rows beside the snapshot.
   const updates = plus ? await listUpdates(row.id, true) : [];
+  // The build step a highlight names (M174), by group key or a step id inside the group.
+  const updateGroups = updates.length ? sectionsFor(kitShapes(doc.kit), doc.kit ?? {}).flatMap((sec) => sec.groups) : [];
+  const stepTitle = (step?: string) => (step ? (updateGroups.find((g) => g.key === step || g.ids.includes(step))?.title ?? null) : null);
   const launchedTokens = await Promise.all(
     (projectLaunches ?? []).slice(0, 5).map(async (l) => ({
       address: l.token_address,
@@ -619,7 +623,19 @@ export default async function ProjectPublicPage({
                       {para}
                     </p>
                   ))}
-                  {u.highlights.length ? <p className="text-xs text-ink-400">{u.highlights.join(" · ")}</p> : null}
+                  {u.highlightItems.length ? (
+                    <ul className="space-y-1">
+                      {u.highlightItems.map((h, i) => {
+                        const where = [h.milestone ? BUILD_COPY.milestones[h.milestone].label : null, stepTitle(h.step)].filter(Boolean).join(" · ");
+                        return (
+                          <li key={i} className="text-xs text-ink-300">
+                            {where ? <span className="text-ink-500">{where} · </span> : null}
+                            {h.text}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
                 </li>
               ))}
             </ul>

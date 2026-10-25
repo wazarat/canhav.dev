@@ -18,6 +18,7 @@ import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { MetaLine, ProgressBar } from "@/components/ui/MetaLine";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
@@ -145,9 +146,10 @@ export function OverviewTab({
       </Card>
 
       {paid && projectPlan.plus && projectPlan.orgId && !doc.teamSafe ? (
-        <p className="text-xs text-ink-400">
-          {BUILD_COPY.deployments.teamSafe.overview}{" "}
-          <button type="button" onClick={onGoDeployments} className="text-ink-200 hover:underline">
+        <p className="flex flex-wrap items-center gap-x-1 text-xs text-ink-400">
+          <span>{BUILD_COPY.deployments.teamSafe.overview}</span>
+          <InfoTip title={BUILD_COPY.deployments.teamSafe.explainLabel} label={BUILD_COPY.deployments.teamSafe.explainLabel}>{BUILD_COPY.deployments.teamSafe.explain}</InfoTip>
+          <button type="button" onClick={onGoDeployments} className="ml-1 text-ink-200 hover:underline">
             {BUILD_COPY.tabs.deployments}
           </button>
         </p>

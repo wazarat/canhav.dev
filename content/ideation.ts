@@ -1066,6 +1066,8 @@ export const AGENT_COPY = {
     untitled: "Untitled run",
     plan: "Plan",
     planProgress: (done: number, total: number) => `${done} of ${total}`,
+    /** The milestone the run is on (M174). */
+    nowOn: (milestone: string) => `now on ${milestone}`,
     planStatus: {
       pending: "Pending",
       in_progress: "In progress",

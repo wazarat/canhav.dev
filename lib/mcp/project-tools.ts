@@ -56,7 +56,7 @@ import { lastTestAt, listAlerts, recordTestEvent } from "@/lib/alerts/db";
 import { ALERT_LIMITS, testMessage } from "@/lib/alerts/kinds";
 import { deliverToChannels } from "@/lib/alerts/send";
 import { setWatch, syncWatch } from "@/lib/alerts/watch";
-import { DEFAULT_CADENCE, UPDATE_LIMITS, periodOf, updateDue, updateInputSchema } from "@/lib/updates";
+import { DEFAULT_CADENCE, UPDATE_LIMITS, periodOf, toHighlight, updateDue, updateInputSchema } from "@/lib/updates";
 import { inviteState } from "@/lib/tester";
 import { listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
 import { listFeedback, listInvites } from "@/lib/tester-db";
@@ -1162,7 +1162,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Report what you are doing",
       description:
-        "Tell the owner where this run stands (M86). state is working, awaiting_input (you need something from the owner, say what in message), done or error. title names the run in a few words, message is one or two sentences for the owner, plan is the whole list of steps you intend with a status each (pending, in_progress, done, canceled), replaced in full on every call, and externalUrl is where the work lives (a branch, a PR, a document). Call it with your plan before you start, after each step with the plan updated, and at the end with done and a short message. Reports update the open session; pass new true to start another run. The owner sees it live at the top of Agent changes, the editor notice fires when you wait on them or finish, and the studio row reads Agent working or Waiting on you. A session that stops reporting reads as stale after thirty minutes. Changes no draft, so it works in propose and direct mode; refused when agent writes are off.",
+        "Tell the owner where this run stands (M86). state is working, awaiting_input (you need something from the owner, say what in message), done or error. title names the run in a few words, message is one or two sentences for the owner, plan is the whole list of steps you intend with a status each (pending, in_progress, done, canceled) and the build milestone each advances (design, testnet, review or launch, as get_build_steps groups the steps; leave it out for a step outside the build), replaced in full on every call, and externalUrl is where the work lives (a branch, a PR, a document). Call it with your plan before you start, after each step with the plan updated, and at the end with done and a short message. Reports update the open session; pass new true to start another run. The owner sees it live at the top of Agent changes, the editor notice fires when you wait on them or finish, and the studio row reads Agent working or Waiting on you. A session that stops reporting reads as stale after thirty minutes. Changes no draft, so it works in propose and direct mode; refused when agent writes are off.",
       inputSchema: reportSessionSchema,
     },
     async (args, ctx) => {
@@ -1667,7 +1667,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_weekly_update",
     {
       title: "Write the team update",
-      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open team update draft request.`,
+      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. Give each highlight as { text, milestone, step } where milestone is the build milestone it moved (design, testnet, review or launch) and step is the id of the build step from get_build_steps when one fits; a plain string still works. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open team update draft request.`,
       inputSchema: updateInputSchema.extend({ publish: z.boolean().optional(), note: noteField }),
     },
     async (args, ctx) => {
@@ -1676,7 +1676,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project } = loaded.value;
       const mode = agentStateOf(project).mode;
       if (mode === "off") return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
-      const row = await upsertUpdate({ projectId: project.id, weekOf: args.weekOf, cadence: project.draft_doc.updateCadence ?? DEFAULT_CADENCE, body: args.body, highlights: args.highlights, author: "agent", source: args.note ? { note: args.note } : null });
+      const row = await upsertUpdate({ projectId: project.id, weekOf: args.weekOf, cadence: project.draft_doc.updateCadence ?? DEFAULT_CADENCE, body: args.body, highlights: args.highlights?.map(toHighlight), author: "agent", source: args.note ? { note: args.note } : null });
       if (!row) return errorResult("Could not save the update.");
       const published = args.publish && mode === "direct" ? await publishUpdate(project.id, row.id) : null;
       // The owner's open request for it, if any, is answered (M117).
@@ -1700,7 +1700,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "get_weekly_updates",
     {
       title: "This project's team updates",
-      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights, who wrote it and whether it is published. Write the current one with set_weekly_update.",
+      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights (highlightItems carries the milestone and step of each), who wrote it and whether it is published. Write the current one with set_weekly_update.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {

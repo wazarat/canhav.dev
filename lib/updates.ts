@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { Milestone } from "@/lib/build-milestones";
 import { cutAtWord } from "@/lib/text";
 
 /**
@@ -68,16 +69,45 @@ export function weekOf(date = new Date()): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** The build milestones a highlight can sit under (M174), the same four as the Build tab. */
+export const HIGHLIGHT_MILESTONES = ["design", "testnet", "review", "launch"] as const satisfies readonly Milestone[];
+
+/**
+ * One highlight (M174): a fact, the milestone it moved and, when known,
+ * the build step (a group key from the kit). Rows from before M174 carry
+ * text only and read with no milestone.
+ */
+export interface UpdateHighlight {
+  text: string;
+  milestone: Milestone | null;
+  step?: string;
+}
+
+export const highlightSchema = z.object({
+  text: z.string().trim().min(1).max(UPDATE_LIMITS.highlights.each),
+  milestone: z.enum(HIGHLIGHT_MILESTONES).nullable().optional(),
+  step: z.string().trim().min(1).max(120).optional(),
+});
+
+/** A highlight as text or as an item, read into an item. */
+export function toHighlight(h: string | z.infer<typeof highlightSchema>): UpdateHighlight {
+  if (typeof h === "string") return { text: h, milestone: null };
+  return { text: h.text, milestone: h.milestone ?? null, ...(h.step ? { step: h.step } : {}) };
+}
+
 export const weeklyDraftSchema = z.object({
   body: z.string(),
-  highlights: z.array(z.string()),
+  highlights: z.array(z.object({ text: z.string(), milestone: z.enum(HIGHLIGHT_MILESTONES).nullable() })),
 });
 
 /** Cut a drafted update to the limits. */
 export function cleanWeeklyDraft(value: WeeklyDraft): WeeklyDraft {
   return {
     body: cutAtWord(value.body.trim(), UPDATE_LIMITS.body.max),
-    highlights: value.highlights.map((h) => cutAtWord(h.trim(), UPDATE_LIMITS.highlights.each)).filter(Boolean).slice(0, UPDATE_LIMITS.highlights.max),
+    highlights: value.highlights
+      .map((h) => ({ text: cutAtWord(h.text.trim(), UPDATE_LIMITS.highlights.each), milestone: h.milestone ?? null }))
+      .filter((h) => h.text)
+      .slice(0, UPDATE_LIMITS.highlights.max),
   };
 }
 export type WeeklyDraft = z.infer<typeof weeklyDraftSchema>;
@@ -86,8 +116,16 @@ export const updateInputSchema = z.object({
   /** The period start (the week's Monday, the day, or the even day), defaults to the current period of the project's cadence. */
   weekOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   body: z.string().trim().min(1).max(UPDATE_LIMITS.body.max),
-  highlights: z.array(z.string().trim().min(1).max(UPDATE_LIMITS.highlights.each)).max(UPDATE_LIMITS.highlights.max).optional(),
+  /** Each highlight as text, or with the milestone and build step it moved (M174). */
+  highlights: z
+    .array(z.union([z.string().trim().min(1).max(UPDATE_LIMITS.highlights.each), highlightSchema]))
+    .max(UPDATE_LIMITS.highlights.max)
+    .optional(),
 });
+
+/** The three questions a team update answers (M142), filled by Auto-summarize from the period's activity (M174). */
+export const weeklyBriefSchema = z.object({ landed: z.string(), next: z.string(), blocked: z.string() });
+export type WeeklyBrief = z.infer<typeof weeklyBriefSchema>;
 
 export interface ProjectUpdate {
   id: string;
@@ -96,7 +134,10 @@ export interface ProjectUpdate {
   /** The cadence the row was written under, for its label. */
   cadence: UpdateCadence;
   body: string;
+  /** The highlight texts, kept for readers from before M174. */
   highlights: string[];
+  /** The highlights with their milestone and step (M174). */
+  highlightItems: UpdateHighlight[];
   status: "draft" | "published";
   author: string;
   createdAt: string;

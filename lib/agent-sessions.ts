@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { Milestone } from "@/lib/build-milestones";
+
 /**
  * Agent sessions (M86), after Linear's agent sessions. An agent connected to
  * a project's MCP server reports what it is doing: a state, a title, a
@@ -20,9 +22,14 @@ export type SessionView = SessionState | "stale";
 export const PLAN_STATUSES = ["pending", "in_progress", "done", "canceled"] as const;
 export type PlanStatus = (typeof PLAN_STATUSES)[number];
 
+/** The build milestone a plan step advances (M174), the four of the Build tab. */
+export const PLAN_MILESTONES = ["design", "testnet", "review", "launch"] as const satisfies readonly Milestone[];
+
 export interface PlanItem {
   content: string;
   status: PlanStatus;
+  /** The build milestone the step advances (M174); older reports carry none. */
+  milestone?: Milestone;
 }
 
 export const SESSION_LIMITS = {
@@ -37,6 +44,7 @@ export const SESSION_LIMITS = {
 export const planItemSchema = z.strictObject({
   content: z.string().min(1).max(SESSION_LIMITS.plan.contentMax),
   status: z.enum(PLAN_STATUSES),
+  milestone: z.enum(PLAN_MILESTONES).optional(),
 });
 
 export const reportSessionSchema = z.strictObject({
@@ -76,6 +84,12 @@ export function sessionOpen(s: Pick<AgentSession, "state">): boolean {
 export function planProgress(plan: readonly PlanItem[]): { done: number; total: number } {
   const counted = plan.filter((p) => p.status !== "canceled");
   return { done: counted.filter((p) => p.status === "done").length, total: counted.length };
+}
+
+/** The milestone the run is on (M174): the step in progress, else the next pending step, when tagged. */
+export function currentMilestone(plan: readonly PlanItem[]): Milestone | null {
+  const step = plan.find((p) => p.status === "in_progress") ?? plan.find((p) => p.status === "pending");
+  return step?.milestone ?? null;
 }
 
 /** Plan items from a stored jsonb value, anything unreadable dropped. */

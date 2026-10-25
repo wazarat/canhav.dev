@@ -366,6 +366,8 @@ export const BUILD_COPY = {
       /** The one line the wizard and the Overview show a Studio+ team (M160). */
       next: "Studio+ teams, create the team Safe under Deployments once the project exists.",
       overview: "Your team has no Safe yet. Create it under Deployments before contracts take owners.",
+      explainLabel: "What is a Safe",
+      explain: "A Safe is a shared team wallet that needs more than one of you to approve, so no single lost or leaked key can take over your contracts.",
       /** The admin function holder quick pick (M154, M160). */
       useAsHolder: "Use the team Safe",
       /** The declared wallet field once a Safe exists. */
@@ -477,8 +479,17 @@ export const BUILD_COPY = {
     bodyLabel: "Update",
     bodyPlaceholder: "What landed, what is next, what is slow.",
     highlightsLabel: "Highlights",
-    highlightsHint: "One per line, up to five.",
+    highlightsHint: "Up to five, each tied to the milestone and build step it moved.",
     highlightsPlaceholder: "Curve launched on testnet",
+    highlightMilestone: "Milestone",
+    highlightStep: "Build step",
+    noMilestone: "No milestone",
+    anyStep: "Any step",
+    addHighlight: "Add a highlight",
+    removeHighlight: "Remove",
+    cadenceSave: "Save",
+    cadenceSaved: "Saved",
+    written: "This period's update is written. Edit it below.",
     save: "Save draft",
     publish: "Publish to the page",
     loadFailed: "Could not read the updates. Reload to try again.",

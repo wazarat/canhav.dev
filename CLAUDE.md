@@ -53,7 +53,10 @@ list. A state is a sentence with a time where it matters ("Last checked
 40 seconds ago", "Published on Oct 21"); a clickable state is a text link
 that underlines on hover; a multiline message is a plain paragraph. The
 only colour is error text in `text-rose-400`, so a state has to say what
-it means in words. `StatusChip` and `Badge` still exist as text renderers
+it means in words. The one exception is the agent line under a project's
+name (M174, `components/build/agent-tone.ts`): green when an agent is
+connected or working, amber when it waits on the owner, red when none is
+connected. `StatusChip` and `Badge` still exist as text renderers
 behind the old call sites and drop any surface classes passed to them; do
 not add new ones, and never hand-roll a coloured box
 (`border-amber-500/40 bg-amber-500/10 text-amber-300` or the emerald and

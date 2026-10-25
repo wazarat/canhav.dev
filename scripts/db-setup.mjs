@@ -604,6 +604,13 @@ await sql`
     add column if not exists cadence text not null default 'weekly'
 `;
 
+// The highlights with the milestone and build step each moved (M174). The
+// highlights text[] stays filled with the texts for older readers.
+await sql`
+  alter table launchpad.project_updates
+    add column if not exists highlight_items jsonb
+`;
+
 // Monitoring and alerts (M123, Studio+). Rules name an address on the
 // project's chain and the kinds to watch; channels hold the encrypted
 // target (ALERTS_SECRET); events are one row per rule and log, delivered
