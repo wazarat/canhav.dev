@@ -24,7 +24,7 @@ import { templateById } from "@/content/templates";
 import { FEATURE_IDS, featuresFor } from "@/content/kits/features";
 import { LAUNCH_TARGETS, PAIR_VENUES } from "@/lib/launch-targets";
 import { TEMPLATE_ID } from "@/lib/templates";
-import { reachableTemplateIds } from "@/lib/template-reach";
+import { lentSubsectors, reachableTemplateIds } from "@/lib/template-reach";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { catalogStepIds, checklistFor, checklistItemById, groupsFor } from "@/content/kits/checklists";
 import { isShapeIconName } from "@/content/kits/shape-icons";
@@ -45,7 +45,9 @@ import {
   type ProjectDoc,
   type TokenDesignDoc,
   type MainnetRecord,
+  addCustomSubsector,
   mainnetRecordEmpty,
+  oracleRowsText,
   stampContracts,
   testnetContractRows,
   validateMainnetRecord,
@@ -280,6 +282,10 @@ export const projectPatchSchema = z
         externalDepsNone: z.boolean(),
         oracleUse: z.enum(["none", "uses"]),
         oracles: z.string().max(L.architectureField.max),
+        // One row per oracle and what it prices (M182); the list replaces the stored list and the text follows it.
+        oracleRows: z
+          .array(z.strictObject({ name: z.string().min(L.whyEntryName.min).max(L.whyEntryName.max), why: z.string().max(L.whyEntryWhy.max).default("") }))
+          .max(L.whyEntries.max),
         // One row per admin function (M154), with the contract it lives on and who can call it; the list replaces the stored list.
         adminFunctions: z
           .array(
@@ -298,6 +304,24 @@ export const projectPatchSchema = z
       })
       .partial(),
     worstCase: z.enum(["lose_funds", "lock_funds", "misprice", "nothing_serious"]),
+    // What the team wants each picked sector to be (M182); an empty string clears one.
+    sectorNotes: z.partialRecord(z.enum(SECTOR_VALUES as [Sector, ...Sector[]]), z.string().max(L.sectorNote.max)),
+    // Subsectors of the team's own (M182): add under a picked sector with the closest of ours, remove by id.
+    customSubsectors: z
+      .strictObject({
+        add: z
+          .array(
+            z.strictObject({
+              sector: z.enum(SECTOR_VALUES as [Sector, ...Sector[]]),
+              title: z.string().trim().min(L.customSubsectors.titleMin).max(L.customSubsectors.titleMax),
+              detail: z.string().max(L.customSubsectors.detailMax).default(""),
+              closest: z.enum(SUBSECTOR_VALUES as [Subsector, ...Subsector[]]).optional(),
+            }),
+          )
+          .max(L.customSubsectors.max),
+        remove: z.array(z.string().regex(/^csub\.[0-9]{1,4}$/)).max(L.customSubsectors.max),
+      })
+      .partial(),
     security: z
       .strictObject({
         audit: statusDecl,
@@ -853,7 +877,8 @@ function markDraftedFields(doc: ProjectDoc, patch: Record<string, unknown>): Pro
 }
 
 function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDoc {
-  const { sectors, subsectors, kit: kitPatch, ...fields } = patch;
+  // Sector notes and own subsectors merge by their own rules below (M182), not deeply.
+  const { sectors, subsectors, kit: kitPatch, sectorNotes: _n, customSubsectors: _c, ...fields } = patch;
   let next = deepMerge(doc, fields);
   // Testnet contracts arrive as rows or plain addresses and are stored as rows (M83).
   // The rows are stamped with their provenance (M150): new addresses as recorded by the agent now, known ones keep their stamp.
@@ -954,7 +979,28 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
   if (patch.architecture?.adminFunctionsNone === true) a.adminFunctions = [];
   else if (patch.architecture?.adminFunctions?.length) a.adminFunctionsNone = false;
   if (patch.architecture && "adminFunctionsLegacy" in patch.architecture) delete (a as { adminFunctionsLegacy?: string }).adminFunctionsLegacy;
+  // Sector notes and the team's own subsectors (M182).
+  if (patch.sectorNotes) {
+    const notes: Partial<Record<Sector, string>> = { ...(next.sectorNotes ?? {}) };
+    for (const [k, v] of Object.entries(patch.sectorNotes)) {
+      if (v.trim()) notes[k as Sector] = v.trim();
+      else delete notes[k as Sector];
+    }
+    next = Object.keys(notes).length ? { ...next, sectorNotes: notes } : dropKey(next, "sectorNotes");
+  }
+  if (patch.customSubsectors) {
+    let list = (next.customSubsectors ?? []).filter((c) => !(patch.customSubsectors?.remove ?? []).includes(c.id));
+    for (const c of patch.customSubsectors.add ?? []) list = addCustomSubsector({ customSubsectors: list }, c).customSubsectors ?? list;
+    next = list.length ? { ...next, customSubsectors: list } : dropKey(next, "customSubsectors");
+  }
+  // Oracle rows keep the text older readers use in step (M182).
+  if (patch.architecture?.oracleRows) a.oracles = oracleRowsText(a.oracleRows ?? []);
   next = { ...next, architecture: a };
+  // Contracts written as rows answer the owner's request to split the earlier paragraph (M182).
+  if (patch.architecture?.contracts?.length && next.agentRequests?.some((r) => r.kind === "contracts")) {
+    const left = withoutAgentRequest(next, "contracts");
+    next = left ? { ...next, agentRequests: left } : dropKey(next, "agentRequests");
+  }
   // Classification in the order the editor asks for it, each with its cascade.
   if (sectors) next = { ...next, ...sectorsChange(next, sectors) };
   if (subsectors) next = { ...next, ...subsectorsChange(next, subsectors) };
@@ -1072,6 +1118,14 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     }
     next = { ...next, ...subsectorsChange(next, patch.subsectors) };
   }
+  if (patch.customSubsectors?.add?.length) {
+    const picked = docSectors(next);
+    for (const c of patch.customSubsectors.add) {
+      if (!picked.includes(c.sector)) return `${c.sector} is not one of this project's sectors (${picked.join(", ") || "none"}). Add the sector first.`;
+      if (c.closest && !SECTOR_SUBSECTORS[c.sector].includes(c.closest)) return `${c.closest} is not a subsector of ${c.sector}. The closest of ours must sit under the same sector.`;
+    }
+    if ((next.customSubsectors?.length ?? 0) + patch.customSubsectors.add.length > L.customSubsectors.max) return `At most ${L.customSubsectors.max} subsectors of your own.`;
+  }
   const k = patch.kit;
   if (!k) return null;
   if (kitsForSectors(sectors, next.subsectors ?? []).length === 0 && !next.kit)
@@ -1105,7 +1159,7 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     if (shapes.length === 0)
       return "This project has no product module yet, so it has no contract templates. Send kit.shapes first.";
     // The one decidable set (M80), the same get_templates lists.
-    const reachable = reachableTemplateIds(shapes, projectChainOf(next), { includeInactive: true });
+    const reachable = reachableTemplateIds(shapes, projectChainOf(next), { includeInactive: true }, lentSubsectors(next));
     const unknown = decided.filter((id) => !reachable.has(id));
     if (unknown.length) {
       const ids = [...reachable];

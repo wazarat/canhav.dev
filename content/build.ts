@@ -6,7 +6,8 @@ import type { ProblemTab } from "@/lib/build-readiness";
  * them Studio+, four build milestones, the agent status line and the drawer.
  * No em dashes, no colons before a space.
  */
-export const BUILD_TABS = ["overview", "build", "decisions", "model", "brand", "viability", "deployments", "publish"] as const;
+/** Decisions sits before Build (M182): decide what you are building, then build it. */
+export const BUILD_TABS = ["overview", "decisions", "build", "model", "brand", "viability", "deployments", "publish"] as const;
 
 export type BuildTab = (typeof BUILD_TABS)[number];
 
@@ -294,6 +295,23 @@ export const BUILD_COPY = {
     chain: "Chain",
     templates: "Templates",
     templatesEmpty: "No template decided yet. Decide them from the Build tab or let your agent.",
+    templatesSummary: (accepted: number, rejected: number) => `${accepted} accepted, ${rejected} rejected`,
+    depsTitle: "External dependencies",
+    depsCount: (n: number) => (n === 0 ? "Not filled yet" : n === 1 ? "1 dependency" : `${n} dependencies`),
+    depsNone: "None",
+    /** Oracles one per row (M182). */
+    oracleRows: {
+      label: "Which oracles, and for what?",
+      hint: "One row per oracle, the feed on top and what it prices under it.",
+      namePlaceholder: "Chainlink AAPL/USD",
+      whyPlaceholder: "Prices the stock token in the pool's health check.",
+      nameField: "Oracle",
+      whyField: "What it prices",
+      add: "Add an oracle",
+      remove: "Remove",
+      none: "",
+      limit: (max: number) => `At most ${max} oracles.`,
+    },
     contracts: "Contracts",
     /** One row per contract with why it exists (M153, F11). */
     contractRows: {
@@ -307,7 +325,13 @@ export const BUILD_COPY = {
       remove: "Remove",
       none: "None yet is an honest answer. There are no contracts to list.",
       limit: (max: number) => `At most ${max} contracts.`,
-      legacy: "Your earlier answer is kept here. Split it into one contract per row, or ask your agent to.",
+      legacy: "Your earlier answer is kept here until it is split into one row per contract.",
+      split: "Split into rows",
+      splitting: "Splitting",
+      splitFailed: "Could not split it. Try again, or ask your agent.",
+      askAgent: "Ask your agent",
+      queued: "Queued for your agent.",
+      cancelQueue: "Cancel",
       legacyRemove: "Remove the earlier answer",
       /** Beside a row whose name matches a recorded testnet contract (M153). */
       onChain: (short: string) => `On the testnet at ${short}`,

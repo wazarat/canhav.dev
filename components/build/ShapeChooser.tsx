@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { CustomSubsectors, SectorNotes } from "@/components/build/CustomSubsectors";
 import { TextField } from "@/components/ideation/TextField";
 import { ChipMultiSelectGroups, type ChipOption, ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { ChoiceCardGroups } from "@/components/ui/ChoiceCard";
@@ -165,6 +166,7 @@ export function ShapeChooser({
       >
         {closedSectorLabels().length ? <p className="text-xs text-ink-400">{SECTOR_COPY.moreSoon(closedSectorLabels())}</p> : null}
       </ChoiceCardGroups>
+      <SectorNotes doc={doc} sectors={sectors} patch={patch} />
       {sectors.includes("other") && (
         <TextField
           label={SECTOR_COPY.otherLabel}
@@ -190,6 +192,7 @@ export function ShapeChooser({
           maxPerGroup={PROJECT_LIMITS.subsectors.max}
         />
       )}
+      <CustomSubsectors doc={doc} sectors={sectors.filter((x) => (SECTOR_SUBSECTORS[x] ?? []).length > 0)} patch={patch} />
       {showKit ? (
         <>
           {buildingLines.length ? (

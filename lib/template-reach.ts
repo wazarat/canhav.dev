@@ -8,7 +8,9 @@ import {
   type TemplateFilter,
   sortTemplates,
   templatesForShapes,
+  templatesForSubsectors,
 } from "@/lib/templates";
+import type { Subsector } from "@/lib/sectors";
 
 /**
  * The one set of contract templates a project with these shapes can decide
@@ -33,10 +35,14 @@ export function reachableTemplatesFor(
   shapes: ShapeInput,
   chain: ProjectChain,
   filter: TemplateFilter = {},
+  /** Subsectors lent by the team's own subsectors (M182), placed like the modules' own. */
+  lent: readonly Subsector[] = [],
 ): ReachableTemplates {
   const list = toShapeList(shapes);
   const via = new Map<string, TemplateVia>();
-  const base = templatesForShapes(TEMPLATE_CATALOG, list, chain, filter);
+  const own = templatesForShapes(TEMPLATE_CATALOG, list, chain, filter);
+  const ownIds = new Set(own.map((t) => t.id));
+  const base = [...own, ...(lent.length ? templatesForSubsectors(TEMPLATE_CATALOG, lent, chain, filter).filter((t) => !ownIds.has(t.id)) : [])];
   for (const t of base) via.set(t.id, "subsector");
   const extras: ContractTemplate[] = [];
   const cite = (id: string, how: TemplateVia) => {
@@ -53,6 +59,11 @@ export function reachableTemplatesFor(
 }
 
 /** The ids of reachableTemplatesFor, for validation. */
-export function reachableTemplateIds(shapes: ShapeInput, chain: ProjectChain, filter: TemplateFilter = {}): Set<string> {
-  return new Set(reachableTemplatesFor(shapes, chain, filter).items.map((t) => t.id));
+export function reachableTemplateIds(shapes: ShapeInput, chain: ProjectChain, filter: TemplateFilter = {}, lent: readonly Subsector[] = []): Set<string> {
+  return new Set(reachableTemplatesFor(shapes, chain, filter, lent).items.map((t) => t.id));
+}
+
+/** The subsectors the team's own subsectors lend (M182), each closest one once. */
+export function lentSubsectors(doc: { customSubsectors?: ReadonlyArray<{ closest?: Subsector }> }): Subsector[] {
+  return [...new Set((doc.customSubsectors ?? []).map((c) => c.closest).filter((x): x is Subsector => Boolean(x)))];
 }

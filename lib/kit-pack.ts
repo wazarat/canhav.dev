@@ -2,7 +2,7 @@ import { KIT_CATALOG } from "@/content/kits/catalog";
 import { featuresFor } from "@/content/kits/features";
 import { TEMPLATE_CATALOG } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
-import { type TemplateVia, reachableTemplatesFor } from "@/lib/template-reach";
+import { type TemplateVia, lentSubsectors, reachableTemplatesFor } from "@/lib/template-reach";
 import {
   type ChainDeployment,
   type ContractTemplate,
@@ -495,7 +495,7 @@ export function buildResourcePack(
       for (const t of g.templates) stepsOf.set(t, [...(stepsOf.get(t) ?? []), g.key]);
   const features = featuresFor(shapes);
   // Every template the project can decide (M80), subsector placements and the ids its steps and features cite.
-  const reach = reachableTemplatesFor(shapes, chain);
+  const reach = reachableTemplatesFor(shapes, chain, {}, lentSubsectors(doc));
   const templateItems: TemplatePackView[] = reach.items.map((t) => ({
     ...t,
     via: reach.via.get(t.id) ?? "subsector",

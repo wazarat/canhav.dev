@@ -271,6 +271,26 @@ export const SECTOR_COPY = {
   /** Under the Other card's text field. */
   otherLabel: "Anything else about the sector?",
   otherHint: "Optional once a subsector is picked. A few words on what the product is.",
+  /** Sector notes and the team's own subsectors (M182). */
+  custom: {
+    noteLabel: (sector: string) => `What you want ${sector} to be`,
+    noteHint: "Optional. One line your agent reads with the sector.",
+    notePlaceholder: "Strategy trading on tokenized stocks, not a general exchange.",
+    title: "Your own subsectors",
+    addOwn: "Add your own subsector",
+    sector: "Sector",
+    name: "Name",
+    namePlaceholder: "Strategy vaults",
+    detail: "What it is",
+    detailPlaceholder: "One line, optional",
+    closest: "Closest of ours",
+    noClosest: "None",
+    closestHint: "The closest of ours lends its contract templates and resources, so you start from the nearest templates and add your own modules on the Build tab.",
+    closestLine: (label: string) => `closest to ${label}`,
+    add: "Add",
+    cancel: "Cancel",
+    remove: (title: string) => `Remove ${title}`,
+  },
   /** Under the subsector chips when the overlap rule ticked something. */
   overlapHint: (added: string, because: string) =>
     `${added} is ticked because it shares product modules with ${because}.`,

@@ -8,20 +8,24 @@ import { FIELD_GRID, TAB_WIDTH } from "@/components/build/layout";
 import { ShapeChooser } from "@/components/build/ShapeChooser";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import type { AgentWriteMode } from "@/lib/agent-writes";
-import { ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Sparkles } from "lucide-react";
+
+import { usePlusHere } from "@/components/studio/PlusGate";
+import { Button } from "@/components/ui/Button";
+import { findAgentRequest, withAgentRequest, withoutAgentRequest } from "@/lib/agent-requests";
 
 import { ExternalDepsEditor } from "@/components/ideation/ExternalDepsEditor";
 import { WhyRowsEditor } from "@/components/ideation/WhyRowsEditor";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { ReferencesEditor } from "@/components/ideation/ReferencesEditor";
 import { StatusDeclarationField } from "@/components/ideation/StatusDeclarationField";
-import { TextField } from "@/components/ideation/TextField";
 import { Card, CardSection } from "@/components/ui/Card";
 import { Field, Input } from "@/components/ui/Input";
 import { Collapsible } from "@/components/ui/Collapsible";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { SegmentedField } from "@/components/ui/Segmented";
 import { SelectField } from "@/components/ui/Select";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import {
   AUDIENCE_OPTIONS,
@@ -37,7 +41,7 @@ import { WORST_CASE_WHY } from "@/content/ideation";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
 import { type ProjectChain, projectChainOf } from "@/lib/chains";
-import { type AdminFunctionEntry, PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, testnetContractRows } from "@/lib/ideation";
+import { type AdminFunctionEntry, type ContractEntry, PROJECT_LIMITS, type ProjectDoc, docAudience, emptyConsumerPersona, emptyPersona, oracleRowsOf, oracleRowsText, testnetContractRows } from "@/lib/ideation";
 import { type ProjectKit, emptyProjectKit, setTemplateDecision } from "@/lib/kits";
 import { kitsForDoc } from "@/content/kits";
 
@@ -123,33 +127,40 @@ export function DecisionsTab({
           {decided.length === 0 ? (
             <p className="text-xs text-ink-500">{D.templatesEmpty}</p>
           ) : (
-            <ul className="space-y-2">
-              {decided.map(({ id, decision, template }) => {
-                const note = agentNote(id);
-                return (
-                  <li key={id} className="flex flex-wrap items-center gap-2 text-sm">
-                    <a href={template!.repoUrl} target="_blank" rel="noreferrer" className="text-ink-100 transition-colors hover:text-electric-200">
-                      {template!.name}
-                    </a>
-                    <StatusChip tone={TEMPLATE_COPY.stateTone[decision]} className="px-2 py-0.5 text-[11px]">
-                      {TEMPLATE_COPY.state[decision]}
-                    </StatusChip>
-                    {note ? (
-                      <span className="text-[11px] text-ink-500">
-                        {D.agentNote(new Date(note.createdAt).toLocaleDateString("en-US"))}. {note.note}
-                      </span>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => kit && patchKit(setTemplateDecision(kit, id, null))}
-                      className="text-[11px] text-ink-400 transition-colors hover:text-ink-100"
-                    >
-                      {BUILD_COPY.row.undo}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            // A fold, closed by default (M182): the counts on the summary, accepted then rejected inside.
+            <Collapsible
+              summary={
+                <span>
+                  {D.templates} <span className="font-normal text-ink-400">· {D.templatesSummary(decided.filter((d) => d.decision === "accepted").length, decided.filter((d) => d.decision === "rejected").length)}</span>
+                </span>
+              }
+            >
+              <ul className="space-y-2">
+                {[...decided].sort((x, y) => (x.decision === y.decision ? 0 : x.decision === "accepted" ? -1 : 1)).map(({ id, decision, template }) => {
+                  const note = agentNote(id);
+                  return (
+                    <li key={id} className="flex flex-wrap items-center gap-2 text-sm">
+                      <a href={template!.repoUrl} target="_blank" rel="noreferrer" className="text-ink-100 transition-colors hover:text-electric-200">
+                        {template!.name}
+                      </a>
+                      <span className="text-[11px] text-ink-400">{TEMPLATE_COPY.state[decision]}</span>
+                      {note ? (
+                        <InfoTip label={D.agentNote(new Date(note.createdAt).toLocaleDateString("en-US"))} title={D.agentNote(new Date(note.createdAt).toLocaleDateString("en-US"))}>
+                          {note.note}
+                        </InfoTip>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => kit && patchKit(setTemplateDecision(kit, id, null))}
+                        className="text-[11px] text-ink-400 transition-colors hover:text-ink-100"
+                      >
+                        {BUILD_COPY.row.undo}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Collapsible>
           )}
         </CardSection>
 
@@ -157,24 +168,7 @@ export function DecisionsTab({
           <Heading>{D.contracts}</Heading>
           <FieldWaiver field="contracts" doc={doc} patch={patch}>
             <div className="space-y-3">
-              {a.contractsLegacy ? (
-                <div className="space-y-2 rounded-lg border border-ink-700/40 p-3">
-                  <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.contractsLegacy}</p>
-                  <p className="text-xs text-ink-400">
-                    {D.contractRows.legacy}{" "}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const { contractsLegacy: _l, ...rest } = a;
-                        patch({ architecture: rest });
-                      }}
-                      className="text-ink-300 transition-colors hover:text-ink-50 hover:underline"
-                    >
-                      {D.contractRows.legacyRemove}
-                    </button>
-                  </p>
-                </div>
-              ) : null}
+              {a.contractsLegacy ? <LegacyContracts id={id} doc={doc} patch={patch} agentMode={agentMode} /> : null}
               <WhyRowsEditor
                 rows={a.contracts}
                 none={a.contractsNone}
@@ -194,11 +188,20 @@ export function DecisionsTab({
             </div>
           </FieldWaiver>
           <FieldWaiver field="externalDeps" doc={doc} patch={patch}>
-            <ExternalDepsEditor
-              deps={a.externalDeps}
-              none={a.externalDepsNone}
-              onChange={(deps, none) => patchSection("architecture", { externalDeps: deps, externalDepsNone: none })}
-            />
+            {/* A fold, closed by default (M182), the count on the summary. */}
+            <Collapsible
+              summary={
+                <span>
+                  {D.depsTitle} <span className="font-normal text-ink-400">· {a.externalDepsNone ? D.depsNone : D.depsCount(a.externalDeps.filter((d) => d.name.trim()).length)}</span>
+                </span>
+              }
+            >
+              <ExternalDepsEditor
+                deps={a.externalDeps}
+                none={a.externalDepsNone}
+                onChange={(deps, none) => patchSection("architecture", { externalDeps: deps, externalDepsNone: none })}
+              />
+            </Collapsible>
           </FieldWaiver>
           <FieldWaiver field="oracles" doc={doc} patch={patch}>
             <div className="space-y-6">
@@ -209,14 +212,15 @@ export function DecisionsTab({
                 onChange={(v) => patchSection("architecture", { oracleUse: v })}
                 options={ORACLE_USE_OPTIONS}
               />
+              {/* One row per oracle and what it prices (M182); the text older readers use follows the rows. */}
               {a.oracleUse === "uses" && (
-                <TextField
-                  label="Which oracles, and for what?"
-                  value={a.oracles}
-                  onChange={(v) => patchSection("architecture", { oracles: v })}
-                  min={PROJECT_LIMITS.architectureField.min}
-                  max={PROJECT_LIMITS.architectureField.max}
-                  rows={2}
+                <WhyRowsEditor
+                  rows={oracleRowsOf(a)}
+                  none={false}
+                  onChange={(rows) => patchSection("architecture", { oracleRows: rows, oracles: oracleRowsText(rows) })}
+                  max={PROJECT_LIMITS.whyEntries.max}
+                  copy={D.oracleRows}
+                  empty={() => ({ name: "", why: "" })}
                 />
               )}
             </div>
@@ -310,6 +314,77 @@ export function DecisionsTab({
           <ReferencesEditor references={doc.references ?? []} onChange={(references) => patch({ references })} />
         </CardSection>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * The contracts paragraph from before the rows (M153), with the ways to turn
+ * it into one row per contract (M182): Split into rows on CanHav's low-cost
+ * model (Studio+), Ask your agent (a request it reads first over MCP), or
+ * remove it. Split rows join any rows already there and the paragraph goes.
+ */
+function LegacyContracts({ id, doc, patch, agentMode }: { id: string; doc: ProjectDoc; patch: (p: Partial<ProjectDoc>) => void; agentMode: AgentWriteMode }) {
+  const C = BUILD_COPY.decisions.contractRows;
+  const a = doc.architecture;
+  const plus = usePlusHere("bmc").ok;
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const queued = findAgentRequest(doc, "contracts");
+  const drop = (): ProjectDoc["architecture"] => {
+    const { contractsLegacy: _l, ...rest } = a;
+    return rest;
+  };
+  const split = async () => {
+    setWorking(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/ideation/projects/${id}/contracts/split`, { method: "POST" });
+      const data = (await res.json().catch(() => null)) as { rows?: ContractEntry[]; error?: string } | null;
+      if (!res.ok || !data?.rows?.length) {
+        setError(data?.error ?? C.splitFailed);
+        return;
+      }
+      // The rows answer an open request to the agent for the same split.
+      patch({
+        architecture: { ...drop(), contracts: [...a.contracts, ...data.rows].slice(0, PROJECT_LIMITS.whyEntries.max), contractsNone: false },
+        ...(queued ? { agentRequests: withoutAgentRequest(doc, "contracts") } : {}),
+      });
+    } catch {
+      setError(C.splitFailed);
+    } finally {
+      setWorking(false);
+    }
+  };
+  return (
+    <div className="space-y-2 rounded-lg border border-ink-700/40 p-3">
+      <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.contractsLegacy}</p>
+      <p className="text-xs text-ink-400">{C.legacy}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        {plus ? (
+          <Button size="sm" variant="outline" disabled={working} aria-busy={working} onClick={() => void split()}>
+            <Sparkles aria-hidden className="h-3.5 w-3.5" /> {working ? C.splitting : C.split}
+          </Button>
+        ) : null}
+        {agentMode !== "off" ? (
+          queued ? (
+            <span className="text-xs text-ink-400">
+              {C.queued}{" "}
+              <button type="button" onClick={() => patch({ agentRequests: withoutAgentRequest(doc, "contracts") })} className="hover:text-ink-50 hover:underline">
+                {C.cancelQueue}
+              </button>
+            </span>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={() => patch({ agentRequests: withAgentRequest(doc, "contracts") })}>
+              {C.askAgent}
+            </Button>
+          )
+        ) : null}
+        <button type="button" onClick={() => patch({ architecture: drop() })} className="text-xs text-ink-300 transition-colors hover:text-ink-50 hover:underline">
+          {C.legacyRemove}
+        </button>
+        {error ? <span className="text-xs text-rose-400">{error}</span> : null}
+      </div>
     </div>
   );
 }

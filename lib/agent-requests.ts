@@ -11,9 +11,11 @@
  * `assets`, the agent fills the assets the idea depends on from the code
  * (M162), cleared by an update_project write of assets; `shape`, the agent
  * ideates a shape the team made (M177), `target` its id, cleared by a board
- * or step write on it.
+ * or step write on it; `contracts`, the agent splits the contracts paragraph
+ * from before the rows into one row per contract (M182), cleared by an
+ * update_project write of architecture.contracts.
  */
-export const AGENT_REQUEST_KINDS = ["deployer", "step", "assets", "shape"] as const;
+export const AGENT_REQUEST_KINDS = ["deployer", "step", "assets", "shape", "contracts"] as const;
 export type AgentRequestKind = (typeof AGENT_REQUEST_KINDS)[number];
 
 export interface AgentRequest {
@@ -100,6 +102,8 @@ export function agentRequestHowTo(kind: AgentRequestKind, envFile = ".env"): str
     );
   if (kind === "assets")
     return "Read the contracts in this repository and record the tokens they touch with update_project assets, each with a symbol, a role (collateral, borrow, quote, underlying or reward) and the address where you know it. Writing assets clears this request.";
+  if (kind === "contracts")
+    return "Split the project's earlier contracts paragraph (architecture.contractsLegacy on get_project) into one row per contract, checked against this repository. Send update_project architecture.contracts with name and why for each, and contractsLegacy set to null to drop the paragraph. Writing the rows clears this request.";
   if (kind === "shape")
     return "Ideate the module the team made, named in target. Read its name and the paragraph on what the team wants it to do under ownShapes on get_build_steps, then put the build steps it needs on it (pick catalog steps onto it with update_project kit.ownShapes.steps, or add steps of your own with set_build_steps), place it in a lane with set_module if it is not core, and name the work in report_session's plan. Writing its steps clears this request.";
   return "Work the step in this repository, add the file, test or address as evidence and tick it with set_build_steps, and name it in report_session's plan. Ticking it clears this request.";

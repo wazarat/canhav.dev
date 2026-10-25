@@ -137,12 +137,14 @@ export function impliedShapesFor(subsectors: readonly Subsector[]): ProductShape
  */
 export function effectiveSubsectors(
   kit: Pick<ProjectKit, "shape" | "shapes"> | undefined,
-  doc: Pick<ProjectDoc, "subsectors" | "sector" | "sectors">,
+  doc: Pick<ProjectDoc, "subsectors" | "sector" | "sectors"> & Partial<Pick<ProjectDoc, "customSubsectors">>,
 ): Subsector[] {
   const own = new Set(subsectorsOf(docSectors(doc)));
   const out = new Set<Subsector>((doc.subsectors ?? []).filter((s) => own.has(s)));
   for (const shape of kitShapes(kit))
     for (const s of SHAPE_SUBSECTORS[shape]) if (own.has(s)) out.add(s);
+  // A subsector the team added lends the closest of ours (M182): its templates and resources.
+  for (const c of doc.customSubsectors ?? []) if (c.closest && own.has(c.closest)) out.add(c.closest);
   return [...out];
 }
 

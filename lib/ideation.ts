@@ -219,6 +219,15 @@ export interface ContractEntry {
   why: string;
 }
 
+/** A subsector the team adds itself (M182), id "csub.<n>". `closest` is one of ours under the same sector. */
+export interface CustomSubsector {
+  id: string;
+  sector: Sector;
+  title: string;
+  detail: string;
+  closest?: Subsector;
+}
+
 /** One admin function with why it exists (M154, F12), the contract it lives on and who can call it. */
 export interface AdminFunctionEntry extends ContractEntry {
   /** The name of a contracts row it lives on, optional. */
@@ -299,6 +308,14 @@ export interface ProjectDoc {
    */
   sectors?: Sector[];
   sectorOther?: string;
+  /** What the team wants each picked sector to be (M182), one short line per sector. Optional, never injected. */
+  sectorNotes?: Partial<Record<Sector, string>>;
+  /**
+   * Subsectors the team adds itself (M182), each under a sector, with the
+   * closest of ours, whose contract templates and modules it borrows.
+   * Optional, never injected.
+   */
+  customSubsectors?: CustomSubsector[];
   /**
    * One to three subsectors for each chosen sector that has them, all in one
    * list. Optional so normalizeProjectDoc never injects the key into older
@@ -359,7 +376,10 @@ export interface ProjectDoc {
     externalDepsNone: boolean;
     /** Gate: oracles text is required only when "uses". Optional field. */
     oracleUse: OracleUse | "";
+    /** The oracles as text, one line per oracle; kept in step with oracleRows (M182) for older readers. */
     oracles: string;
+    /** One row per oracle and what it prices (M182). Optional, never injected. */
+    oracleRows?: ContractEntry[];
     /** One row per admin function with why it exists (M154). */
     adminFunctions: AdminFunctionEntry[];
     /** The explicit choice that the contracts are immutable and have no admin functions (M154), a strength on the public page. */
@@ -574,6 +594,9 @@ export interface MainnetPair {
 export const PROJECT_LIMITS = {
   name: { min: 3, max: 60 },
   sectorOther: { max: 60 },
+  /** A picked sector's note and the subsectors a team adds (M182). */
+  sectorNote: { max: 200 },
+  customSubsectors: { max: 12, titleMin: 3, titleMax: 60, detailMax: 200 },
   sectors: { min: 1, max: SECTOR_VALUES.length },
   /** Per sector that asks for them. */
   subsectors: { min: 1, max: 3 },
@@ -650,6 +673,65 @@ export function isWaivableField(value: unknown): value is WaivableField {
  * current shape. Idempotent; applied at every read choke point in
  * lib/ideation-db.ts and before publish stamping.
  */
+/** The oracle rows as text, one line per oracle (M182), for readers from before the rows. */
+export function oracleRowsText(rows: readonly ContractEntry[]): string {
+  return rows
+    .filter((r) => r.name.trim())
+    .map((r) => (r.why.trim() ? `${r.name.trim()}, ${r.why.trim()}` : r.name.trim()))
+    .join("\n");
+}
+
+/** The oracle rows to edit (M182): the stored rows, else one row per line of an older text answer. */
+export function oracleRowsOf(a: Pick<ProjectDoc["architecture"], "oracles" | "oracleRows">): ContractEntry[] {
+  if (a.oracleRows?.length) return a.oracleRows;
+  return a.oracles
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((name) => ({ name: name.slice(0, PROJECT_LIMITS.whyEntryName.max), why: "" }));
+}
+
+/** Sector notes and custom subsectors, cleaned (M182). Unknown sectors and a closest outside its sector are dropped. */
+function sectorExtrasOf(doc: Record<string, unknown>): Pick<ProjectDoc, "sectorNotes" | "customSubsectors"> {
+  const out: Pick<ProjectDoc, "sectorNotes" | "customSubsectors"> = {};
+  // Only the sectors the project is in keep a note or own subsectors, as unticking a sector drops its subsectors.
+  const picked = new Set(docSectors(doc as { sector: Sector | ""; sectors?: Sector[] }));
+  if (doc.sectorNotes && typeof doc.sectorNotes === "object" && !Array.isArray(doc.sectorNotes)) {
+    const notes: Partial<Record<Sector, string>> = {};
+    for (const [k, v] of Object.entries(doc.sectorNotes as Record<string, unknown>))
+      if (picked.has(k as Sector) && typeof v === "string" && v.trim()) notes[k as Sector] = v.trim().slice(0, PROJECT_LIMITS.sectorNote.max);
+    if (Object.keys(notes).length) out.sectorNotes = notes;
+  }
+  if (Array.isArray(doc.customSubsectors)) {
+    const L = PROJECT_LIMITS.customSubsectors;
+    const list: CustomSubsector[] = [];
+    for (const raw of doc.customSubsectors as unknown[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const c = raw as Record<string, unknown>;
+      if (typeof c.id !== "string" || !/^csub\.[0-9]{1,4}$/.test(c.id) || list.some((x) => x.id === c.id)) continue;
+      if (!picked.has(c.sector as Sector) || typeof c.title !== "string" || c.title.trim().length < L.titleMin) continue;
+      if (list.length >= L.max) break;
+      const sector = c.sector as Sector;
+      const closest = typeof c.closest === "string" && SECTOR_SUBSECTORS[sector].includes(c.closest as Subsector) ? (c.closest as Subsector) : undefined;
+      list.push({ id: c.id, sector, title: c.title.trim().slice(0, L.titleMax), detail: typeof c.detail === "string" ? c.detail.trim().slice(0, L.detailMax) : "", ...(closest ? { closest } : {}) });
+    }
+    if (list.length) out.customSubsectors = list;
+  }
+  return out;
+}
+
+/** Add a subsector of the team's own under a sector (M182). */
+export function addCustomSubsector(doc: Pick<ProjectDoc, "customSubsectors">, input: { sector: Sector; title: string; detail?: string; closest?: Subsector }): Pick<ProjectDoc, "customSubsectors"> {
+  const L = PROJECT_LIMITS.customSubsectors;
+  const list = doc.customSubsectors ?? [];
+  if (list.length >= L.max) return { customSubsectors: list };
+  const n = list.map((c) => Number(c.id.slice(5)) || 0).reduce((a, b) => Math.max(a, b), 0) + 1;
+  const closest = input.closest && SECTOR_SUBSECTORS[input.sector].includes(input.closest) ? input.closest : undefined;
+  return {
+    customSubsectors: [...list, { id: `csub.${n}`, sector: input.sector, title: input.title.trim().slice(0, L.titleMax), detail: (input.detail ?? "").trim().slice(0, L.detailMax), ...(closest ? { closest } : {}) }],
+  };
+}
+
 export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
   const doc = raw as ProjectDoc & {
     architecture: ProjectDoc["architecture"] & { externalDeps: ExternalDep[] | string; contracts: ContractEntry[] | string; adminFunctions: AdminFunctionEntry[] | string };
@@ -698,7 +780,15 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     externalDeps = [];
   }
 
-  const oracles = typeof a.oracles === "string" ? a.oracles : "";
+  // Oracles as rows (M182); the text follows the rows when there are any.
+  const oracleRows: ContractEntry[] = Array.isArray(a.oracleRows)
+    ? (a.oracleRows as unknown[])
+        .filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === "object")
+        .map((r) => ({ name: typeof r.name === "string" ? r.name.slice(0, PROJECT_LIMITS.whyEntryName.max) : "", why: typeof r.why === "string" ? r.why.slice(0, PROJECT_LIMITS.whyEntryWhy.max) : "" }))
+        .filter((r) => r.name.trim() || r.why.trim())
+        .slice(0, PROJECT_LIMITS.whyEntries.max)
+    : [];
+  const oracles = oracleRows.length ? oracleRowsText(oracleRows) : typeof a.oracles === "string" ? a.oracles : "";
   const oracleUse: OracleUse | "" =
     a.oracleUse === "none" || a.oracleUse === "uses"
       ? a.oracleUse
@@ -1028,8 +1118,13 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
       externalDepsNone: a.externalDepsNone === true,
       oracleUse,
       oracles,
+      ...(oracleRows.length ? { oracleRows } : {}),
     },
+    ...sectorExtrasOf(doc as unknown as Record<string, unknown>),
   };
+  if (!oracleRows.length) delete (out.architecture as { oracleRows?: ContractEntry[] }).oracleRows;
+  if (!out.sectorNotes) delete (out as { sectorNotes?: unknown }).sectorNotes;
+  if (!out.customSubsectors) delete (out as { customSubsectors?: unknown }).customSubsectors;
   // A string answer became rows and legacy text (M153); the key must not linger.
   if (!contractsLegacy) delete (out.architecture as { contractsLegacy?: string }).contractsLegacy;
   if (!adminFunctionsLegacy) delete (out.architecture as { adminFunctionsLegacy?: string }).adminFunctionsLegacy;

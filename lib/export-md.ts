@@ -51,7 +51,9 @@ import {
   UNDERSUBSCRIPTION_OPTIONS,
   optionLabel,
   personaRows,
+  SECTOR_OPTIONS,
   sectorLabels,
+  subsectorLabel,
   subsectorLabels,
   MAINNET_COPY,
   TESTNET_COPY,
@@ -538,6 +540,17 @@ function canvasLines(canvas: Canvas | undefined, verdicts: ReturnType<typeof ite
   return lines;
 }
 
+/** What the team wants each sector to be and its own subsectors (M182), with the closest of ours. */
+function sectorExtraLines(doc: Pick<ProjectDoc, "sectorNotes" | "customSubsectors">): string[] {
+  const name = (s: string) => SECTOR_OPTIONS.find((o) => o.value === s)?.label ?? s;
+  return [
+    ...Object.entries(doc.sectorNotes ?? {}).map(([s, note]) => `- **${name(s)}, what the team wants it to be:** ${note}`),
+    ...(doc.customSubsectors ?? []).map(
+      (c) => `- **Own subsector under ${name(c.sector)}:** ${c.title}${c.detail ? `, ${c.detail}` : ""}${c.closest ? ` (closest of ours ${subsectorLabel(c.closest)})` : ""}`,
+    ),
+  ];
+}
+
 /** The experiments (M170), running first, with their results. */
 function experimentSection(doc: Pick<ProjectDoc, "experiments">): string[] {
   const lines = experimentLines(doc.experiments);
@@ -556,6 +569,7 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     "",
     `- **Sector:** ${sectorLabels(doc).join(", ") || "Not set"}`,
     ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
+    ...sectorExtraLines(doc),
     ...kitLines(doc),
     `- **Stage:** ${optionLabel(STAGE_OPTIONS, doc.stage)}`,
     "",
@@ -912,6 +926,7 @@ export function buildAgentsMd(input: {
       "",
       `- **Sector:** ${sectorLabels(project).join(", ") || "Not set"}`,
       ...(subsectors.length ? [`- **Subsector:** ${subsectors.join(", ")}`] : []),
+      ...sectorExtraLines(project),
       ...kitLines(project),
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
       `- **What it does:** ${orNotSet(project.whatItDoes)}`,

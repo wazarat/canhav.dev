@@ -103,15 +103,18 @@ export function WhyRowsEditor<T extends WhyRow>({
           {atMax ? <p className="text-xs text-ink-500">{copy.limit(max)}</p> : null}
         </div>
       ) : null}
-      <label className="flex items-start gap-2.5 text-sm text-ink-200">
-        <input
-          type="checkbox"
-          checked={none}
-          onChange={(e) => onChange(e.target.checked ? [] : [...rows], e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-ink-700 bg-ink-950 accent-electric-500"
-        />
-        {copy.none}
-      </label>
+      {/* A list with its own none question elsewhere (the oracles, M182) passes empty none copy. */}
+      {copy.none ? (
+        <label className="flex items-start gap-2.5 text-sm text-ink-200">
+          <input
+            type="checkbox"
+            checked={none}
+            onChange={(e) => onChange(e.target.checked ? [] : [...rows], e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-ink-700 bg-ink-950 accent-electric-500"
+          />
+          {copy.none}
+        </label>
+      ) : null}
     </div>
   );
 }
