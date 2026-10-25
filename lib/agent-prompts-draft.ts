@@ -79,9 +79,9 @@ export function draftWeeklyPrompt(name: string, projectId: string, brief = ""): 
   return [
     `Use the ${alias} MCP server for my CanHav project.`,
     `1. Call get_project_status and get_agent_changes, and read this repository's commits from the last seven days.`,
-    `2. Write the team update for the public page, two or three short paragraphs in the first person plural, what landed, what is next, one honest line on what is blocked, and up to five one line highlights. Nothing the activity does not support.`,
+    `2. Write the team update for the public page, two or three short paragraphs in the first person plural, what landed, what is next, one honest line on what is blocked, up to five one line highlights, and up to five main focuses for the next period, each under its milestone with the module and build step from get_build_steps when one fits. Nothing the activity does not support.`,
     ...(brief ? [brief] : []),
-    `3. Call set_weekly_update with body and highlights, then tell me what you wrote. I publish it from the Overview.`,
+    `3. Call set_weekly_update with body, highlights and focuses, then tell me what you wrote. I publish it from the Overview.`,
   ].join("\n\n");
 }
 

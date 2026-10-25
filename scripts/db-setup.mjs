@@ -611,6 +611,12 @@ await sql`
     add column if not exists highlight_items jsonb
 `;
 
+// The main focuses for the next period, each under a milestone (M183).
+await sql`
+  alter table launchpad.project_updates
+    add column if not exists focus_items jsonb
+`;
+
 // Monitoring and alerts (M123, Studio+). Rules name an address on the
 // project's chain and the kinds to watch; channels hold the encrypted
 // target (ALERTS_SECRET); events are one row per rule and log, delivered

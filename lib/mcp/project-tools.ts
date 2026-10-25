@@ -56,7 +56,7 @@ import { lastTestAt, listAlerts, recordTestEvent } from "@/lib/alerts/db";
 import { ALERT_LIMITS, testMessage } from "@/lib/alerts/kinds";
 import { deliverToChannels } from "@/lib/alerts/send";
 import { setWatch, syncWatch } from "@/lib/alerts/watch";
-import { DEFAULT_CADENCE, UPDATE_LIMITS, periodOf, toHighlight, updateDue, updateInputSchema } from "@/lib/updates";
+import { DEFAULT_CADENCE, UPDATE_LIMITS, periodOf, toFocus, toHighlight, updateDue, updateInputSchema } from "@/lib/updates";
 import { inviteState } from "@/lib/tester";
 import { listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
 import { listFeedback, listInvites } from "@/lib/tester-db";
@@ -1819,7 +1819,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_weekly_update",
     {
       title: "Write the team update",
-      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. Give each highlight as { text, milestone, step } where milestone is the build milestone it moved (design, testnet, review or launch) and step is the id of the build step from get_build_steps when one fits; a plain string still works. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open team update draft request.`,
+      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. Give each highlight as { text, milestone, step } where milestone is the build milestone it moved (design, testnet, review or launch) and step is the id of the build step from get_build_steps when one fits; a plain string still works. Give the main focuses for the next period, up to ${UPDATE_LIMITS.focuses.max}, as { milestone, shape, step, text } where milestone is the build milestone the work is toward, shape the module id and step the build step id from get_build_steps when they fit, and text a line of at most ${UPDATE_LIMITS.focuses.each} characters, which may be empty when a step is named. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open team update draft request.`,
       inputSchema: updateInputSchema.extend({ publish: z.boolean().optional(), note: noteField }),
     },
     async (args, ctx) => {
@@ -1828,7 +1828,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const { project } = loaded.value;
       const mode = agentStateOf(project).mode;
       if (mode === "off") return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
-      const row = await upsertUpdate({ projectId: project.id, weekOf: args.weekOf, cadence: project.draft_doc.updateCadence ?? DEFAULT_CADENCE, body: args.body, highlights: args.highlights?.map(toHighlight), author: "agent", source: args.note ? { note: args.note } : null });
+      const row = await upsertUpdate({ projectId: project.id, weekOf: args.weekOf, cadence: project.draft_doc.updateCadence ?? DEFAULT_CADENCE, body: args.body, highlights: args.highlights?.map(toHighlight), focuses: args.focuses?.map(toFocus), author: "agent", source: args.note ? { note: args.note } : null });
       if (!row) return errorResult("Could not save the update.");
       const published = args.publish && mode === "direct" ? await publishUpdate(project.id, row.id) : null;
       // The owner's open request for it, if any, is answered (M117).
@@ -1852,7 +1852,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "get_weekly_updates",
     {
       title: "This project's team updates",
-      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights (highlightItems carries the milestone and step of each), who wrote it and whether it is published. Write the current one with set_weekly_update.",
+      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights (highlightItems carries the milestone and step of each), the focuses for the next period (focusItems, each with milestone, shape, step and text), who wrote it and whether it is published. Write the current one with set_weekly_update.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {

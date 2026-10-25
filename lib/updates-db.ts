@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getDb } from "@/lib/db";
-import { DEFAULT_CADENCE, type ProjectUpdate, UPDATE_LIMITS, type UpdateCadence, type UpdateHighlight, highlightSchema, isUpdateCadence, periodOf, toHighlight } from "@/lib/updates";
+import { DEFAULT_CADENCE, type ProjectUpdate, UPDATE_LIMITS, type UpdateCadence, type UpdateFocus, type UpdateHighlight, focusSchema, highlightSchema, isUpdateCadence, periodOf, toFocus, toHighlight } from "@/lib/updates";
 
 /** Storage for team updates (M124, the kind is still called weekly). Rows go with their project; the routes check ownership first. */
 
@@ -12,6 +12,8 @@ interface Row {
   highlights: string[] | null;
   /** The highlights with milestones (M174), null on older rows. */
   highlight_items?: unknown;
+  /** The focuses for the next period (M183), absent before db-setup. */
+  focus_items?: unknown;
   cadence?: string | null;
   status: "draft" | "published";
   author: string;
@@ -37,6 +39,17 @@ function itemsOf(r: Row): UpdateHighlight[] {
   return (r.highlights ?? []).map((text) => ({ text, milestone: null }));
 }
 
+/** The stored focuses, each read again so a bad row drops out. */
+function focusesOf(r: Row): UpdateFocus[] {
+  if (!Array.isArray(r.focus_items)) return [];
+  const out: UpdateFocus[] = [];
+  for (const v of r.focus_items) {
+    const p = focusSchema.safeParse(v);
+    if (p.success) out.push(toFocus(p.data));
+  }
+  return out;
+}
+
 function map(r: Row): ProjectUpdate {
   return {
     id: r.id,
@@ -44,6 +57,7 @@ function map(r: Row): ProjectUpdate {
     body: r.body,
     highlights: r.highlights ?? [],
     highlightItems: itemsOf(r),
+    focusItems: focusesOf(r),
     cadence: isUpdateCadence(r.cadence) ? r.cadence : DEFAULT_CADENCE,
     status: r.status,
     author: r.author,
@@ -68,12 +82,31 @@ export async function listUpdates(projectId: string, publishedOnly = false): Pro
 }
 
 /** Write or replace the week's row; a published row goes back to draft when its body changes. */
-export async function upsertUpdate(input: { projectId: string; weekOf?: string; cadence?: UpdateCadence; body: string; highlights?: UpdateHighlight[]; author: string; source?: Record<string, unknown> | null }): Promise<ProjectUpdate | null> {
+export async function upsertUpdate(input: { projectId: string; weekOf?: string; cadence?: UpdateCadence; body: string; highlights?: UpdateHighlight[]; focuses?: UpdateFocus[]; author: string; source?: Record<string, unknown> | null }): Promise<ProjectUpdate | null> {
   const sql = getDb();
   if (!sql) return null;
   const cadence = input.cadence ?? DEFAULT_CADENCE;
   const week = input.weekOf ?? periodOf(cadence);
   const items = input.highlights ?? [];
+  const focuses = input.focuses ?? [];
+  try {
+    const rows = await sql`
+      insert into launchpad.project_updates (project_id, week_of, cadence, body, highlights, highlight_items, focus_items, status, author, source)
+      values (${input.projectId}, ${week}, ${cadence}, ${input.body}, ${items.map((h) => h.text)}, ${JSON.stringify(items)}, ${JSON.stringify(focuses)}, 'draft', ${input.author}, ${input.source ? JSON.stringify(input.source) : null})
+      on conflict (project_id, week_of) do update
+        set body = excluded.body, highlights = excluded.highlights, highlight_items = excluded.highlight_items, focus_items = excluded.focus_items, cadence = excluded.cadence, author = excluded.author, source = excluded.source,
+            status = case when launchpad.project_updates.body = excluded.body then launchpad.project_updates.status else 'draft' end,
+            updated_at = now()
+      returning *
+    `;
+    return rows[0] ? map(rows[0] as Row) : null;
+  } catch (err) {
+    // Before db-setup adds focus_items (M183) the write goes without the focuses, so updates keep saving.
+    if ((err as { code?: string }).code !== "42703") {
+      console.error("[updates] upsert failed", err);
+      return null;
+    }
+  }
   try {
     const rows = await sql`
       insert into launchpad.project_updates (project_id, week_of, cadence, body, highlights, highlight_items, status, author, source)

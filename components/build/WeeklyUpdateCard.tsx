@@ -17,8 +17,9 @@ import { sectionsFor } from "@/content/kits/checklists";
 import { draftWeeklyPrompt } from "@/lib/agent-prompts-draft";
 import { type Milestone, groupsByMilestone } from "@/lib/build-milestones";
 import type { ProjectDoc } from "@/lib/ideation";
-import { kitShapes } from "@/lib/kits";
-import { DEFAULT_CADENCE, HIGHLIGHT_MILESTONES, type ProjectUpdate, UPDATE_CADENCES, UPDATE_LIMITS, type UpdateCadence, type UpdateHighlight, type WeeklyBrief, type WeeklyDraft, periodLabel, periodOf, updateDue } from "@/lib/updates";
+import { shapeName } from "@/content/kits/copy";
+import { type ShapeId, allShapes, kitShapes } from "@/lib/kits";
+import { DEFAULT_CADENCE, HIGHLIGHT_MILESTONES, type ProjectUpdate, UPDATE_CADENCES, UPDATE_LIMITS, type UpdateCadence, type UpdateFocus, type UpdateHighlight, type WeeklyBrief, type WeeklyDraft, periodLabel, periodOf, updateDue } from "@/lib/updates";
 
 type UpdateDoc = DraftMeta & Pick<ProjectDoc, "updateCadence" | "kit">;
 
@@ -37,6 +38,22 @@ const toItems = (rows: readonly Row[]): UpdateHighlight[] =>
     .slice(0, UPDATE_LIMITS.highlights.max);
 /** One string per row set, to tell whether the editor differs from the saved row. */
 const sig = (items: readonly UpdateHighlight[]) => JSON.stringify(items.map((h) => [h.text, h.milestone, h.step ?? ""]));
+
+/** A focus row while it is edited (M183); an empty module or step is any. */
+interface FocusRow {
+  milestone: Milestone;
+  shape: string;
+  step: string;
+  text: string;
+}
+
+const toFocusRows = (items: readonly UpdateFocus[]): FocusRow[] => items.map((f) => ({ milestone: f.milestone, shape: f.shape ?? "", step: f.step ?? "", text: f.text }));
+const toFocusItems = (rows: readonly FocusRow[]): UpdateFocus[] =>
+  rows
+    .map((r) => ({ milestone: r.milestone, ...(r.shape ? { shape: r.shape } : {}), ...(r.step ? { step: r.step } : {}), text: r.text.trim() }))
+    .filter((f) => f.text || f.step)
+    .slice(0, UPDATE_LIMITS.focuses.max);
+const focusSig = (items: readonly UpdateFocus[]) => JSON.stringify(items.map((f) => [f.milestone, f.shape ?? "", f.step ?? "", f.text]));
 
 /**
  * This week's update on the Overview (M124, Studio+): the current week's
@@ -65,6 +82,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
   const [updates, setUpdates] = useState<ProjectUpdate[] | null>(null);
   const [body, setBody] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
+  const [focuses, setFocuses] = useState<FocusRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   /** The cadence picked but not saved yet (M174), and a short Saved after Save. */
@@ -75,6 +93,9 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
   // The build steps per milestone, for the step pick on each highlight (M174).
   const groups = useMemo(() => groupsByMilestone(sectionsFor(kitShapes(doc.kit), doc.kit ?? {})), [doc.kit]);
   const stepKey = (m: Milestone, step: string) => groups[m].find((g) => g.key === step || g.ids.includes(step))?.key ?? "";
+  // The modules a focus can name (M183), ours and the team's own, and the steps of one module under one milestone.
+  const modules = useMemo(() => allShapes(doc.kit).map((id) => ({ id, name: shapeName(doc.kit, id) })), [doc.kit]);
+  const stepsFor = (m: Milestone, shape: string) => groups[m].filter((g) => !shape || g.shapes.includes(shape as ShapeId));
 
   useEffect(() => setPendingCadence(cadence), [cadence]);
   useEffect(() => {
@@ -95,6 +116,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
     if (mine) {
       setBody(mine.body);
       setRows(toRows(mine.highlightItems ?? mine.highlights.map((text) => ({ text, milestone: null }))));
+      setFocuses(toFocusRows(mine.focusItems ?? []));
     }
   };
   useEffect(() => {
@@ -109,7 +131,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
       const res = await fetch(`/api/ideation/projects/${projectId}/updates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekOf: week, body: body.trim(), highlights: toItems(rows) }),
+        body: JSON.stringify({ weekOf: week, body: body.trim(), highlights: toItems(rows), focuses: toFocusItems(focuses) }),
       });
       if (!res.ok) {
         setFailed(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? C.failed);
@@ -147,9 +169,10 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
   };
 
   const savedItems = current ? (current.highlightItems ?? current.highlights.map((text) => ({ text, milestone: null }))) : [];
-  const dirty = body.trim() !== (current?.body ?? "") || sig(toItems(rows)) !== sig(savedItems);
+  const dirty = body.trim() !== (current?.body ?? "") || sig(toItems(rows)) !== sig(savedItems) || focusSig(toFocusItems(focuses)) !== focusSig(current?.focusItems ?? []);
   const state = !current ? C.none : current.status === "published" ? C.published(new Date(current.publishedAt ?? current.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })) : C.draft(current.author === "agent" ? C.byAgent : current.author === "canhav" ? C.byCanhav : C.byYou);
   const setRow = (i: number, next: Partial<Row>) => setRows((all) => all.map((r, j) => (j === i ? { ...r, ...next } : r)));
+  const setFocus = (i: number, next: Partial<FocusRow>) => setFocuses((all) => all.map((r, j) => (j === i ? { ...r, ...next } : r)));
 
   return (
     <div className="space-y-4">
@@ -250,6 +273,64 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
           {rows.length < UPDATE_LIMITS.highlights.max ? (
             <button type="button" onClick={() => setRows((all) => [...all, { text: "", milestone: "", step: "" }])} className="text-xs text-ink-300 hover:text-ink-100 hover:underline">
               {C.addHighlight}
+            </button>
+          ) : null}
+        </div>
+      </Field>
+      <Field label={C.focusesLabel[cadence]} hint={C.focusesHint}>
+        <div className="space-y-2">
+          {focuses.map((f, i) => {
+            const steps = stepsFor(f.milestone, f.shape);
+            return (
+              <div key={i} className="grid gap-2 sm:grid-cols-3 xl:grid-cols-[9rem_11rem_14rem_minmax(0,1fr)_auto] xl:items-center">
+                <Select value={f.milestone} aria-label={C.focusMilestone} onChange={(e) => setFocus(i, { milestone: e.target.value as Milestone, step: "" })}>
+                  {HIGHLIGHT_MILESTONES.map((m) => (
+                    <option key={m} value={m} className={optionClasses}>
+                      {BUILD_COPY.milestones[m].label}
+                    </option>
+                  ))}
+                </Select>
+                <Select value={f.shape} aria-label={C.focusModule} onChange={(e) => setFocus(i, { shape: e.target.value, step: "" })}>
+                  <option value="" className={optionClasses}>
+                    {C.anyModule}
+                  </option>
+                  {modules.map((m) => (
+                    <option key={m.id} value={m.id} className={optionClasses}>
+                      {m.name}
+                    </option>
+                  ))}
+                </Select>
+                <Select value={steps.some((g) => g.key === f.step) ? f.step : stepKey(f.milestone, f.step)} aria-label={C.focusStep} disabled={steps.length === 0} onChange={(e) => setFocus(i, { step: e.target.value })}>
+                  <option value="" className={optionClasses}>
+                    {C.anyStep}
+                  </option>
+                  {steps.map((g) => (
+                    <option key={g.key} value={g.key} className={optionClasses}>
+                      {g.title}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  value={f.text}
+                  onChange={(e) => setFocus(i, { text: e.target.value })}
+                  maxLength={UPDATE_LIMITS.focuses.each}
+                  placeholder={C.focusesPlaceholder}
+                  aria-label={C.focusesLabel[cadence]}
+                  className="sm:col-span-2 xl:col-span-1"
+                />
+                <button type="button" onClick={() => setFocuses((all) => all.filter((_, j) => j !== i))} className="justify-self-start text-xs text-ink-400 hover:text-ink-100 hover:underline">
+                  {C.removeFocus}
+                </button>
+              </div>
+            );
+          })}
+          {focuses.length < UPDATE_LIMITS.focuses.max ? (
+            <button
+              type="button"
+              onClick={() => setFocuses((all) => [...all, { milestone: all[all.length - 1]?.milestone ?? "design", shape: all[all.length - 1]?.shape ?? "", step: "", text: "" }])}
+              className="text-xs text-ink-300 hover:text-ink-100 hover:underline"
+            >
+              {C.addFocus}
             </button>
           ) : null}
         </div>

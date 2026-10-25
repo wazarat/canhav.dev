@@ -14,6 +14,8 @@ import { cutAtWord } from "@/lib/text";
 export const UPDATE_LIMITS = {
   body: { min: 40, max: 4000 },
   highlights: { max: 5, each: 160 },
+  /** The main focuses for the next period (M183). */
+  focuses: { max: 5, each: 160 },
   shown: 12,
 } as const;
 
@@ -95,6 +97,32 @@ export function toHighlight(h: string | z.infer<typeof highlightSchema>): Update
   return { text: h.text, milestone: h.milestone ?? null, ...(h.step ? { step: h.step } : {}) };
 }
 
+/**
+ * One focus for the next period (M183): the milestone it works toward, the
+ * module and the build step inside it when the team picks them, and a line.
+ * A focus names a step or says something, so text may be empty only when a
+ * step is picked.
+ */
+export interface UpdateFocus {
+  milestone: Milestone;
+  shape?: string;
+  step?: string;
+  text: string;
+}
+
+export const focusSchema = z
+  .object({
+    milestone: z.enum(HIGHLIGHT_MILESTONES),
+    shape: z.string().trim().min(1).max(80).optional(),
+    step: z.string().trim().min(1).max(120).optional(),
+    text: z.string().trim().max(UPDATE_LIMITS.focuses.each).default(""),
+  })
+  .refine((f) => f.text || f.step, { message: "A focus names a build step or says what it is." });
+
+export function toFocus(f: z.infer<typeof focusSchema>): UpdateFocus {
+  return { milestone: f.milestone, ...(f.shape ? { shape: f.shape } : {}), ...(f.step ? { step: f.step } : {}), text: f.text };
+}
+
 export const weeklyDraftSchema = z.object({
   body: z.string(),
   highlights: z.array(z.object({ text: z.string(), milestone: z.enum(HIGHLIGHT_MILESTONES).nullable() })),
@@ -121,6 +149,8 @@ export const updateInputSchema = z.object({
     .array(z.union([z.string().trim().min(1).max(UPDATE_LIMITS.highlights.each), highlightSchema]))
     .max(UPDATE_LIMITS.highlights.max)
     .optional(),
+  /** The main focuses for the next period, each under a milestone (M183). */
+  focuses: z.array(focusSchema).max(UPDATE_LIMITS.focuses.max).optional(),
 });
 
 /** The three questions a team update answers (M142), filled by Auto-summarize from the period's activity (M174). */
@@ -138,6 +168,8 @@ export interface ProjectUpdate {
   highlights: string[];
   /** The highlights with their milestone and step (M174). */
   highlightItems: UpdateHighlight[];
+  /** The main focuses for the next period (M183), empty on older rows. */
+  focusItems: UpdateFocus[];
   status: "draft" | "published";
   author: string;
   createdAt: string;

@@ -23,7 +23,8 @@ import {
   TESTNET_COPY,
 } from "@/content/ideation";
 import { buildProgress, sectionsFor } from "@/content/kits/checklists";
-import { kitShapes } from "@/lib/kits";
+import { shapeName } from "@/content/kits/copy";
+import { allShapes, kitShapes } from "@/lib/kits";
 import { CHECKLIST_COPY, shapeLabels, startingPointLabel } from "@/content/kits/copy";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { mainnetView } from "@/lib/mainnet-view";
@@ -635,6 +636,26 @@ export default async function ProjectPublicPage({
                         );
                       })}
                     </ul>
+                  ) : null}
+                  {/* The focuses for the next period (M183), under the milestone, module and step they name. */}
+                  {u.focusItems.length ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-ink-300">{BUILD_COPY.weekly.publicFocuses}</p>
+                      <ul className="space-y-1">
+                        {u.focusItems.map((f, i) => {
+                          const step = stepTitle(f.step);
+                          // A module the kit no longer holds reads as no module.
+                          const mod = allShapes(doc.kit).find((id) => id === f.shape);
+                          const where = [BUILD_COPY.milestones[f.milestone].label, mod ? shapeName(doc.kit, mod) : null, f.text ? step : null].filter(Boolean).join(" · ");
+                          return (
+                            <li key={i} className="text-xs text-ink-300">
+                              <span className="text-ink-500">{where} · </span>
+                              {f.text || step}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   ) : null}
                 </li>
               ))}
