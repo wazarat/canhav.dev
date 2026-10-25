@@ -103,11 +103,11 @@ import { PROSPECT_LIMITS, prospectInputSchema } from "@/lib/prospects";
 import { listProspects } from "@/lib/prospects-db";
 import { groupsFor } from "@/content/kits/checklists";
 import { latestAgentSession, reportAgentSession } from "@/lib/agent-sessions-db";
-import { buildProgress, checklistFor, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
+import { buildProgress, checklistFor, checklistItemById, gatedStepsFor, sectionsFor } from "@/content/kits/checklists";
 import { featuresFor } from "@/content/kits/features";
 import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
-import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
+import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels, shapeName } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, PACK_SECTIONS, buildResourcePack, buildReviewView, packSections, packSummary, templatesRead } from "@/lib/kit-pack";
 import { PROJECT_CHAINS, type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { SECTOR_VALUES, type Sector } from "@/lib/sectors";
@@ -117,7 +117,8 @@ import { launchTargetLabel } from "@/content/launch-targets";
 import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
 import { mainnetView } from "@/lib/mainnet-view";
 import { TEMPLATE_ID } from "@/lib/templates";
-import { FEATURE_ID, KIT_LIMITS, hasFeature } from "@/lib/kits";
+import { FEATURE_ID, KIT_LIMITS, allShapes, customStepShapes, hasFeature, isOwnShapeId, isProductShape } from "@/lib/kits";
+import { boardFor } from "@/lib/board";
 
 const KIT_LIMITS_FEATURES = KIT_LIMITS.features.max;
 import {
@@ -817,18 +818,38 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       const loaded = await withProject(projectId, ctx, args.preview);
       if (!loaded.ok) return errorResult(loaded.message);
       const kit = loaded.value.project.draft_doc.kit;
-      const items = checklistFor(kitShapes(kit));
+      // Ours, then the catalog steps the team's own shapes picked (M176), each once.
+      const ours = checklistFor(kitShapes(kit));
+      const picked = [...new Set((kit?.ownShapes ?? []).flatMap((o) => o.steps))]
+        .filter((id) => !ours.some((i) => i.id === id))
+        .map((id) => checklistItemById(id))
+        .filter((i): i is NonNullable<typeof i> => Boolean(i));
+      const items = [...ours, ...picked];
       // A shape may hold only steps the team added, so the shapes decide, not the catalog (M52).
-      if (!kit || kitShapes(kit).length === 0) return errorResult(NO_SHAPE_HINT);
+      if (!kit || allShapes(kit).length === 0) return errorResult(NO_SHAPE_HINT);
       const groupOf = new Map<string, readonly string[]>();
+      const shapesOf = new Map<string, readonly string[]>();
       for (const section of sectionsFor(kitShapes(kit), kit))
-        for (const g of section.groups) for (const id of g.ids) groupOf.set(id, g.ids);
+        for (const g of [...section.groups, ...section.sharedAbove])
+          for (const id of g.ids) {
+            groupOf.set(id, g.ids);
+            shapesOf.set(id, g.shapes);
+          }
       const hidden = new Set(kit.hiddenSteps ?? []);
       const gatedOff = (i: { feature?: string }) => Boolean(i.feature) && !hasFeature(kit, i.feature!);
       const features = featuresFor(kitShapes(kit));
       return jsonResult({
         ...stateOf(loaded.value),
         progress: buildProgress(kit),
+        // Every shape, ours then own (M176); the cap is 3 on Studio and 10 on Studio+, ours and own together.
+        shapes: allShapes(kit).map((id) => ({ id, name: shapeName(kit, id), own: isOwnShapeId(id) })),
+        ownShapes: (kit.ownShapes ?? []).map((o) => ({ id: o.id, title: o.title, detail: o.detail, ...(o.basedOn ? { copiedFrom: o.basedOn } : {}), steps: o.steps })),
+        // The shape boards (M176): core, exploring and later. Sort them with set_board.
+        boards: allShapes(kit).map((shape) => {
+          const b = boardFor(kit, shape);
+          const lane = (l: "core" | "exploring" | "later") => b[l].map((i) => ({ kind: i.kind, id: i.id, title: i.title }));
+          return { shape, core: lane("core"), exploring: lane("exploring"), later: lane("later") };
+        }),
         features: features.map((f) => ({
           id: f.id,
           shape: f.id.slice(0, f.id.indexOf(".")),
@@ -843,7 +864,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             .filter((i) => !hidden.has(i.id) && !gatedOff(i))
             .map((i) => ({
               id: i.id,
-              shape: i.id.slice(0, i.id.indexOf(".")),
+              shape: shapesOf.get(i.id)?.[0] ?? i.id.slice(0, i.id.indexOf(".")),
+              shapes: [...(shapesOf.get(i.id) ?? [i.id.slice(0, i.id.indexOf("."))])],
               title: i.title,
               detail: i.detail,
               editorStep: i.step as string | null,
@@ -861,10 +883,11 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           ...(kit.customSteps ?? []).map((c) => ({
             id: c.id,
             shape: c.shape as string,
+            shapes: customStepShapes(c) as string[],
             title: c.title,
             detail: c.detail,
             editorStep: null,
-            milestone: milestoneOf({ key: c.id, step: "review", custom: true }),
+            milestone: milestoneOf({ key: c.id, step: "review", custom: true, ...(c.milestone ? { milestone: c.milestone } : {}) }),
             done: kit.checklist?.[c.id] === true,
             state: kit.notApplicable?.[c.id] ? "na" : kit.checklist?.[c.id] === true ? "done" : "open",
             ...(kit.notApplicable?.[c.id] ? { reason: kit.notApplicable[c.id] } : {}),
@@ -923,12 +946,13 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_ideas",
     {
       title: "Edit what the team could build",
-      description: `Change the "What you could build" lines of this project, one per product shape. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. To add one line send add (M84), to drop one send remove by its exact text; the rest is untouched. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. ideas replaces the whole list instead; send one form per call. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
+      description: `Change the "What you could build" lines of this project, one per product shape. They are the own cards on the shape boards (M176); shape may be an own shape id (own.<slug>) and lane (core, exploring or later, exploring when left out) places the line. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. To add one line send add (M84), to drop one send remove by its exact text; the rest is untouched. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. ideas replaces the whole list instead; send one form per call. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
       inputSchema: z.object({
         ideas: z
           .array(
             z.object({
-              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              shape: z.string().max(60),
+              lane: z.enum(["core", "exploring", "later"]).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
@@ -938,7 +962,8 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         add: z
           .array(
             z.object({
-              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              shape: z.string().max(60),
+              lane: z.enum(["core", "exploring", "later"]).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
@@ -948,7 +973,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         remove: z
           .array(
             z.object({
-              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              shape: z.string().max(60),
               text: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
             }),
           )
@@ -985,7 +1010,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_build_steps",
     {
       title: "Tick, add, remove or restore build steps",
-      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like, and an optional milestone, design, testnet or review, design when left out; the dependency check's suggested steps carry theirs). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's shapes (shape, title, optional detail on what done looks like, optional shapes for further shapes it serves, ours or own ids from get_build_steps, and an optional milestone, design, testnet or review, design when left out; the dependency check's suggested steps carry theirs). shapes takes id and shapes pairs to put a step the team added on other shapes, each list replacing the old one, at least one (M176). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {
@@ -1008,6 +1033,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
             evidence: args.evidence,
             notApplicable: args.notApplicable,
             applicable: args.applicable,
+            shapes: args.shapes,
           },
         },
         args.note,
@@ -1018,6 +1044,100 @@ export function registerProjectTools(server: McpServer, projectId: string): void
         changeId: result.changeId,
         message: result.message,
       });
+    },
+    scope,
+  );
+
+  // Shapes and boards (M176): add one of ours or one the team makes, remove one, and sort its board.
+  registerMeteredTool(
+    server,
+    "add_shape",
+    {
+      title: "Add a product shape",
+      description:
+        "Add a shape to this project (M176). Send shape for one of ours (an id from get_project's offered shapes, under the project's sectors), or name (and detail, and copyFrom, one of our shape ids whose catalog steps it starts with) for a shape the team makes, which gets an id own.<slug>. Ours and own count together against the cap, 3 on Studio and 10 on Studio+. A new shape's board starts empty; fill it with set_board. " +
+        WRITE_RULES,
+      inputSchema: z.object({
+        shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
+        name: z.string().trim().min(KIT_LIMITS.ownShapes.titleMin).max(KIT_LIMITS.ownShapes.titleMax).optional(),
+        detail: z.string().max(KIT_LIMITS.ownShapes.detailMax).optional(),
+        copyFrom: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      if (Boolean(args.shape) === Boolean(args.name)) return errorResult("Send shape for one of ours, or name for a shape of your own, not both.");
+      const { project, design } = loaded.value;
+      const patch = args.shape
+        ? { kit: { shapes: [...kitShapes(project.draft_doc.kit), args.shape] } }
+        : { kit: { ownShapes: { add: [{ title: args.name!, detail: args.detail ?? "", ...(args.copyFrom ? { copyFrom: args.copyFrom } : {}) }] } } };
+      const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "fields", patch }, args.note);
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "remove_shape",
+    {
+      title: "Remove a product shape",
+      description:
+        "Take a shape off this project (M176). An own shape id (own.<slug>) goes with its board, its lines and the steps only it has; a step it shares stays on its other shapes. One of ours is taken off the kit; its ticks stay stored and come back with it. " +
+        WRITE_RULES,
+      inputSchema: z.object({ shape: z.string().max(60), note: noteField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const kit = project.draft_doc.kit;
+      const patch = isOwnShapeId(args.shape)
+        ? { kit: { ownShapes: { remove: [args.shape] } } }
+        : isProductShape(args.shape) && kitShapes(kit).includes(args.shape)
+          ? { kit: { shapes: kitShapes(kit).filter((s) => s !== args.shape) } }
+          : null;
+      if (!patch) return errorResult(`${args.shape} is not one of this project's shapes (${allShapes(kit).join(", ") || "none"}).`);
+      const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "fields", patch }, args.note);
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
+    },
+    scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "set_board",
+    {
+      title: "Sort a shape's board",
+      description:
+        "Place, move or remove cards on the shape boards (M176). Each shape has three lanes, core (part of the product), exploring (being ideated) and later (a feature to add and test later). A card is kind feature (a feature id from get_build_steps), resource (a resource id from get_resource_pack), template (a contract template id from get_templates) or own (a line of the team's own, id is its text). lane is core, exploring, later or remove. A feature placed in core is ticked, so it adds the build steps it gates; moving it out unticks it, and a tick is project wide. Read the boards on get_build_steps. " +
+        WRITE_RULES,
+      inputSchema: z.object({
+        cards: z
+          .array(
+            z.object({
+              shape: z.string().max(60),
+              kind: z.enum(["feature", "resource", "template", "own"]),
+              id: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
+              lane: z.enum(["core", "exploring", "later", "remove"]),
+            }),
+          )
+          .min(1)
+          .max(100),
+        note: noteField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project, design } = loaded.value;
+      const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "fields", patch: { kit: { board: args.cards } } }, args.note);
+      if (!result.ok) return errorResult(result.message);
+      return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
     },
     scope,
   );

@@ -5,6 +5,7 @@ import {
   type ProductShape,
   type ProductSection,
   type ProjectKit,
+  type ShapeId,
   type ShapeInput,
   type StepGroup,
   assertChecklists,
@@ -16,6 +17,7 @@ import {
   toShapeList,
   withFeatureSteps,
   withKitSteps,
+  withOwnShapes,
 } from "@/lib/kits";
 
 import { SHARED_STEPS } from "./shared";
@@ -79,7 +81,18 @@ export function checklistFor(shapes: ShapeInput): readonly ChecklistItem[] {
   return toShapeList(shapes).flatMap((s) => KIT_CHECKLISTS[s] ?? []);
 }
 
-type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps" | "features">;
+type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps" | "features"> & Partial<Pick<ProjectKit, "ownShapes">>;
+
+/** Every catalog step by id, across all our shapes (M176), for the steps an own shape picks. */
+const ITEM_BY_ID = new Map<string, ChecklistItem>(Object.values(KIT_CHECKLISTS).flatMap((list) => (list ?? []).map((i) => [i.id, i] as const)));
+export function checklistItemById(id: string): ChecklistItem | undefined {
+  return ITEM_BY_ID.get(id);
+}
+
+/** Every catalog step of one of our shapes (M176), for copying it into an own shape. */
+export function catalogStepIds(shape: ProductShape): string[] {
+  return (KIT_CHECKLISTS[shape] ?? []).map((i) => i.id);
+}
 
 /**
  * One section per chosen shape with shared steps shown once (M43). What the
@@ -90,7 +103,8 @@ type KitSteps = Pick<ProjectKit, "customSteps" | "hiddenSteps" | "features">;
  */
 export function sectionsFor(shapes: ShapeInput, kit?: KitSteps): ProductSection[] {
   const base = withFeatureSteps(productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, shapes), kit);
-  return kit ? withKitSteps(base, kit) : base;
+  // The team's own shapes follow ours (M176), with the catalog steps they picked.
+  return kit ? withKitSteps(withOwnShapes(base, kit.ownShapes ?? [], checklistItemById), kit) : base;
 }
 
 /** Every group across the chosen shapes, section order. Kit aware like sectionsFor. */
@@ -101,7 +115,7 @@ export function groupsFor(shapes: ShapeInput, kit?: KitSteps): StepGroup[] {
 /** The catalog steps a kit removed, by the shape whose section listed them (M50). */
 export function removedGroupsFor(
   kit: (Pick<ProjectKit, "shape" | "shapes"> & KitSteps) | undefined,
-): Map<ProductShape, StepGroup[]> {
+): Map<ShapeId, StepGroup[]> {
   return removedGroups(withFeatureSteps(productSectionsFor(KIT_CHECKLISTS, SHARED_STEPS, kitShapes(kit)), kit), kit);
 }
 

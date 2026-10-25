@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Plus } from "lucide-react";
 
+import { AddShape } from "@/components/build/AddShape";
 import { ReviewPassRow } from "@/components/build/ReviewPassRow";
+import { ShapeBoard } from "@/components/build/ShapeBoard";
 import { SendToAgent } from "@/components/build/SendToAgent";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
 import { stepPrompt } from "@/lib/agent-prompts";
@@ -11,29 +13,33 @@ import { type AgentRequest, agentRequestsFull, findAgentRequest, withAgentReques
 import type { AgentWriteMode, BuildStepsPatch } from "@/lib/agent-writes";
 import { type CheckRunView, latestFor } from "@/lib/checks/schema";
 import { type StepSend, StepRow } from "@/components/build/StepRow";
-import { FeaturesBlock } from "@/components/ideation/kit/FeaturesBlock";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { Input } from "@/components/ui/Input";
 import { Segmented } from "@/components/ui/Segmented";
-import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { type LaunchFacts, launchRows as launchRowsOf } from "@/components/build/launch-rows";
 import { MetaLine, ProgressBar } from "@/components/ui/MetaLine";
 import { usePlan } from "@/components/studio/PlanContext";
 import { BUILD_COPY, type BuildTab as BuildTabName } from "@/content/build";
-import { removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, REVIEW_COPY, shapeLabel } from "@/content/kits/copy";
-import { featuresFor } from "@/content/kits/features";
+import { catalogStepIds, removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
+import { CHECKLIST_COPY, REVIEW_COPY, shapeName } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { MILESTONES, type Milestone, groupsByMilestone, nowSteps } from "@/lib/build-milestones";
 import type { ProjectChain } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
+import { cn } from "@/lib/utils";
 import {
   KIT_LIMITS,
   type ProductShape,
+  type ShapeId,
+  addOwnShape,
+  allShapes,
+  ownShapeOf,
+  shapeCap,
+  withoutShape,
   type ProjectKit,
   type StepGroup,
   addCustomStep,
@@ -87,7 +93,13 @@ export function BuildTab({
   checks = [],
   testerKit,
   agent,
+  offered = [],
+  onAddShape,
 }: {
+  /** Our shapes for the project's sectors that are not on it yet (M176), for Add a shape. */
+  offered?: readonly ProductShape[];
+  /** Adds one of our shapes through the record's classification (M176). */
+  onAddShape?: (shape: ProductShape) => void;
   /** The tester kit block under the Testnet milestone (M125). */
   testerKit?: React.ReactNode;
   /** Send to agent (M152). */
@@ -104,19 +116,29 @@ export function BuildTab({
   onGoTab: (tab: BuildTabName) => void;
 }) {
   const F = BUILD_COPY.filters;
-  const shapes = kitShapes(kit);
+  // Ours and the team's own (M176); the catalog readers keep kitShapes.
+  const catalogShapes = kitShapes(kit);
+  const shapes = allShapes(kit);
   const shapesKey = shapes.join(",");
-  const [shape, setShape] = useState<ProductShape | "">("");
+  const [shape, setShape] = useState<ShapeId | "">("");
+  const plus = usePlan().plan === "studio_plus";
+  const cap = shapeCap(plus);
   const [view, setView] = useState<"now" | "all">(milestone ? "all" : "now");
-  // A shape that left the kit must leave the filter too.
-  useEffect(() => setShape(""), [shapesKey]);
+  // A shape that left the kit must leave the filter too; a new one opens on its board.
+  const prevShapes = useRef(shapesKey);
+  useEffect(() => {
+    const before = prevShapes.current ? prevShapes.current.split(",") : [];
+    prevShapes.current = shapesKey;
+    const added = before.length ? shapes.find((s) => !before.includes(s)) : undefined;
+    setShape((cur) => added ?? (cur && shapes.includes(cur) ? cur : ""));
+  }, [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // Picking a milestone (the sidebar, the filter) means seeing every step of it.
   useEffect(() => {
     if (milestone) setView("all");
   }, [milestone]);
   const setMilestone = onMilestone;
 
-  const sections = useMemo(() => sectionsFor(shapes, kit ?? {}), [shapesKey, kit]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sections = useMemo(() => sectionsFor(catalogShapes, kit ?? {}), [shapesKey, kit]); // eslint-disable-line react-hooks/exhaustive-deps
   const byMilestone = useMemo(() => groupsByMilestone(sections), [sections]);
   // A step the owner ticked or marked not applicable here answers its own request (M152).
   const requestsDoc = useMemo(() => ({ agentRequests: agent?.requests }), [agent?.requests]);
@@ -140,16 +162,30 @@ export function BuildTab({
       onCancel: () => agent.onRequests(withoutAgentRequest(requestsDoc, "step", g.key)),
     };
   };
-  const passes = useMemo(() => reviewPassesFor(REVIEW_PASSES, shapes), [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const passes = useMemo(() => reviewPassesFor(REVIEW_PASSES, catalogShapes), [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const removed = useMemo(() => [...removedGroupsFor(kit).values()].flat(), [kit]);
 
-  if (!kit?.shape) {
+  const addShape = kit ? (
+    <AddShape
+      offered={offered.filter((s) => !catalogShapes.includes(s))}
+      count={shapes.length}
+      cap={cap}
+      plus={plus}
+      onAddOurs={(s) => onAddShape?.(s)}
+      onCreateOwn={({ title, detail, basedOn }) => onPatchKit(addOwnShape(kit, { title, detail, basedOn, steps: basedOn ? catalogStepIds(basedOn) : [] }).patch)}
+    />
+  ) : null;
+
+  if (!kit || shapes.length === 0) {
     return (
       <div className={`${TAB_WIDTH} space-y-3`}>
         <p className="text-sm text-ink-400">{BUILD_COPY.overview.noShape}</p>
-        <Button size="sm" variant="outline" onClick={() => onGoTab("decisions")}>
-          {BUILD_COPY.publish.openIn(BUILD_COPY.tabs.decisions)} <ArrowRight aria-hidden className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => onGoTab("decisions")}>
+            {BUILD_COPY.publish.openIn(BUILD_COPY.tabs.decisions)} <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+          </Button>
+          {addShape}
+        </div>
       </div>
     );
   }
@@ -178,26 +214,34 @@ export function BuildTab({
             { value: "all", label: F.all },
           ]}
         />
-        {shapes.length > 1 ? (
-          <Segmented<ProductShape | "">
-            size="sm"
-            ariaLabel={F.everyShape}
-            value={shape}
-            onChange={setShape}
-            options={[{ value: "", label: F.everyShape }, ...shapes.map((s) => ({ value: s, label: shapeLabel(s) ?? s }))]}
-          />
-        ) : null}
+        {/* Picking a shape opens its board (M176); Every shape keeps the page to the steps. */}
+        <Segmented<ShapeId | "">
+          size="sm"
+          ariaLabel={F.everyShape}
+          value={shape}
+          onChange={setShape}
+          options={[{ value: "", label: F.everyShape }, ...shapes.map((s) => ({ value: s, label: shapeName(kit, s) }))]}
+        />
+        {addShape}
       </div>
 
-      {shapes.map((s) => {
-        const features = featuresFor([s]);
-        if (!features.length) return null;
-        return (
-          <Collapsible key={s} summary={`${CHECKLIST_COPY.featuresTitle} · ${shapeLabel(s) ?? s}`}>
-            <FeaturesBlock shape={s} features={features} kit={kit} onPatchKit={onPatchKit} />
-          </Collapsible>
-        );
-      })}
+      {shape ? (
+        <ShapeBoard
+          key={shape}
+          kit={kit}
+          shape={shape}
+          chain={chain}
+          onPatchKit={onPatchKit}
+          onRemoveShape={
+            ownShapeOf(kit, shape)
+              ? () => {
+                  onPatchKit(withoutShape(kit, shape));
+                  setShape("");
+                }
+              : undefined
+          }
+        />
+      ) : null}
 
       {/* The milestone row sits right above the sections it filters (M152, F9); the view and shape rows stay at the top. */}
       {view === "all" ? (
@@ -267,7 +311,7 @@ export function BuildTab({
         ))
       )}
 
-      <AddStepRow kit={kit} shapes={shapes} onPatchKit={onPatchKit} />
+      <AddStepRow kit={kit} shapes={shapes} preferred={shape || undefined} onPatchKit={onPatchKit} />
       {removed.length ? (
         <Collapsible summary={BUILD_COPY.row.removed(removed.length)}>
           <p className="text-xs leading-relaxed text-ink-500">{CHECKLIST_COPY.removedHint}</p>
@@ -399,26 +443,33 @@ function MilestoneSection({
   );
 }
 
-/** Add a step under one of the project's shapes (M50), as one row. */
+/** Add a step under one or more of the project's shapes (M50, M176), as one row. */
 function AddStepRow({
   kit,
   shapes,
+  preferred,
   onPatchKit,
 }: {
   kit: ProjectKit;
-  shapes: ProductShape[];
+  shapes: ShapeId[];
+  /** The shape picked in the filter, ticked by default. */
+  preferred?: ShapeId;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
 }) {
   const R = BUILD_COPY.row;
   const L = KIT_LIMITS.customSteps;
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
-  const [shape, setShape] = useState<ProductShape>(shapes[0]);
+  const [picked, setPicked] = useState<ShapeId[]>([preferred ?? shapes[0]]);
+  useEffect(() => {
+    if (preferred) setPicked([preferred]);
+  }, [preferred]);
+  const on = picked.filter((s) => shapes.includes(s));
   const full = (kit.customSteps?.length ?? 0) >= L.max;
-  const canAdd = title.trim().length >= L.titleMin && !full;
+  const canAdd = title.trim().length >= L.titleMin && !full && on.length > 0;
   const add = () => {
     if (!canAdd) return;
-    onPatchKit(addCustomStep(kit, shape, title, detail));
+    onPatchKit(addCustomStep(kit, on, title, detail));
     setTitle("");
     setDetail("");
   };
@@ -426,32 +477,20 @@ function AddStepRow({
     <Collapsible summary={R.addStep}>
       <div className="space-y-2">
         {full ? <p className="text-xs text-ink-500">{CHECKLIST_COPY.addLimit(L.max)}</p> : null}
-        <div className="flex flex-wrap gap-2">
-          <Input
-            value={title}
-            maxLength={L.titleMax}
-            disabled={full}
-            placeholder={R.addStepTitle}
-            aria-label={R.addStepTitle}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                add();
-              }
-            }}
-            className="min-w-[14rem] flex-1"
-          />
-          {shapes.length > 1 ? (
-            <Select value={shape} aria-label={R.addStepShape} onChange={(e) => setShape(e.target.value as ProductShape)} className="max-w-[12rem]">
-              {shapes.map((s) => (
-                <option key={s} value={s} className={optionClasses}>
-                  {shapeLabel(s) ?? s}
-                </option>
-              ))}
-            </Select>
-          ) : null}
-        </div>
+        <Input
+          value={title}
+          maxLength={L.titleMax}
+          disabled={full}
+          placeholder={R.addStepTitle}
+          aria-label={R.addStepTitle}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+        />
         <Input
           value={detail}
           maxLength={L.detailMax}
@@ -460,6 +499,28 @@ function AddStepRow({
           aria-label={R.addStepDetail}
           onChange={(e) => setDetail(e.target.value)}
         />
+        {shapes.length > 1 ? (
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={R.addStepShape}>
+            <span className="mr-1 text-xs text-ink-400">{BUILD_COPY.shapes.shapesLine}</span>
+            {shapes.map((s) => {
+              const active = on.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setPicked(active ? on.filter((x) => x !== s) : [...on, s])}
+                  className={cn(
+                    "rounded-md border px-2 py-1 text-xs transition-colors",
+                    active ? "border-ink-500 bg-ink-800/60 text-ink-50" : "border-ink-700/60 text-ink-400 hover:text-ink-100",
+                  )}
+                >
+                  {shapeName(kit, s)}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
         <Button size="sm" variant="outline" disabled={!canAdd} onClick={add}>
           <Plus className="h-3.5 w-3.5" aria-hidden /> {R.add}
         </Button>

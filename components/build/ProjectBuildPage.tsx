@@ -26,6 +26,8 @@ import { ProjectPlanProvider } from "@/components/studio/ProjectPlanContext";
 import { usePlan } from "@/components/studio/PlanContext";
 import { buildTabsFor } from "@/lib/build-tabs";
 import { TAB_WIDTH } from "@/components/build/layout";
+import { shapesChange } from "@/lib/classify";
+import { SECTOR_SUBSECTORS, docSectors } from "@/lib/sectors";
 import { ProjectRail } from "@/components/build/ProjectRail";
 import type { AgentTone } from "@/components/build/agent-tone";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
@@ -46,7 +48,7 @@ import { registerCommands } from "@/lib/command-menu";
 import { deployerView } from "@/lib/deployer";
 import { type ProjectDoc, testnetContractRows } from "@/lib/ideation";
 import { mainnetView } from "@/lib/mainnet-view";
-import { type ProjectKit, emptyProjectKit } from "@/lib/kits";
+import { type ProjectKit, emptyProjectKit, kitShapes, shapeCap, shapesFor } from "@/lib/kits";
 import type { LaunchTarget } from "@/lib/launch-targets";
 
 /**
@@ -230,6 +232,8 @@ export function ProjectBuildPage({
     ),
     build: (
       <BuildTabView
+        offered={shapesFor(docSectors(doc).flatMap((sec) => SECTOR_SUBSECTORS[sec] ?? []))}
+        onAddShape={(shape) => patch(shapesChange(doc, [...kitShapes(doc.kit), shape], shapeCap(plan.plan === "studio_plus")))}
         kit={kit}
         chain={projectChainOf(doc)}
         facts={facts}

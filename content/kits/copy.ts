@@ -19,8 +19,10 @@ import {
   type ProjectKit,
   PRODUCT_SHAPE_VALUES,
   SHAPE_SUBSECTORS,
+  type ShapeId,
   type StartingPoint,
   kitShapes,
+  ownShapeOf,
   shapesFor,
 } from "@/lib/kits";
 
@@ -66,7 +68,7 @@ export const KIT_COPY = {
   shapeLabel: "What are you building",
   shapeHint: "Pick every layer your users touch, up to three. The research kit merges the packs for what you choose.",
   /** Under the shape chips (M131). */
-  shapeCap: (max: number) => `Up to ${max} shapes per project, so the build steps stay a list a team can read.`,
+  shapeCap: (max: number) => `Up to ${max} shapes per project, ours and your own together. Studio holds 3 and Studio+ holds 10.`,
   /** One line per subsector that names its shape on its own. */
   buildingLine: (phrase: string, sentence: string) => `I am building ${phrase}. ${sentence}`,
   buildingHint: "These follow from the subsectors you picked. Untick a subsector to drop its product.",
@@ -166,6 +168,30 @@ export const RAIL_COPY = {
   footnote:
     "Core items are ticked for you. Untick what you already know, tick anything " +
     "extra. Your ticks travel with the project into AGENTS.md and the MCP tools.",
+} as const;
+
+/** The shape boards (M176): three lanes per shape, and the words for the cards on them. */
+export const BOARD_COPY = {
+  title: "Board",
+  hint: "What this shape includes, sorted into three lanes. Core is part of the product and a core feature adds its build steps. Exploring is being ideated. Later is a feature to add and test later. Your agent reads and moves cards over MCP.",
+  lanes: {
+    core: { label: "Core", hint: "Part of the product" },
+    exploring: { label: "Exploring", hint: "Being ideated" },
+    later: { label: "Later", hint: "Add and test later" },
+  },
+  kinds: { feature: "Feature", resource: "Resource", template: "Template", own: "Your item" },
+  add: "Add",
+  writeOwn: "Write your own",
+  ownPlaceholder: "One line, what it is",
+  moveTo: (lane: string) => `Move to ${lane}`,
+  remove: "Remove",
+  empty: "Nothing here yet.",
+  libraryTitles: { feature: "Features", resource: "Resources", template: "Contract templates" },
+  featuresFrom: (shape: string) => `Features from ${shape}`,
+  search: "Filter",
+  nothingLeft: "Everything is on the board.",
+  export: "Shape boards",
+  exportLine: (lane: string, items: string) => `${lane}. ${items}`,
 } as const;
 
 export const CHECKLIST_COPY = {
@@ -297,16 +323,24 @@ function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
 }
 
-export function shapeLabel(shape: ProductShape | "" | undefined): string | null {
+export function shapeLabel(shape: ShapeId | "" | undefined): string | null {
   if (!shape) return null;
   return SHAPE_OPTIONS.find((o) => o.value === shape)?.label ?? null;
 }
 
-/** Labels for every shape a kit is building, in table order. Empty when none. */
-export function shapeLabels(kit: Pick<ProjectKit, "shape" | "shapes"> | undefined): string[] {
-  return kitShapes(kit)
-    .map((s) => shapeLabel(s))
-    .filter((l): l is string => Boolean(l));
+/** The name of any shape (M176): our label, or the title of one the team made. */
+export function shapeName(kit: Pick<ProjectKit, "ownShapes"> | undefined, shape: ShapeId): string {
+  return ownShapeOf(kit, shape)?.title ?? shapeLabel(shape) ?? shape;
+}
+
+/** Names for every shape a kit is building, ours in table order then its own (M176). Empty when none. */
+export function shapeLabels(kit: Pick<ProjectKit, "shape" | "shapes" | "ownShapes"> | undefined): string[] {
+  return [
+    ...kitShapes(kit)
+      .map((s) => shapeLabel(s))
+      .filter((l): l is string => Boolean(l)),
+    ...(kit?.ownShapes ?? []).map((o) => o.title),
+  ];
 }
 
 export function shapeBlurb(shape: ProductShape | ""): string | null {

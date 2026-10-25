@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { checklistFor } from "@/content/kits/checklists";
-import { shapeLabel } from "@/content/kits/copy";
+import { shapeLabel, shapeName } from "@/content/kits/copy";
 import {
   type AgentChange,
   type BuildStepsPatch,
@@ -20,7 +20,7 @@ import { latestAgentSession } from "@/lib/agent-sessions-db";
 import { prospectsSummary } from "@/lib/prospects";
 import { authGate } from "@/lib/ideation-api";
 import { getLinkedTokenDesign, getProject } from "@/lib/ideation-db";
-import { type ProductShape, kitShapes } from "@/lib/kits";
+import { type ProductShape, type ShapeId, kitShapes } from "@/lib/kits";
 
 export const runtime = "nodejs";
 
@@ -52,7 +52,7 @@ export async function GET(_req: Request, { params }: Ctx) {
     ...tokenStepTitles(),
     // Steps the team added (M50).
     ...(project.draft_doc.kit?.customSteps ?? []).map(
-      (c) => [c.id, `${c.title} (${shapeLabel(c.shape) ?? ""})`] as const,
+      (c) => [c.id, `${c.title} (${shapeName(project.draft_doc.kit, c.shape)})`] as const,
     ),
   ]);
   /** A readable label for one build step line. Ticks keep the title; adds, removals and restores say so (M50). */
@@ -60,8 +60,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     // Entry keys from buildStepKeys, code not copy.
     if (key.startsWith("add:")) { // copy-ok
       const a = patch.add?.[Number(key.slice(4))];
-      return `New step (${shapeLabel((a?.shape ?? "") as ProductShape) ?? a?.shape ?? ""})`;
+      return `New step (${[a?.shape, ...(a?.shapes ?? [])].filter((x): x is string => Boolean(x)).map((x) => shapeName(project.draft_doc.kit, x as ShapeId)).join(", ")})`;
     }
+    if (key.startsWith("shapes:")) return `Shapes. ${titles.get(key.slice(7)) ?? key.slice(7)}`; // copy-ok
     if (key.startsWith("remove:")) return `Remove. ${titles.get(key.slice(7)) ?? key.slice(7)}`; // copy-ok
     if (key.startsWith("restore:")) return `Restore. ${titles.get(key.slice(8)) ?? key.slice(8)}`; // copy-ok
     if (key.startsWith("evidence:")) return `Evidence. ${titles.get(key.slice(9)) ?? key.slice(9)}`; // copy-ok

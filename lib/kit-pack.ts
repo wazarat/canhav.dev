@@ -12,10 +12,10 @@ import {
   templateOnChain,
   templatesForShapes,
 } from "@/lib/templates";
-import { buildProgress, checklistFor, sectionsFor } from "@/content/kits/checklists";
+import { buildProgress, checklistFor, checklistItemById, sectionsFor } from "@/content/kits/checklists";
 import { milestoneOf } from "@/lib/build-milestones";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
-import { FAMILY_LABELS, shapeExamples, shapeLabel, shapeLabels } from "@/content/kits/copy";
+import { FAMILY_LABELS, shapeExamples, shapeLabel, shapeLabels, shapeName } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { type ProjectChain, chainInfo, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, launchTargetHandoffLine, launchTargetLabel } from "@/content/launch-targets";
@@ -58,7 +58,11 @@ import {
   ideaRows,
   templateCounts,
   templateState,
+  type BoardLane,
+  type ShapeId,
+  allShapes,
 } from "@/lib/kits";
+import { type BoardKind, boardFor } from "@/lib/board";
 
 /**
  * One view of a project's resource pack, shared by the MCP tool, the
@@ -117,14 +121,14 @@ export interface ResourcePackView {
   checklist: {
     done: number;
     total: number;
-    items: Array<ChecklistItem & { done: boolean; notApplicable?: string; evidence?: string; shape: ProductShape; sharedWith: string[]; custom?: boolean }>;
+    items: Array<ChecklistItem & { done: boolean; notApplicable?: string; evidence?: string; shape: ShapeId; sharedWith: string[]; custom?: boolean }>;
     groups: Array<{
       key: string;
       title: string;
       detail: string;
       step: KitStep;
-      shape: ProductShape;
-      shapes: ProductShape[];
+      shape: ShapeId;
+      shapes: ShapeId[];
       ids: string[];
       resources: string[];
       /** Contract template ids that fit the step (M61). */
@@ -148,8 +152,12 @@ export interface ResourcePackView {
   templates: TemplatesView;
   /** What the product includes, as the features the team ticked (M64). */
   features: FeaturesView;
+  /** The shapes the team made itself (M176), after `shapes`, with the catalog steps each picked. */
+  ownShapes: Array<{ id: ShapeId; title: string; detail: string; basedOn?: string; steps: string[] }>;
+  /** The board of every shape, ours then own (M176): Core, Exploring and Later. */
+  boards: Array<{ shape: ShapeId; name: string } & Record<BoardLane, Array<{ kind: BoardKind; id: string; title: string }>>>;
   /** What the team could build with each shape, the catalog lines it ticked and its own (M68 follow-up). */
-  ideas: { count: number; items: Array<{ shape: ProductShape; text: string; on: boolean; own: boolean; from?: string }> };
+  ideas: { count: number; items: Array<{ shape: ShapeId; text: string; on: boolean; own: boolean; from?: string; lane?: BoardLane }> };
   /**
    * Shapes with no contract template live on this chain's mainnet (M68
    * follow-up), with how many run on the other mainnet and the way forward.
@@ -459,6 +467,11 @@ export function buildResourcePack(
   const hiddenSteps = new Set(kit.hiddenSteps ?? []);
   const checklistItems: Array<ChecklistItem & { custom?: boolean }> = [
     ...checklistFor(shapes).filter((i) => !hiddenSteps.has(i.id) && (!i.feature || hasFeature(kit, i.feature))),
+    // The catalog steps the team's own shapes picked (M176), each once.
+    ...[...new Set((kit.ownShapes ?? []).flatMap((o) => o.steps))]
+      .filter((id) => !hiddenSteps.has(id) && !checklistFor(shapes).some((i) => i.id === id))
+      .map((id) => checklistItemById(id))
+      .filter((i): i is ChecklistItem => Boolean(i)),
     ...(kit.customSteps ?? []).map((c) => ({
       id: c.id,
       title: c.title,
@@ -470,7 +483,7 @@ export function buildResourcePack(
   ];
   const customShape = new Map((kit.customSteps ?? []).map((c) => [c.id, c.shape] as const));
   const sections = sectionsFor(shapes, kit);
-  const groupOf = new Map<string, { ids: readonly string[]; shape: ProductShape }>();
+  const groupOf = new Map<string, { ids: readonly string[]; shape: ShapeId }>();
   for (const section of sections)
     for (const g of section.groups) for (const id of g.ids) groupOf.set(id, { ids: g.ids, shape: section.shape });
   const checkedOn = families.length
@@ -529,7 +542,7 @@ export function buildResourcePack(
         done: kit.checklist?.[i.id] === true,
         ...(kit.notApplicable?.[i.id] ? { notApplicable: kit.notApplicable[i.id] } : {}),
         ...(kit.evidence?.[i.id] ? { evidence: kit.evidence[i.id] } : {}),
-        shape: customShape.get(i.id) ?? (i.id.slice(0, i.id.indexOf(".")) as ProductShape),
+        shape: customShape.get(i.id) ?? groupOf.get(i.id)?.shape ?? (i.id.slice(0, i.id.indexOf(".")) as ProductShape),
         sharedWith: (groupOf.get(i.id)?.ids ?? []).filter((id) => id !== i.id),
       })),
       groups: sections.flatMap((section) =>
@@ -556,9 +569,22 @@ export function buildResourcePack(
     review: buildReviewView(doc)!,
     templates: { counts: templateCounts(templateItems.map((t) => t.id), kit), items: templateItems },
     features: { ...featureProgress(features, kit), items: featureItems },
+    ownShapes: (kit.ownShapes ?? []).map((o) => ({ id: o.id, title: o.title, detail: o.detail, ...(o.basedOn ? { basedOn: o.basedOn } : {}), steps: [...o.steps] })),
+    boards: allShapes(kit).map((shape) => {
+      const b = boardFor(kit, shape);
+      const lane = (l: BoardLane) => b[l].map((i) => ({ kind: i.kind, id: i.id, title: i.title }));
+      return { shape, name: shapeName(kit, shape), core: lane("core"), exploring: lane("exploring"), later: lane("later") };
+    }),
     ideas: {
       count: kit.ideas?.length ?? 0,
-      items: shapes.flatMap((s) => ideaRows(kit, s, shapeExamples(s)).map((r) => ({ shape: s, ...r }))),
+      items: [
+        ...shapes.flatMap((s) => ideaRows(kit, s, shapeExamples(s)).map((r) => ({ shape: s as ShapeId, ...r }))),
+        // The team's own shapes have no catalog examples, only its own lines (M176).
+        ...(kit.ownShapes ?? []).flatMap((o) => ideaRows(kit, o.id, []).map((r) => ({ shape: o.id as ShapeId, ...r }))),
+      ].map((r) => {
+        const lane = kit.ideas?.find((i) => i.shape === r.shape && i.text === r.text)?.lane;
+        return lane ? { ...r, lane } : r;
+      }),
     },
     templateGaps: shapes.flatMap((s) => {
       const here = templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [s], chain), chain);

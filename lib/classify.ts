@@ -73,11 +73,11 @@ export function subsectorsChange(doc: ProjectDoc, picked: readonly Subsector[]):
   };
 }
 
-export function shapesChange(doc: ProjectDoc, picked: readonly ProductShape[]): Partial<ProjectDoc> {
+export function shapesChange(doc: ProjectDoc, picked: readonly ProductShape[], cap: number = KIT_LIMITS.shapes.maxPlus): Partial<ProjectDoc> {
   const sectors = docSectors(doc);
   const subsectors = doc.subsectors ?? [];
-  // At most KIT_LIMITS.shapes.max shapes per project (M131); the first picks win.
-  const kept = picked.slice(0, KIT_LIMITS.shapes.max);
+  // At most the plan's cap of our shapes, less the ones the team made (M131, M176); the first picks win.
+  const kept = picked.slice(0, Math.max(0, cap - (doc.kit?.ownShapes?.length ?? 0)));
   const nextSubs = withShapeSubsectors(subsectors, kept, sectors);
   const kits = kitsForSectors(sectors, nextSubs);
   const base = doc.kit ?? emptyProjectKit(kitsForDoc(doc));

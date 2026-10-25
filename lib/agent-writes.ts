@@ -26,7 +26,8 @@ import { LAUNCH_TARGETS, PAIR_VENUES } from "@/lib/launch-targets";
 import { TEMPLATE_ID } from "@/lib/templates";
 import { reachableTemplateIds } from "@/lib/template-reach";
 import { chainInfo, projectChainOf } from "@/lib/chains";
-import { checklistFor, groupsFor } from "@/content/kits/checklists";
+import { catalogStepIds, checklistFor, checklistItemById, groupsFor } from "@/content/kits/checklists";
+import { featureById, placeCard, placeIdea, removeCard, removeIdea } from "@/lib/board";
 import { offeredShapes } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { PROJECT_CHAINS } from "@/lib/chains";
@@ -79,6 +80,18 @@ import {
   toggleIdea,
   toggleResource,
   setReviewEvidence,
+  BOARD_LANES,
+  OWN_SHAPE_ID,
+  type OwnShapeId,
+  type ShapeId,
+  addOwnShape,
+  allShapes,
+  editOwnShape,
+  isOwnShapeId,
+  isProductShape,
+  setCustomStepShapes,
+  setOwnShapeSteps,
+  withoutShape,
 } from "@/lib/kits";
 import {
   SECTOR_SUBSECTORS,
@@ -141,7 +154,7 @@ export interface BuildStepsPatch {
   done: string[];
   undone: string[];
   /** Steps to add under a shape (M50). Project build steps only. A milestone lands it under Testnet or Review (M163), design when left out. */
-  add?: Array<{ shape: string; title: string; detail?: string; milestone?: "design" | "testnet" | "review" }>;
+  add?: Array<{ shape: string; shapes?: string[]; title: string; detail?: string; milestone?: "design" | "testnet" | "review" }>;
   /** Step ids to remove from the sections. A catalog id hides its whole shared group. */
   remove?: string[];
   /** Removed catalog step ids to bring back. */
@@ -152,6 +165,8 @@ export interface BuildStepsPatch {
   notApplicable?: Array<{ id: string; reason: string }>;
   /** Step ids to mark applicable again. */
   applicable?: string[];
+  /** The shapes of steps the team added (M176), each list replacing the stored one. */
+  shapes?: Array<{ id: string; shapes: string[] }>;
 }
 
 /** One recorded agent change, as the studio and the MCP tools see it. */
@@ -210,6 +225,12 @@ const consumerPersona = z.strictObject({
   howTheyFindYou: z.string().max(L.personaText.max).default(""),
   holdings: z.string().max(L.personaText.max).default(""),
 });
+
+/** One of our shapes or one the team made (M176), checked against the project by projectPatchProblem. */
+const SHAPE_REF = z
+  .string()
+  .max(60)
+  .refine((v): boolean => isProductShape(v) || isOwnShapeId(v), "Name one of our shapes or an own shape id (own.<slug>)");
 
 export const projectPatchSchema = z
   .strictObject({
@@ -383,7 +404,7 @@ export const projectPatchSchema = z
       .strictObject({
         shapes: z
           .array(z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]))
-          .max(KIT_LIMITS.shapes.max),
+          .max(KIT_LIMITS.shapes.maxPlus),
         startingPoint: z.enum(STARTING_POINT_VALUES as [StartingPoint, ...StartingPoint[]]),
         existingProduct: z.string().max(KIT_LIMITS.existingProduct.max),
         resources: z
@@ -407,7 +428,10 @@ export const projectPatchSchema = z
         ideas: z
           .array(
             z.strictObject({
-              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              // One of ours or an own shape id, "own.<slug>" (M176).
+              shape: SHAPE_REF,
+              // The board lane (M176); exploring when left out.
+              lane: z.enum(BOARD_LANES).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               // The catalog example the line was edited from, which then steps aside.
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
@@ -418,7 +442,8 @@ export const projectPatchSchema = z
         addIdeas: z
           .array(
             z.strictObject({
-              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              shape: SHAPE_REF,
+              lane: z.enum(BOARD_LANES).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
@@ -427,7 +452,7 @@ export const projectPatchSchema = z
         removeIdeas: z
           .array(
             z.strictObject({
-              shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]),
+              shape: SHAPE_REF,
               text: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
             }),
           )
@@ -441,6 +466,50 @@ export const projectPatchSchema = z
         features: z
           .record(z.string().max(120).regex(FEATURE_ID), z.boolean())
           .refine((o) => Object.keys(o).length <= KIT_LIMITS.features.max, "Too many features"),
+        // Shapes the team makes (M176): add (blank, or copyFrom one of ours, which brings its steps), edit, remove and pick catalog steps.
+        ownShapes: z
+          .strictObject({
+            add: z
+              .array(
+                z.strictObject({
+                  title: z.string().trim().min(KIT_LIMITS.ownShapes.titleMin).max(KIT_LIMITS.ownShapes.titleMax),
+                  detail: z.string().max(KIT_LIMITS.ownShapes.detailMax).default(""),
+                  copyFrom: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
+                }),
+              )
+              .max(KIT_LIMITS.shapes.maxPlus),
+            edit: z
+              .array(
+                z.strictObject({
+                  id: z.string().regex(OWN_SHAPE_ID),
+                  title: z.string().trim().min(KIT_LIMITS.ownShapes.titleMin).max(KIT_LIMITS.ownShapes.titleMax).optional(),
+                  detail: z.string().max(KIT_LIMITS.ownShapes.detailMax).optional(),
+                }),
+              )
+              .max(KIT_LIMITS.shapes.maxPlus),
+            remove: z.array(z.string().regex(OWN_SHAPE_ID)).max(KIT_LIMITS.shapes.maxPlus),
+            steps: z
+              .array(
+                z.strictObject({
+                  shape: z.string().regex(OWN_SHAPE_ID),
+                  add: z.array(z.string().max(120)).max(KIT_LIMITS.ownShapes.steps).default([]),
+                  remove: z.array(z.string().max(120)).max(KIT_LIMITS.ownShapes.steps).default([]),
+                }),
+              )
+              .max(KIT_LIMITS.shapes.maxPlus),
+          })
+          .partial(),
+        // Shape boards (M176): place, move or remove a card. kind own is a line of the team's own, id its text.
+        board: z
+          .array(
+            z.strictObject({
+              shape: SHAPE_REF,
+              kind: z.enum(["feature", "resource", "template", "own"]),
+              id: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
+              lane: z.enum([...BOARD_LANES, "remove"]),
+            }),
+          )
+          .max(100),
       })
       .partial(),
   })
@@ -582,6 +651,8 @@ export const buildStepsPatchSchema = z.strictObject({
     .array(
       z.strictObject({
         shape: z.string().max(60),
+        // Further shapes the step serves (M176), ours or own.
+        shapes: z.array(z.string().max(60)).max(KIT_LIMITS.shapes.maxPlus).optional(),
         title: z.string().min(KIT_LIMITS.customSteps.titleMin).max(KIT_LIMITS.customSteps.titleMax),
         detail: z.string().max(KIT_LIMITS.customSteps.detailMax).default(""),
         // The milestone the added step lands under (M163); design when left out.
@@ -592,6 +663,11 @@ export const buildStepsPatchSchema = z.strictObject({
     .default([]),
   remove: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
   restore: z.array(z.string().max(120)).max(AGENT_CHANGE_LIMITS.buildSteps.max).default([]),
+  // Put a step the team added on these shapes (M176), replacing its list; at least one.
+  shapes: z
+    .array(z.strictObject({ id: z.string().max(120), shapes: z.array(z.string().max(60)).min(1).max(KIT_LIMITS.shapes.maxPlus) }))
+    .max(AGENT_CHANGE_LIMITS.buildSteps.max)
+    .default([]),
   evidence: z
     .array(z.strictObject({ id: z.string().max(120), text: z.string().max(KIT_LIMITS.evidence.textMax) }))
     .max(AGENT_CHANGE_LIMITS.buildSteps.max)
@@ -623,6 +699,7 @@ export function buildStepKeys(patch: BuildStepsPatch): string[] {
     ...(patch.evidence ?? []).map((e) => `evidence:${e.id}`),
     ...(patch.notApplicable ?? []).map((e) => `na:${e.id}`),
     ...(patch.applicable ?? []).map((id) => `applicable:${id}`),
+    ...(patch.shapes ?? []).map((e) => `shapes:${e.id}`),
   ];
 }
 
@@ -873,17 +950,32 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
       kit = { ...kit, ...setTemplateDecision(kit, id, d === "open" ? null : d) };
     for (const [id, on] of Object.entries(kitPatch.features ?? {}))
       kit = { ...kit, ...toggleFeature(kit, id, on) };
+    // Own shapes first (M176), so ideas and cards in the same change may name one that already exists.
+    const o = kitPatch.ownShapes;
+    if (o) {
+      for (const a of o.add ?? []) kit = { ...kit, ...addOwnShape(kit, { title: a.title, detail: a.detail, basedOn: a.copyFrom, steps: a.copyFrom ? catalogStepIds(a.copyFrom) : [] }).patch };
+      for (const e of o.edit ?? []) kit = { ...kit, ...editOwnShape(kit, e.id as OwnShapeId, { title: e.title, detail: e.detail }) };
+      for (const e of o.steps ?? []) kit = { ...kit, ...setOwnShapeSteps(kit, e.shape as OwnShapeId, e.add, e.remove) };
+      for (const id of o.remove ?? []) kit = { ...kit, ...withoutShape(kit, id as OwnShapeId) };
+    }
     if (kitPatch.ideas) {
-      const own = new Set(kitShapes(kit));
+      const names = new Set<string>(allShapes(kit));
       const seen = new Set<string>();
       const ideas = kitPatch.ideas
-        .map((i) => (i.from ? { shape: i.shape, text: i.text.trim(), from: i.from.trim() } : { shape: i.shape, text: i.text.trim() }))
-        .filter((i) => own.has(i.shape) && i.text && !seen.has(`${i.shape}\n${i.text}`) && seen.add(`${i.shape}\n${i.text}`));
+        .map((i) => ({ shape: i.shape as ShapeId, text: i.text.trim(), ...(i.from ? { from: i.from.trim() } : {}), ...(i.lane && i.lane !== "exploring" ? { lane: i.lane } : {}) }))
+        .filter((i) => names.has(i.shape) && i.text && !seen.has(`${i.shape}\n${i.text}`) && seen.add(`${i.shape}\n${i.text}`));
       kit = { ...kit, ideas: ideas.length ? ideas : undefined };
     }
-    for (const i of kitPatch.removeIdeas ?? []) kit = { ...kit, ...toggleIdea(kit, i.shape, i.text, false) };
-    for (const i of kitPatch.addIdeas ?? [])
-      kit = { ...kit, ...(i.from ? editIdea(kit, i.shape, i.from, i.text, true) : toggleIdea(kit, i.shape, i.text, true)) };
+    for (const i of kitPatch.removeIdeas ?? []) kit = { ...kit, ...toggleIdea(kit, i.shape as ShapeId, i.text, false) };
+    for (const i of kitPatch.addIdeas ?? []) {
+      kit = { ...kit, ...(i.from ? editIdea(kit, i.shape as ShapeId, i.from, i.text, true) : toggleIdea(kit, i.shape as ShapeId, i.text, true)) };
+      if (i.lane) kit = { ...kit, ...placeIdea(kit, i.shape as ShapeId, i.text, i.lane) };
+    }
+    for (const c of kitPatch.board ?? []) {
+      const shape = c.shape as ShapeId;
+      if (c.kind === "own") kit = { ...kit, ...(c.lane === "remove" ? removeIdea(kit, shape, c.id) : placeIdea(kit, shape, c.id, c.lane)) };
+      else kit = { ...kit, ...(c.lane === "remove" ? removeCard(kit, shape, c.kind, c.id) : placeCard(kit, shape, c.kind, c.id, c.lane)) };
+    }
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
   }
@@ -946,11 +1038,11 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
   if (kitsForSectors(sectors, next.subsectors ?? []).length === 0 && !next.kit)
     return "This project has no subsector with product shapes yet. Send sectors and subsectors first, in the same change or an earlier one.";
   if (k.shapes) {
-    if (k.shapes.length > KIT_LIMITS.shapes.max) return `At most ${KIT_LIMITS.shapes.max} shapes per project. Pick the ones the product is really made of.`;
+    if (k.shapes.length + (next.kit?.ownShapes?.length ?? 0) > KIT_LIMITS.shapes.maxPlus) return `At most ${KIT_LIMITS.shapes.maxPlus} shapes per project, ours and own together (3 on Studio). Pick the ones the product is really made of.`;
     const offered = offeredShapes(next.subsectors ?? []);
     const stray = k.shapes.filter((s) => !offered.includes(s));
     if (stray.length) return `${stray[0]} is not offered under this project's subsectors (${(next.subsectors ?? []).join(", ") || "none"}). Offered shapes are ${offered.join(", ") || "none"}.`;
-    next = { ...next, ...shapesChange(next, k.shapes) };
+    next = { ...next, ...shapesChange(next, k.shapes, KIT_LIMITS.shapes.maxPlus) };
   }
   const shapes = kitShapes(next.kit);
   const tick = k.resources?.tick ?? [];
@@ -983,10 +1075,34 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
       return `Unknown template ${unknown.slice(0, 3).join(", ")}. This project's shapes can decide ${shown}${rest}.`;
     }
   }
+  // Own shapes (M176): the ids named must exist, a new one must fit the cap, picked steps must be ours.
+  if (k.ownShapes) {
+    const o = k.ownShapes;
+    const mine = new Set((next.kit?.ownShapes ?? []).map((x) => x.id as string));
+    const named = [...(o.edit ?? []).map((e) => e.id), ...(o.remove ?? []), ...(o.steps ?? []).map((e) => e.shape)];
+    const missing = named.filter((id) => !mine.has(id));
+    if (missing.length) return `${missing[0]} is not a shape this project made. Read get_build_steps for ownShapes.`;
+    const after = allShapes(next.kit).length + (o.add?.length ?? 0) - (o.remove?.length ?? 0);
+    if ((o.add?.length ?? 0) > 0 && after > KIT_LIMITS.shapes.maxPlus) return `At most ${KIT_LIMITS.shapes.maxPlus} shapes per project, ours and own together (3 on Studio).`;
+    const stepIds = (o.steps ?? []).flatMap((e) => e.add);
+    const unknownSteps = stepIds.filter((id) => !checklistItemById(id));
+    if (unknownSteps.length) return `Unknown catalog step ${unknownSteps.slice(0, 3).join(", ")}. Pick ids from get_build_steps of our shapes, or add a step of your own with set_build_steps.`;
+  }
+  const allNames = new Set<string>([...allShapes(next.kit)]);
   const ideaLines = [...(k.ideas ?? []), ...(k.addIdeas ?? []), ...(k.removeIdeas ?? [])];
   if (ideaLines.length) {
-    const stray = ideaLines.filter((i) => !shapes.includes(i.shape));
-    if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${shapes.join(", ") || "none"}), so a what you could build line cannot name it.`;
+    const stray = ideaLines.filter((i) => !allNames.has(i.shape));
+    if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}), so a line cannot name it.`;
+  }
+  if (k.board?.length) {
+    const stray = k.board.find((c) => !allNames.has(c.shape));
+    if (stray) return `${stray.shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}). Add it with add_shape first.`;
+    for (const c of k.board) {
+      if (c.kind === "feature" && !featureById(c.id)) return `Unknown feature ${c.id}. Read get_build_steps for feature ids.`;
+      if (c.kind === "resource" && !KIT_CATALOG.some((r) => r.id === c.id)) return `Unknown resource ${c.id}. Read get_resource_pack for resource ids.`;
+      if (c.kind === "template" && !templateById(c.id)) return `Unknown contract template ${c.id}. Read get_templates for template ids.`;
+      if (c.kind === "own" && c.lane !== "remove" && c.id.trim().length < KIT_LIMITS.ideas.textMin) return `A line of your own needs at least ${KIT_LIMITS.ideas.textMin} characters.`;
+    }
   }
   const ticked = Object.keys(k.features ?? {});
   if (ticked.length) {
@@ -1021,7 +1137,7 @@ export function buildStepIds(doc: ProjectDoc): Set<string> {
 
 /** Null when every id belongs to this project's build steps, else the problem. */
 export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): string | null {
-  if (!doc.kit || kitShapes(doc.kit).length === 0)
+  if (!doc.kit || allShapes(doc.kit).length === 0)
     return "This project has no product shape yet, so it has no build steps. Set kit.shapes with update_project, or the owner picks a shape in the studio.";
   if (buildStepKeys(patch).length === 0) return "Name at least one build step.";
   const known = buildStepIds(doc);
@@ -1040,10 +1156,13 @@ export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): stri
   if (naAndDone.length) return `${naAndDone[0].id} is in both done and notApplicable.`;
   const naAndBack = na.filter((e) => applicable.includes(e.id));
   if (naAndBack.length) return `${naAndBack[0].id} is in both notApplicable and applicable.`;
-  const shapes = kitShapes(doc.kit);
-  const badShape = add.find((a) => !shapes.includes(a.shape as ProductShape));
+  // Ours and the team's own (M176); a step may serve several.
+  const shapes: string[] = allShapes(doc.kit);
+  const badShape = [...add.flatMap((a) => [a.shape, ...(a.shapes ?? [])]), ...(patch.shapes ?? []).flatMap((e) => e.shapes)].find((x) => !shapes.includes(x));
   if (badShape)
-    return `${badShape.shape} is not one of this project's product shapes (${shapes.join(", ")}). A step is added under a shape the project builds.`;
+    return `${badShape} is not one of this project's shapes (${shapes.join(", ")}). A step goes on a shape the project builds; add one with add_shape.`;
+  const notAdded = (patch.shapes ?? []).find((e) => !(doc.kit?.customSteps ?? []).some((c) => c.id === e.id));
+  if (notAdded) return `${notAdded.id} is not a step the team added. Only added steps change shapes; a catalog step follows its shapes.`;
   const room = KIT_LIMITS.customSteps.max - (doc.kit.customSteps?.length ?? 0);
   if (add.length > room) return `This project can add ${Math.max(room, 0)} more build steps.`;
   const hidden = new Set(doc.kit.hiddenSteps ?? []);
@@ -1056,7 +1175,8 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   if (!doc.kit) return doc;
   let kit = doc.kit;
   for (const a of patch.add ?? [])
-    kit = { ...kit, ...addCustomStep(kit, a.shape as ProductShape, a.title, a.detail ?? "", a.milestone ? { milestone: a.milestone } : {}) };
+    kit = { ...kit, ...addCustomStep(kit, [a.shape, ...(a.shapes ?? [])] as ShapeId[], a.title, a.detail ?? "", a.milestone ? { milestone: a.milestone } : {}) };
+  for (const e of patch.shapes ?? []) kit = { ...kit, ...setCustomStepShapes(kit, e.id, e.shapes as ShapeId[]) };
   if (patch.remove?.length) {
     // A catalog id takes its whole shared group with it, the same as the studio's remove.
     const groups = groupsFor(kitShapes(kit), kit);
@@ -1476,6 +1596,7 @@ export function buildStepLines(patch: BuildStepsPatch): ChangeLine[] {
     ...(patch.evidence ?? []).map((e) => ({ path: `evidence:${e.id}`, before: "", after: e.text.trim() || "Cleared" })),
     ...(patch.notApplicable ?? []).map((e) => ({ path: `na:${e.id}`, before: "Listed", after: `Not applicable, because ${e.reason.trim()}` })),
     ...(patch.applicable ?? []).map((id) => ({ path: `applicable:${id}`, before: "Not applicable", after: "Listed" })),
+    ...(patch.shapes ?? []).map((e) => ({ path: `shapes:${e.id}`, before: "", after: e.shapes.join(", ") })),
   ];
 }
 
@@ -1562,6 +1683,7 @@ export function subsetBuildSteps(patch: BuildStepsPatch, keep: ReadonlySet<strin
     evidence: (patch.evidence ?? []).filter((e) => keep.has(`evidence:${e.id}`)),
     notApplicable: (patch.notApplicable ?? []).filter((e) => keep.has(`na:${e.id}`)),
     applicable: (patch.applicable ?? []).filter((id) => keep.has(`applicable:${id}`)),
+    shapes: (patch.shapes ?? []).filter((e) => keep.has(`shapes:${e.id}`)),
   };
 }
 
@@ -1577,7 +1699,8 @@ export function buildStepsNarrow(stored: BuildStepsPatch, decided: BuildStepsPat
     (decided.restore ?? []).every((id) => (stored.restore ?? []).includes(id)) &&
     (decided.evidence ?? []).every((e) => (stored.evidence ?? []).some((b) => sameAdd(e, b))) &&
     (decided.notApplicable ?? []).every((e) => (stored.notApplicable ?? []).some((b) => sameAdd(e, b))) &&
-    (decided.applicable ?? []).every((id) => (stored.applicable ?? []).includes(id))
+    (decided.applicable ?? []).every((id) => (stored.applicable ?? []).includes(id)) &&
+    (decided.shapes ?? []).every((e) => (stored.shapes ?? []).some((b) => sameAdd(e, b)))
   );
 }
 
@@ -1700,6 +1823,7 @@ export function buildStepDecisionLines(patch: BuildStepsPatch, applied: BuildSte
     ...(applied.evidence ?? []).map((e) => `evidence:${e.id}`),
     ...(applied.notApplicable ?? []).map((e) => `na:${e.id}`),
     ...(applied.applicable ?? []).map((id) => `applicable:${id}`),
+    ...(applied.shapes ?? []).map((e) => `shapes:${e.id}`),
   ]);
   return buildStepLines(patch).map((l) => ({ ...l, applied: kept.has(l.path) }));
 }

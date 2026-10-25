@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, ChevronDown, Trash2 } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Trash2 } from "lucide-react";
 
 import { TemplateCard } from "@/components/ideation/kit/TemplateCard";
 import { TemplateDecisionRow } from "@/components/ideation/kit/TemplateDecision";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +13,7 @@ import { SendToAgent } from "@/components/build/SendToAgent";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { KIT_CATALOG } from "@/content/kits/catalog";
-import { CHECKLIST_COPY, shapeLabel } from "@/content/kits/copy";
+import { CHECKLIST_COPY, shapeName } from "@/content/kits/copy";
 import { featuresFor } from "@/content/kits/features";
 import { templateById } from "@/content/templates";
 import { TEMPLATE_COPY } from "@/content/templates/copy";
@@ -28,7 +27,11 @@ import {
   groupEvidence,
   groupReason,
   groupState,
+  allShapes,
+  customStepShapes,
+  isProductShape,
   removeStepGroup,
+  setCustomStepShapes,
   setGroupNotApplicable,
   setStepEvidence,
   setTemplateDecision,
@@ -54,7 +57,8 @@ function stateLabel(state: GroupState): string {
 
 /** The active templates a step lists, a ticked feature's suggestions first, then catalog order (M64). */
 function rankedTemplates(group: StepGroup, kit: ProjectKit): Array<{ t: ContractTemplate; by: string[] }> {
-  const features = featuresFor(group.shapes);
+  // Features are ours; an own shape (M176) has none of its own.
+  const features = featuresFor(group.shapes.filter(isProductShape));
   return group.templates
     .map((id) => templateById(id))
     .filter((t): t is ContractTemplate => Boolean(t) && t!.status === "active")
@@ -67,6 +71,55 @@ function rankedTemplates(group: StepGroup, kit: ProjectKit): Array<{ t: Contract
  * (M95). Opening one goes to a new tab; the pack itself stays with the
  * agent.
  */
+/**
+ * The shapes a step serves (M176), as one line of names. A step the team
+ * added opens a menu to put it on more shapes or take it off one; a
+ * catalog step's shapes come from the catalog and the shapes that picked it.
+ */
+function ShapesLine({ group, kit, onPatchKit }: { group: StepGroup; kit: ProjectKit; onPatchKit: (partial: Partial<ProjectKit>) => void }) {
+  const S = BUILD_COPY.shapes;
+  const names = group.shapes.map((x) => shapeName(kit, x)).join(", ");
+  if (!group.custom) return <span className="text-[11px] text-ink-400">{names}</span>;
+  const all = allShapes(kit);
+  const step = kit.customSteps?.find((c) => c.id === group.key);
+  const current = step ? customStepShapes(step) : [...group.shapes];
+  return (
+    <Menu
+      align="left"
+      width="w-64"
+      trigger={({ open, toggle }) => (
+        <button type="button" onClick={toggle} aria-expanded={open} aria-label={S.editShapes} className="inline-flex items-center gap-1 text-[11px] text-ink-300 transition-colors hover:text-ink-50">
+          {names}
+          <ChevronDown aria-hidden className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+        </button>
+      )}
+    >
+      <p className="px-3.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">{S.shapesLine}</p>
+      {all.map((x) => {
+        const on = current.includes(x);
+        const last = on && current.length === 1;
+        return (
+          <button
+            key={x}
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={on}
+            disabled={last}
+            title={last ? S.atLeastOne : undefined}
+            onClick={() => onPatchKit(setCustomStepShapes(kit, group.key, on ? current.filter((c) => c !== x) : [...current, x]))}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-ink-100 transition-colors hover:bg-ink-800/60 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span aria-hidden className={cn("flex h-3.5 w-3.5 items-center justify-center rounded border", on ? "border-ink-300 bg-ink-300 text-ink-950" : "border-ink-600")}>
+              {on ? <Check className="h-3 w-3" /> : null}
+            </span>
+            {shapeName(kit, x)}
+          </button>
+        );
+      })}
+    </Menu>
+  );
+}
+
 export function ReadMenu({ ids }: { ids: readonly string[] }) {
   const links = ids.map((id) => BY_ID.get(id)).filter((r): r is NonNullable<typeof r> => Boolean(r));
   if (!links.length) return null;
@@ -83,6 +136,7 @@ export function ReadMenu({ ids }: { ids: readonly string[] }) {
         >
           <BookOpen aria-hidden className="h-3 w-3" />
           {BUILD_COPY.row.read(links.length)}
+          <ChevronDown aria-hidden className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
         </button>
       )}
     >
@@ -241,12 +295,8 @@ export function StepRow({
           <p className="text-xs leading-relaxed text-ink-400">{group.detail}</p>
         ) : null}
         <div className="flex flex-wrap items-center gap-1.5">
-          {group.shapes.map((s) => (
-            <Badge key={s} tone="neon" className="px-2 py-0 text-[10px]">
-              {shapeLabel(s) ?? s}
-            </Badge>
-          ))}
-          {group.custom ? <Badge className="px-2 py-0 text-[10px]">{R.yourStep}</Badge> : null}
+          <ShapesLine group={group} kit={kit} onPatchKit={onPatchKit} />
+          {group.custom ? <span className="text-[11px] text-ink-500">{R.yourStep}</span> : null}
           {group.source === "dependency" ? <span className="text-[11px] text-ink-400">{R.fromDependencyCheck}</span> : null}
           <ReadMenu ids={group.resources} />
           {send && !done && !na ? <SendToAgent prompt={send.prompt} canQueue={send.canQueue} full={send.full} onQueue={send.onQueue} /> : null}

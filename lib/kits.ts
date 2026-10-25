@@ -91,6 +91,25 @@ export const SHAPE_SUBSECTORS: Record<ProductShape, readonly Subsector[]> = {
 
 export const PRODUCT_SHAPE_VALUES = Object.keys(SHAPE_SUBSECTORS) as readonly ProductShape[];
 
+/**
+ * A shape the team made itself (M176), "own.<slug>". It carries no catalog
+ * content of its own: the team picks catalog steps from any of our shapes
+ * into it, adds its own steps and fills its board.
+ */
+export type OwnShapeId = `own.${string}`;
+/** One of our shapes or one the team made (M176). */
+export type ShapeId = ProductShape | OwnShapeId;
+
+export const OWN_SHAPE_ID = /^own\.[a-z0-9-]{1,40}$/;
+
+export function isOwnShapeId(v: unknown): v is OwnShapeId {
+  return typeof v === "string" && OWN_SHAPE_ID.test(v);
+}
+
+export function isProductShape(v: unknown): v is ProductShape {
+  return typeof v === "string" && (PRODUCT_SHAPE_VALUES as readonly string[]).includes(v);
+}
+
 /** Shapes offered for the chosen subsectors, in PRODUCT_SHAPE_VALUES order. */
 export function shapesFor(subsectors: readonly Subsector[]): ProductShape[] {
   const chosen = new Set(subsectors);
@@ -338,10 +357,44 @@ export interface ProjectKit {
    * a shared step. Only reasoned ids are stored, never injected.
    */
   notApplicable?: Record<string, string>;
+  /** Shapes the team made itself (M176), after the catalog shapes. Read with allShapes(). */
+  ownShapes?: OwnShape[];
+  /**
+   * The shape boards (M176): catalog features, resources and contract
+   * templates placed in a lane per shape. A feature in Core is also in
+   * `features`, so it gates its steps; see lib/board.ts.
+   */
+  board?: BoardCard[];
 }
 
+/** A shape the team made (M176). `steps` are catalog step ids picked from any of our shapes. */
+export interface OwnShape {
+  id: OwnShapeId;
+  title: string;
+  /** One line on what it is. May be empty. */
+  detail: string;
+  /** The shape it was copied from, when it was. */
+  basedOn?: ProductShape;
+  steps: string[];
+}
+
+/** The three lanes of a shape board (M176). */
+export const BOARD_LANES = ["core", "exploring", "later"] as const;
+export type BoardLane = (typeof BOARD_LANES)[number];
+
+/** One placed card (M176). `ref` is "feature:<id>", "resource:<id>" or "template:<id>". */
+export interface BoardCard {
+  shape: ShapeId;
+  ref: string;
+  lane: BoardLane;
+}
+
+export const BOARD_REF = /^(feature|resource|template):[A-Za-z0-9._-]{1,120}$/;
+
 export interface KitIdea {
-  shape: ProductShape;
+  shape: ShapeId;
+  /** Its board lane (M176); absent reads as exploring. */
+  lane?: BoardLane;
   /** One line. A catalog example is stored by its exact text. */
   text: string;
   /** The catalog example this line was edited from. That example is shown no more while this line exists. */
@@ -366,7 +419,9 @@ export type CustomStepSource = "dependency";
 export interface CustomStep {
   /** "custom.<shape>.<n>", unique within the kit. */
   id: string;
-  shape: ProductShape;
+  shape: ShapeId;
+  /** Further shapes the step serves (M176), beyond `shape`. */
+  shapes?: ShapeId[];
   title: string;
   /** What done looks like. May be empty. */
   detail: string;
@@ -381,8 +436,15 @@ export const REVIEW_VERDICTS: readonly ReviewVerdict[] = ["pass", "fail", "na"];
 
 export const KIT_LIMITS = {
   existingProduct: { max: 200 },
-  /** Shapes per project (M131). Three keeps the build steps a team can read; stored docs over it keep working. */
-  shapes: { max: 3 },
+  /**
+   * Shapes per project, ours and own together (M131, M176): three on Studio,
+   * ten on Studio+. Stored docs over it keep working. Read with shapeCap().
+   */
+  shapes: { max: 3, maxPlus: 10 },
+  /** A shape the team makes (M176). */
+  ownShapes: { titleMin: 3, titleMax: 60, detailMax: 200, steps: 200 },
+  /** Placed board cards across the shapes (M176). */
+  board: { max: 200 },
   /** Cap on each id list, well above any catalog size. */
   ids: { max: 400 },
   /** Cap on stored checklist entries. */
@@ -423,6 +485,116 @@ function idList(v: unknown): string[] {
  * `kits` is what the document's sectors and subsectors qualify for; when it
  * is empty a valid stored id is kept, otherwise "credit". Idempotent.
  */
+/** Every shape of the project (M176), ours in table order, then the team's own in the order made. */
+export function allShapes(kit: Pick<ProjectKit, "shape" | "shapes" | "ownShapes"> | undefined): ShapeId[] {
+  return [...kitShapes(kit), ...(kit?.ownShapes ?? []).map((o) => o.id)];
+}
+
+/** The team's own shape by id. */
+export function ownShapeOf(kit: Pick<ProjectKit, "ownShapes"> | undefined, id: ShapeId): OwnShape | undefined {
+  return isOwnShapeId(id) ? kit?.ownShapes?.find((o) => o.id === id) : undefined;
+}
+
+/** How many shapes a project may hold (M176): three on Studio, ten on Studio+. */
+export function shapeCap(plus: boolean): number {
+  return plus ? KIT_LIMITS.shapes.maxPlus : KIT_LIMITS.shapes.max;
+}
+
+/** A fresh own shape id from a title, unique within the kit. */
+function ownShapeId(title: string, taken: readonly string[]): OwnShapeId {
+  const base = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "shape";
+  let id: OwnShapeId = `own.${base}`;
+  for (let n = 2; taken.includes(id); n++) id = `own.${base}-${n}`;
+  return id;
+}
+
+/** Add a shape the team made (M176). `steps` are the catalog step ids it starts with (a copy fills them). */
+export function addOwnShape(
+  kit: Pick<ProjectKit, "ownShapes">,
+  input: { title: string; detail?: string; basedOn?: ProductShape; steps?: readonly string[] },
+): { patch: Pick<ProjectKit, "ownShapes">; id: OwnShapeId } {
+  const L = KIT_LIMITS.ownShapes;
+  const existing = kit.ownShapes ?? [];
+  const title = input.title.trim().slice(0, L.titleMax);
+  const id = ownShapeId(title, existing.map((o) => o.id));
+  const shape: OwnShape = {
+    id,
+    title,
+    detail: (input.detail ?? "").trim().slice(0, L.detailMax),
+    ...(input.basedOn ? { basedOn: input.basedOn } : {}),
+    steps: [...new Set(input.steps ?? [])].slice(0, L.steps),
+  };
+  return { patch: { ownShapes: [...existing, shape] }, id };
+}
+
+/** Rename or redescribe an own shape (M176). */
+export function editOwnShape(kit: Pick<ProjectKit, "ownShapes">, id: OwnShapeId, next: { title?: string; detail?: string }): Pick<ProjectKit, "ownShapes"> {
+  const L = KIT_LIMITS.ownShapes;
+  return {
+    ownShapes: (kit.ownShapes ?? []).map((o) =>
+      o.id === id
+        ? { ...o, ...(next.title?.trim() ? { title: next.title.trim().slice(0, L.titleMax) } : {}), ...(next.detail !== undefined ? { detail: next.detail.trim().slice(0, L.detailMax) } : {}) }
+        : o,
+    ),
+  };
+}
+
+/** Pick or drop catalog steps on an own shape (M176). */
+export function setOwnShapeSteps(kit: Pick<ProjectKit, "ownShapes">, id: OwnShapeId, add: readonly string[], remove: readonly string[] = []): Pick<ProjectKit, "ownShapes"> {
+  const drop = new Set(remove);
+  return {
+    ownShapes: (kit.ownShapes ?? []).map((o) =>
+      o.id === id ? { ...o, steps: [...new Set([...o.steps.filter((x) => !drop.has(x)), ...add])].slice(0, KIT_LIMITS.ownShapes.steps) } : o,
+    ),
+  };
+}
+
+/**
+ * Remove a shape from everything that names it (M176): its own shape entry,
+ * its board cards and ideas, and the steps the team added. A step that
+ * serves other shapes stays on them; a step on this shape alone goes.
+ */
+export function withoutShape(
+  kit: Pick<ProjectKit, "ownShapes" | "board" | "ideas" | "customSteps">,
+  id: ShapeId,
+): Pick<ProjectKit, "ownShapes" | "board" | "ideas" | "customSteps"> {
+  const own = (kit.ownShapes ?? []).filter((o) => o.id !== id);
+  const board = (kit.board ?? []).filter((c) => c.shape !== id);
+  const ideas = (kit.ideas ?? []).filter((i) => i.shape !== id);
+  const steps: CustomStep[] = [];
+  for (const c of kit.customSteps ?? []) {
+    const list = customStepShapes(c).filter((x) => x !== id);
+    if (!list.length) continue;
+    const [first, ...rest] = list;
+    steps.push({ ...c, shape: first, ...(rest.length ? { shapes: rest } : { shapes: undefined }) });
+  }
+  return {
+    ownShapes: own.length ? own : undefined,
+    board: board.length ? board : undefined,
+    ideas: ideas.length ? ideas : undefined,
+    customSteps: steps.length ? steps.map(({ shapes, ...c }) => (shapes?.length ? { ...c, shapes } : c)) : undefined,
+  };
+}
+
+/** Every shape an added step serves, `shape` first (M176). */
+export function customStepShapes(c: Pick<CustomStep, "shape" | "shapes">): ShapeId[] {
+  return [c.shape, ...(c.shapes ?? []).filter((x) => x !== c.shape)];
+}
+
+/** Put an added step on these shapes (M176), at least one. The id stays as made. */
+export function setCustomStepShapes(kit: Pick<ProjectKit, "customSteps">, stepId: string, shapes: readonly ShapeId[]): Pick<ProjectKit, "customSteps"> {
+  const list = [...new Set(shapes)];
+  if (!list.length) return { customSteps: kit.customSteps };
+  const [first, ...rest] = list;
+  return {
+    customSteps: (kit.customSteps ?? []).map((c) => {
+      if (c.id !== stepId) return c;
+      const { shapes: _old, ...base } = c;
+      return { ...base, shape: first, ...(rest.length ? { shapes: rest } : {}) };
+    }),
+  };
+}
+
 export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): ProjectKit | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
@@ -480,6 +652,28 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     }
     if (n > 0) kit.reviewEvidence = out;
   }
+  // The team's own shapes first (M176), so steps, ideas and cards may name them.
+  if (Array.isArray(r.ownShapes)) {
+    const L = KIT_LIMITS.ownShapes;
+    const own: OwnShape[] = [];
+    for (const raw of r.ownShapes as unknown[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const o = raw as Record<string, unknown>;
+      if (!isOwnShapeId(o.id) || own.some((x) => x.id === o.id)) continue;
+      if (typeof o.title !== "string" || o.title.trim().length < L.titleMin) continue;
+      if (own.length >= KIT_LIMITS.shapes.maxPlus) break;
+      own.push({
+        id: o.id,
+        title: o.title.trim().slice(0, L.titleMax),
+        detail: typeof o.detail === "string" ? o.detail.trim().slice(0, L.detailMax) : "",
+        ...(isProductShape(o.basedOn) ? { basedOn: o.basedOn } : {}),
+        steps: idList(o.steps).slice(0, L.steps),
+      });
+    }
+    if (own.length) kit.ownShapes = own;
+  }
+  const known = new Set<string>([...PRODUCT_SHAPE_VALUES, ...(kit.ownShapes ?? []).map((o) => o.id)]);
+  const isShape = (v: unknown): v is ShapeId => typeof v === "string" && known.has(v);
   if (Array.isArray(r.customSteps)) {
     const L = KIT_LIMITS.customSteps;
     const seen = new Set<string>();
@@ -488,13 +682,15 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
       if (!raw || typeof raw !== "object") continue;
       const c = raw as Record<string, unknown>;
       if (typeof c.id !== "string" || !c.id.startsWith("custom.") || seen.has(c.id)) continue;
-      if (!PRODUCT_SHAPE_VALUES.includes(c.shape as ProductShape)) continue;
+      if (!isShape(c.shape)) continue;
       if (typeof c.title !== "string" || !c.title.trim()) continue;
       if (steps.length >= L.max) break;
       seen.add(c.id);
+      const more = Array.isArray(c.shapes) ? [...new Set((c.shapes as unknown[]).filter(isShape))].filter((x) => x !== c.shape) : [];
       steps.push({
         id: c.id,
-        shape: c.shape as ProductShape,
+        shape: c.shape,
+        ...(more.length ? { shapes: more } : {}),
         title: c.title.slice(0, L.titleMax),
         detail: typeof c.detail === "string" ? c.detail.slice(0, L.detailMax) : "",
         ...(CUSTOM_STEP_MILESTONES.includes(c.milestone as CustomStepMilestone) ? { milestone: c.milestone as CustomStepMilestone } : {}),
@@ -512,14 +708,15 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
     for (const raw of r.ideas as unknown[]) {
       if (!raw || typeof raw !== "object") continue;
       const c = raw as Record<string, unknown>;
-      if (!PRODUCT_SHAPE_VALUES.includes(c.shape as ProductShape)) continue;
+      if (!isShape(c.shape)) continue;
       if (typeof c.text !== "string" || !c.text.trim()) continue;
       const text = c.text.trim().slice(0, L.textMax);
       const key = `${c.shape}\n${text}`;
       if (seen.has(key) || ideas.length >= L.max) continue;
       seen.add(key);
       const from = typeof c.from === "string" && c.from.trim() ? c.from.trim().slice(0, L.textMax) : undefined;
-      ideas.push(from ? { shape: c.shape as ProductShape, text, from } : { shape: c.shape as ProductShape, text });
+      const lane = BOARD_LANES.includes(c.lane as BoardLane) && c.lane !== "exploring" ? { lane: c.lane as BoardLane } : {};
+      ideas.push({ shape: c.shape, text, ...(from ? { from } : {}), ...lane });
     }
     if (ideas.length) kit.ideas = ideas;
   }
@@ -536,6 +733,18 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
   }
   const features = idList(r.features).slice(0, KIT_LIMITS.features.max);
   if (features.length) kit.features = features;
+  if (Array.isArray(r.board)) {
+    const cards: BoardCard[] = [];
+    for (const raw of r.board as unknown[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const c = raw as Record<string, unknown>;
+      if (!isShape(c.shape) || typeof c.ref !== "string" || !BOARD_REF.test(c.ref)) continue;
+      if (!BOARD_LANES.includes(c.lane as BoardLane)) continue;
+      if (cards.some((x) => x.shape === c.shape && x.ref === c.ref) || cards.length >= KIT_LIMITS.board.max) continue;
+      cards.push({ shape: c.shape, ref: c.ref, lane: c.lane as BoardLane });
+    }
+    if (cards.length) kit.board = cards;
+  }
   if (r.evidence && typeof r.evidence === "object" && !Array.isArray(r.evidence)) {
     const L = KIT_LIMITS.evidence;
     const lines: Record<string, string> = {};
@@ -595,13 +804,23 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     const L = KIT_LIMITS.customSteps;
     if (kit.customSteps.length > L.max) return `At most ${L.max} added build steps.`;
     for (const c of kit.customSteps) {
-      if (!PRODUCT_SHAPE_VALUES.includes(c.shape)) return "An added build step names an unknown product shape.";
+      if (customStepShapes(c).some((x) => !isProductShape(x) && !ownShapeOf(kit, x))) return "An added build step names an unknown product shape.";
       if (c.title.trim().length < L.titleMin) return `An added build step needs a title of at least ${L.titleMin} characters.`;
       if (c.title.length > L.titleMax) return `An added build step title is over ${L.titleMax} characters.`;
       if (c.detail.length > L.detailMax) return `An added build step detail is over ${L.detailMax} characters.`;
     }
   }
   if ((kit.hiddenSteps?.length ?? 0) > KIT_LIMITS.hiddenSteps.max) return "Too many removed build steps.";
+  if (kit.ownShapes) {
+    const L = KIT_LIMITS.ownShapes;
+    for (const o of kit.ownShapes) {
+      if (!isOwnShapeId(o.id)) return "A shape you made has an unreadable id.";
+      if (o.title.trim().length < L.titleMin) return `A shape you made needs a name of at least ${L.titleMin} characters.`;
+      if (o.title.length > L.titleMax) return `A shape name is over ${L.titleMax} characters.`;
+      if (o.detail.length > L.detailMax) return `A shape description is over ${L.detailMax} characters.`;
+    }
+  }
+  if ((kit.board?.length ?? 0) > KIT_LIMITS.board.max) return `At most ${KIT_LIMITS.board.max} cards across the shape boards.`;
   if (kit.evidence) {
     const L = KIT_LIMITS.evidence;
     const entries = Object.entries(kit.evidence);
@@ -619,7 +838,7 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     const L = KIT_LIMITS.ideas;
     if (kit.ideas.length > L.max) return `At most ${L.max} lines under what you could build.`;
     for (const i of kit.ideas) {
-      if (!PRODUCT_SHAPE_VALUES.includes(i.shape)) return "A what you could build line names an unknown product shape.";
+      if (!isProductShape(i.shape) && !ownShapeOf(kit, i.shape)) return "A what you could build line names an unknown product shape.";
       if (i.text.trim().length < L.textMin) return `A what you could build line needs at least ${L.textMin} characters.`;
       if (i.text.length > L.textMax) return `A what you could build line is over ${L.textMax} characters.`;
     }
@@ -784,18 +1003,18 @@ export type FeatureLists = Partial<Record<ProductShape, readonly FeatureItem[]>>
 // ---------------------------------------------------------------------------
 // What you could build (M68 follow-up). Ticked catalog examples and own lines.
 
-export function ideasFor(kit: Pick<ProjectKit, "ideas"> | undefined, shape: ProductShape): KitIdea[] {
+export function ideasFor(kit: Pick<ProjectKit, "ideas"> | undefined, shape: ShapeId): KitIdea[] {
   return (kit?.ideas ?? []).filter((i) => i.shape === shape);
 }
 
-export function hasIdea(kit: Pick<ProjectKit, "ideas"> | undefined, shape: ProductShape, text: string): boolean {
+export function hasIdea(kit: Pick<ProjectKit, "ideas"> | undefined, shape: ShapeId, text: string): boolean {
   return (kit?.ideas ?? []).some((i) => i.shape === shape && i.text === text);
 }
 
 /** Tick or untick one line. Never stores an empty list. */
 export function toggleIdea(
   kit: Pick<ProjectKit, "ideas">,
-  shape: ProductShape,
+  shape: ShapeId,
   text: string,
   on: boolean,
 ): Pick<ProjectKit, "ideas"> {
@@ -813,7 +1032,7 @@ export function toggleIdea(
  */
 export function editIdea(
   kit: Pick<ProjectKit, "ideas">,
-  shape: ProductShape,
+  shape: ShapeId,
   prevText: string,
   nextText: string,
   isCatalog: boolean,
@@ -823,7 +1042,7 @@ export function editIdea(
   const prev = (kit.ideas ?? []).find((i) => i.shape === shape && i.text === prevText);
   const from = isCatalog ? prevText : prev?.from;
   const rest = (kit.ideas ?? []).filter((i) => !(i.shape === shape && (i.text === prevText || i.text === clean)));
-  const line: KitIdea = from ? { shape, text: clean, from } : { shape, text: clean };
+  const line: KitIdea = { shape, text: clean, ...(from ? { from } : {}), ...(prev?.lane ? { lane: prev.lane } : {}) };
   return { ideas: [...rest, line].slice(0, KIT_LIMITS.ideas.max) };
 }
 
@@ -833,7 +1052,7 @@ export function editIdea(
  */
 export function ideaRows(
   kit: Pick<ProjectKit, "ideas"> | undefined,
-  shape: ProductShape,
+  shape: ShapeId,
   examples: readonly string[],
 ): Array<{ text: string; on: boolean; own: boolean; from?: string }> {
   const mine = ideasFor(kit, shape);
@@ -1006,8 +1225,8 @@ export interface StepGroup {
   feature?: string;
   /** Every member id among the chosen shapes, table order. */
   ids: readonly string[];
-  /** Chosen shapes carrying it, table order. shapes[0] is where it is listed. */
-  shapes: readonly ProductShape[];
+  /** Chosen shapes carrying it, table order. shapes[0] is where it is listed. Own shapes (M176) come after ours. */
+  shapes: readonly ShapeId[];
   /** True for a step the team added (M50). One id, one shape, no resources. */
   custom?: true;
   /** An added step's milestone (M163), when it was given one. */
@@ -1017,7 +1236,7 @@ export interface StepGroup {
 }
 
 export interface ProductSection {
-  shape: ProductShape;
+  shape: ShapeId;
   /** Groups listed here, in this shape's own list order. */
   groups: StepGroup[];
   /** Groups this shape carries that are listed under an earlier shape. */
@@ -1163,7 +1382,7 @@ function isHidden(group: StepGroup, hidden: ReadonlySet<string>): boolean {
   return group.ids.length > 0 && group.ids.every((id) => hidden.has(id));
 }
 
-function customGroup(c: CustomStep): StepGroup {
+function customGroup(c: CustomStep, shapes: readonly ShapeId[] = customStepShapes(c)): StepGroup {
   return {
     key: c.id,
     slug: "custom",
@@ -1174,11 +1393,65 @@ function customGroup(c: CustomStep): StepGroup {
     resources: [],
     templates: [],
     ids: [c.id],
-    shapes: [c.shape],
+    shapes,
     custom: true,
     ...(c.milestone ? { milestone: c.milestone } : {}),
     ...(c.source ? { source: c.source } : {}),
   };
+}
+
+/**
+ * One section per own shape after the catalog sections (M176). Each picked
+ * catalog step id becomes a group; an id a catalog section (or an earlier
+ * own section) already lists goes under sharedAbove there, with the own
+ * shape added to that group's shapes, so it is counted once. `lookup`
+ * finds a catalog item by id across all our shapes.
+ */
+export function withOwnShapes(
+  sections: readonly ProductSection[],
+  own: readonly OwnShape[],
+  lookup: (id: string) => ChecklistItem | undefined,
+): ProductSection[] {
+  if (!own.length) return [...sections];
+  const extra = new Map<string, ShapeId[]>();
+  const byId = new Map<string, StepGroup>();
+  for (const section of sections) for (const g of section.groups) for (const id of g.ids) byId.set(id, g);
+  const added: ProductSection[] = [];
+  for (const o of own) {
+    const section: ProductSection = { shape: o.id, groups: [], sharedAbove: [] };
+    for (const id of o.steps) {
+      const above = byId.get(id);
+      if (above) {
+        extra.set(above.key, [...(extra.get(above.key) ?? []), o.id]);
+        if (!section.sharedAbove.includes(above)) section.sharedAbove.push(above);
+        continue;
+      }
+      const item = lookup(id);
+      if (!item) continue;
+      const group: StepGroup = {
+        key: item.id,
+        slug: item.id.slice(item.id.indexOf(".") + 1),
+        title: item.title,
+        detail: item.detail,
+        step: item.step,
+        resources: [...item.resources],
+        templates: [...(item.templates ?? [])],
+        ids: [item.id],
+        shapes: [o.id],
+      };
+      byId.set(id, group);
+      section.groups.push(group);
+    }
+    added.push(section);
+  }
+  // A shared group carries every shape it serves, ours then own.
+  const widen = (g: StepGroup): StepGroup => (extra.has(g.key) ? { ...g, shapes: [...g.shapes, ...extra.get(g.key)!.filter((x) => !g.shapes.includes(x))] } : g);
+  const widened = new Map<StepGroup, StepGroup>();
+  const map = (g: StepGroup) => {
+    if (!widened.has(g)) widened.set(g, widen(g));
+    return widened.get(g)!;
+  };
+  return [...sections, ...added].map((section) => ({ shape: section.shape, groups: section.groups.map(map), sharedAbove: section.sharedAbove.map(map) }));
 }
 
 /** The catalog sections without the steps whose feature the kit has not ticked (M64). */
@@ -1194,17 +1467,25 @@ export function withFeatureSteps(
   }));
 }
 
-/** The catalog sections with the kit's removals taken out and its added steps appended to their shape. */
+/**
+ * The sections with the kit's removals taken out and its added steps
+ * appended. A step on several shapes (M176) is listed under the first of
+ * them that has a section and shown as shared under the others.
+ */
 export function withKitSteps(sections: readonly ProductSection[], kit: KitSteps | undefined): ProductSection[] {
   const hidden = new Set(kit?.hiddenSteps ?? []);
-  const custom = kit?.customSteps ?? [];
+  const present = sections.map((s) => s.shape);
+  const custom = (kit?.customSteps ?? []).map((c) => {
+    const shapes = customStepShapes(c).filter((x) => present.includes(x));
+    return { home: shapes[0], group: customGroup(c, shapes) };
+  });
   return sections.map((section) => ({
     shape: section.shape,
-    groups: [
-      ...section.groups.filter((g) => !isHidden(g, hidden)),
-      ...custom.filter((c) => c.shape === section.shape).map(customGroup),
+    groups: [...section.groups.filter((g) => !isHidden(g, hidden)), ...custom.filter((c) => c.home === section.shape).map((c) => c.group)],
+    sharedAbove: [
+      ...section.sharedAbove.filter((g) => !isHidden(g, hidden)),
+      ...custom.filter((c) => c.home !== section.shape && c.group.shapes.includes(section.shape)).map((c) => c.group),
     ],
-    sharedAbove: section.sharedAbove.filter((g) => !isHidden(g, hidden)),
   }));
 }
 
@@ -1212,9 +1493,9 @@ export function withKitSteps(sections: readonly ProductSection[], kit: KitSteps 
 export function removedGroups(
   sections: readonly ProductSection[],
   kit: KitSteps | undefined,
-): Map<ProductShape, StepGroup[]> {
+): Map<ShapeId, StepGroup[]> {
   const hidden = new Set(kit?.hiddenSteps ?? []);
-  const out = new Map<ProductShape, StepGroup[]>();
+  const out = new Map<ShapeId, StepGroup[]>();
   for (const section of sections) {
     const gone = section.groups.filter((g) => isHidden(g, hidden));
     if (gone.length) out.set(section.shape, gone);
@@ -1222,17 +1503,23 @@ export function removedGroups(
   return out;
 }
 
-/** Add a step under a shape. The id is "custom.<shape>.<n>", n one past the highest in use. `opts` gives it a milestone and a source (M163). */
+/**
+ * Add a step under a shape, or several (M176). The id is "custom.<first
+ * shape>.<n>", n one past the highest in use. `opts` gives it a milestone
+ * and a source (M163).
+ */
 export function addCustomStep(
   kit: KitSteps,
-  shape: ProductShape,
+  shapeOrShapes: ShapeId | readonly ShapeId[],
   title: string,
   detail = "",
   opts: { milestone?: CustomStepMilestone; source?: CustomStepSource } = {},
 ): Pick<ProjectKit, "customSteps"> {
   const L = KIT_LIMITS.customSteps;
   const existing = kit.customSteps ?? [];
-  if (existing.length >= L.max) return { customSteps: existing };
+  const list = typeof shapeOrShapes === "string" ? [shapeOrShapes] : [...new Set(shapeOrShapes)];
+  const [shape, ...more] = list;
+  if (existing.length >= L.max || !shape) return { customSteps: existing };
   const prefix = `custom.${shape}.`;
   const n =
     existing
@@ -1245,6 +1532,7 @@ export function addCustomStep(
       {
         id: `${prefix}${n}`,
         shape,
+        ...(more.length ? { shapes: more } : {}),
         title: title.trim().slice(0, L.titleMax),
         detail: detail.trim().slice(0, L.detailMax),
         ...(opts.milestone ? { milestone: opts.milestone } : {}),

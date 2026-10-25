@@ -45,8 +45,10 @@ import {
   kitShapes,
   missingFamilies,
   overlappingSubsectors,
+  shapeCap,
   shapesFor,
 } from "@/lib/kits";
+import { usePlan } from "@/components/studio/PlanContext";
 import { SECTOR_SUBSECTORS, type Sector, type Subsector, docSectors, sectorOfSubsector } from "@/lib/sectors";
 import { templateChainCounts, templatesForShapes } from "@/lib/templates";
 
@@ -75,7 +77,10 @@ export function ShapeChooser({
   const patchKit = (partial: Partial<ProjectKit>) => patch({ kit: { ...(kit ?? emptyProjectKit(kitIds)), ...partial } });
   const onSectors = (v: Sector[]) => patch(sectorsChange(doc, v));
   const onSubsectors = (v: Subsector[]) => patch(subsectorsChange(doc, v));
-  const onShapes = (shapes: readonly string[]) => patch(shapesChange(doc, shapes as ProductShape[]));
+  // Ours and own count together against the plan's cap (M176): 3 on Studio, 10 on Studio+.
+  const cap = shapeCap(usePlan().plan === "studio_plus");
+  const ourCap = Math.max(0, cap - (doc.kit?.ownShapes?.length ?? 0));
+  const onShapes = (shapes: readonly string[]) => patch(shapesChange(doc, shapes as ProductShape[], cap));
 
   /** One line per subsector the overlap rule ticked, from the click order stored in the doc. */
   const overlapHints = subsectors.flatMap((sub, i) => {
@@ -226,10 +231,10 @@ export function ShapeChooser({
               }
               value={kitShapes(kit)}
               onChange={onShapes}
-              max={KIT_LIMITS.shapes.max}
+              max={ourCap}
               groups={shapeGroups}
             >
-              <p className="text-xs text-ink-500">{KIT_COPY.shapeCap(KIT_LIMITS.shapes.max)}</p>
+              <p className="text-xs text-ink-500">{KIT_COPY.shapeCap(cap)}</p>
             </ChipMultiSelectGroups>
           ) : null}
           {kitShapes(kit).length && kit ? (

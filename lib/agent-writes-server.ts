@@ -41,6 +41,7 @@ import {
   getProject,
 } from "@/lib/ideation-db";
 import { emptyTokenDesignDoc } from "@/lib/ideation";
+import { allShapes, shapeCap } from "@/lib/kits";
 import { type Owner, ownedBy, ownerOf } from "@/lib/owner";
 import { type ProspectsPatch, prospectsPatchSchema } from "@/lib/prospects";
 import { upsertProspects } from "@/lib/prospects-db";
@@ -295,9 +296,15 @@ export async function submitAgentChange(
     const problem = projectPatchProblem(project.draft_doc, input.patch);
     if (problem) return { ok: false, message: problem };
     if (await chainChangeRefused(project, input.patch)) return { ok: false, message: CHAIN_LOCKED };
+    const plus = await projectPlus(project);
     // The Studio+ fields are refused when the project's team is not on the plan (M134), in both modes.
-    const plusProblem = plusFieldProblem(input.patch, await projectPlus(project));
+    const plusProblem = plusFieldProblem(input.patch, plus);
     if (plusProblem) return { ok: false, message: plusProblem };
+    // Shapes, ours and own together, stop at the plan's cap (M176): 3 on Studio, 10 on Studio+.
+    const shapesBefore = allShapes(project.draft_doc.kit).length;
+    const shapesAfter = allShapes(applyProjectPatch(project.draft_doc, input.patch as ProjectPatch).kit).length;
+    if (shapesAfter > shapesBefore && shapesAfter > shapeCap(plus))
+      return { ok: false, message: `This project can hold ${shapeCap(plus)} shapes on ${plus ? "Studio+" : "Studio"}, ours and own together${plus ? "" : ", and 10 on Studio+"}. Remove one first.` };
   }
   if (Object.keys(input.patch).length === 0)
     return { ok: false, message: "The change is empty. Send at least one field." };

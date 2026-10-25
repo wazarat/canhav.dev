@@ -72,13 +72,14 @@ import {
   shapeLabels,
   startingPointLabel,
   KIT_COPY,
+  BOARD_COPY,
 } from "@/content/kits/copy";
 import { launchChain } from "@/content/launch";
 import { deployerEnvFile, DEPLOYER_ENV, deployerHint, deployerView } from "@/lib/deployer";
 import { TOKEN_STEPS_COPY, TOKEN_STEP_LABELS } from "@/content/token-steps";
 import type { TokenBuildRow } from "@/lib/token-steps";
 import { type PackResourceView, buildResourcePack } from "@/lib/kit-pack";
-import { KIT_PRIORITY_ORDER, type ProductShape } from "@/lib/kits";
+import { KIT_PRIORITY_ORDER, type ProductShape, type ShapeId } from "@/lib/kits";
 import {
   type ProjectDoc,
   referenceIsLink,
@@ -264,8 +265,9 @@ function resourcePackSections(
       "",
       `${pack.checklist.done} of ${pack.checklist.total} done. ${CHECKLIST_COPY.countNote} A step marked na does not apply and leaves the count. In order.`,
     );
-    const label = (shape: ProductShape) => shapeLabel(shape) ?? shape;
-    for (const shape of pack.shapes as ProductShape[]) {
+    const own = new Map(pack.ownShapes.map((o) => [o.id as string, o.title] as const));
+    const label = (shape: ShapeId) => own.get(shape) ?? shapeLabel(shape) ?? shape;
+    for (const shape of [...pack.shapes, ...pack.ownShapes.map((o) => o.id)] as ShapeId[]) {
       const groups = pack.checklist.groups.filter((g) => g.shape === shape);
       const above = pack.checklist.groups.filter((g) => g.shape !== shape && g.shapes.includes(shape));
       lines.push("", `${heading}# ${label(shape)}`, "");
@@ -289,11 +291,21 @@ function resourcePackSections(
         lines.push("", CHECKLIST_COPY.sharedAboveLine([...new Set(above.map((g) => label(g.shape)))]));
     }
   }
+  // The shape boards (M176), the lanes that hold anything.
+  if (pack.boards.some((b) => b.core.length + b.exploring.length + b.later.length > 0)) {
+    lines.push("", `${heading} ${BOARD_COPY.export}`);
+    for (const b of pack.boards) {
+      const lanes = (["core", "exploring", "later"] as const).filter((l) => b[l].length);
+      if (!lanes.length) continue;
+      lines.push("", `${heading}# ${b.name}`, "");
+      for (const l of lanes) lines.push(`- ${BOARD_COPY.exportLine(BOARD_COPY.lanes[l].label, b[l].map((i) => `${i.title} (${BOARD_COPY.kinds[i.kind].toLowerCase()})`).join(", "))}`);
+    }
+  }
   if (pack.ideas.items.length > 0) {
     lines.push("", `${heading} ${KIT_COPY.examplesTitle}`, "", KIT_COPY.ideasExport(pack.ideas.count), "");
     for (const i of pack.ideas.items)
       lines.push(
-        `- [${i.on ? "x" : " "}] ${i.text} (${shapeLabel(i.shape) ?? i.shape}${i.own ? `, ${(i.from ? KIT_COPY.ideaEdited : KIT_COPY.ideaOwn).toLowerCase()}` : ""})`,
+        `- [${i.on ? "x" : " "}] ${i.text} (${pack.ownShapes.find((o) => o.id === i.shape)?.title ?? shapeLabel(i.shape) ?? i.shape}${i.own ? `, ${(i.from ? KIT_COPY.ideaEdited : KIT_COPY.ideaOwn).toLowerCase()}` : ""})`,
       );
   }
   if (pack.templateGaps.length > 0) {
