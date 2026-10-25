@@ -179,6 +179,35 @@ export const STUDIO_PLUS_COPY = {
     differentiatorHint: "One line a reviewer remembers. Drafted from the record against the landscape.",
     draft: "Draft the line",
     pinned: (n: number) => (n === 1 ? "1 pinned" : `${n} pinned`),
+    /** How others built it (M169, V5): the comparables under the landscape. No dates, no metrics, plain text. */
+    comparables: {
+      title: "How others built it",
+      lead: "How existing protocols in your subsectors work, how they differ from each other and what goes wrong with each design. From CanHav's research store, no metrics and no dates on purpose.",
+      loading: "Reading the comparables",
+      failed: "Could not load the comparables. Reload and try again.",
+      none: "No comparable is recorded for these subsectors yet.",
+      all: "All",
+      components: "Components",
+      more: (n: number) => (n === 1 ? "1 more" : `${n} more`),
+      less: "Show fewer",
+      contrasts: "Design contrasts",
+      unlike: (name: string, text: string) => `Unlike ${name}, ${text.charAt(0).toLowerCase()}${text.slice(1)}`,
+      risks: "What goes wrong",
+      links: { docs: "Docs", github: "GitHub", website: "Website", template: (name: string) => `Template, ${name}` },
+      pin: "Pin on the map",
+      pinned: "Pinned on the map",
+      notOnChain: "Not on DefiLlama for this chain",
+      pinFull: "Twelve pins are used. Unpin one on the map first.",
+      useAs: "Use as reference",
+      useAsHint: (name: string) => `Attach to an item of the value canvas as its source, from ${name}.`,
+      noItems: "Add products, pain relievers or gain creators to the value canvas first.",
+      profile: (n: number) => `Profile ${n}`,
+      /** The line under a value canvas item that carries a reference. */
+      ref: (name: string, text: string) => `From ${name}, ${text}`,
+      refRemove: "Remove the reference",
+      refsFull: "Three references on an item is the most.",
+      attached: (item: string) => `Attached to ${item}`,
+    },
   },
   /** The Value Proposition Canvas per profile (M157, F16). */
   valueCanvas: {
@@ -248,6 +277,24 @@ export const STUDIO_PLUS_COPY = {
       objection: { label: "Objection", placeholder: "What stops them." },
     },
     listHint: "Comma separated.",
+    /** Reachable wallets (M168), one block per profile. Numbers are words and digits, never a chip. */
+    reach: {
+      title: "Reachable wallets",
+      overlap: "Wallets that use the subsector and hold the assets",
+      users: "Subsector users, 90 days",
+      holders: "Asset holders",
+      sparkline: (chain: string) => `Subsector users per day on ${chain} over the last 90 days.`,
+      source: (date: string) => `Dune, read ${date}`,
+      refresh: "Refresh",
+      refreshing: "Reading Dune",
+      left: (n: number) => (n === 1 ? "1 of 10 refreshes left this month" : `${n} of 10 refreshes left this month`),
+      cap: "The ten refreshes of this month are used. The numbers refresh again next month.",
+      needsAssets: "Add the assets on Viability to see who holds them.",
+      notConfigured: "Dune is not configured on this deployment, so there are no wallet counts yet.",
+      failed: "Dune could not answer. Try again in a moment.",
+      loading: "Reading the cached numbers",
+      counted: (assets: readonly string[], protocols: number) => `Counted over ${assets.join(", ")} and ${protocols} ${protocols === 1 ? "contract" : "contracts"}.`,
+    },
   },
   /** The Business Model Canvas (M113). */
   canvas: {
@@ -412,6 +459,10 @@ export const STUDIO_PLUS_COPY = {
       title: "Version history",
       teaser: "Draft version history with restore, for when an agent or a teammate overwrites something. Published snapshots are free for everyone.",
     },
+    viability: {
+      title: "Viability",
+      teaser: "Can it be built on this chain today, is anyone already doing it here, do the numbers work, and what is the cheapest test that proves or kills it. Each answer stored with its source and date, readable and writable by your agent.",
+    },
   } satisfies Record<PlusFeature, { title: string; teaser: string }>,
 } as const;
 
@@ -419,4 +470,4 @@ export const STUDIO_PLUS_COPY = {
  * The features that have shipped. Everything else on the pricing page
  * carries the Soon badge. Grows with the run.
  */
-export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring", "weekly_update", "tester_kit", "investor_pack", "custom_domain"];
+export const STUDIO_PLUS_SHIPPED: readonly PlusFeature[] = ["private_projects", "version_history", "project_keys", "bmc", "icp", "competitors", "brand", "github_sync", "checks", "analytics", "monitoring", "weekly_update", "tester_kit", "investor_pack", "custom_domain", "viability"];

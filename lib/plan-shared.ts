@@ -30,6 +30,7 @@ export const PLUS_FEATURES = [
   "tester_kit",
   "custom_domain",
   "version_history",
+  "viability",
 ] as const;
 
 export type PlusFeature = (typeof PLUS_FEATURES)[number];

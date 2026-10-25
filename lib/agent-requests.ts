@@ -7,9 +7,11 @@
  *
  * Kinds: `deployer`, the agent makes the throwaway deployer key on the
  * person's machine and records its address (F8); `step`, the agent works
- * one build step, `target` being the step group's key (F10, M152).
+ * one build step, `target` being the step group's key (F10, M152);
+ * `assets`, the agent fills the assets the idea depends on from the code
+ * (M162), cleared by an update_project write of assets.
  */
-export const AGENT_REQUEST_KINDS = ["deployer", "step"] as const;
+export const AGENT_REQUEST_KINDS = ["deployer", "step", "assets"] as const;
 export type AgentRequestKind = (typeof AGENT_REQUEST_KINDS)[number];
 
 export interface AgentRequest {
@@ -94,5 +96,7 @@ export function agentRequestHowTo(kind: AgentRequestKind, envFile = ".env"): str
       `Make a throwaway deployer key on this machine (cast wallet new, or viem's generatePrivateKey), write it to ${envFile} as DEPLOYER_PRIVATE_KEY=0x..., ` +
       `check the file is ignored by git (git check-ignore ${envFile}), record its address with update_project deployer, and never print the key. Recording the address clears this request.`
     );
+  if (kind === "assets")
+    return "Read the contracts in this repository and record the tokens they touch with update_project assets, each with a symbol, a role (collateral, borrow, quote, underlying or reward) and the address where you know it. Writing assets clears this request.";
   return "Work the step in this repository, add the file, test or address as evidence and tick it with set_build_steps, and name it in report_session's plan. Ticking it clears this request.";
 }

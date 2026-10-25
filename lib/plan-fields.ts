@@ -16,6 +16,11 @@ export const PLUS_DOC_FIELDS = {
   brand: "brand",
   investorPack: "investor_pack",
   updateCadence: "weekly_update",
+  assets: "viability",
+  economics: "viability",
+  experiments: "viability",
+  reach: "icp",
+  reachProtocols: "icp",
 } as const satisfies Partial<Record<keyof ProjectDoc, PlusFeature>>;
 
 export type PlusDocField = keyof typeof PLUS_DOC_FIELDS;

@@ -479,6 +479,50 @@ await sql`
   )
 `;
 
+// The gap map (M164) needs how many protocols the category has on the
+// chain, not only the top rows the snapshot keeps.
+await sql`
+  alter table launchpad.competitor_snapshots
+    add column if not exists total integer
+`;
+
+// Reach snapshots (M168): the Dune counts behind Reachable wallets, one
+// row per read, per project, ideal customer profile and chain; the newest
+// row of a month is the cached answer, and manual rows count against the
+// team's monthly refresh cap. Rows go with their project.
+await sql`
+  create table if not exists launchpad.reach_snapshots (
+    id uuid primary key default gen_random_uuid(),
+    project_id uuid not null references launchpad.projects(id) on delete cascade,
+    profile smallint not null,
+    chain text not null,
+    month date not null,
+    rows jsonb not null,
+    manual boolean not null default false,
+    requested_by text,
+    fetched_at timestamptz not null default now()
+  )
+`;
+await sql`
+  create index if not exists reach_snapshots_project_idx
+    on launchpad.reach_snapshots (project_id, profile, chain, fetched_at desc)
+`;
+
+// Pool snapshots (M162): DefiLlama's pools on the mainnet a project chain
+// stands in for, one row per chain per day, taken lazily on the first read
+// of a day. The dependency check sums liquidity per asset from it and the
+// unit economics read rates from it.
+await sql`
+  create table if not exists launchpad.pool_snapshots (
+    id uuid primary key default gen_random_uuid(),
+    chain text not null,
+    day date not null,
+    rows jsonb not null,
+    fetched_at timestamptz not null default now(),
+    unique (chain, day)
+  )
+`;
+
 // Check runs (M121): one row per tool run the checks workflow posts, so
 // Review reads as proof. Rows go with their project.
 await sql`

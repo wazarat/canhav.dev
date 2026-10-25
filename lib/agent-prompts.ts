@@ -98,3 +98,34 @@ export function stepPrompt(
     `5. Respect the project's agent write mode. In propose mode the owner accepts your change on the project page; never work around it.`,
   ].join("\n\n");
 }
+
+/**
+ * The assets the idea depends on (M162, Viability): the agent reads the
+ * contracts and records every token they touch with its role, so the
+ * dependency check can read a price feed and onchain liquidity for each.
+ */
+export function assetsPrompt(name: string, projectId: string): string {
+  const alias = mcpAlias(name, projectId);
+  return [
+    serverLine(alias),
+    `Fill the assets this project depends on, the tokens its contracts touch.`,
+    `1. Call get_project and read the contracts in this repository (the collateral and loan tokens, the quote asset of any pool, the underlying of any vault or tokenized asset, any reward token).`,
+    `2. Call update_project with assets, one row per token with symbol (the upper case ticker), role (collateral, borrow, quote, underlying or reward) and address where the code or the deploy scripts name one, at most twenty rows. Keep the id of any row get_project already returns.`,
+    `3. Call check_dependencies afterwards when it is available and tell me which assets have no price feed or no liquidity on the project's chain.`,
+  ].join("\n\n");
+}
+
+/**
+ * Experiments (M171, Viability): the agent proposes the cheapest tests
+ * for the riskiest assumptions and adds evidence as the work happens.
+ */
+export function experimentsPrompt(name: string, projectId: string): string {
+  const alias = mcpAlias(name, projectId);
+  return [
+    serverLine(alias),
+    `Propose the cheapest experiments that prove or kill this project's riskiest assumptions, and keep them fed with evidence.`,
+    `1. Call get_project and get_experiments. Read the Business Model Canvas and the value canvas items (each carries an id) and pick the two or three assumptions that would hurt most if wrong.`,
+    `2. For each, call update_project with experiments, one row per experiment with assumption (kind canvas or value and the item's id, or text), hypothesis, test (what is done, by whom, on which chain), metric, passBar, killCriterion and a deadline within three weeks. Leave the status as planned.`,
+    `3. While an experiment runs, add evidence rows (what you saw, with a link where there is one) through the same tool, and when it ends propose the verdict in result. Only the owner sets passed or failed, from the project page.`,
+  ].join("\n\n");
+}

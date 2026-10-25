@@ -29,6 +29,14 @@ import { FIELD_PATCH_PATH, FIELD_TAB, openFields } from "@/lib/project-fields";
 import { tokenDesignOpenSections } from "@/lib/token-design-steps";
 import { COMPARABLES_NOTE, COMPARABLES_SOURCE, COMPARABLE_SECTIONS, type ComparableSection, comparablesForSubsectors, pickSections } from "@/lib/comparables";
 import { effectiveSubsectors } from "@/lib/kits";
+import { dependencyCheck } from "@/lib/viability/check";
+import { gapMap } from "@/lib/gaps";
+import { reachFor } from "@/lib/reach-server";
+import { dueLine, isOverdue, orderExperiments } from "@/lib/experiments";
+import { PROFILE_KEYS as REACH_PROFILE_KEYS } from "@/lib/value-canvas";
+import { ECONOMICS_FORMULAS, SHAPE_ECONOMICS_FAMILY, breakEvenSentence, computeEconomics, defaultEconomics, economicsLines, familyOf, inputsFor } from "@/lib/economics";
+import { ECONOMICS_COPY } from "@/content/economics";
+import { dependencyCheckStatic } from "@/lib/viability/static";
 import {
   type ProjectRow,
   type TokenDesignRow,
@@ -101,7 +109,8 @@ import { tokenBuildProgressOf, tokenBuildRowsOf } from "@/content/token-steps";
 import type { TokenLaunchFacts } from "@/lib/token-steps";
 import { REVIEW_VERDICT_LABELS, shapeLabel, shapeLabels } from "@/content/kits/copy";
 import { NO_SHAPE_HINT, PACK_SECTIONS, buildResourcePack, buildReviewView, packSections, packSummary, templatesRead } from "@/lib/kit-pack";
-import { type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
+import { PROJECT_CHAINS, type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
+import { SECTOR_VALUES, type Sector } from "@/lib/sectors";
 import { deployerEnvFile, deployerHint, deployerView } from "@/lib/deployer";
 import { getDeployerBalances } from "@/lib/deployer-server";
 import { launchTargetLabel } from "@/content/launch-targets";
@@ -443,6 +452,14 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           })()
         : { address: null, projectChain: projectChainOf(project.draft_doc), hint: deployerHint(project.draft_doc), envFile: deployerEnvFile(project.draft_doc) };
       const chainKey = projectChainOf(project.draft_doc);
+      // The dependency check without the pools read (M163): what is missing or needs a workaround on the chain, for a Studio+ team.
+      const deps = plus ? dependencyCheckStatic(project.draft_doc).summary : null;
+      // The unit economics (M166): the chosen case's break even, for a Studio+ team with a record.
+      const economics = plus && project.draft_doc.economics ? { family: project.draft_doc.economics.family, chosen: project.draft_doc.economics.chosen, breakEven: breakEvenSentence(project.draft_doc.economics), by: project.draft_doc.economics.by, updatedAt: project.draft_doc.economics.updatedAt } : null;
+      // Experiments (M170): the running ones and the overdue ones, for a Studio+ team.
+      const experimentsOpen = plus ? (project.draft_doc.experiments ?? []).filter((e) => e.status === "running") : [];
+      const experiments = plus ? { running: experimentsOpen.map((e) => ({ id: e.id, hypothesis: e.hypothesis, due: dueLine(e.deadline) })), overdue: experimentsOpen.filter((e) => isOverdue(e)).map((e) => e.id), planned: (project.draft_doc.experiments ?? []).filter((e) => e.status === "planned").length, howTo: "Read get_experiments for every experiment with its evidence; add evidence or propose a verdict in result with update_project experiments; only a person sets passed or failed." } : null;
+      const dependencies = deps ? { summary: deps.sentence, missing: deps.missing, workaround: deps.workaround, mainnetOnly: deps.mainnetOnly, howTo: "Read check_dependencies for every row with its source; a missing or workaround row can become a build step with set_build_steps add (milestone testnet or design)." } : null;
       return jsonResult({
         plus,
         // The owner's requests for the agent (M151): make the deployer key, work a step. Each says how; answering it clears it.
@@ -552,7 +569,17 @@ export function registerProjectTools(server: McpServer, projectId: string): void
               curve: curveSummary(launched.token_address === tokenAddress ? curve : launchedCurve, now),
             }
           : null,
-        nextAction,
+        dependencies,
+        economics,
+        experiments,
+        // A missing dependency rides on the next action (M163) so the agent plans the workaround with the rest.
+        nextAction: [
+          nextAction,
+          dependencies?.missing.length ? `The dependency check finds ${dependencies.missing.join(", ")} missing on ${chainInfo(chainKey).short}; read check_dependencies and plan the workaround.` : "",
+          experiments?.overdue.length ? `${experiments.overdue.length === 1 ? "An experiment is" : `${experiments.overdue.length} experiments are`} running past the deadline (${experiments.overdue.join(", ")}); read get_experiments, add the evidence you have and propose a verdict in result.` : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
       });
     },
     scope,
@@ -752,7 +779,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "update_project",
     {
       title: "Change this project's draft",
-      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts as rows of name, 2 to 80 characters, and why it exists, 10 to 300, up to thirty, the list replaces the stored list, contractsNone true for the honest None yet, and contractsLegacy, the free text answer from before rows existed, which get_project returns when the team has one, split it into rows and send contractsLegacy null to drop it; externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions as rows of name and why with an optional contract, the name of a contracts row it lives on, and holder, who can call it such as "Team Safe 2 of 3" or "Timelock, 1 day", up to thirty, the list replaces the stored list, adminFunctionsNone true when the contracts are immutable and have no admin functions, which publishes as a strength, and adminFunctionsLegacy, the free text answer from before rows existed, split it into rows and send adminFunctionsLegacy null to drop it; upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear, recorded as made by the agent and answering the owner's open key request on get_project_status, and deployerEnvFile, where that key lives in the repository as a path relative to its root, for example packages/contracts/.env, null for the default .env of the contracts package; read the repository layout and record the real path), logo (a URL on CanHav's image store from set_logo, or null to clear), and summary (built and building lists, see set_summary, null to clear), and canvas, the Business Model Canvas (Studio+), any of customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners and costStructure as a list of up to eight short items of 2 to 140 characters, one idea each (a paragraph or plain lines are split into items), each block sent replaces the stored block and the rest stay, items carry an id that get_project returns and an item sent with its id keeps that id so later links to it hold, null to clear the canvas, competitors (Studio+) with differentiator, one line of up to 300 characters on how the project differs, read the landscape with get_competitors first, brand (Studio+) with palette (primary, secondary, accent, surface as lowercase hex), fonts (display and body from the Google Fonts list the studio offers), tone (two to five words) and tagline, merged over the stored kit, null to clear, and icp (Studio+), one or two ideal customer profiles with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection, the list replaces the stored one, null to clear, and valueCanvas (Studio+), the Value Proposition Canvas per profile keyed "0" and "1", each with products, painRelievers, gainCreators, jobs, pains and gains as lists of up to eight short items of 2 to 140 characters (a paragraph or plain lines are split, items carry ids that get_project returns, keep an id to edit in place, and a reliever or creator may carry answers, the ids of the pains or gains it addresses), each area sent replaces the stored area, a profile key sent as null drops its canvas, and investorPack (Studio+) with files, where the one pager and the deck you built live, files.onepager and files.deck each a path in the repository or an https URL of at most 300 characters, null to drop one, merged over the stored pack, null to clear it all, never published; the one pager and the deck themselves are built outside CanHav from the draft_pack prompt and are no longer written here, a write of onepager, deck or grants is refused. Writing canvas, icp, valueCanvas, competitors, brand or investorPack.files clears the owner's open draft request for it (get_project_status lists them first) and marks the field as drafted by the agent. What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also updateCadence (Studio+), how often the team posts an update, daily, every_other_day, weekly or manual, null for the default weekly. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. The Studio+ fields (canvas, icp, competitors, brand, investorPack, updateCadence) are refused when the project's team is not on Studio+. Also waived, a map of recommended field to a reason of 3 to 200 characters saying why it does not apply (subsectors, sectorOther, contracts, externalDeps, oracles, adminFunctions, upgradeability, worstCase, audit, bugBounty, monitoring, incidentResponse, keyCustody, firstHundredUsers), merged over the stored map, a key sent as null clears that waiver; the reason publishes as plain text and a stated value always wins over it. check_project lists the recommended fields still open under recommendedOpen. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
+      description: `Change fields of this project's draft across the editor steps. Basics (name, whatItDoes, audience b2b or b2c, personas for a b2b audience with teamSize, geography, industry, primaryContact and revenueRange, consumerPersonas for a b2c audience with ageRange, geography, cryptoExperience, howTheyFindYou and holdings, payer, whoPays, whyThisChain, stage), architecture (contracts as rows of name, 2 to 80 characters, and why it exists, 10 to 300, up to thirty, the list replaces the stored list, contractsNone true for the honest None yet, and contractsLegacy, the free text answer from before rows existed, which get_project returns when the team has one, split it into rows and send contractsLegacy null to drop it; externalDeps, externalDepsNone, oracleUse, oracles, adminFunctions as rows of name and why with an optional contract, the name of a contracts row it lives on, and holder, who can call it such as "Team Safe 2 of 3" or "Timelock, 1 day", up to thirty, the list replaces the stored list, adminFunctionsNone true when the contracts are immutable and have no admin functions, which publishes as a strength, and adminFunctionsLegacy, the free text answer from before rows existed, split it into rows and send adminFunctionsLegacy null to drop it; upgradeability), security (worstCase and the five status declarations), reality (firstHundredUsers) and the verification fields (githubRepo, website as an https URL, testnetContracts as address and optional label rows or plain lowercase addresses, up to a hundred, the list replaces the stored list, addressBook as an https URL to the file or explorer list that holds every deployed address, verifyWallet, and deployer, the throwaway deployer key's lowercase address, never the key itself, null to clear, recorded as made by the agent and answering the owner's open key request on get_project_status, and deployerEnvFile, where that key lives in the repository as a path relative to its root, for example packages/contracts/.env, null for the default .env of the contracts package; read the repository layout and record the real path), logo (a URL on CanHav's image store from set_logo, or null to clear), and summary (built and building lists, see set_summary, null to clear), and canvas, the Business Model Canvas (Studio+), any of customerSegments, valueProposition, channels, customerRelationships, revenueStreams, keyResources, keyActivities, keyPartners and costStructure as a list of up to eight short items of 2 to 140 characters, one idea each (a paragraph or plain lines are split into items), each block sent replaces the stored block and the rest stay, items carry an id that get_project returns and an item sent with its id keeps that id so later links to it hold, null to clear the canvas, competitors (Studio+) with differentiator, one line of up to 300 characters on how the project differs, read the landscape with get_competitors first, brand (Studio+) with palette (primary, secondary, accent, surface as lowercase hex), fonts (display and body from the Google Fonts list the studio offers), tone (two to five words) and tagline, merged over the stored kit, null to clear, and icp (Studio+), one or two ideal customer profiles with name, summary, walletsTheyUse, channels, protocolsTheyUse, buyingTrigger and objection, the list replaces the stored one, null to clear, and valueCanvas (Studio+), the Value Proposition Canvas per profile keyed "0" and "1", each with products, painRelievers, gainCreators, jobs, pains and gains as lists of up to eight short items of 2 to 140 characters (a paragraph or plain lines are split, items carry ids that get_project returns, keep an id to edit in place, and a reliever or creator may carry answers, the ids of the pains or gains it addresses), each area sent replaces the stored area, a profile key sent as null drops its canvas, and assets (Studio+ under viability), the tokens the idea depends on as rows of symbol (an upper case ticker of at most 12 characters), role (collateral, borrow, quote, underlying or reward) and an optional address (the token on the project's chain or its mainnet), up to twenty, the list replaces the stored list, a row sent with the id get_project returns keeps that row's provenance, null to clear; read the contracts in the repository and record every token they touch, since the dependency check on the Viability tab reads a price feed and onchain liquidity for each, and writing assets clears the owner's open request for them, and experiments (Studio+ under viability), a list of experiments where a row without an id is appended and a row with an id from get_experiments is updated in place (fields left out keep their values), each with assumption (kind canvas, value or text, ref the item id for canvas or value, text), hypothesis, test, metric, passBar, killCriterion, deadline as YYYY-MM-DD, status among planned, running and stopped (passed and failed are a person's call from the project page), evidence rows (text and an optional https url, appended with you as the author) and result, the paragraph that proposes or records the outcome, null to clear them all, and reachProtocols (Studio+ under icp), protocol contracts on the mainnet to count in the reachable wallets queries as rows of name and lowercase address, up to twenty, the list replaces the stored list, null to clear, and economics (Studio+ under viability), the unit economics with family (read get_unit_economics for the project's family and inputs), scenarios.low, .base and .high as full or partial input sets of the family's keys (rates as percentages, money in dollars, a missing key keeps the stored or default value) and chosen, merged over the stored record and stamped as filled by the agent, null to clear, and investorPack (Studio+) with files, where the one pager and the deck you built live, files.onepager and files.deck each a path in the repository or an https URL of at most 300 characters, null to drop one, merged over the stored pack, null to clear it all, never published; the one pager and the deck themselves are built outside CanHav from the draft_pack prompt and are no longer written here, a write of onepager, deck or grants is refused. Writing canvas, icp, valueCanvas, competitors, brand or investorPack.files clears the owner's open draft request for it (get_project_status lists them first) and marks the field as drafted by the agent. What the project is classed as (sectors, sectorOther, subsectors, and under kit the product shapes, startingPoint scratch or existing_product, existingProduct, resources with tick and untick lists of resource ids from get_resource_pack, and review, a list of pass and verdict pairs with ids from get_prelaunch_review and verdict pass, fail, na or open to clear). Also references, the team's own files as title, location (a link or a path on the team's machine), note and an optional evidence handle (an REA evidence id, a test name, a commit), which are never published and are read back on get_project under draft.references. Also updateCadence (Studio+), how often the team posts an update, daily, every_other_day, weekly or manual, null for the default weekly. Also chain, robinhood_testnet or arbitrum_sepolia, the testnet the project builds on and its token launches on, which is refused once a token has launched from the project. Also mainnet, the deployment beside the testnet launch (M70), with contracts (label and lowercase address, the list replaces the stored list, on the mainnet the project's chain stands in for), companionTemplate (a template accepted on this project with a Pons fit line, see get_templates, null to clear) and pons (the paired Pons launch's tokenAddress and the creator feeRecipient, Robinhood Chain projects only, null to clear), and pair, the external trading pair (venue pons, pools_xyz, uniswap or other, quoteAsset as a symbol or a lowercase address, optional pairAddress and an https url where it trades, pons and pools_xyz on Robinhood Chain projects only, null to clear); send mainnet null to clear the whole record. A sector marked Coming soon is refused, a subsector must belong to a chosen sector, and a shape must be offered under the chosen subsectors, so send sectors, subsectors and kit.shapes together when starting from nothing. Changing sectors or subsectors drops the shapes they no longer offer. Lists replace the stored list. The distribution acknowledgement can only be ticked by a person in the studio. The Studio+ fields (canvas, icp, valueCanvas, competitors, brand, investorPack, updateCadence, assets, economics, experiments, reachProtocols) are refused when the project's team is not on Studio+. Also waived, a map of recommended field to a reason of 3 to 200 characters saying why it does not apply (subsectors, sectorOther, contracts, externalDeps, oracles, adminFunctions, upgradeability, worstCase, audit, bugBounty, monitoring, incidentResponse, keyCustody, firstHundredUsers), merged over the stored map, a key sent as null clears that waiver; the reason publishes as plain text and a stated value always wins over it. check_project lists the recommended fields still open under recommendedOpen. ${WRITE_RULES} Run check_project afterwards to see what is still missing.`,
       inputSchema: z.object({ changes: projectPatchSchema, note: noteField }),
     },
     async (args, ctx) => {
@@ -958,7 +985,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_build_steps",
     {
       title: "Tick, add, remove or restore build steps",
-      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
+      description: `Change this project's build steps. done and undone tick or untick steps by id from get_build_steps; tick a step when the work is written down and you can point to it, not when it is started. evidence takes id and text pairs (a file path, a test name, an address, an REA evidence id, up to 200 characters) stored beside the step, shown under it in the studio and in RESOURCES.md, and read back on get_build_steps; send it with the tick instead of listing files in the note, and empty text clears it. notApplicable takes id and reason pairs for catalog steps that do not fit this product (a fixed rate order book has no PT wrapper to prove); the step stays listed struck through with the reason, leaves the progress count and is unticked; applicable takes ids to bring back. Use it instead of remove when the step is honest to show. add puts new steps under one of the project's product shapes (shape, title, optional detail on what done looks like, and an optional milestone, design, testnet or review, design when left out; the dependency check's suggested steps carry theirs). remove takes steps out of the list by id; a step shared between shapes goes for all of them, and a step the team added is deleted. restore brings removed catalog steps back. ${WRITE_RULES} Ticking, marking not applicable or removing a step the owner queued for you clears that request; get_project_status lists them first under agentRequests with the step's title, detail, resources and templates (M152).`,
       inputSchema: z.object({ ...buildStepsPatchSchema.shape, note: noteField }),
     },
     async (args, ctx) => {
@@ -1373,7 +1400,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Comparables for this project's subsectors",
       description:
-        "How existing protocols in this project's subsectors are built, how they differ from each other and what goes wrong with each design, from the canhav.co research store. Bound to the project's subsectors, the declared ones plus the ones its product shapes imply. Each entity carries components, contrasts, risks by category, dependencies with severity, links and templateIds into get_templates. Call it before you propose architecture, and read the risks before the security review passes. It carries no metrics, no dates and no rankings on purpose; read the linked docs for anything current. A protocol appearing here says nothing about whether it is deployed on this project's testnet; get_templates and the resource pack's environment block answer that. Narrow with include." + PREVIEW_NOTE,
+        "How existing protocols in this project's subsectors are built, how they differ from each other and what goes wrong with each design, from the canhav.co research store. Bound to the project's subsectors, the declared ones plus the ones its product shapes imply. Each entity carries components, contrasts, risks by category, dependencies with severity, links and templateIds into get_templates. Call it before you propose architecture, and read the risks before the security review passes. It carries no metrics, no dates and no rankings on purpose; read the linked docs for anything current. The studio shows the same entities under Competitors on the Business model tab (Studio+), where the team pins one on the map or attaches a component or risk line to a value canvas item as its source (valueCanvas items carry refs, which update_project accepts as comparable, section and name). A protocol appearing here says nothing about whether it is deployed on this project's testnet; get_templates and the resource pack's environment block answer that. Narrow with include." + PREVIEW_NOTE,
       inputSchema: z.object({
         include: z.array(z.enum(COMPARABLE_SECTIONS as unknown as [ComparableSection, ...ComparableSection[]])).optional().describe("Sections to return; every section when left out."),
         preview: previewField,
@@ -1398,6 +1425,128 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       });
     },
     scope,
+  );
+
+  registerMeteredTool(
+    server,
+    "check_dependencies",
+    {
+      title: "Can this be built on the project's chain today",
+      description:
+        "The dependency check of the Viability tab (Studio+). One row per protocol the product shapes rely on (from the kit environment), per accepted contract template, per external dependency declared on Decisions, per asset the idea depends on (a Chainlink price feed on the testnet or the mainnet from the committed feed list, and pool liquidity on the mainnet from DefiLlama's daily pools snapshot) and per chain fact (the network, the faucet, the tokenized equity feeds). Each row carries a state, available, mainnet_only, workaround (a community deployment, a fork you deploy, your own recorded mock), missing or unknown, one or two sentences of reason, the source with its read date, and for a missing or workaround row a suggested build step (title, detail, milestone) you can add with set_build_steps add. Fill the assets with update_project assets first; a project without them gets protocol and chain rows only. refresh true takes a new pools snapshot." + PREVIEW_NOTE,
+      inputSchema: z.object({ refresh: z.boolean().optional().describe("Take a new pools snapshot instead of today's."), preview: previewField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const check = await dependencyCheck(loaded.value.project.draft_doc, { refresh: args.refresh });
+      return jsonResult({
+        ...stateOf(loaded.value),
+        chain: projectChainOf(loaded.value.project.draft_doc),
+        summary: check.summary,
+        rows: check.rows,
+        readAt: check.readAt,
+        poolsReadAt: check.poolsReadAt,
+        oraclesCheckedOn: check.oraclesCheckedOn,
+        stepsHint: "A row's step goes on the project with set_build_steps add (shape, title, detail, milestone). The studio marks such steps as coming from the dependency check.",
+      });
+    },
+    { ...scope, plus: "viability" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_experiments",
+    {
+      title: "This project's experiments",
+      description:
+        "The experiments of the Viability tab (Studio+), running first, then planned, then finished, each with its id, the assumption it tests (a Business Model Canvas or value canvas item by id, or text), the hypothesis, the test, the metric, the pass bar, the kill criterion, the deadline with how far away it is, the status, the evidence timeline (text, link, time, who added it), the tester invite when one is attached and the result. Propose a new experiment, add evidence or propose a verdict (in result) with update_project experiments; only a person sets passed or failed, from the project page, which turns the linked item validated or invalidated on the public page." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const doc = loaded.value.project.draft_doc;
+      const list = orderExperiments(doc.experiments ?? []);
+      return jsonResult({
+        ...stateOf(loaded.value),
+        total: list.length,
+        running: list.filter((e) => e.status === "running").length,
+        overdue: list.filter((e) => isOverdue(e)).map((e) => e.id),
+        experiments: list.map((e) => ({ ...e, due: dueLine(e.deadline), overdue: isOverdue(e) })),
+        howTo: "A new experiment is a row without an id; a row with an id updates that experiment (fields left out keep their values, evidence sent is appended). Statuses you may set are planned, running and stopped.",
+      });
+    },
+    { ...scope, plus: "viability" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_unit_economics",
+    {
+      title: "Do the numbers work",
+      description:
+        "The unit economics model of the Viability tab (Studio+). The project's family (every product shape maps to one, lending and fixed income, vaults and leveraged yield, pools, perps and options, staking and restaking, RWA and underwriting, or governance which has no revenue model), the inputs with their labels, units and bounds, the three scenarios the team stored (low, base, high) or the defaults when nothing is stored yet, the outputs per scenario (monthly revenue, monthly cost, break even scale, months to break even at the growth rate, the liquidity providers' impermanent loss for pools) and the formulas in words so you can explain them. Write a scenario with update_project economics (family, scenarios.low, .base or .high as full or partial input sets, chosen); rates are percentages as typed. Every number is a model at the entered inputs, never a forecast." + PREVIEW_NOTE,
+      inputSchema: PREVIEW,
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const doc = loaded.value.project.draft_doc;
+      const family = doc.economics?.family ?? familyOf(kitShapes(doc.kit));
+      if (!family) return jsonResult({ ...stateOf(loaded.value), family: null, hint: "This project has no product shape yet, so it has no economics family. Set kit.shapes with update_project first." });
+      const record = doc.economics ?? defaultEconomics(family);
+      const stored = Boolean(doc.economics);
+      return jsonResult({
+        ...stateOf(loaded.value),
+        family,
+        familyLabel: ECONOMICS_COPY.families[family],
+        shapeFamilies: Object.fromEntries(kitShapes(doc.kit).map((s) => [s, SHAPE_ECONOMICS_FAMILY[s]])),
+        stored,
+        by: stored ? record.by : null,
+        updatedAt: stored ? record.updatedAt : null,
+        chosen: record.chosen,
+        inputs: inputsFor(family).map((i) => ({ key: i.key, label: i.label, explain: i.explain, unit: i.unit, min: i.min, max: i.max, default: i.default })),
+        scenarios: Object.fromEntries((["low", "base", "high"] as const).map((s) => [s, { values: record.scenarios[s], outputs: computeEconomics(family, record.scenarios[s]), sentence: breakEvenSentence(record, s) }])),
+        sources: record.sources ?? {},
+        formulas: ECONOMICS_FORMULAS[family],
+        lines: economicsLines(record),
+      });
+    },
+    { ...scope, plus: "viability" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_chain_gaps",
+    {
+      title: "What is live on the chain, by subsector",
+      description:
+        "The gap map of the Viability tab (Studio+), for each of the six sectors and their subsectors, how many protocols are live on the mainnet the project's chain stands in for and up to twelve names with links, from DefiLlama's monthly snapshot (every category of CanHav's subsector mapping), CanHav's own published projects on the chain and the contract templates deployed on its mainnet. A subsector with count 0 is open, nobody is there yet. Pass chain to read the other chain and sector to narrow to one sector. Counts carry the snapshot month and the date it was read; nothing here is a forecast." + PREVIEW_NOTE,
+      inputSchema: z.object({
+        chain: z.enum(PROJECT_CHAINS).optional().describe("robinhood_testnet reads Robinhood Chain mainnet, arbitrum_sepolia reads Arbitrum One; the project's chain when left out."),
+        sector: z.enum(SECTOR_VALUES as unknown as [Sector, ...Sector[]]).optional(),
+        preview: previewField,
+      }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const doc = loaded.value.project.draft_doc;
+      const map = await gapMap(args.chain ?? projectChainOf(doc));
+      const sectors = args.sector ? map.sectors.filter((s) => s.sector === args.sector) : map.sectors;
+      return jsonResult({
+        ...stateOf(loaded.value),
+        chain: map.chain,
+        chainName: map.chainName,
+        month: map.month,
+        readAt: map.readAt,
+        yourSubsectors: effectiveSubsectors(doc.kit, doc),
+        open: map.open,
+        sectors,
+      });
+    },
+    { ...scope, plus: "viability" },
   );
 
   registerMeteredTool(
@@ -1444,6 +1593,31 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       if (mcpKey(ctx)) return errorResult(STUDIO_PLUS_COPY.prospects.sessionOnly);
       const prospects = await listProspects(loaded.value.project.id);
       return jsonResult({ ...stateOf(loaded.value), total: prospects.length, contacted: prospects.filter((p) => p.contacted).length, prospects });
+    },
+    { ...scope, plus: "icp" },
+  );
+
+  registerMeteredTool(
+    server,
+    "get_reachable_users",
+    {
+      title: "Reachable wallets per ideal customer profile",
+      description:
+        "Studio+. How many real wallets on the chain's mainnet already do what this idea depends on, per ideal customer profile, from Dune, the overlap (wallets that used the subsector's contracts in the last 90 days and hold one of the project's assets), the subsector users and the asset holders, each with the exact definition and the read date, plus the 90 day daily series of subsector users. Reads this month's cached numbers and never runs Dune itself; the team refreshes from the studio (ten times a month). A project without assets answers needs_assets, fill them with update_project assets first; a deployment without the Dune queries answers not_configured. Protocol contracts the queries count come from DefiLlama's pools of the subsector; add more with update_project reachProtocols (name and address rows)." + PREVIEW_NOTE,
+      inputSchema: z.object({ profile: z.enum(REACH_PROFILE_KEYS).optional().describe("0 or 1; every profile when left out."), preview: previewField }),
+    },
+    async (args, ctx) => {
+      const loaded = await withProject(projectId, ctx, args.preview);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      const keys = args.profile ? [args.profile] : [...REACH_PROFILE_KEYS].filter((k) => project.draft_doc.icp?.[Number(k)]);
+      const profiles = await Promise.all(
+        keys.map(async (k) => {
+          const result = await reachFor(project.id, project.org_id ?? null, project.draft_doc, k, projectChainOf(project.draft_doc), {});
+          return { profile: k, name: project.draft_doc.icp?.[Number(k)]?.name ?? null, ...(result.kind === "ok" ? { kind: "ok", ...result.read } : result) };
+        }),
+      );
+      return jsonResult({ ...stateOf(loaded.value), chain: projectChainOf(project.draft_doc), profiles, lastRead: project.draft_doc.reach ?? null });
     },
     { ...scope, plus: "icp" },
   );

@@ -47,7 +47,7 @@ A launch appears here when it was made while you were signed in. A launch that r
 
 ## The project page
 
-A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's seven sections, two of them with Studio+, the navigation's logo and breadcrumb line up above the project name in it, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
+A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the left lists the project's eight sections, three of them with Studio+, the navigation's logo and breadcrumb line up above the project name in it, and the content fills the rest. On a phone the sidebar folds into a row of tabs. The sections never change with what the project builds; product shapes are labels and filters inside Build. The section in view is kept in the URL (`?tab=build`), so a link lands on the right one and a reload keeps it.
 
 | Section | Holds |
 |---------|-------|
@@ -56,6 +56,7 @@ A project opens at `/studio/project/<id>`. On a wide screen a sidebar on the lef
 | Decisions | What you are building, the chain, the contract templates you decided on, the contract architecture, the security declarations and your project files |
 | Business model | With Studio+, the Business Model Canvas, the ideal customer profiles and the competitor landscape |
 | Brand | With Studio+, the brand kit |
+| Viability | With Studio+, whether the idea can work on its chain, the assets it depends on and the dependency check, what is live on the chain, the unit economics and the experiments |
 | Deployments | Testnet contracts, the tokens linked to the project, the mainnet record |
 | Publish | The rest of the public record, the readiness list and the hand off to your agent |
 
@@ -129,6 +130,10 @@ Studio+. Three sections on one tab, each a teaser with the upgrade link on a fre
 ### Brand
 
 Studio+. The brand kit, palette (four swatches with a contrast line each, or picked from the logo), display and body fonts, tone words and a tagline, drafted or filled by hand, with the X header, link card and avatar as SVG downloads and brand.json on the export; the public page uses the palette and the link preview image carries it. The logo itself stays on Publish with the public record.
+
+### Viability
+
+Studio+ (M162 onwards). Whether the idea can work on its chain, answered from the record, current chain data and a fixed method. The tab opens with **Where it stands**, one sentence per section with data, each a link to its section. **Can it be built here** starts with the **Assets** the idea depends on, one row per token with a role (collateral, borrowed, quote asset, underlying, reward) and an optional address, each row reading who filled it; **Ask your agent** queues a request your agent reads first on `get_project_status` and answers with `update_project assets`, or copies the prompt. The dependency check, **What is live on this chain**, **Do the numbers work** and **Experiments** fill in through the run. The sidebar lists the four sections and scrolls to each.
 
 ### Deployments
 

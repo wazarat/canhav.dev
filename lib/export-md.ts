@@ -1,5 +1,6 @@
 import { CANVAS_BLOCKS, type Canvas, canvasFilled } from "@/lib/canvas";
-import { PROFILE_KEYS, VALUE_AREAS, unanswered } from "@/lib/value-canvas";
+import { PROFILE_KEYS, type ProfileKey, VALUE_AREAS, unanswered } from "@/lib/value-canvas";
+import { type Reach, reachLine } from "@/lib/reach";
 import type { Icp } from "@/lib/icp";
 import type { Competitors } from "@/lib/competitors/record";
 import { googleFontsUrl } from "@/content/brand-fonts";
@@ -7,6 +8,11 @@ import { briefSummary } from "@/lib/draft/briefs";
 import { DRAFT_KIND_FIELDS, draftPromptName, draftWriteHint, openRequests } from "@/lib/draft/requests";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { agentRequestHowTo, openAgentRequests } from "@/lib/agent-requests";
+import { dependencyCheckStatic } from "@/lib/viability/static";
+import { dependencyLines } from "@/lib/viability/dependencies";
+import { economicsLines } from "@/lib/economics";
+import { experimentLines, itemVerdicts } from "@/lib/experiments";
+import { VIABILITY_COPY } from "@/content/viability";
 import { type ProjectChain, chainInfo, chainIsBeta, projectChainOf } from "@/lib/chains";
 import { LAUNCH_TARGET_COPY, LAUNCH_TARGET_INFO, launchTargetLabel } from "@/content/launch-targets";
 import { type LaunchTarget, launchTargetOf } from "@/lib/launch-targets";
@@ -424,18 +430,21 @@ export function buildResourcesMd(doc: ProjectDoc, draft = true): string {
 // canhav-[slug].md — project
 
 /** "## Ideal customers", the profiles (M114), or nothing. */
-function icpLines(icp: Icp[] | undefined): string[] {
+function icpLines(icp: Icp[] | undefined, reach?: Reach): string[] {
   if (!icp?.length) return [];
   const F = STUDIO_PLUS_COPY.icp.fields;
   const lines = ["## Ideal customers", ""];
   icp.forEach((p, i) => {
     lines.push(`**${p.name || `Profile ${i + 1}`}.** ${p.summary}`, "");
+    const r = reach?.[String(i) as ProfileKey];
     const facts = [
       p.walletsTheyUse.length ? `- **${F.walletsTheyUse.label}:** ${p.walletsTheyUse.join(", ")}` : null,
       p.channels.length ? `- **${F.channels.label}:** ${p.channels.join(", ")}` : null,
       p.protocolsTheyUse.length ? `- **${F.protocolsTheyUse.label}:** ${p.protocolsTheyUse.join(", ")}` : null,
       p.buyingTrigger ? `- **${F.buyingTrigger.label}:** ${p.buyingTrigger}` : null,
       p.objection ? `- **${F.objection.label}:** ${p.objection}` : null,
+      // The last reachable wallets read (M168), with its definition and date.
+      r ? `- **${STUDIO_PLUS_COPY.icp.reach.title}:** ${reachLine(p.name || `profile ${i + 1}`, r)}` : null,
     ].filter((l): l is string => Boolean(l));
     if (facts.length) lines.push(...facts, "");
   });
@@ -485,10 +494,11 @@ function positioningLines(c: Competitors | undefined): string[] {
 
 /** "## Business model", the nine canvas blocks (M113), or nothing. */
 /** The value proposition canvas per profile (M157): each area as a list, the fit line, under "## Value proposition". */
-function valueCanvasLines(doc: Pick<ProjectDoc, "valueCanvas" | "icp">): string[] {
+function valueCanvasLines(doc: Pick<ProjectDoc, "valueCanvas" | "icp" | "experiments">): string[] {
   const all = doc.valueCanvas;
   if (!all) return [];
   const V = STUDIO_PLUS_COPY.valueCanvas;
+  const verdicts = itemVerdicts(doc.experiments);
   const lines = ["## Value proposition", ""];
   for (const key of PROFILE_KEYS) {
     const c = all[key];
@@ -497,7 +507,7 @@ function valueCanvasLines(doc: Pick<ProjectDoc, "valueCanvas" | "icp">): string[
     lines.push(`### ${V.forProfile(who)}`, "");
     for (const a of VALUE_AREAS) {
       if (!c[a].length) continue;
-      lines.push(`**${V.areas[a].label}.**`, ...c[a].map((i) => `- ${i.text}`), "");
+      lines.push(`**${V.areas[a].label}.**`, ...c[a].map((i) => `- ${i.text}${verdicts.has(i.id) ? ` (${VIABILITY_COPY.experiments.verdicts[verdicts.get(i.id)!.verdict]})` : ""}${i.refs?.length ? ` (${i.refs.map((r) => STUDIO_PLUS_COPY.competitors.comparables.ref(r.comparable, r.name)).join("; ")})` : ""}`), "");
     }
     const pains = unanswered(c, "pains").length;
     const gains = unanswered(c, "gains").length;
@@ -506,16 +516,22 @@ function valueCanvasLines(doc: Pick<ProjectDoc, "valueCanvas" | "icp">): string[
   return lines;
 }
 
-function canvasLines(canvas: Canvas | undefined): string[] {
+function canvasLines(canvas: Canvas | undefined, verdicts: ReturnType<typeof itemVerdicts> = new Map()): string[] {
   if (!canvas || canvasFilled(canvas) === 0) return [];
-  // Each block as a list of its items (M155).
+  // Each block as a list of its items (M155), a verdict word after a tested one (M170).
   const lines = ["## Business model", ""];
   for (const b of CANVAS_BLOCKS) {
     const items = canvas[b];
     if (!items?.length) continue;
-    lines.push(`**${STUDIO_PLUS_COPY.canvas.blocks[b].label}.**`, ...items.map((i) => `- ${i.text}`), "");
+    lines.push(`**${STUDIO_PLUS_COPY.canvas.blocks[b].label}.**`, ...items.map((i) => `- ${i.text}${verdicts.has(i.id) ? ` (${VIABILITY_COPY.experiments.verdicts[verdicts.get(i.id)!.verdict]})` : ""}`), "");
   }
   return lines;
+}
+
+/** The experiments (M170), running first, with their results. */
+function experimentSection(doc: Pick<ProjectDoc, "experiments">): string[] {
+  const lines = experimentLines(doc.experiments);
+  return lines.length ? ["## Experiments", "", ...lines, ""] : [];
 }
 
 export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): string {
@@ -538,9 +554,10 @@ export function buildProjectMarkdown(doc: ProjectDoc, publishedAt?: string): str
     doc.whatItDoes,
     "",
     ...customerLines(doc),
-    ...icpLines(doc.icp),
-    ...canvasLines(doc.canvas),
+    ...icpLines(doc.icp, doc.reach),
+    ...canvasLines(doc.canvas, itemVerdicts(doc.experiments)),
     ...valueCanvasLines(doc),
+    ...experimentSection(doc),
     ...positioningLines(doc.competitors),
     "## Distribution reality",
     "",
@@ -889,9 +906,10 @@ export function buildAgentsMd(input: {
       `- **Stage:** ${optionLabel(STAGE_OPTIONS, project.stage)}`,
       `- **What it does:** ${orNotSet(project.whatItDoes)}`,
       "",
-      ...icpLines(project.icp),
-      ...canvasLines(project.canvas),
+      ...icpLines(project.icp, project.reach),
+      ...canvasLines(project.canvas, itemVerdicts(project.experiments)),
       ...valueCanvasLines(project),
+      ...experimentSection(project),
       ...positioningLines(project.competitors),
       "## Contract architecture",
       "",
@@ -907,6 +925,13 @@ export function buildAgentsMd(input: {
       "",
       "Before proposing architecture, call get_comparables on this project's MCP server for how protocols in the same subsectors are built and what goes wrong with each design (no metrics or dates on purpose), and read its risks before the security review passes.",
     );
+    // The dependency check (M163): what is missing or needs a workaround on the chain, from the kit environment, the accepted templates and the assets, without the pools read.
+    const deps = dependencyCheckStatic(project);
+    const depLines = dependencyLines(deps.rows);
+    if (deps.summary.total > 0)
+      lines.push("", "## Dependencies", "", deps.summary.sentence, ...(depLines.length ? ["", ...depLines] : []), "", "Read check_dependencies for every row with its source and the liquidity of each asset; a missing or workaround row's suggested step goes on the project with set_build_steps add.");
+    // The unit economics (M167): the chosen case, when the team stored a model.
+    if (project.economics) lines.push("", "## Unit economics", "", ...economicsLines(project.economics), "", "A model at the entered inputs, never a forecast. Read get_unit_economics for every scenario and the formulas; write one with update_project economics.");
     // Recommended fields the team left open (M130): the agent states each or waives it.
     const open = openFieldLines(project);
     if (open.length) lines.push("", "## Open fields", "", "Recommended fields the team has not stated yet. Each publishes as Not stated until it is filled or marked not applicable.", "", ...open);
@@ -920,7 +945,7 @@ export function buildAgentsMd(input: {
     const asks = openAgentRequests(project);
     if (asks.length) {
       lines.push("", "## Open requests", "", "The owner asked for these first. Answering each one clears it.", "");
-      for (const r of asks) lines.push(`- ${r.kind === "deployer" ? "Deployer key" : `Build step ${r.target}`}, asked ${r.requestedAt.slice(0, 10)}. ${agentRequestHowTo(r.kind, deployerEnvFile(project))}`);
+      for (const r of asks) lines.push(`- ${r.kind === "deployer" ? "Deployer key" : r.kind === "assets" ? "Assets the idea depends on" : `Build step ${r.target}`}, asked ${r.requestedAt.slice(0, 10)}. ${agentRequestHowTo(r.kind, deployerEnvFile(project))}`);
     }
     // Open draft requests (M117): the owner clicked Draft and waits on the agent.
     const requests = openRequests(project);

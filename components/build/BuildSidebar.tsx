@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Bot, ChevronDown, ExternalLink, FileCode2, Globe, Hammer, History, LayoutDashboard, Map, Palette, PieChart, Scale, Server } from "lucide-react";
+import { BookOpen, Bot, ChevronDown, Compass, ExternalLink, FileCode2, Globe, Hammer, History, LayoutDashboard, Map, Palette, PieChart, Scale, Server } from "lucide-react";
 
 import { RESOURCE_VIEWS, type ResourceView } from "@/components/build/ResourcesDrawer";
+import { VIABILITY_SECTIONS, viabilitySectionId } from "@/components/build/ViabilityTab";
 
 import { AGENT_COPY } from "@/content/ideation";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
+import { VIABILITY_COPY } from "@/content/viability";
 import { MILESTONES, type Milestone } from "@/lib/build-milestones";
 import type { ProblemTab } from "@/lib/build-readiness";
 import { cn } from "@/lib/utils";
@@ -17,6 +19,7 @@ const ICONS: Record<BuildTab, React.ComponentType<{ className?: string }>> = {
   decisions: Scale,
   model: PieChart,
   brand: Palette,
+  viability: Compass,
   deployments: Server,
   publish: Globe,
 };
@@ -37,6 +40,9 @@ const DECISION_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: "security", label: BUILD_COPY.decisions.security },
   { id: "files", label: BUILD_COPY.decisions.files },
 ];
+
+/** The Viability sections the sidebar scrolls to (M162). */
+const VIABILITY_LINKS: ReadonlyArray<{ id: string; label: string }> = VIABILITY_SECTIONS.map((s) => ({ id: viabilitySectionId(s), label: VIABILITY_COPY.sections[s].title }));
 
 const ITEM = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors";
 const IDLE = "text-ink-300 hover:bg-ink-800/60 hover:text-ink-50";
@@ -123,6 +129,20 @@ export function BuildSidebar({
                     key={s.id}
                     type="button"
                     onClick={() => document.getElementById(`decisions-${s.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className={cn(ITEM, "py-1.5 text-[13px]", IDLE)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {t === "viability" && active ? (
+              <div className="ml-4 mt-0.5 space-y-0.5 border-l border-ink-700/40 pl-2">
+                {VIABILITY_LINKS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                     className={cn(ITEM, "py-1.5 text-[13px]", IDLE)}
                   >
                     {s.label}

@@ -3,6 +3,12 @@ import { z } from "zod";
 import { CANVAS_ITEM_LIMITS, type Canvas, type CanvasBlock, canvasPatchSchema } from "@/lib/canvas";
 import { normalizeItems } from "@/lib/canvas-items";
 import { PROFILE_KEYS, VALUE_AREAS, type ValueCanvases, emptyValueCanvas, normalizeValueCanvas, valueCanvasPatchSchema } from "@/lib/value-canvas";
+import { type AssetRole, assetLine, assetsPatchSchema, normalizeAssets, stampAssets } from "@/lib/assets";
+import { economicsPatchSchema, isEconomicsFamily, mergeEconomics } from "@/lib/economics";
+import { normalizeReachProtocols, reachProtocolsPatchSchema } from "@/lib/reach";
+import { VERDICT_STATUSES, experimentsPatchSchema, mergeExperiments } from "@/lib/experiments";
+import { VIABILITY_COPY } from "@/content/viability";
+import { ECONOMICS_COPY } from "@/content/economics";
 import { icpListSchema } from "@/lib/icp";
 import { competitorsPatchSchema } from "@/lib/competitors/record";
 import { DEFAULT_BRAND, brandPatchSchema } from "@/lib/brand/record";
@@ -45,6 +51,7 @@ import {
 } from "@/lib/ideation";
 import { JOURNEY_LIMITS } from "@/lib/journey";
 import {
+  CUSTOM_STEP_MILESTONES,
   KIT_LIMITS,
   PRODUCT_SHAPE_VALUES,
   STARTING_POINT_VALUES,
@@ -133,8 +140,8 @@ export type AgentChangeStatus = "proposed" | "applied" | "accepted" | "rejected"
 export interface BuildStepsPatch {
   done: string[];
   undone: string[];
-  /** Steps to add under a shape (M50). Project build steps only. */
-  add?: Array<{ shape: string; title: string; detail?: string }>;
+  /** Steps to add under a shape (M50). Project build steps only. A milestone lands it under Testnet or Review (M163), design when left out. */
+  add?: Array<{ shape: string; title: string; detail?: string; milestone?: "design" | "testnet" | "review" }>;
   /** Step ids to remove from the sections. A catalog id hides its whole shared group. */
   remove?: string[];
   /** Removed catalog step ids to bring back. */
@@ -306,6 +313,14 @@ export const projectPatchSchema = z
     canvas: canvasPatchSchema.nullable(),
     // The value proposition canvas per profile (M157, Studio+ under icp): a profile key sent replaces its areas, null drops it.
     valueCanvas: valueCanvasPatchSchema.nullable(),
+    // The assets the idea depends on (M162, Studio+ under viability): the list replaces the stored list, a row sent with its id keeps it; null clears them.
+    assets: assetsPatchSchema.nullable(),
+    // Experiments (M170, Studio+ under viability): each row appends (no id) or updates by id, evidence sent is appended, passed and failed are refused; null clears them.
+    experiments: experimentsPatchSchema.nullable(),
+    // Protocol contracts for the reach parameters (M168, Studio+ under icp): the list replaces the stored list; null clears it.
+    reachProtocols: reachProtocolsPatchSchema.nullable(),
+    // The unit economics (M166, Studio+ under viability): the family, any scenario as a full or partial input set, the chosen one, merged over the stored record and stamped as the agent's; null clears it.
+    economics: economicsPatchSchema.nullable(),
     // The agent's summary (M104): both lists replace the stored ones; null clears it.
     summary: z
       .strictObject({
@@ -569,6 +584,8 @@ export const buildStepsPatchSchema = z.strictObject({
         shape: z.string().max(60),
         title: z.string().min(KIT_LIMITS.customSteps.titleMin).max(KIT_LIMITS.customSteps.titleMax),
         detail: z.string().max(KIT_LIMITS.customSteps.detailMax).default(""),
+        // The milestone the added step lands under (M163); design when left out.
+        milestone: z.enum(CUSTOM_STEP_MILESTONES).optional(),
       }),
     )
     .max(20)
@@ -780,6 +797,26 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
     }
     next = Object.keys(merged).length ? { ...next, valueCanvas: merged } : dropKey(next, "valueCanvas");
   }
+  if (patch.experiments === null) next = dropKey(next, "experiments");
+  else if (patch.experiments) {
+    const list = mergeExperiments(doc.experiments ?? [], patch.experiments, "agent", next);
+    next = list.length ? { ...next, experiments: list } : dropKey(next, "experiments");
+  }
+  if (patch.reachProtocols === null) next = dropKey(next, "reachProtocols");
+  else if (patch.reachProtocols) {
+    const rows = normalizeReachProtocols(patch.reachProtocols);
+    next = rows.length ? { ...next, reachProtocols: rows } : dropKey(next, "reachProtocols");
+  }
+  if (patch.economics === null) next = dropKey(next, "economics");
+  else if (patch.economics) next = { ...next, economics: mergeEconomics(doc.economics, patch.economics, "agent") };
+  // Assets (M162): the list replaces the stored list, stamped as recorded by the agent, known ids keep their stamp; a write answers the owner's open request.
+  if (patch.assets === null) next = dropKey(next, "assets");
+  else if (patch.assets) {
+    const rows = stampAssets(doc.assets ?? [], normalizeAssets(patch.assets), "agent");
+    next = rows.length ? { ...next, assets: rows } : dropKey(next, "assets");
+    const left = withoutAgentRequest(next, "assets");
+    next = left ? { ...next, agentRequests: left } : dropKey(next, "agentRequests");
+  }
   if (patch.canvas === null) next = dropKey(next, "canvas");
   else if (patch.canvas) {
     // Each block sent replaces the stored block (M155): a paragraph or plain lines are lifted into items, an item sent with its id keeps it.
@@ -874,6 +911,8 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
  */
 export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): string | null {
   let next = doc;
+  // Only a person sets an experiment's verdict (M170).
+  if (patch.experiments?.some((e) => e.status && VERDICT_STATUSES.includes(e.status))) return VIABILITY_COPY.experiments.verdictByPerson;
   // The pack's text parts are no longer written (M159); only where the built files live is recorded.
   if (patch.investorPack && writtenPackParts(patch.investorPack).length) return STUDIO_PLUS_COPY.pack.filesOnly(writtenPackParts(patch.investorPack));
   if (patch.mainnet) {
@@ -1017,7 +1056,7 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   if (!doc.kit) return doc;
   let kit = doc.kit;
   for (const a of patch.add ?? [])
-    kit = { ...kit, ...addCustomStep(kit, a.shape as ProductShape, a.title, a.detail ?? "") };
+    kit = { ...kit, ...addCustomStep(kit, a.shape as ProductShape, a.title, a.detail ?? "", a.milestone ? { milestone: a.milestone } : {}) };
   if (patch.remove?.length) {
     // A catalog id takes its whole shared group with it, the same as the studio's remove.
     const groups = groupsFor(kitShapes(kit), kit);
@@ -1180,6 +1219,36 @@ function showWhyRows(v: unknown): string {
     .join("\n\n");
 }
 
+/** The assets as one line each (M162): symbol, role, short address. Ids and stamps never show. */
+function showAssets(v: unknown): string {
+  if (!Array.isArray(v)) return show(v);
+  return v.map((a) => assetLine(a as { symbol: string; role: AssetRole; address?: string })).filter(Boolean).join("\n");
+}
+
+/** The unit economics (M166): the family, then each scenario sent as its inputs on one line, the chosen one marked. */
+function showEconomics(v: unknown): string {
+  if (!v || typeof v !== "object") return show(v);
+  const o = v as { family?: string; chosen?: string; scenarios?: Record<string, Record<string, number>> };
+  const lines: string[] = [];
+  if (o.family && isEconomicsFamily(o.family)) lines.push(ECONOMICS_COPY.families[o.family]);
+  for (const [s, vals] of Object.entries(o.scenarios ?? {})) {
+    if (!vals || typeof vals !== "object") continue;
+    lines.push(`${s}${o.chosen === s ? " (chosen)" : ""}, ${Object.entries(vals).map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  }
+  return lines.join("\n");
+}
+
+/** Experiments (M170): one block per experiment, the hypothesis, the test, the pass bar, the status and any evidence sent. */
+function showExperiments(v: unknown): string {
+  if (!Array.isArray(v)) return show(v);
+  return v
+    .map((e) => {
+      const o = (e ?? {}) as { id?: string; hypothesis?: string; assumption?: { text?: string }; test?: string; passBar?: string; killCriterion?: string; status?: string; deadline?: string; result?: string; evidence?: Array<{ text?: string }> };
+      return [o.hypothesis ?? o.assumption?.text ?? "", o.test ? `Test, ${o.test}` : "", o.passBar ? `Pass when ${o.passBar}` : "", o.killCriterion ? `Kill when ${o.killCriterion}` : "", o.status ? `Status ${o.status}` : "", o.deadline ? `Due ${o.deadline}` : "", o.result ? `Result, ${o.result}` : "", ...(o.evidence ?? []).map((x) => `Evidence, ${x.text ?? ""}`)].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+}
+
 /** A canvas block as its items, one per line (M155); ids never show. */
 function showItems(v: unknown): string {
   if (typeof v === "string") return v;
@@ -1202,6 +1271,9 @@ function showValueCanvas(v: unknown): string {
 
 function fieldRenderer(path: string): ((v: unknown) => string) | null {
   if (path === "icp") return showIcp;
+  if (path === "assets") return showAssets;
+  if (path === "economics") return showEconomics;
+  if (path === "experiments") return showExperiments;
   if (path.startsWith("canvas.")) return showItems;
   if (path === "valueCanvas" || path.startsWith("valueCanvas.")) return showValueCanvas;
   if (path === "architecture.contracts" || path === "architecture.adminFunctions") return showWhyRows;
@@ -1251,6 +1323,12 @@ export function changeLines(doc: unknown, patch: unknown, prefix = ""): ChangeLi
 /** Paths whose field name would read oddly (M51). */
 const PATH_LABELS: Record<string, string> = {
   prospects: "Prospects",
+  assets: "Assets the idea depends on",
+  economics: "Unit economics",
+  experiments: "Experiments",
+  reachProtocols: "Reach, protocol contracts",
+  "economics.scenarios": "Unit economics, scenarios",
+  "economics.chosen": "Unit economics, chosen case",
   valueCanvas: "Value proposition canvas",
   "valueCanvas.0": "Value canvas, profile 1",
   "valueCanvas.1": "Value canvas, profile 2",

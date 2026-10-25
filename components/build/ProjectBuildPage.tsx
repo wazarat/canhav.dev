@@ -9,6 +9,7 @@ import { BuildTabs } from "@/components/build/BuildTabs";
 import { DecisionsTab } from "@/components/build/DecisionsTab";
 import { type DeployedToken, DeploymentsTab } from "@/components/build/DeploymentsTab";
 import { BrandTab } from "@/components/build/BrandTab";
+import { ViabilityTab } from "@/components/build/ViabilityTab";
 import { ModelTab } from "@/components/build/ModelTab";
 import { OverviewTab } from "@/components/build/OverviewTab";
 import { TesterKitSection } from "@/components/build/TesterKitSection";
@@ -257,6 +258,7 @@ export function ProjectBuildPage({
     ),
     model: <ModelTab id={id} createdAt={createdAt} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} token={tokens[0] ? { name: tokens[0].name, symbol: tokens[0].symbol, address: tokens[0].address } : null} />,
     brand: <BrandTab id={id} agentMode={agent.state?.mode ?? "propose"} doc={doc} patch={patch} />,
+    viability: <ViabilityTab id={id} doc={doc} patch={patch} setDoc={setDoc} onPatchKit={patchKit} agentMode={agent.state?.mode ?? "propose"} agentConnected={Boolean(session || agent.state?.changes.length)} token={tokens[0] ? { address: tokens[0].address } : null} />,
     deployments: (
       <DeploymentsTab
         id={id}

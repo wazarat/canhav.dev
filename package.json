@@ -14,7 +14,10 @@
     "gen:comparables": "node scripts/gen-comparables.mjs",
     "check:comparables": "node scripts/gen-comparables.mjs --check",
     "gen:workflows": "node scripts/gen-workflow-templates.mjs",
-    "check:workflows": "node scripts/gen-workflow-templates.mjs --check"
+    "check:workflows": "node scripts/gen-workflow-templates.mjs --check",
+    "gen:oracles": "node scripts/gen-oracles.mjs",
+    "check:oracles": "node scripts/gen-oracles.mjs --check",
+    "check:economics": "node --no-warnings scripts/check-economics.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

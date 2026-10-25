@@ -3,6 +3,11 @@ import { type Icp, icpListSchema, normalizeIcp } from "@/lib/icp";
 import { type Competitors, normalizeCompetitors } from "@/lib/competitors/record";
 import { type DraftRequest, type Drafted, normalizeDraftRequests, normalizeDrafted } from "@/lib/draft/requests";
 import { type AgentRequest, normalizeAgentRequests } from "@/lib/agent-requests";
+import { ASSET_LIMITS, type AssetEntry, cleanSymbol, isAssetRole, normalizeAssets } from "@/lib/assets";
+import { type Economics, normalizeEconomics } from "@/lib/economics";
+import { type Reach, type ReachProtocol, normalizeReach, normalizeReachProtocols } from "@/lib/reach";
+import { EXPERIMENT_LIMITS, type Experiment, normalizeExperiments } from "@/lib/experiments";
+import { isItemId } from "@/lib/canvas-items";
 import { type Briefs, normalizeBriefs } from "@/lib/draft/briefs";
 import { cutAtWord } from "@/lib/text";
 import { PROFILE_KEYS, VALUE_AREAS, VALUE_CANVAS_LIMITS, type ValueCanvases, normalizeValueCanvases } from "@/lib/value-canvas";
@@ -411,6 +416,16 @@ export interface ProjectDoc {
   brand?: Brand;
   /** The Value Proposition Canvas per ideal customer profile (M157, Studio+ under icp). Optional, never injected. */
   valueCanvas?: ValueCanvases;
+  /** The assets the idea depends on (M162, Studio+ under viability), the base of the dependency check. Optional, never injected, published with the record. */
+  assets?: AssetEntry[];
+  /** The unit economics scenarios (M166, Studio+ under viability). Optional, never injected, stripped at publish. */
+  economics?: Economics;
+  /** Experiments (M170, Studio+ under viability). Optional, never injected; the finished ones publish with the record. */
+  experiments?: Experiment[];
+  /** The last reachable wallets read per ideal customer profile (M168, Studio+ under icp). Optional, never injected, stripped at publish. */
+  reach?: Reach;
+  /** Protocol contracts the team or its agent adds to the reach parameters (M168). Optional, never injected, stripped at publish. */
+  reachProtocols?: ReachProtocol[];
   /** The investor and grant pack (M126, Studio+). Optional, never injected, stripped at publish. */
   investorPack?: InvestorPack;
   /** How often the team posts an update (Studio+). Optional, never injected, stripped at publish; weekly when absent. */
@@ -887,6 +902,32 @@ export function normalizeProjectDoc(raw: ProjectDoc): ProjectDoc {
     const clean = normalizeAgentRequests((rest as { agentRequests?: unknown }).agentRequests);
     if (clean) (rest as { agentRequests?: AgentRequest[] }).agentRequests = clean;
     else delete (rest as { agentRequests?: unknown }).agentRequests;
+  }
+  // Experiments (M170) read the canvases, so they normalize after them.
+  if ("experiments" in rest) {
+    const clean = normalizeExperiments((rest as { experiments?: unknown }).experiments, rest as { canvas?: Canvas; valueCanvas?: ValueCanvases });
+    if (clean.length) (rest as { experiments?: Experiment[] }).experiments = clean;
+    else delete (rest as { experiments?: unknown }).experiments;
+  }
+  if ("reach" in rest) {
+    const clean = normalizeReach((rest as { reach?: unknown }).reach);
+    if (clean) (rest as { reach?: Reach }).reach = clean;
+    else delete (rest as { reach?: unknown }).reach;
+  }
+  if ("reachProtocols" in rest) {
+    const clean = normalizeReachProtocols((rest as { reachProtocols?: unknown }).reachProtocols);
+    if (clean.length) (rest as { reachProtocols?: ReachProtocol[] }).reachProtocols = clean;
+    else delete (rest as { reachProtocols?: unknown }).reachProtocols;
+  }
+  if ("economics" in rest) {
+    const clean = normalizeEconomics((rest as { economics?: unknown }).economics);
+    if (clean) (rest as { economics?: Economics }).economics = clean;
+    else delete (rest as { economics?: unknown }).economics;
+  }
+  if ("assets" in rest) {
+    const clean = normalizeAssets((rest as { assets?: unknown }).assets);
+    if (clean.length) (rest as { assets?: AssetEntry[] }).assets = clean;
+    else delete (rest as { assets?: unknown }).assets;
   }
   if ("teamSafe" in rest) {
     const clean = normalizeTeamSafe((rest as { teamSafe?: unknown }).teamSafe);
@@ -1442,6 +1483,24 @@ export function validateProjectDoc(doc: ProjectDoc): string | null {
   if (doc.verifyWallet && !ADDRESS.test(doc.verifyWallet))
     return "Team wallet must be a lowercase hex address.";
   if (doc.teamSafe && !normalizeTeamSafe(doc.teamSafe)) return "The team Safe record is malformed.";
+  if (doc.economics && !normalizeEconomics(doc.economics)) return "The unit economics record is malformed.";
+  if (doc.experiments) {
+    if (!Array.isArray(doc.experiments) || doc.experiments.length > EXPERIMENT_LIMITS.max) return `At most ${EXPERIMENT_LIMITS.max} experiments.`;
+    for (const e of doc.experiments) {
+      if (!isItemId(e?.id)) return "An experiment is missing its id.";
+      if (typeof e.hypothesis !== "string" || e.hypothesis.length > EXPERIMENT_LIMITS.text) return `An experiment's hypothesis is over ${EXPERIMENT_LIMITS.text} characters.`;
+      if ((e.evidence?.length ?? 0) > EXPERIMENT_LIMITS.evidence.max) return `An experiment holds at most ${EXPERIMENT_LIMITS.evidence.max} pieces of evidence.`;
+    }
+  }
+  if (doc.assets) {
+    if (!Array.isArray(doc.assets) || doc.assets.length > ASSET_LIMITS.max) return `At most ${ASSET_LIMITS.max} assets.`;
+    for (const a of doc.assets) {
+      if (!isItemId(a?.id)) return "An asset is missing its id.";
+      if (cleanSymbol(a.symbol) !== a.symbol) return "An asset symbol is not an upper case ticker of at most 12 characters.";
+      if (!isAssetRole(a.role)) return "An asset role is not collateral, borrow, quote, underlying or reward.";
+      if (a.address !== undefined && !ADDRESS.test(a.address)) return "An asset address must be lowercase hex.";
+    }
+  }
   if (doc.deployer && !ADDRESS.test(doc.deployer)) return "Deployer address must be a lowercase hex address.";
   if (doc.deployerEnvFile !== undefined && (typeof doc.deployerEnvFile !== "string" || doc.deployerEnvFile.length > L.deployerEnvFile.max || doc.deployerEnvFile.startsWith("/") || doc.deployerEnvFile.split("/").includes("..")))
     return `The deployer env file is a relative path of at most ${L.deployerEnvFile.max} characters.`;

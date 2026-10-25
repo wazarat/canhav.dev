@@ -2,11 +2,11 @@ import type { Milestone } from "@/lib/build-milestones";
 import type { ProblemTab } from "@/lib/build-readiness";
 
 /**
- * Copy for the Studio project page (M93 onwards). Seven fixed tabs, two of
+ * Copy for the Studio project page (M93 onwards). Eight fixed tabs, three of
  * them Studio+, four build milestones, the agent status line and the drawer.
  * No em dashes, no colons before a space.
  */
-export const BUILD_TABS = ["overview", "build", "decisions", "model", "brand", "deployments", "publish"] as const;
+export const BUILD_TABS = ["overview", "build", "decisions", "model", "brand", "viability", "deployments", "publish"] as const;
 
 export type BuildTab = (typeof BUILD_TABS)[number];
 
@@ -18,6 +18,7 @@ export const BUILD_COPY = {
     decisions: "Decisions",
     model: "Business model",
     brand: "Brand",
+    viability: "Viability",
     deployments: "Deployments",
     publish: "Publish",
   } satisfies Record<BuildTab, string>,
@@ -89,6 +90,8 @@ export const BUILD_COPY = {
     more: (n: number) => `+${n} more`,
     evidencePlaceholder: "Evidence, a file, a test name, an address or a commit",
     yourStep: "Your step",
+    /** An added step that came from the dependency check on the Viability tab (M163). */
+    fromDependencyCheck: "From the dependency check",
     remove: "Remove",
     restore: "Restore",
     removed: (n: number) => (n === 1 ? "1 removed step" : `${n} removed steps`),
