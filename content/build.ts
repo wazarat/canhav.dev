@@ -617,6 +617,27 @@ export const BUILD_COPY = {
     publicPage: "Public page",
     history: "History",
   },
+  /** The properties rail beside the tabs on wide screens (M173). */
+  rail: {
+    label: "Project details",
+    properties: "Properties",
+    status: "Status",
+    draft: "Draft",
+    published: "Published",
+    publishedPrivate: "Published privately",
+    stage: "Stage",
+    chain: "Chain",
+    shapes: "Shapes",
+    agent: "Agent",
+    deployer: "Deployer",
+    page: "Page",
+    openPage: "Open",
+    none: "Not set",
+    milestones: "Milestones",
+    noShape: "Pick what you are building under Decisions to get build steps.",
+    readiness: "Publishing",
+    ready: "Ready to publish.",
+  },
   /** Automated checks (M121). The run line is plain text, the evidence field is for every account. */
   checks: {
     run: (tool: string, result: string, date: string) => `${result} ${tool}, run ${date}.`,

@@ -60,7 +60,7 @@ export function ModelTab({
 
         <CardSection id="model-icp" className="space-y-4">
           <Heading>{M.icp}</Heading>
-          <p className="text-xs text-ink-500">{M.icpLead}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{M.icpLead}</p>
           <PlusGate feature="icp">
             <IcpEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} onChange={(icp) => patch({ icp })} reach={doc.reach} hasAssets={Boolean(doc.assets?.length)} onReach={(reach) => patch({ reach })} />
           </PlusGate>

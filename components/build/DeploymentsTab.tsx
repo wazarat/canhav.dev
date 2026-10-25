@@ -182,7 +182,7 @@ export function DeploymentsTab({
               ) : null}
             </p>
           ) : null}
-          <p className="text-xs leading-relaxed text-ink-400">{D.contracts.intro}</p>
+          <p className="max-w-3xl text-xs leading-relaxed text-ink-400">{D.contracts.intro}</p>
           <Field label={TESTNET_COPY.contractsLabel} info={TESTNET_COPY.contractsHint}>
             <ContractRowsEditor
               rows={testnetContractRows(doc)}

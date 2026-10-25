@@ -159,7 +159,7 @@ export function DecisionsTab({
             <div className="space-y-3">
               {a.contractsLegacy ? (
                 <div className="space-y-2 rounded-lg border border-ink-700/40 p-3">
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.contractsLegacy}</p>
+                  <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.contractsLegacy}</p>
                   <p className="text-xs text-ink-400">
                     {D.contractRows.legacy}{" "}
                     <button
@@ -225,7 +225,7 @@ export function DecisionsTab({
             <div className="space-y-3">
               {a.adminFunctionsLegacy ? (
                 <div className="space-y-2 rounded-lg border border-ink-700/40 p-3">
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.adminFunctionsLegacy}</p>
+                  <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed text-ink-300">{a.adminFunctionsLegacy}</p>
                   <p className="text-xs text-ink-400">
                     {D.adminRows.legacy}{" "}
                     <button

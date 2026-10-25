@@ -16,7 +16,7 @@ export function BrandTab({ id, agentMode, doc, patch }: { id: string; agentMode:
       <Card>
         <CardSection id="brand-kit" className="space-y-4">
           <h2 className="font-display text-base font-semibold text-ink-50">{B.title}</h2>
-          <p className="text-xs text-ink-500">{B.lead}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{B.lead}</p>
           <PlusGate feature="brand">
             <BrandEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} brand={doc.brand} hasLogo={Boolean(doc.logo)} onChange={(brand) => patch({ brand })} />
           </PlusGate>

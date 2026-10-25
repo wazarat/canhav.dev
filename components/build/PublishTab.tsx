@@ -289,10 +289,10 @@ export function PublishTab({
           </dl>
           <p className="text-xs text-ink-400">{FIELD_STATE_COPY.recommended(fields.filter((f) => f.state === "missing").length)}</p>
           {open.length === 0 && problems.overall === null ? (
-            <p className="text-sm leading-relaxed text-ink-300">{P.readinessLine}</p>
+            <p className="max-w-3xl text-sm leading-relaxed text-ink-300">{P.readinessLine}</p>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm leading-relaxed text-ink-300">
+              <p className="max-w-3xl text-sm leading-relaxed text-ink-300">
                 {P.notReady} {problems.overall}
               </p>
               <ul className="space-y-1.5">

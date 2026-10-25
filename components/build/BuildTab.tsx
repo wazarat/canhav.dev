@@ -20,6 +20,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { TAB_WIDTH } from "@/components/build/layout";
+import { type LaunchFacts, launchRows as launchRowsOf } from "@/components/build/launch-rows";
 import { MetaLine, ProgressBar } from "@/components/ui/MetaLine";
 import { usePlan } from "@/components/studio/PlanContext";
 import { BUILD_COPY, type BuildTab as BuildTabName } from "@/content/build";
@@ -66,16 +67,6 @@ function doneByAgentAt(group: StepGroup, changes: AgentChangeRow[]): string | nu
     if (p?.done?.some((id) => group.ids.includes(id))) return c.resolvedAt ?? c.createdAt;
   }
   return null;
-}
-
-/** What the derived Launch rows read from the record. */
-export interface LaunchFacts {
-  /** The deployer key holds ETH on the project's chain (M103). */
-  deployerFunded: boolean;
-  published: boolean;
-  hasTestnetContracts: boolean;
-  hasToken: boolean;
-  hasMainnet: boolean;
 }
 
 /**
@@ -335,15 +326,7 @@ function MilestoneSection({
   const M = BUILD_COPY.milestones[milestone];
   const progress = groupProgress(groups, kit);
   const review = passes.length ? reviewProgress(passes, kit) : null;
-  const L = BUILD_COPY.launchRows;
-  const launchRows = facts
-    ? [
-        { key: "fund", ...L.fund, done: facts.deployerFunded },
-        { key: "testnet", ...L.testnet, done: facts.hasTestnetContracts },
-        { key: "token", ...L.token, done: facts.hasToken },
-        { key: "publish", ...L.publish, done: facts.published },
-      ]
-    : [];
+  const launchRows = facts ? launchRowsOf(facts) : [];
   const launchDone = launchRows.filter((r) => r.done).length;
   return (
     <Card>
@@ -376,7 +359,7 @@ function MilestoneSection({
             ]}
           />
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-ink-400">{M.blurb}</p>
+        <p className="max-w-3xl mt-1 text-xs leading-relaxed text-ink-400">{M.blurb}</p>
       </CardSection>
       <CardSection className="py-2">
         {groups.length === 0 && passes.length === 0 && launchRows.length === 0 ? (
@@ -396,7 +379,7 @@ function MilestoneSection({
                 </StatusChip>
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className={r.done ? "text-sm text-ink-400 line-through decoration-ink-600" : "text-sm text-ink-50"}>{r.title}</p>
-                  <p className="text-xs leading-relaxed text-ink-400">{r.detail}</p>
+                  <p className="max-w-3xl text-xs leading-relaxed text-ink-400">{r.detail}</p>
                 </div>
                 <Button size="sm" variant="ghost" onClick={() => onGoTab(r.tab)}>
                   {BUILD_COPY.publish.openIn(BUILD_COPY.tabs[r.tab])} <ArrowRight aria-hidden className="h-3.5 w-3.5" />

@@ -86,7 +86,7 @@ export function ViabilityTab({
       <Card>
         <CardSection id={viabilitySectionId("summary")} className="space-y-3">
           <Heading>{V.summary.title}</Heading>
-          <p className="text-xs text-ink-500">{V.lead}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{V.lead}</p>
           <PlusGate feature="viability">
             <ViabilitySummary lines={lines} />
           </PlusGate>
@@ -94,7 +94,7 @@ export function ViabilityTab({
 
         <CardSection id={viabilitySectionId("dependencies")} className="space-y-4">
           <Heading>{V.sections.dependencies.title}</Heading>
-          <p className="text-xs text-ink-500">{V.sections.dependencies.question}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{V.sections.dependencies.question}</p>
           <PlusGate feature="viability">
             <DependenciesSection
               projectId={id}
@@ -127,7 +127,7 @@ export function ViabilityTab({
 
         <CardSection id={viabilitySectionId("gaps")} className="space-y-3">
           <Heading>{V.sections.gaps.title}</Heading>
-          <p className="text-xs text-ink-500">{V.sections.gaps.question}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{V.sections.gaps.question}</p>
           <PlusGate feature="viability">
             <GapMapSection projectId={id} chain={projectChainOf(doc)} yourSubsectors={effectiveSubsectors(doc.kit, doc)} onSummary={setGapLine} />
           </PlusGate>
@@ -135,7 +135,7 @@ export function ViabilityTab({
 
         <CardSection id={viabilitySectionId("economics")} className="space-y-3">
           <Heading>{V.sections.economics.title}</Heading>
-          <p className="text-xs text-ink-500">{V.sections.economics.question}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{V.sections.economics.question}</p>
           <PlusGate feature="viability">
             <EconomicsSection projectId={id} doc={doc} patch={patch} />
           </PlusGate>
@@ -143,7 +143,7 @@ export function ViabilityTab({
 
         <CardSection id={viabilitySectionId("experiments")} className="space-y-3">
           <Heading>{V.sections.experiments.title}</Heading>
-          <p className="text-xs text-ink-500">{V.sections.experiments.question}</p>
+          <p className="max-w-3xl text-xs text-ink-500">{V.sections.experiments.question}</p>
           <PlusGate feature="viability">
             <ExperimentsSection projectId={id} doc={doc} patch={patch} setDoc={setDoc} agentMode={agentMode} agentConnected={agentConnected} token={token} />
           </PlusGate>

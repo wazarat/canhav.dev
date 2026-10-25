@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ListChecks } from "lucide-react";
 
 import { AgentFeed } from "@/components/build/AgentFeed";
+import { deployerState } from "@/components/build/deployer-state";
 import { ProgressDialog } from "@/components/build/ProgressDialog";
 import { SummaryDialog } from "@/components/build/SummaryDialog";
 import { WeeklyUpdateCard } from "@/components/build/WeeklyUpdateCard";
@@ -40,29 +41,10 @@ function DeployerChip({
   funding: DeployerFunding;
   onClick: () => void;
 }) {
-  const C = BUILD_COPY.deployments.deployer;
-  if (!deployer) {
-    return (
-      <StatusChip tone="neutral" onClick={onClick}>
-        {C.chipNone}
-      </StatusChip>
-    );
-  }
-  if (funding.balances === null) {
-    return (
-      <StatusChip tone="neutral" onClick={onClick}>
-        {funding.loading ? C.chipChecking : C.chipEmpty}
-      </StatusChip>
-    );
-  }
-  const names = deployer.chains.filter((c) => funding.fundedOn(c.chain)).map((c) => c.name);
-  return names.length ? (
-    <StatusChip tone="success" onClick={onClick}>
-      {C.chipFunded(names)}
-    </StatusChip>
-  ) : (
-    <StatusChip tone="warning" onClick={onClick}>
-      {C.chipEmpty}
+  const { label, tone } = deployerState(deployer, funding);
+  return (
+    <StatusChip tone={tone} onClick={onClick}>
+      {label}
     </StatusChip>
   );
 }
@@ -128,8 +110,10 @@ export function OverviewTab({
     <div className={`${TAB_WIDTH} space-y-6`}>
       <Card>
         <CardSection className="space-y-3">
-          {line ? <p className="text-sm leading-relaxed text-ink-200">{line}</p> : null}
+          {line ? <p className="max-w-3xl text-sm leading-relaxed text-ink-200">{line}</p> : null}
+          {/* The rail carries these facts on wide screens (M173). */}
           <MetaLine
+            className="2xl:hidden"
             items={[
               shapes.length ? shapes.join(" and ") : null,
               chain.short,

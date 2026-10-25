@@ -26,6 +26,7 @@ import { ProjectPlanProvider } from "@/components/studio/ProjectPlanContext";
 import { usePlan } from "@/components/studio/PlanContext";
 import { buildTabsFor } from "@/lib/build-tabs";
 import { TAB_WIDTH } from "@/components/build/layout";
+import { ProjectRail } from "@/components/build/ProjectRail";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
 import { StaleDraftNotice } from "@/components/ideation/StaleDraftNotice";
 import { useAutosave } from "@/components/ideation/useAutosave";
@@ -316,6 +317,8 @@ export function ProjectBuildPage({
         />
       </aside>
       <div className="min-w-0 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+      {/* One centred frame for the header, the tab and the rail (M173), so a wide screen is used and Publish lines up with the rail. */}
+      <div className="mx-auto w-full max-w-[92rem]">
       <BuildHeader
         id={id}
         name={doc.name}
@@ -340,11 +343,31 @@ export function ProjectBuildPage({
           <StaleDraftNotice />
         </div>
       ) : null}
-      {/* The save state sits with the section being edited, not in the header (2026-10-19). */}
-      <div className={cn("mt-6 flex h-7 items-center justify-end", TAB_WIDTH)}>
-        <AutosaveIndicator state={saveState} />
+      <div className="2xl:grid 2xl:grid-cols-[minmax(0,1fr)_17rem] 2xl:gap-8">
+        <div className="min-w-0">
+          {/* The save state sits with the section being edited, not in the header (2026-10-19). */}
+          <div className={cn("mt-6 flex h-7 items-center justify-end", TAB_WIDTH)}>
+            <AutosaveIndicator state={saveState} />
+          </div>
+          <div className="mt-1">{body[tab]}</div>
+        </div>
+        <aside aria-label={BUILD_COPY.rail.label} className="hidden 2xl:sticky 2xl:top-24 2xl:mt-14 2xl:block 2xl:max-h-[calc(100vh-7rem)] 2xl:self-start 2xl:overflow-y-auto">
+          <ProjectRail
+            doc={doc}
+            facts={facts}
+            problems={problems}
+            tabProblems={tabDots}
+            agentLine={agentLine}
+            publicHref={publicHref}
+            publishedPrivate={publishedVisibility === "private"}
+            deployer={deployer}
+            funding={funding}
+            onTab={setTab}
+            onMilestone={setMilestone}
+          />
+        </aside>
       </div>
-      <div className="mt-1">{body[tab]}</div>
+      </div>
       <PublishBlockedDialog open={blockedOpen} onClose={() => setBlockedOpen(false)} problems={problems} onGoTab={setTab} />
       <HistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} projectId={id} />
       {activity ? <AgentActivityToast key={activity.seq} activity={activity} onDismiss={dismissActivity} /> : null}
