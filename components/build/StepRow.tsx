@@ -247,6 +247,7 @@ export function StepRow({
             </Badge>
           ))}
           {group.custom ? <Badge className="px-2 py-0 text-[10px]">{R.yourStep}</Badge> : null}
+          {group.source === "dependency" ? <span className="text-[11px] text-ink-400">{R.fromDependencyCheck}</span> : null}
           <ReadMenu ids={group.resources} />
           {send && !done && !na ? <SendToAgent prompt={send.prompt} canQueue={send.canQueue} full={send.full} onQueue={send.onQueue} /> : null}
         </div>

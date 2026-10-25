@@ -37,11 +37,12 @@ export function milestoneOfStep(step: KitStep | null | undefined): Milestone {
 
 /**
  * The milestone of a step group. Custom steps (id prefix "custom.") go to
- * Design whatever editor step their group carries, since customGroup fills
- * in "review" only as a placeholder.
+ * the milestone they were given (M163, the dependency check adds Testnet
+ * steps) and to Design otherwise, whatever editor step their group
+ * carries, since customGroup fills in "review" only as a placeholder.
  */
-export function milestoneOf(group: Pick<StepGroup, "key" | "step"> & { custom?: true }): Milestone {
-  if (group.custom || group.key.startsWith("custom.")) return "design";
+export function milestoneOf(group: Pick<StepGroup, "key" | "step"> & { custom?: true; milestone?: Milestone }): Milestone {
+  if (group.custom || group.key.startsWith("custom.")) return group.milestone ?? "design";
   return STEP_MILESTONE[group.step];
 }
 

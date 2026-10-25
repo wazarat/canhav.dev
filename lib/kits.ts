@@ -355,6 +355,13 @@ export const TEMPLATE_DECISIONS: readonly TemplateDecision[] = ["accepted", "rej
 /** A decision or, when none is recorded, open. */
 export type TemplateState = TemplateDecision | "open";
 
+/** The milestones an added step can land under (M163); absent reads as design. Launch holds no added steps. */
+export const CUSTOM_STEP_MILESTONES = ["design", "testnet", "review"] as const;
+export type CustomStepMilestone = (typeof CUSTOM_STEP_MILESTONES)[number];
+
+/** Where an added step came from (M163): the dependency check on the Viability tab. Absent for a step typed by the team or its agent. */
+export type CustomStepSource = "dependency";
+
 /** A build step the team added. Ticked through `checklist` like any other, by its id. */
 export interface CustomStep {
   /** "custom.<shape>.<n>", unique within the kit. */
@@ -363,6 +370,9 @@ export interface CustomStep {
   title: string;
   /** What done looks like. May be empty. */
   detail: string;
+  /** The milestone it sits under (M163). Absent reads as design. */
+  milestone?: CustomStepMilestone;
+  source?: CustomStepSource;
 }
 
 export type ReviewVerdict = "pass" | "fail" | "na";
@@ -487,6 +497,8 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
         shape: c.shape as ProductShape,
         title: c.title.slice(0, L.titleMax),
         detail: typeof c.detail === "string" ? c.detail.slice(0, L.detailMax) : "",
+        ...(CUSTOM_STEP_MILESTONES.includes(c.milestone as CustomStepMilestone) ? { milestone: c.milestone as CustomStepMilestone } : {}),
+        ...(c.source === "dependency" ? { source: "dependency" as const } : {}),
       });
     }
     if (steps.length) kit.customSteps = steps;
@@ -998,6 +1010,10 @@ export interface StepGroup {
   shapes: readonly ProductShape[];
   /** True for a step the team added (M50). One id, one shape, no resources. */
   custom?: true;
+  /** An added step's milestone (M163), when it was given one. */
+  milestone?: CustomStepMilestone;
+  /** Where an added step came from (M163). */
+  source?: CustomStepSource;
 }
 
 export interface ProductSection {
@@ -1160,6 +1176,8 @@ function customGroup(c: CustomStep): StepGroup {
     ids: [c.id],
     shapes: [c.shape],
     custom: true,
+    ...(c.milestone ? { milestone: c.milestone } : {}),
+    ...(c.source ? { source: c.source } : {}),
   };
 }
 
@@ -1204,12 +1222,13 @@ export function removedGroups(
   return out;
 }
 
-/** Add a step under a shape. The id is "custom.<shape>.<n>", n one past the highest in use. */
+/** Add a step under a shape. The id is "custom.<shape>.<n>", n one past the highest in use. `opts` gives it a milestone and a source (M163). */
 export function addCustomStep(
   kit: KitSteps,
   shape: ProductShape,
   title: string,
   detail = "",
+  opts: { milestone?: CustomStepMilestone; source?: CustomStepSource } = {},
 ): Pick<ProjectKit, "customSteps"> {
   const L = KIT_LIMITS.customSteps;
   const existing = kit.customSteps ?? [];
@@ -1223,7 +1242,14 @@ export function addCustomStep(
   return {
     customSteps: [
       ...existing,
-      { id: `${prefix}${n}`, shape, title: title.trim().slice(0, L.titleMax), detail: detail.trim().slice(0, L.detailMax) },
+      {
+        id: `${prefix}${n}`,
+        shape,
+        title: title.trim().slice(0, L.titleMax),
+        detail: detail.trim().slice(0, L.detailMax),
+        ...(opts.milestone ? { milestone: opts.milestone } : {}),
+        ...(opts.source ? { source: opts.source } : {}),
+      },
     ],
   };
 }
