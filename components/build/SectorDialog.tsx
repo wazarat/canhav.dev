@@ -14,7 +14,7 @@ import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { BUILD_COPY } from "@/content/build";
 import { SECTOR_COPY, SECTOR_OPTIONS, subsectorLabel, subsectorOptionsFor } from "@/content/ideation";
 import { sectionsFor } from "@/content/kits/checklists";
-import { offeredShapes, shapeGroupsFor, shapeLabel } from "@/content/kits/copy";
+import { offeredShapes, shapeGroupsFor, shapeLabel, shapeName } from "@/content/kits/copy";
 import { MILESTONES, groupsByMilestone } from "@/lib/build-milestones";
 import { projectChainOf } from "@/lib/chains";
 import { sectorRemoval, sectorSave } from "@/lib/classify";
@@ -22,13 +22,26 @@ import { PROJECT_LIMITS, type ProjectDoc } from "@/lib/ideation";
 import { type ProductShape, impliedShapesFor, kitShapes } from "@/lib/kits";
 import { SECTOR_SUBSECTORS, type Sector, type Subsector } from "@/lib/sectors";
 import { reachableTemplatesFor } from "@/lib/template-reach";
+import { cn } from "@/lib/utils";
 
 const F = SECTOR_COPY.flow;
-type Step = keyof typeof F.steps;
+type Step = Exclude<keyof typeof F.steps, "sector">;
 const STEPS: Step[] = ["subsectors", "build", "steps", "review"];
 
 export function sectorTitle(sector: Sector): string {
   return SECTOR_OPTIONS.find((o) => o.value === sector)?.label ?? sector;
+}
+
+/** Our modules a sector holds on the project (M186), from its picked subsectors. */
+export function sectorModules(doc: Pick<ProjectDoc, "subsectors" | "kit">, sector: Sector): ProductShape[] {
+  const subs = (doc.subsectors ?? []).filter((s) => (SECTOR_SUBSECTORS[sector] ?? []).includes(s));
+  return kitShapes(doc.kit).filter((m) => offeredShapes(subs).includes(m));
+}
+
+/** A picked sector named by its modules (M186), else by the sector. */
+export function moduleTitle(doc: Pick<ProjectDoc, "subsectors" | "kit">, sector: Sector): string {
+  const mods = sectorModules(doc, sector);
+  return mods.length ? mods.map((m) => shapeName(doc.kit, m)).join(", ") : sectorTitle(sector);
 }
 
 /** The modules and done steps a save or a delete takes with it, as one phrase. */
@@ -69,8 +82,24 @@ function Shell({ title, onClose, children, footer }: { title: string; onClose: (
  * Nothing is written until Save. An edit that drops a module says what
  * goes with it before Save.
  */
-export function SectorDialog({ doc, sector, cap, onClose, patch }: { doc: ProjectDoc; sector: Sector; cap: number; onClose: () => void; patch: (p: Partial<ProjectDoc>) => void }) {
-  const editing = (doc.sectors ?? (doc.sector ? [doc.sector] : [])).includes(sector);
+export function SectorDialog({
+  doc,
+  sector,
+  cap,
+  onClose,
+  patch,
+  onBack,
+}: {
+  doc: ProjectDoc;
+  sector: Sector;
+  cap: number;
+  onClose: () => void;
+  patch: (p: Partial<ProjectDoc>) => void;
+  /** Back to the sector pick, when the pop-up started there (M186). */
+  onBack?: () => void;
+}) {
+  // An edit opens from a module's card; a pick of a sector already on the project adds to it.
+  const editing = !onBack;
   const name = sectorTitle(sector);
   const mine = SECTOR_SUBSECTORS[sector] ?? [];
   const hasSubs = subsectorOptionsFor(sector).length > 0;
@@ -107,12 +136,16 @@ export function SectorDialog({ doc, sector, cap, onClose, patch }: { doc: Projec
 
   return (
     <Shell
-      title={editing ? F.dialogEdit(name) : F.dialogAdd(name)}
+      title={editing ? F.dialogEdit(moduleTitle(doc, sector)) : F.dialogDefine}
       onClose={onClose}
       footer={
         <>
           {pos > 0 ? (
             <Button size="sm" variant="ghost" onClick={() => setStep(order[pos - 1])}>
+              {F.back}
+            </Button>
+          ) : onBack ? (
+            <Button size="sm" variant="ghost" onClick={onBack}>
               {F.back}
             </Button>
           ) : (
@@ -130,7 +163,7 @@ export function SectorDialog({ doc, sector, cap, onClose, patch }: { doc: Projec
                 onClose();
               }}
             >
-              {editing ? F.save : F.add(name)}
+              {editing ? F.save : F.addModule}
             </Button>
           ) : (
             <Button size="sm" disabled={blocked} onClick={() => setStep(order[pos + 1])}>
@@ -141,13 +174,16 @@ export function SectorDialog({ doc, sector, cap, onClose, patch }: { doc: Projec
       }
     >
       <p className="text-xs leading-relaxed text-ink-400">{F.reassure}</p>
-      <Segmented<Step>
+      <Segmented<Step | "sector">
         size="sm"
         role="tablist"
         value={step}
-        onChange={setStep}
-        ariaLabel={editing ? F.dialogEdit(name) : F.dialogAdd(name)}
-        options={order.map((s, i) => ({ value: s, label: `${i + 1}. ${F.steps[s]}`, disabled: blocked && STEPS.indexOf(s) > at && s !== "subsectors" }))}
+        onChange={(v) => (v === "sector" ? onBack?.() : setStep(v))}
+        ariaLabel={editing ? F.dialogEdit(moduleTitle(doc, sector)) : F.dialogDefine}
+        options={[
+          ...(onBack ? [{ value: "sector" as const, label: `1. ${F.steps.sector} ${name}` }] : []),
+          ...order.map((s, i) => ({ value: s, label: `${i + (onBack ? 2 : 1)}. ${F.steps[s]}`, disabled: blocked && STEPS.indexOf(s) > at && s !== "subsectors" })),
+        ]}
       />
 
       {step === "subsectors" ? (
@@ -242,6 +278,64 @@ export function SectorDialog({ doc, sector, cap, onClose, patch }: { doc: Projec
   );
 }
 
+/**
+ * Define a module (M186): the pop-up behind Add a new feature or product.
+ * It starts with the six sectors; a sector already on the project opens
+ * with its picks so the team adds to it, then the sector's own steps follow.
+ */
+export function ModuleDialog({ doc, cap, onClose, patch }: { doc: ProjectDoc; cap: number; onClose: () => void; patch: (p: Partial<ProjectDoc>) => void }) {
+  const [sector, setSector] = useState<Sector | null>(null);
+  const [chosen, setChosen] = useState(false);
+  const picked = doc.sectors ?? (doc.sector ? [doc.sector] : []);
+  if (chosen && sector) return <SectorDialog key={sector} doc={doc} sector={sector} cap={cap} onClose={onClose} patch={patch} onBack={() => setChosen(false)} />;
+  return (
+    <Shell
+      title={F.dialogDefine}
+      onClose={onClose}
+      footer={
+        <>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            {F.cancel}
+          </Button>
+          <span className="flex-1" />
+          <Button size="sm" disabled={!sector} onClick={() => setChosen(true)}>
+            {F.next}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-xs leading-relaxed text-ink-400">{F.reassure}</p>
+      <p className="text-xs leading-relaxed text-ink-400">{F.sectorLead}</p>
+      <ul className="space-y-2" role="radiogroup" aria-label={F.steps.sector}>
+        {SECTOR_OPTIONS.map((o) => (
+          <li key={o.value}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={sector === o.value}
+              disabled={o.available === false}
+              onClick={() => setSector(o.value)}
+              onDoubleClick={() => {
+                setSector(o.value);
+                setChosen(true);
+              }}
+              className={cn(
+                "w-full rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                sector === o.value ? "border-electric-500 bg-ink-800/60" : "border-ink-700/60 hover:border-ink-500",
+              )}
+            >
+              <span className="block text-sm font-medium text-ink-50">{o.title ?? o.label}</span>
+              {o.sentence ? <span className="mt-0.5 block text-xs leading-relaxed text-ink-400">{o.sentence}</span> : null}
+              {picked.includes(o.value) ? <span className="mt-1 block text-xs text-ink-500">{F.sectorOn}</span> : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {!sector ? <p className="text-xs text-ink-500">{F.sectorPick}</p> : null}
+    </Shell>
+  );
+}
+
 /** Delete one sector (M185): a pop-up that names what goes with it, done steps included. */
 export function SectorDeleteDialog({ doc, sector, onClose, patch }: { doc: ProjectDoc; sector: Sector; onClose: () => void; patch: (p: Partial<ProjectDoc>) => void }) {
   const name = sectorTitle(sector);
@@ -258,7 +352,7 @@ export function SectorDeleteDialog({ doc, sector, onClose, patch }: { doc: Proje
   ];
   return (
     <Shell
-      title={F.deleteTitle(name)}
+      title={F.deleteTitle(moduleTitle(doc, sector))}
       onClose={onClose}
       footer={
         <>
@@ -280,7 +374,7 @@ export function SectorDeleteDialog({ doc, sector, onClose, patch }: { doc: Proje
         </>
       }
     >
-      <p className="text-sm leading-relaxed text-ink-300">{F.deleteBody}</p>
+      <p className="text-sm leading-relaxed text-ink-300">{F.deleteBody(name)}</p>
       {lines.length ? (
         <dl className="space-y-2 text-sm">
           {lines.map(([k, v]) => (

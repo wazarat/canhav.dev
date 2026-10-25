@@ -4,15 +4,16 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { CustomSubsectors } from "@/components/build/CustomSubsectors";
-import { SectorDeleteDialog, SectorDialog, sectorTitle } from "@/components/build/SectorDialog";
+import { ModuleDialog, SectorDeleteDialog, SectorDialog, sectorModules, sectorTitle } from "@/components/build/SectorDialog";
+import { ShapeGlyph } from "@/components/build/shape-icons";
 import { MetaLine } from "@/components/ui/MetaLine";
 import { TextField } from "@/components/ideation/TextField";
 import { ChipRadioGroup } from "@/components/ui/ChipGroup";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { InfoTip } from "@/components/ui/InfoTip";
-import { SECTOR_COPY, SECTOR_OPTIONS, closedSectorLabels, subsectorLabel } from "@/content/ideation";
+import { SECTOR_COPY, closedSectorLabels, subsectorLabel } from "@/content/ideation";
 import { kitsForDoc } from "@/content/kits";
-import { FAMILY_LABELS, GATE_COPY, KIT_COPY, STARTING_POINT_OPTIONS, offeredShapes, shapeBlurb, shapeLabel } from "@/content/kits/copy";
+import { FAMILY_LABELS, GATE_COPY, KIT_COPY, STARTING_POINT_OPTIONS, shapeBlurb, shapeLabel, shapeName } from "@/content/kits/copy";
 import { KIT_ENVIRONMENTS } from "@/content/kits/environments";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { shapesChange } from "@/lib/classify";
@@ -26,7 +27,9 @@ import { SECTOR_SUBSECTORS, type Sector, docSectors, sectorOfSubsector } from "@
  * Basics): sectors, subsectors, the product shapes, the starting point.
  * Since M185 a sector is added through a pop-up that walks its subsectors,
  * modules and build steps, then sits locked here with Edit and Delete; a
- * delete names everything it takes, done steps included.
+ * delete names everything it takes, done steps included. Since M186 the
+ * picked sectors read as their modules with the Build tab's icons, and one
+ * Add a new feature or product button opens the pop-up at the sectors.
  * The gate notes name the protocols missing on the project's testnet and
  * never block a pick. The ideas list and the overlap dialog left the UI;
  * their data and tools stay.
@@ -71,15 +74,14 @@ export function ShapeChooser({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [impliedMissing.join(",")]);
   // The sector pop-ups (M185): add one, edit a locked one, or delete it with everything under it.
-  const [dialog, setDialog] = useState<{ kind: "add" | "edit" | "delete"; sector: Sector } | null>(null);
-  const unpicked = SECTOR_OPTIONS.filter((o) => !sectors.includes(o.value));
+  const [dialog, setDialog] = useState<{ kind: "add" } | { kind: "edit" | "delete"; sector: Sector } | null>(null);
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <p className="inline-flex items-center gap-1 text-xs font-medium text-ink-200">
           <span>
-            {SECTOR_COPY.label}
+            {SECTOR_COPY.flow.label}
             <span className="ml-0.5 text-rose-400">*</span>
           </span>
           <InfoTip>{SECTOR_COPY.flow.hint}</InfoTip>
@@ -88,18 +90,28 @@ export function ShapeChooser({
           <ul className="space-y-2">
             {sectors.map((sec) => {
               const subs = subsectors.filter((x) => (SECTOR_SUBSECTORS[sec] ?? []).includes(x));
-              const mods = kitShapes(kit).filter((m) => offeredShapes(subs).includes(m));
+              const mods = sectorModules(doc, sec);
               const notes = mods.flatMap((m) => (missingFamilies(m, envRows).length ? [`${shapeLabel(m) ?? m} ${gateNote(missingFamilies(m, envRows))}`] : []));
               return (
                 <li key={sec} className="rounded-lg border border-ink-700/60 bg-ink-900 px-4 py-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-medium text-ink-50">{SECTOR_OPTIONS.find((o) => o.value === sec)?.title ?? sectorTitle(sec)}</p>
+                      {/* Named by its modules with the Build tab's icon and colour (M186), the sector under it. */}
+                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-ink-50">
+                        {mods.length
+                          ? mods.map((m) => (
+                              <span key={m} className="inline-flex items-center gap-1.5">
+                                <ShapeGlyph kit={kit} shape={m} className="h-4 w-4" />
+                                {shapeName(kit, m)}
+                              </span>
+                            ))
+                          : sectorTitle(sec)}
+                      </p>
                       <p className="text-xs leading-relaxed text-ink-300">{doc.sectorNotes?.[sec] ?? (sec === "other" && doc.sectorOther ? doc.sectorOther : SECTOR_COPY.flow.cardNoNote)}</p>
                       <MetaLine
                         items={[
+                          SECTOR_COPY.flow.cardSector(sectorTitle(sec)),
                           subs.length ? `${SECTOR_COPY.flow.cardSubsectors} ${subs.map(subsectorLabel).join(", ")}` : null,
-                          mods.length ? `${SECTOR_COPY.flow.cardModules} ${mods.map((m) => shapeLabel(m) ?? m).join(", ")}` : null,
                         ]}
                       />
                       {notes.map((n) => (
@@ -124,34 +136,19 @@ export function ShapeChooser({
         ) : null}
       </div>
       <div className="space-y-2">
-        <p className="text-xs font-medium text-ink-200">{SECTOR_COPY.flow.addTitle}</p>
-        {unpicked.length ? (
-          <ul className="space-y-2">
-            {unpicked.map((o) => (
-              <li key={o.value}>
-                <button
-                  type="button"
-                  disabled={o.available === false}
-                  onClick={() => setDialog({ kind: "add", sector: o.value })}
-                  className="flex w-full items-start gap-3 rounded-lg border border-dashed border-ink-700/60 px-4 py-3 text-left transition-colors hover:border-ink-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink-100">{o.title ?? o.label}</span>
-                    {o.sentence ? <span className="mt-0.5 block text-xs leading-relaxed text-ink-400">{o.sentence}</span> : null}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-ink-500">{SECTOR_COPY.flow.addNone}</p>
-        )}
+        <button
+          type="button"
+          onClick={() => setDialog({ kind: "add" })}
+          className="flex w-full items-center gap-2 rounded-lg border border-dashed border-ink-700/60 px-4 py-3 text-left text-sm font-medium text-ink-100 transition-colors hover:border-ink-500"
+        >
+          <Plus aria-hidden className="h-4 w-4 shrink-0 text-ink-400" /> {SECTOR_COPY.flow.addButton}
+        </button>
         {closedSectorLabels().length ? <p className="text-xs text-ink-400">{SECTOR_COPY.moreSoon(closedSectorLabels())}</p> : null}
         {overlapHints.length > 0 ? <p className="text-xs text-ink-500">{overlapHints.join(" ")}</p> : null}
       </div>
       <CustomSubsectors doc={doc} sectors={sectors.filter((x) => (SECTOR_SUBSECTORS[x] ?? []).length > 0)} patch={patch} />
-      {dialog?.kind === "add" || dialog?.kind === "edit" ? <SectorDialog doc={doc} sector={dialog.sector} cap={cap} onClose={() => setDialog(null)} patch={patch} /> : null}
+      {dialog?.kind === "add" ? <ModuleDialog doc={doc} cap={cap} onClose={() => setDialog(null)} patch={patch} /> : null}
+      {dialog?.kind === "edit" ? <SectorDialog doc={doc} sector={dialog.sector} cap={cap} onClose={() => setDialog(null)} patch={patch} /> : null}
       {dialog?.kind === "delete" ? <SectorDeleteDialog doc={doc} sector={dialog.sector} onClose={() => setDialog(null)} patch={patch} /> : null}
       {showKit ? (
         <>
