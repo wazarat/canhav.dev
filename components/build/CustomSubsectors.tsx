@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 
-import { TextField } from "@/components/ideation/TextField";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { Select, optionClasses } from "@/components/ui/Select";
@@ -12,33 +11,6 @@ import { PROJECT_LIMITS, type ProjectDoc, addCustomSubsector } from "@/lib/ideat
 import { SECTOR_SUBSECTORS, type Sector, type Subsector } from "@/lib/sectors";
 
 const sectorLabel = (s: Sector) => SECTOR_OPTIONS.find((o) => o.value === s)?.label ?? s;
-
-/** One line per picked sector on what the team wants it to be (M182). */
-export function SectorNotes({ doc, sectors, patch }: { doc: ProjectDoc; sectors: readonly Sector[]; patch: (p: Partial<ProjectDoc>) => void }) {
-  const C = SECTOR_COPY.custom;
-  if (!sectors.length) return null;
-  const set = (s: Sector, v: string) => {
-    const next = { ...(doc.sectorNotes ?? {}) };
-    if (v) next[s] = v;
-    else delete next[s];
-    patch({ sectorNotes: Object.keys(next).length ? next : undefined });
-  };
-  return (
-    <div className="space-y-3">
-      {sectors.map((s) => (
-        <TextField
-          key={s}
-          label={C.noteLabel(sectorLabel(s))}
-          hint={C.noteHint}
-          value={doc.sectorNotes?.[s] ?? ""}
-          onChange={(v) => set(s, v)}
-          max={PROJECT_LIMITS.sectorNote.max}
-          placeholder={C.notePlaceholder}
-        />
-      ))}
-    </div>
-  );
-}
 
 /**
  * Subsectors the team adds itself (M182), under any picked sector, each with

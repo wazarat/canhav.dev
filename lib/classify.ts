@@ -1,9 +1,12 @@
 import { kitsForDoc } from "@/content/kits";
+import { checklistFor } from "@/content/kits/checklists";
 import { offeredShapes } from "@/content/kits/copy";
+import { projectChainOf } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import {
   KIT_LIMITS,
   type ProductShape,
+  type ProjectKit,
   emptyProjectKit,
   impliedShapesFor,
   kitShapes,
@@ -11,8 +14,10 @@ import {
   withImpliedSubsectors,
   withShapeSubsectors,
   withShapes,
+  withoutShape,
 } from "@/lib/kits";
-import { type Sector, type Subsector, docSectors, subsectorsOf, withSectors } from "@/lib/sectors";
+import { lentSubsectors, reachableTemplateIds } from "@/lib/template-reach";
+import { SECTOR_SUBSECTORS, type Sector, type Subsector, docSectors, subsectorsOf, withSectors } from "@/lib/sectors";
 
 /**
  * What a project is classed as, sectors, subsectors and product shapes, and
@@ -85,5 +90,117 @@ export function shapesChange(doc: ProjectDoc, picked: readonly ProductShape[], c
   return {
     ...(nextSubs.length !== subsectors.length ? { subsectors: nextSubs } : {}),
     kit: { ...base, ...withShapes(kept), kits: nextKits, id: nextKits[0] },
+  };
+}
+
+/**
+ * What a classification change took away (M185), cleaned up after it: the
+ * modules it dropped lose their board entries and added steps, and every
+ * step no remaining module holds loses its tick, evidence and not
+ * applicable reason. Features of a dropped module and decisions on templates
+ * the project can no longer reach go too. Returns the cleaned kit and what
+ * went, for the confirm line.
+ */
+export function cleanupAfter(before: ProjectDoc, after: ProjectDoc): { kit: ProjectKit | undefined; modules: ProductShape[]; done: number; templates: number } {
+  const was = kitShapes(before.kit);
+  const kept = new Set(kitShapes(after.kit));
+  const modules = was.filter((s) => !kept.has(s));
+  let kit = after.kit;
+  if (!kit || !modules.length) return { kit, modules, done: 0, templates: 0 };
+  for (const s of modules) kit = { ...kit, ...withoutShape(kit, s) };
+  const keep = new Set<string>([
+    ...checklistFor(kitShapes(kit)).map((i) => i.id),
+    ...(kit.ownShapes ?? []).flatMap((o) => o.steps),
+    ...(kit.customSteps ?? []).map((c) => c.id),
+  ]);
+  const gone = new Set<string>([
+    ...checklistFor(modules).map((i) => i.id),
+    ...(before.kit?.customSteps ?? []).map((c) => c.id),
+  ].filter((id) => !keep.has(id)));
+  const drop = <T,>(rec: Record<string, T> | undefined) => {
+    if (!rec) return rec;
+    const out = Object.fromEntries(Object.entries(rec).filter(([k]) => !gone.has(k)));
+    return Object.keys(out).length ? out : undefined;
+  };
+  const done = [...gone].filter((id) => before.kit?.checklist?.[id]).length;
+  const reach = reachableTemplateIds(kitShapes(kit), projectChainOf(after), {}, lentSubsectors(after));
+  const decided = Object.entries(kit.templates ?? {});
+  const leftTemplates = decided.filter(([id]) => reach.has(id));
+  const features = (kit.features ?? []).filter((f) => !modules.some((s) => f.startsWith(`${s}.`)));
+  kit = {
+    ...kit,
+    checklist: drop(kit.checklist) as ProjectKit["checklist"],
+    evidence: drop(kit.evidence),
+    notApplicable: drop(kit.notApplicable),
+    features: features.length ? features : undefined,
+    templates: leftTemplates.length ? Object.fromEntries(leftTemplates) : undefined,
+  };
+  return { kit, modules, done, templates: decided.length - leftTemplates.length };
+}
+
+/** The sector's own extras, its note and the team's own subsectors under it, dropped with it (M185). */
+function withoutSectorExtras(doc: ProjectDoc, sector: Sector): Pick<ProjectDoc, "sectorNotes" | "customSubsectors"> {
+  const { [sector]: _n, ...notes } = doc.sectorNotes ?? {};
+  const own = (doc.customSubsectors ?? []).filter((c) => c.sector !== sector);
+  return { sectorNotes: Object.keys(notes).length ? notes : undefined, customSubsectors: own.length ? own : undefined };
+}
+
+/** Delete a sector (M185): it, its subsectors, the modules only they offer and everything those modules hold. */
+export function sectorRemoval(doc: ProjectDoc, sector: Sector): { patch: Partial<ProjectDoc>; subsectors: Subsector[]; modules: ProductShape[]; done: number; templates: number } {
+  const after: ProjectDoc = { ...doc, ...sectorsChange(doc, docSectors(doc).filter((s) => s !== sector)), ...withoutSectorExtras(doc, sector) };
+  const clean = cleanupAfter(doc, after);
+  const subsectors = (doc.subsectors ?? []).filter((s) => !(after.subsectors ?? []).includes(s));
+  return {
+    patch: {
+      sectors: after.sectors,
+      sector: after.sector,
+      subsectors: after.subsectors,
+      sectorNotes: after.sectorNotes,
+      customSubsectors: after.customSubsectors,
+      ...(sector === "other" ? { sectorOther: "" } : {}),
+      ...(clean.kit ? { kit: clean.kit } : {}),
+    },
+    subsectors,
+    ...clean,
+  };
+}
+
+/**
+ * Save one sector from the add or edit pop-up (M185): the sector, its
+ * subsectors, the modules picked under them and its note, in the editor's
+ * cascade order, then the cleanup for anything an edit took away. The
+ * other sectors' picks stay as they are.
+ */
+export function sectorSave(
+  doc: ProjectDoc,
+  input: { sector: Sector; subsectors: readonly Subsector[]; shapes: readonly ProductShape[]; note: string; other?: string },
+  cap: number = KIT_LIMITS.shapes.maxPlus,
+): { patch: Partial<ProjectDoc>; modules: ProductShape[]; done: number; templates: number } {
+  const { sector } = input;
+  const sectors = docSectors(doc);
+  let next: ProjectDoc = sectors.includes(sector) ? doc : { ...doc, ...sectorsChange(doc, [...sectors, sector]) };
+  const mine = new Set(SECTOR_SUBSECTORS[sector] ?? []);
+  const others = (next.subsectors ?? []).filter((s) => !mine.has(s));
+  next = { ...next, ...subsectorsChange(next, [...others, ...input.subsectors]) };
+  // Modules offered under this sector's picks are the pop-up's to decide; the rest stay.
+  const offeredHere = new Set(offeredShapes(input.subsectors));
+  const offeredBefore = new Set(offeredShapes((doc.subsectors ?? []).filter((s) => mine.has(s))));
+  const keepOthers = kitShapes(next.kit).filter((s) => !offeredHere.has(s) && !offeredBefore.has(s));
+  next = { ...next, ...shapesChange(next, [...keepOthers, ...input.shapes.filter((s) => offeredHere.has(s))], cap) };
+  const notes = { ...(doc.sectorNotes ?? {}) };
+  if (input.note.trim()) notes[sector] = input.note.trim();
+  else delete notes[sector];
+  next = { ...next, sectorNotes: Object.keys(notes).length ? notes : undefined, ...(input.other !== undefined ? { sectorOther: input.other } : {}) };
+  const clean = cleanupAfter(doc, next);
+  return {
+    patch: {
+      sectors: next.sectors,
+      sector: next.sector,
+      subsectors: next.subsectors,
+      sectorNotes: next.sectorNotes,
+      ...(input.other !== undefined ? { sectorOther: input.other } : {}),
+      ...(clean.kit ? { kit: clean.kit } : {}),
+    },
+    ...clean,
   };
 }
