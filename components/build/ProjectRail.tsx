@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import Link from "next/link";
 
-import { AGENT_TONE_CLASS, type AgentTone } from "@/components/build/agent-tone";
 import { deployerState } from "@/components/build/deployer-state";
 import { type LaunchFacts, launchRows } from "@/components/build/launch-rows";
 import { progressFill } from "@/components/build/progress-tone";
@@ -23,7 +22,6 @@ import { groupProgress, kitShapes } from "@/lib/kits";
 
 /** The five steps a project moves through (M175), each read from the record. */
 type Stage = "draft" | "inProgress" | "ready" | "published" | "live";
-const STAGES: readonly Stage[] = ["draft", "inProgress", "ready", "published", "live"];
 
 function projectStage(facts: LaunchFacts, problems: ProjectProblems, started: boolean): Stage {
   if (facts.hasMainnet) return "live";
@@ -48,7 +46,6 @@ export function ProjectRail({
   problems,
   tabProblems,
   agentLine,
-  agentTone,
   publicHref,
   publishedPrivate,
   deployer,
@@ -62,7 +59,6 @@ export function ProjectRail({
   tabProblems: Record<ProblemTab, string | null>;
   /** One of BUILD_COPY.agent. */
   agentLine: string;
-  agentTone: AgentTone;
   publicHref: string | null;
   publishedPrivate: boolean;
   deployer: DeployerView | null;
@@ -81,11 +77,16 @@ export function ProjectRail({
   const open = (Object.keys(tabProblems) as ProblemTab[]).filter((t) => tabProblems[t]);
   const started = MILESTONES.some((m) => progress(m).done > 0);
   const stage = projectStage(facts, problems, started);
+  // Every milestone's steps added up (owner feedback 2026-10-25), beside the stage.
+  const overall = MILESTONES.reduce((acc, m) => {
+    const p = progress(m);
+    return { done: acc.done + p.done, total: acc.total + p.total };
+  }, { done: 0, total: 0 });
   const stageLabel: Record<Stage, string> = { draft: R.draft, inProgress: R.inProgress, ready: R.readyStage, published: publishedPrivate ? R.publishedPrivate : R.published, live: R.live };
   const status = (
     <>
       {stageLabel[stage]}
-      <span className="text-ink-500"> · {R.stepOf(STAGES.indexOf(stage) + 1, STAGES.length)}</span>
+      {kit?.shape && overall.total ? <span className="text-ink-500"> · {R.overall(overall.done, overall.total, Math.round((overall.done / overall.total) * 100))}</span> : null}
     </>
   );
   // More than two shapes read as the first two and a count, the full list on hover (M175).
@@ -107,7 +108,7 @@ export function ProjectRail({
           <Property labelClassName={LABEL} label={R.stage} value={doc.stage ? optionLabel(STAGE_OPTIONS, doc.stage) : R.none} />
           <Property labelClassName={LABEL} label={R.chain} value={chainInfo(projectChainOf(doc)).short} />
           <Property labelClassName={LABEL} label={R.shapes} value={shapesValue} />
-          <Property labelClassName={LABEL} label={R.agent} value={<span className={AGENT_TONE_CLASS[agentTone]}>{agentLine}</span>} />
+          <Property labelClassName={LABEL} label={R.agent} value={agentLine} />
           <Property
             labelClassName={LABEL}
             label={R.deployer}

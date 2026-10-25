@@ -361,7 +361,6 @@ export function ProjectBuildPage({
             problems={problems}
             tabProblems={tabDots}
             agentLine={agentLine}
-            agentTone={agentTone}
             publicHref={publicHref}
             publishedPrivate={publishedVisibility === "private"}
             deployer={deployer}

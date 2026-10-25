@@ -639,7 +639,7 @@ export const BUILD_COPY = {
     published: "Published",
     publishedPrivate: "Published privately",
     live: "Live on mainnet",
-    stepOf: (n: number, total: number) => `${n} of ${total}`,
+    overall: (done: number, total: number, pct: number) => `${done} of ${total} steps (${pct}%)`,
     moreShapes: (n: number) => `+${n} more`,
     stage: "Stage",
     chain: "Chain",
