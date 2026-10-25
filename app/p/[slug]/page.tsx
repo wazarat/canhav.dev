@@ -40,6 +40,9 @@ import { getSessionUser } from "@/lib/auth";
 import { BUILD_COPY } from "@/content/build";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { Card } from "@/components/ui/Card";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { VIABILITY_COPY } from "@/content/viability";
+import { itemVerdicts, publishedExperiments } from "@/lib/experiments";
 import { CanvasBlockFrame, CanvasGrid, CanvasItemsList } from "@/components/build/CanvasGrid";
 import { canvasFilled } from "@/lib/canvas";
 import { PROFILE_KEYS, VALUE_AREAS } from "@/lib/value-canvas";
@@ -125,6 +128,9 @@ export default async function ProjectPublicPage({
   // The Studio+ blocks show while the project's team is on the plan (M134).
   const plus = await projectPlus(row);
   const doc = plus ? snapshot.doc : stripPlusFields(snapshot.doc);
+  // The verdicts the finished experiments give the canvases (M170) and the experiments the page lists.
+  const verdicts = itemVerdicts(doc.experiments);
+  const finishedExperiments = publishedExperiments(doc.experiments);
   const audience = docAudience(doc);
   const personaCards = audiencePersonaCards(doc);
 
@@ -271,6 +277,12 @@ export default async function ProjectPublicPage({
                                 {c[a].map((i) => (
                                   <li key={i.id} className="text-sm text-ink-200">
                                     {i.text}
+                                    {verdicts.get(i.id) ? (
+                                      <a href={`#experiment-${verdicts.get(i.id)!.experimentId}`} className="ml-1.5 text-xs text-ink-400 underline-offset-2 hover:text-ink-50 hover:underline">
+                                        {VIABILITY_COPY.experiments.verdicts[verdicts.get(i.id)!.verdict]}
+                                      </a>
+                                    ) : null}
+                                    {i.refs?.length ? <span className="text-xs text-ink-500">{` (${i.refs.map((r) => STUDIO_PLUS_COPY.competitors.comparables.ref(r.name === r.comparable ? r.comparable : r.comparable, r.name)).join("; ")})`}</span> : null}
                                   </li>
                                 ))}
                               </ul>
@@ -325,10 +337,30 @@ export default async function ProjectPublicPage({
             <CanvasGrid
               render={(b, placement) => (
                 <CanvasBlockFrame key={b} block={b} title={STUDIO_PLUS_COPY.canvas.blocks[b].label} className={placement}>
-                  <CanvasItemsList items={doc.canvas?.[b]} empty={STUDIO_PLUS_COPY.canvas.empty} />
+                  <CanvasItemsList items={doc.canvas?.[b]} empty={STUDIO_PLUS_COPY.canvas.empty} verdicts={verdicts} verdictHref={(id) => `#experiment-${id}`} />
                 </CanvasBlockFrame>
               )}
             />
+          </Section>
+        ) : null}
+
+        {finishedExperiments.length ? (
+          <Section title={VIABILITY_COPY.experiments.publicTitle}>
+            <p className="text-sm leading-relaxed text-ink-400">{VIABILITY_COPY.experiments.publicLead}</p>
+            <ul className="space-y-2">
+              {finishedExperiments.map((e) => (
+                <li key={e.id} id={`experiment-${e.id}`}>
+                  <Collapsible summary={VIABILITY_COPY.experiments.publicLine(VIABILITY_COPY.experiments.statuses[e.status], e.hypothesis || e.assumption.text)} summaryClassName="text-sm font-normal text-ink-100">
+                    <div className="space-y-2 text-sm leading-relaxed text-ink-300">
+                      {e.assumption.text ? <p className="text-ink-400">{e.assumption.text}</p> : null}
+                      {e.test ? <p>{e.test}</p> : null}
+                      {e.passBar || e.killCriterion ? <p className="text-ink-400">{[e.passBar ? `Pass when ${e.passBar}` : "", e.killCriterion ? `kill when ${e.killCriterion}` : ""].filter(Boolean).join(", ")}.</p> : null}
+                      {e.result ? <p><span className="text-xs uppercase tracking-wide text-ink-500">{VIABILITY_COPY.experiments.publicResult}</span> {e.result}</p> : null}
+                    </div>
+                  </Collapsible>
+                </li>
+              ))}
+            </ul>
           </Section>
         ) : null}
 

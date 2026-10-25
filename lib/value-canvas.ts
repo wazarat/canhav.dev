@@ -18,9 +18,20 @@ export const CUSTOMER_AREAS: readonly ValueArea[] = ["jobs", "pains", "gains"];
 /** Which customer area a map area answers. */
 export const ANSWERS: Partial<Record<ValueArea, ValueArea>> = { painRelievers: "pains", gainCreators: "gains" };
 
+/** A line of a comparable attached to an item as its source (M169): the comparable's id, which section it came from and the line's name. */
+export interface ValueRef {
+  comparable: string;
+  section: "components" | "risks";
+  name: string;
+}
+
+export const VALUE_REF_LIMITS = { max: 3, name: 120, comparable: 60 } as const;
+
 export interface ValueItem extends CanvasItem {
   /** Ids of the pains or gains this reliever or creator answers. */
   answers?: string[];
+  /** Comparable lines this item builds on (M169). */
+  refs?: ValueRef[];
 }
 
 export type ValueCanvas = Record<ValueArea, ValueItem[]>;
@@ -45,10 +56,30 @@ export function emptyValueCanvas(): ValueCanvas {
 }
 
 /** Items as stored: the canvas item rules plus `answers` kept as ids (dangling ones drop after the whole canvas is read). */
+function normalizeRefs(raw: unknown): ValueRef[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ValueRef[] = [];
+  const seen = new Set<string>();
+  for (const v of raw) {
+    if (!v || typeof v !== "object") continue;
+    const o = v as { comparable?: unknown; section?: unknown; name?: unknown };
+    if (typeof o.comparable !== "string" || !/^[a-z0-9][a-z0-9-]{0,59}$/.test(o.comparable)) continue;
+    if (o.section !== "components" && o.section !== "risks") continue;
+    if (typeof o.name !== "string" || !o.name.trim()) continue;
+    const key = `${o.comparable}:${o.section}:${o.name.trim()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ comparable: o.comparable, section: o.section, name: o.name.trim().slice(0, VALUE_REF_LIMITS.name) });
+    if (out.length >= VALUE_REF_LIMITS.max) break;
+  }
+  return out;
+}
+
 function normalizeArea(raw: unknown): ValueItem[] {
   return normalizeItems<ValueItem>(raw, VALUE_ITEM_LIMITS, (item, source) => {
     const answers = Array.isArray(source.answers) ? source.answers.filter(isItemId) : [];
-    return answers.length ? { ...item, answers: [...new Set(answers)] } : item;
+    const refs = normalizeRefs(source.refs);
+    return { ...item, ...(answers.length ? { answers: [...new Set(answers)] } : {}), ...(refs.length ? { refs } : {}) };
   });
 }
 
@@ -102,7 +133,13 @@ export function valueCanvasFilled(c: ValueCanvas | undefined): number {
 const itemText = z.string().min(VALUE_CANVAS_LIMITS.item.min).max(VALUE_CANVAS_LIMITS.item.max);
 const itemPatch = z.union([
   itemText,
-  z.strictObject({ id: z.string().regex(/^[a-z0-9]{4,12}$/).optional(), text: itemText, answers: z.array(z.string().regex(/^[a-z0-9]{4,12}$/)).max(VALUE_CANVAS_LIMITS.items.max).optional() }),
+  z.strictObject({
+    id: z.string().regex(/^[a-z0-9]{4,12}$/).optional(),
+    text: itemText,
+    answers: z.array(z.string().regex(/^[a-z0-9]{4,12}$/)).max(VALUE_CANVAS_LIMITS.items.max).optional(),
+    // Comparable lines the item builds on (M169): the comparable's id from get_comparables, the section and the line's name.
+    refs: z.array(z.strictObject({ comparable: z.string().regex(/^[a-z0-9][a-z0-9-]{0,59}$/), section: z.enum(["components", "risks"]), name: z.string().min(1).max(VALUE_REF_LIMITS.name) })).max(VALUE_REF_LIMITS.max).optional(),
+  }),
 ]);
 const areaPatch = z.union([z.string().max(VALUE_CANVAS_LIMITS.items.max * VALUE_CANVAS_LIMITS.item.max), z.array(itemPatch).max(VALUE_CANVAS_LIMITS.items.max)]);
 const canvasPatch = z.strictObject(Object.fromEntries(VALUE_AREAS.map((a) => [a, areaPatch.optional()])) as Record<ValueArea, z.ZodOptional<typeof areaPatch>>).nullable();

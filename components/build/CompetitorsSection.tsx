@@ -5,7 +5,10 @@ import { useEffect, useState } from "react";
 import { DraftControl, type DraftMeta } from "@/components/build/DraftControl";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
+import { ComparablesSection } from "@/components/build/ComparablesSection";
 import { PositioningPanel } from "@/components/build/PositioningPanel";
+import type { Icp } from "@/lib/icp";
+import type { ValueCanvases } from "@/lib/value-canvas";
 import { TextField } from "@/components/ideation/TextField";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
 import { draftCompetitorsPrompt } from "@/lib/agent-prompts-draft";
@@ -29,6 +32,9 @@ export function CompetitorsSection({
   createdAt,
   value,
   onChange,
+  profiles,
+  valueCanvas,
+  onValueCanvas,
 }: {
   projectId: string;
   name: string;
@@ -40,6 +46,10 @@ export function CompetitorsSection({
   createdAt: string;
   value: Competitors | undefined;
   onChange: (next: Competitors) => void;
+  /** The profiles and the value canvas a comparable line can be attached to (M169). */
+  profiles?: Icp[];
+  valueCanvas?: ValueCanvases;
+  onValueCanvas?: (next: ValueCanvases) => void;
 }) {
   const C = STUDIO_PLUS_COPY.competitors;
   const [landscape, setLandscape] = useState<Landscape | null>(null);
@@ -133,6 +143,10 @@ export function CompetitorsSection({
           <PositioningPanel rows={rows} value={current} onChange={onChange} projectAgeMonths={projectAge} projectName={name} />
         </>
       )}
+      {/* How others built it (M169), from the committed comparables; pins land on the landscape's slugs. */}
+      <div className="border-t border-ink-700/40 pt-5">
+        <ComparablesSection projectId={projectId} pinned={pinned} pinnable={new Set(rows.map((r) => r.slug))} onPin={togglePin} profiles={profiles} valueCanvas={valueCanvas} onValueCanvas={(next) => onValueCanvas?.(next)} />
+      </div>
       <div className="space-y-3">
         <TextField label={C.differentiator} hint={C.differentiatorHint} value={current.differentiator} onChange={(v) => onChange({ ...current, differentiator: v })} max={COMPETITOR_LIMITS.differentiator.max} rows={2} />
         <DraftControl<{ differentiator: string }>

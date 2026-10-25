@@ -7,6 +7,7 @@ import { ItemsEditor } from "@/components/build/ItemsEditor";
 import { Button } from "@/components/ui/Button";
 import { Segmented } from "@/components/ui/Segmented";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
+import { VIABILITY_COPY } from "@/content/viability";
 import { draftValueCanvasPrompt } from "@/lib/agent-prompts-draft";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import { type CanvasItem, normalizeItems } from "@/lib/canvas-items";
@@ -51,6 +52,8 @@ export function ValueCanvasEditor({
   value,
   onChange,
   differentiator,
+  verdicts,
+  testHref,
 }: {
   projectId: string;
   name: string;
@@ -62,6 +65,9 @@ export function ValueCanvasEditor({
   onChange: (next: ValueCanvases | undefined) => void;
   /** The competitor line, echoed under the canvas as the one sentence to quote. */
   differentiator?: string;
+  /** The verdicts experiments gave the items (M170) and the Test this link (M171), when the session has Viability. */
+  verdicts?: ReadonlyMap<string, { verdict: "validated" | "invalidated"; experimentId: string }>;
+  testHref?: (key: ProfileKey, itemId: string) => string;
 }) {
   const C = STUDIO_PLUS_COPY.valueCanvas;
   const list = profiles ?? [];
@@ -147,9 +153,28 @@ export function ValueCanvasEditor({
           </div>
         ) : items.length ? (
           <ul className="space-y-1">
-            {items.map((i: CanvasItem) => (
+            {items.map((i: ValueItem) => (
               <li key={i.id} className="text-sm leading-snug text-ink-200">
                 {i.text}
+                {verdicts?.get(i.id) ? <span className="ml-1.5 text-xs text-ink-400">{VIABILITY_COPY.experiments.verdicts[verdicts.get(i.id)!.verdict]}</span> : null}
+                {testHref && !verdicts?.get(i.id) ? (
+                  <a href={testHref(key, i.id)} className="ml-1.5 text-xs text-ink-500 underline-offset-2 hover:text-ink-50 hover:underline">
+                    {VIABILITY_COPY.experiments.testThis}
+                  </a>
+                ) : null}
+                {i.refs?.length ? (
+                  <span className="block text-xs text-ink-400">
+                    {i.refs.map((r, n) => (
+                      <span key={`${r.comparable}:${r.name}`}>
+                        {n > 0 ? " · " : ""}
+                        {STUDIO_PLUS_COPY.competitors.comparables.ref(r.comparable, r.name)}{" "}
+                        <button type="button" aria-label={STUDIO_PLUS_COPY.competitors.comparables.refRemove} onClick={() => setArea(a, items.map((x) => (x.id === i.id ? { ...x, refs: (x.refs ?? []).filter((y) => !(y.comparable === r.comparable && y.name === r.name)) } : x)))} className="text-ink-500 underline-offset-2 hover:text-ink-50 hover:underline">
+                          {STUDIO_PLUS_COPY.canvas.remove}
+                        </button>
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
