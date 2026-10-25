@@ -6,19 +6,20 @@ import Link from "next/link";
 import { deployerState } from "@/components/build/deployer-state";
 import { type LaunchFacts, launchRows } from "@/components/build/launch-rows";
 import { progressFill } from "@/components/build/progress-tone";
+import { ShapeGlyph } from "@/components/build/shape-icons";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
 import { ProgressBar } from "@/components/ui/MetaLine";
 import { Property, PropertyList } from "@/components/ui/Property";
 import { BUILD_COPY, type BuildTab } from "@/content/build";
 import { STAGE_OPTIONS, optionLabel } from "@/content/ideation";
 import { sectionsFor } from "@/content/kits/checklists";
-import { CHECKLIST_COPY, shapeLabels } from "@/content/kits/copy";
+import { CHECKLIST_COPY, shapeLabels, shapeName } from "@/content/kits/copy";
 import { MILESTONES, type Milestone, groupsByMilestone } from "@/lib/build-milestones";
 import type { ProblemTab, ProjectProblems } from "@/lib/build-readiness";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import type { DeployerView } from "@/lib/deployer";
 import type { ProjectDoc } from "@/lib/ideation";
-import { groupProgress, kitShapes } from "@/lib/kits";
+import { allShapes, groupProgress, kitShapes } from "@/lib/kits";
 
 /** The five steps a project moves through (M175), each read from the record. */
 type Stage = "draft" | "inProgress" | "ready" | "published" | "live";
@@ -90,10 +91,17 @@ export function ProjectRail({
     </>
   );
   // More than two shapes read as the first two and a count, the full list on hover (M175).
-  const shapesValue = shapes.length ? (
-    <span title={shapes.length > 2 ? shapes.join(", ") : undefined}>
-      {shapes.slice(0, 2).join(", ")}
-      {shapes.length > 2 ? <span className="text-ink-500"> {R.moreShapes(shapes.length - 2)}</span> : null}
+  // Each with its icon and colour (M177).
+  const ids = allShapes(kit);
+  const shapesValue = ids.length ? (
+    <span title={shapes.length > 2 ? shapes.join(", ") : undefined} className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      {ids.slice(0, 2).map((id) => (
+        <span key={id} className="inline-flex items-center gap-1">
+          <ShapeGlyph kit={kit} shape={id} />
+          {shapeName(kit, id)}
+        </span>
+      ))}
+      {ids.length > 2 ? <span className="text-ink-500">{R.moreShapes(ids.length - 2)}</span> : null}
     </span>
   ) : (
     R.none

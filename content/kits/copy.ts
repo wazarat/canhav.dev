@@ -170,27 +170,18 @@ export const RAIL_COPY = {
     "extra. Your ticks travel with the project into AGENTS.md and the MCP tools.",
 } as const;
 
-/** The shape boards (M176): three lanes per shape, and the words for the cards on them. */
-export const BOARD_COPY = {
-  title: "Board",
-  hint: "What this shape includes, sorted into three lanes. Core is part of the product and a core feature adds its build steps. Exploring is being ideated. Later is a feature to add and test later. Your agent reads and moves cards over MCP.",
+/** The shape lanes (M177): every shape sits in Core, Exploring or Later. */
+export const LANE_COPY = {
+  title: "Shapes",
   lanes: {
     core: { label: "Core", hint: "Part of the product" },
     exploring: { label: "Exploring", hint: "Being ideated" },
     later: { label: "Later", hint: "Add and test later" },
   },
-  kinds: { feature: "Feature", resource: "Resource", template: "Template", own: "Your item" },
-  add: "Add",
-  writeOwn: "Write your own",
-  ownPlaceholder: "One line, what it is",
   moveTo: (lane: string) => `Move to ${lane}`,
-  remove: "Remove",
   empty: "Nothing here yet.",
-  libraryTitles: { feature: "Features", resource: "Resources", template: "Contract templates" },
-  featuresFrom: (shape: string) => `Features from ${shape}`,
-  search: "Filter",
-  nothingLeft: "Everything is on the board.",
-  export: "Shape boards",
+  noParagraph: "No description yet.",
+  export: "Shapes by lane",
   exportLine: (lane: string, items: string) => `${lane}. ${items}`,
 } as const;
 

@@ -9,9 +9,11 @@
  * person's machine and records its address (F8); `step`, the agent works
  * one build step, `target` being the step group's key (F10, M152);
  * `assets`, the agent fills the assets the idea depends on from the code
- * (M162), cleared by an update_project write of assets.
+ * (M162), cleared by an update_project write of assets; `shape`, the agent
+ * ideates a shape the team made (M177), `target` its id, cleared by a board
+ * or step write on it.
  */
-export const AGENT_REQUEST_KINDS = ["deployer", "step", "assets"] as const;
+export const AGENT_REQUEST_KINDS = ["deployer", "step", "assets", "shape"] as const;
 export type AgentRequestKind = (typeof AGENT_REQUEST_KINDS)[number];
 
 export interface AgentRequest {
@@ -42,7 +44,7 @@ export function normalizeAgentRequests(raw: unknown): AgentRequest[] | null {
     const o = r as Record<string, unknown>;
     if (!isAgentRequestKind(o.kind)) continue;
     const target = typeof o.target === "string" && o.target.trim() ? o.target.trim().slice(0, 120) : undefined;
-    if (o.kind === "step" && !target) continue;
+    if ((o.kind === "step" || o.kind === "shape") && !target) continue;
     const key = agentRequestKey(o.kind, target);
     if (seen.has(key)) continue;
     seen.add(key);
@@ -98,5 +100,13 @@ export function agentRequestHowTo(kind: AgentRequestKind, envFile = ".env"): str
     );
   if (kind === "assets")
     return "Read the contracts in this repository and record the tokens they touch with update_project assets, each with a symbol, a role (collateral, borrow, quote, underlying or reward) and the address where you know it. Writing assets clears this request.";
+  if (kind === "shape")
+    return "Ideate the shape the team made, named in target. Read its name and the paragraph on what the team wants it to do under ownShapes on get_build_steps, then put the build steps it needs on it (pick catalog steps onto it with update_project kit.ownShapes.steps, or add steps of your own with set_build_steps), place it in a lane with set_shape if it is not core, and name the work in report_session's plan. Writing its steps clears this request.";
   return "Work the step in this repository, add the file, test or address as evidence and tick it with set_build_steps, and name it in report_session's plan. Ticking it clears this request.";
+}
+
+/** Drop the ideate request of each shape in the set (M177). */
+export function withoutShapeRequests(doc: { agentRequests?: AgentRequest[] }, shapes: ReadonlySet<string>): AgentRequest[] | undefined {
+  const rest = (doc.agentRequests ?? []).filter((r) => !(r.kind === "shape" && r.target && shapes.has(r.target)));
+  return rest.length ? rest : undefined;
 }

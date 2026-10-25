@@ -117,8 +117,8 @@ import { launchTargetLabel } from "@/content/launch-targets";
 import { launchTargetFit, launchTargetOf } from "@/lib/launch-targets";
 import { mainnetView } from "@/lib/mainnet-view";
 import { TEMPLATE_ID } from "@/lib/templates";
-import { FEATURE_ID, KIT_LIMITS, allShapes, customStepShapes, hasFeature, isOwnShapeId, isProductShape } from "@/lib/kits";
-import { boardFor } from "@/lib/board";
+import { FEATURE_ID, KIT_LIMITS, SHAPE_COLORS, SHAPE_LANES, allShapes, customStepShapes, hasFeature, isOwnShapeId, isProductShape, laneOf } from "@/lib/kits";
+import { SHAPE_ICON_NAMES } from "@/content/kits/shape-icons";
 
 const KIT_LIMITS_FEATURES = KIT_LIMITS.features.max;
 import {
@@ -841,15 +841,9 @@ export function registerProjectTools(server: McpServer, projectId: string): void
       return jsonResult({
         ...stateOf(loaded.value),
         progress: buildProgress(kit),
-        // Every shape, ours then own (M176); the cap is 3 on Studio and 10 on Studio+, ours and own together.
-        shapes: allShapes(kit).map((id) => ({ id, name: shapeName(kit, id), own: isOwnShapeId(id) })),
+        // Every shape, ours then own (M176), with its lane, icon and colour (M177); the cap is 3 on Studio and 10 on Studio+, ours and own together.
+        shapes: allShapes(kit).map((id) => ({ id, name: shapeName(kit, id), own: isOwnShapeId(id), lane: laneOf(kit, id), ...(kit.shapeStyles?.[id] ?? {}) })),
         ownShapes: (kit.ownShapes ?? []).map((o) => ({ id: o.id, title: o.title, detail: o.detail, ...(o.basedOn ? { copiedFrom: o.basedOn } : {}), steps: o.steps })),
-        // The shape boards (M176): core, exploring and later. Sort them with set_board.
-        boards: allShapes(kit).map((shape) => {
-          const b = boardFor(kit, shape);
-          const lane = (l: "core" | "exploring" | "later") => b[l].map((i) => ({ kind: i.kind, id: i.id, title: i.title }));
-          return { shape, core: lane("core"), exploring: lane("exploring"), later: lane("later") };
-        }),
         features: features.map((f) => ({
           id: f.id,
           shape: f.id.slice(0, f.id.indexOf(".")),
@@ -946,13 +940,12 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_ideas",
     {
       title: "Edit what the team could build",
-      description: `Change the "What you could build" lines of this project, one per product shape. They are the own cards on the shape boards (M176); shape may be an own shape id (own.<slug>) and lane (core, exploring or later, exploring when left out) places the line. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. To add one line send add (M84), to drop one send remove by its exact text; the rest is untouched. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. ideas replaces the whole list instead; send one form per call. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
+      description: `Change the "What you could build" lines of this project, one per product shape. shape may be an own shape id (own.<slug>) since M176. Read the ideas block of get_resource_pack first; it lists every catalog example with on (ticked) and the team's own lines with own. To add one line send add (M84), to drop one send remove by its exact text; the rest is untouched. A catalog example is ticked by sending its exact text; a line of your own is any other text; an edited catalog example carries from, the original text, which then steps aside until the line is removed. ideas replaces the whole list instead; send one form per call. Keep every line the team ticked or wrote unless the team asked to drop it. ${WRITE_RULES}`,
       inputSchema: z.object({
         ideas: z
           .array(
             z.object({
               shape: z.string().max(60),
-              lane: z.enum(["core", "exploring", "later"]).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
@@ -963,7 +956,6 @@ export function registerProjectTools(server: McpServer, projectId: string): void
           .array(
             z.object({
               shape: z.string().max(60),
-              lane: z.enum(["core", "exploring", "later"]).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
@@ -1055,7 +1047,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Add a product shape",
       description:
-        "Add a shape to this project (M176). Send shape for one of ours (an id from get_project's offered shapes, under the project's sectors), or name (and detail, and copyFrom, one of our shape ids whose catalog steps it starts with) for a shape the team makes, which gets an id own.<slug>. Ours and own count together against the cap, 3 on Studio and 10 on Studio+. A new shape's board starts empty; fill it with set_board. " +
+        "Add a shape to this project (M176). Send shape for one of ours (an id from get_project's offered shapes, under the project's sectors), or name (and detail, and copyFrom, one of our shape ids whose catalog steps it starts with) for a shape the team makes, which gets an id own.<slug>. Ours and own count together against the cap, 3 on Studio and 10 on Studio+. A new shape sits in core; move it with set_shape. " +
         WRITE_RULES,
       inputSchema: z.object({
         shape: z.enum(PRODUCT_SHAPE_VALUES as [ProductShape, ...ProductShape[]]).optional(),
@@ -1086,7 +1078,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     {
       title: "Remove a product shape",
       description:
-        "Take a shape off this project (M176). An own shape id (own.<slug>) goes with its board, its lines and the steps only it has; a step it shares stays on its other shapes. One of ours is taken off the kit; its ticks stay stored and come back with it. " +
+        "Take a shape off this project (M176). An own shape id (own.<slug>) goes with its lane, its lines and the steps only it has; a step it shares stays on its other shapes. One of ours is taken off the kit; its ticks stay stored and come back with it. " +
         WRITE_RULES,
       inputSchema: z.object({ shape: z.string().max(60), note: noteField }),
     },
@@ -1110,32 +1102,30 @@ export function registerProjectTools(server: McpServer, projectId: string): void
 
   registerMeteredTool(
     server,
-    "set_board",
+    "set_shape",
     {
-      title: "Sort a shape's board",
+      title: "Place a shape and style it",
       description:
-        "Place, move or remove cards on the shape boards (M176). Each shape has three lanes, core (part of the product), exploring (being ideated) and later (a feature to add and test later). A card is kind feature (a feature id from get_build_steps), resource (a resource id from get_resource_pack), template (a contract template id from get_templates) or own (a line of the team's own, id is its text). lane is core, exploring, later or remove. A feature placed in core is ticked, so it adds the build steps it gates; moving it out unticks it, and a tick is project wide. Read the boards on get_build_steps. " +
+        `Sort a shape into a lane and give it an icon and colour (M177). lane is core (part of the product), exploring (being ideated) or later (to add and test later); a shape with no lane reads as core. icon is one of ${SHAPE_ICON_NAMES.join(", ")}; color is one of ${SHAPE_COLORS.join(", ")}; null clears either. shape is one of ours or an own id from get_build_steps. ` +
         WRITE_RULES,
       inputSchema: z.object({
-        cards: z
-          .array(
-            z.object({
-              shape: z.string().max(60),
-              kind: z.enum(["feature", "resource", "template", "own"]),
-              id: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
-              lane: z.enum(["core", "exploring", "later", "remove"]),
-            }),
-          )
-          .min(1)
-          .max(100),
+        shape: z.string().max(60),
+        lane: z.enum(SHAPE_LANES).optional(),
+        icon: z.enum(SHAPE_ICON_NAMES).nullable().optional(),
+        color: z.enum(SHAPE_COLORS).nullable().optional(),
         note: noteField,
       }),
     },
     async (args, ctx) => {
       const loaded = await withProject(projectId, ctx);
       if (!loaded.ok) return errorResult(loaded.message);
+      if (!args.lane && args.icon === undefined && args.color === undefined) return errorResult("Send a lane, an icon or a colour.");
       const { project, design } = loaded.value;
-      const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "fields", patch: { kit: { board: args.cards } } }, args.note);
+      const kit = {
+        ...(args.lane ? { shapeLanes: { [args.shape]: args.lane } } : {}),
+        ...(args.icon !== undefined || args.color !== undefined ? { shapeStyles: { [args.shape]: { ...(args.icon !== undefined ? { icon: args.icon } : {}), ...(args.color !== undefined ? { color: args.color } : {}) } } } : {}),
+      };
+      const result = await submitAgentChange(project, design, ownerOf(project), { target: "project", kind: "fields", patch: { kit } }, args.note);
       if (!result.ok) return errorResult(result.message);
       return jsonResult({ outcome: result.outcome, changeId: result.changeId, message: result.message });
     },

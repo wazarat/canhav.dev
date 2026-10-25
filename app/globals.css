@@ -47,6 +47,16 @@
     --progress-start: 124 132 153;
     --progress-mid: 250 204 21;
     --progress-end: 34 197 94;
+    /* The shape colours (M177), picked per shape on the Build tab. */
+    --shape-grey: 156 163 175;
+    --shape-slate: 100 116 139;
+    --shape-indigo: 129 140 248;
+    --shape-cyan: 34 211 238;
+    --shape-green: 74 222 128;
+    --shape-yellow: 250 204 21;
+    --shape-orange: 251 146 60;
+    --shape-pink: 244 114 182;
+    --shape-red: 248 113 113;
   }
 
   html.light {
@@ -82,6 +92,15 @@
     --progress-start: 12 21 0;
     --progress-mid: 202 138 4;
     --progress-end: 22 163 74;
+    --shape-grey: 107 114 128;
+    --shape-slate: 71 85 105;
+    --shape-indigo: 79 70 229;
+    --shape-cyan: 8 145 178;
+    --shape-green: 22 163 74;
+    --shape-yellow: 202 138 4;
+    --shape-orange: 234 88 12;
+    --shape-pink: 219 39 119;
+    --shape-red: 220 38 38;
   }
 
   html,

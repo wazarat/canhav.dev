@@ -5,10 +5,11 @@ import { ArrowRight, Plus } from "lucide-react";
 
 import { AddShape } from "@/components/build/AddShape";
 import { ReviewPassRow } from "@/components/build/ReviewPassRow";
-import { ShapeBoard } from "@/components/build/ShapeBoard";
+import { ShapeLanes, ShapePanel } from "@/components/build/ShapeLanes";
+import { ShapeGlyph } from "@/components/build/shape-icons";
 import { SendToAgent } from "@/components/build/SendToAgent";
 import type { AgentChangeRow } from "@/components/build/useAgentChanges";
-import { stepPrompt } from "@/lib/agent-prompts";
+import { ideateShapePrompt, stepPrompt } from "@/lib/agent-prompts";
 import { type AgentRequest, agentRequestsFull, findAgentRequest, withAgentRequest, withoutAgentRequest, withoutStepRequests } from "@/lib/agent-requests";
 import type { AgentWriteMode, BuildStepsPatch } from "@/lib/agent-writes";
 import { type CheckRunView, latestFor } from "@/lib/checks/schema";
@@ -31,8 +32,10 @@ import { MILESTONES, type Milestone, groupsByMilestone, nowSteps } from "@/lib/b
 import type { ProjectChain } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
+import type { Sector, Subsector } from "@/lib/sectors";
 import {
   KIT_LIMITS,
+  type GroupState,
   type ProductShape,
   type ShapeId,
   addOwnShape,
@@ -75,6 +78,11 @@ function doneByAgentAt(group: StepGroup, changes: AgentChangeRow[]): string | nu
   return null;
 }
 
+/** The status filter over the step rows (M177); partial counts as to do. */
+const STATUS_FILTERS = ["all", "open", "done", "na"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+const statusOf = (state: GroupState): Exclude<StatusFilter, "all"> => (state === "done" ? "done" : state === "na" ? "na" : "open");
+
 /**
  * The Build tab (M95): every build step of every chosen shape as one list
  * under four milestones, with a shape filter, a milestone filter and a Now
@@ -93,13 +101,13 @@ export function BuildTab({
   checks = [],
   testerKit,
   agent,
-  offered = [],
+  sectors = [],
   onAddShape,
 }: {
-  /** Our shapes for the project's sectors that are not on it yet (M176), for Add a shape. */
-  offered?: readonly ProductShape[];
-  /** Adds one of our shapes through the record's classification (M176). */
-  onAddShape?: (shape: ProductShape) => void;
+  /** The project's sectors, picked first in the Add a shape pop-up (M177). */
+  sectors?: readonly Sector[];
+  /** Adds one of our shapes through the record's classification, with its sector and subsector when new (M176, M177). */
+  onAddShape?: (shape: ProductShape, sector: Sector, subsector: Subsector) => void;
   /** The tester kit block under the Testnet milestone (M125). */
   testerKit?: React.ReactNode;
   /** Send to agent (M152). */
@@ -124,6 +132,7 @@ export function BuildTab({
   const plus = usePlan().plan === "studio_plus";
   const cap = shapeCap(plus);
   const [view, setView] = useState<"now" | "all">(milestone ? "all" : "now");
+  const [status, setStatus] = useState<StatusFilter>("all");
   // A shape that left the kit must leave the filter too; a new one opens on its board.
   const prevShapes = useRef(shapesKey);
   useEffect(() => {
@@ -165,14 +174,23 @@ export function BuildTab({
   const passes = useMemo(() => reviewPassesFor(REVIEW_PASSES, catalogShapes), [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const removed = useMemo(() => [...removedGroupsFor(kit).values()].flat(), [kit]);
 
+  const canAsk = Boolean(agent && agent.connected && agent.mode !== "off" && !agentRequestsFull(requestsDoc));
   const addShape = kit ? (
     <AddShape
-      offered={offered.filter((s) => !catalogShapes.includes(s))}
+      onProject={catalogShapes}
+      sectors={sectors}
       count={shapes.length}
       cap={cap}
       plus={plus}
-      onAddOurs={(s) => onAddShape?.(s)}
-      onCreateOwn={({ title, detail, basedOn }) => onPatchKit(addOwnShape(kit, { title, detail, basedOn, steps: basedOn ? catalogStepIds(basedOn) : [] }).patch)}
+      canAsk={canAsk}
+      prompt={(title, detail) => ideateShapePrompt(agent?.projectName ?? "", agent?.projectId ?? "", { title, detail })}
+      onAddOurs={(s, sector, sub) => onAddShape?.(s, sector, sub)}
+      onCreateOwn={({ title, detail, basedOn }, ask) => {
+        const made = addOwnShape(kit, { title, detail, basedOn, steps: basedOn ? catalogStepIds(basedOn) : [] });
+        onPatchKit(made.patch);
+        // The team's agent ideates it over MCP (M177): a request on the new shape, read first on get_project_status.
+        if (ask && agent) agent.onRequests(withAgentRequest(requestsDoc, "shape", made.id));
+      }}
     />
   ) : null;
 
@@ -198,11 +216,18 @@ export function BuildTab({
     launch: [],
   };
   const now = view === "now" ? nowSteps(filtered, kit, 3) : null;
+  const inView = MILESTONES.filter((m) => !milestone || m === milestone).flatMap((m) => filtered[m]);
+  const statusCounts: Record<StatusFilter, number> = { all: inView.length, open: 0, done: 0, na: 0 };
+  for (const g of inView) statusCounts[statusOf(groupState(g, kit))] += 1;
+  const showRow = (g: StepGroup) => status === "all" || statusOf(groupState(g, kit)) === status;
   const visible = MILESTONES.filter((m) => !milestone || m === milestone);
   const total = MILESTONES.reduce((n, m) => n + filtered[m].length, 0);
 
   return (
     <div className={`${TAB_WIDTH} space-y-6`}>
+      {/* The shapes sorted into Core, Exploring and Later (M177); a card picks the shape below. */}
+      <ShapeLanes kit={kit} selected={shape} onSelect={setShape} onPatchKit={onPatchKit} projectId={agent?.projectId ?? ""} />
+
       <div className="flex flex-wrap items-center gap-3">
         <Segmented
           size="sm"
@@ -214,24 +239,38 @@ export function BuildTab({
             { value: "all", label: F.all },
           ]}
         />
-        {/* Picking a shape opens its board (M176); Every shape keeps the page to the steps. */}
+        {/* Picking a shape opens its panel (M177); Every shape keeps the page to the steps. */}
         <Segmented<ShapeId | "">
           size="sm"
           ariaLabel={F.everyShape}
           value={shape}
           onChange={setShape}
-          options={[{ value: "", label: F.everyShape }, ...shapes.map((s) => ({ value: s, label: shapeName(kit, s) }))]}
+          options={[
+            { value: "", label: F.everyShape },
+            ...shapes.map((s) => ({
+              value: s,
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <ShapeGlyph kit={kit} shape={s} />
+                  {shapeName(kit, s)}
+                </span>
+              ),
+            })),
+          ]}
         />
         {addShape}
       </div>
 
       {shape ? (
-        <ShapeBoard
+        <ShapePanel
           key={shape}
           kit={kit}
           shape={shape}
-          chain={chain}
           onPatchKit={onPatchKit}
+          queued={(() => {
+            const r = agent ? findAgentRequest(requestsDoc, "shape", shape) : undefined;
+            return r && agent ? { at: r.requestedAt, onCancel: () => agent.onRequests(withoutAgentRequest(requestsDoc, "shape", shape)) } : null;
+          })()}
           onRemoveShape={
             ownShapeOf(kit, shape)
               ? () => {
@@ -245,16 +284,33 @@ export function BuildTab({
 
       {/* The milestone row sits right above the sections it filters (M152, F9); the view and shape rows stay at the top. */}
       {view === "all" ? (
-        <Segmented<Milestone | "">
-          size="sm"
-          ariaLabel={F.everyMilestone}
-          value={milestone}
-          onChange={setMilestone}
-          options={[
-            { value: "", label: F.everyMilestone },
-            ...MILESTONES.map((m) => ({ value: m, label: BUILD_COPY.milestones[m].label })),
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Segmented<Milestone | "">
+            size="sm"
+            ariaLabel={F.everyMilestone}
+            value={milestone}
+            onChange={setMilestone}
+            options={[
+              { value: "", label: F.everyMilestone },
+              ...MILESTONES.map((m) => ({ value: m, label: BUILD_COPY.milestones[m].label })),
+            ]}
+          />
+          {/* Done, to do or not applicable (M177); the milestone counts stay whole. */}
+          <Segmented<StatusFilter>
+            size="sm"
+            ariaLabel={F.status}
+            value={status}
+            onChange={setStatus}
+            options={STATUS_FILTERS.map((f) => ({
+              value: f,
+              label: (
+                <span>
+                  {F.statuses[f]} <span className="text-ink-500">{statusCounts[f]}</span>
+                </span>
+              ),
+            }))}
+          />
+        </div>
       ) : null}
 
       {now ? (
@@ -287,6 +343,7 @@ export function BuildTab({
             checks={checks}
             testerKit={m === "testnet" ? testerKit : undefined}
             sendFor={(g) => sendFor(g, m)}
+            showRow={showRow}
             sendOpen={
               agent && m !== "launch"
                 ? (() => {
@@ -349,7 +406,10 @@ function MilestoneSection({
   testerKit,
   sendFor,
   sendOpen,
+  showRow,
 }: {
+  /** The status filter (M177): rows it hides still count in the milestone's progress. */
+  showRow?: (g: StepGroup) => boolean;
   testerKit?: React.ReactNode;
   /** Send to agent per row and for the whole milestone (M152). */
   sendFor?: (g: StepGroup) => StepSend | undefined;
@@ -413,7 +473,7 @@ function MilestoneSection({
             {passes.map((p) => (
               <ReviewPassRow key={p.id} pass={p} kit={kit} onPatchKit={onPatchKit} run={latestFor(p.id, checks)} />
             ))}
-            {groups.map((g) => (
+            {groups.filter((g) => !showRow || showRow(g)).map((g) => (
               <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} send={sendFor?.(g)} />
             ))}
             {launchRows.map((r) => (

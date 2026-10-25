@@ -100,6 +100,25 @@ export function stepPrompt(
 }
 
 /**
+ * Ideate a shape the team made (M177): the agent reads its name and what
+ * the team wants, fills its board and its steps over MCP. The same work the
+ * queued shape request asks for.
+ */
+export function ideateShapePrompt(name: string, projectId: string, shape: { id?: string; title: string; detail: string }): string {
+  const alias = mcpAlias(name, projectId);
+  const ref = shape.id ?? "its own.<slug> id under ownShapes";
+  return [
+    serverLine(alias),
+    `Ideate the product shape "${shape.title}"${shape.id ? ` (${shape.id})` : ""} the team made on this project, and nothing else. If it is not on the project yet, add it with add_shape (name and detail) first.`,
+    shape.detail ? `What the team wants it to do. ${shape.detail}` : "The team gave no description, so start from the project's what it does.",
+    `1. Call get_build_steps and read shapes and ownShapes; call report_session with a plan.`,
+    `2. Decide its lane with set_shape. core when the product needs it now, exploring when it is an idea worth trying, later when it is a feature to add and test later.`,
+    `3. Put the build steps it needs on it with set_build_steps (add with shape ${ref}, or shapes on a step the team added), picking catalog steps where one fits.`,
+    `4. Respect the project's agent write mode. In propose mode the owner accepts your change on the project page.`,
+  ].join("\n\n");
+}
+
+/**
  * The assets the idea depends on (M162, Viability): the agent reads the
  * contracts and records every token they touch with its role, so the
  * dependency check can read a price feed and onchain liquidity for each.

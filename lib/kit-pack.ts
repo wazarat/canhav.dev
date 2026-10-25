@@ -58,11 +58,11 @@ import {
   ideaRows,
   templateCounts,
   templateState,
-  type BoardLane,
   type ShapeId,
+  type ShapeLane,
   allShapes,
+  laneOf,
 } from "@/lib/kits";
-import { type BoardKind, boardFor } from "@/lib/board";
 
 /**
  * One view of a project's resource pack, shared by the MCP tool, the
@@ -154,10 +154,10 @@ export interface ResourcePackView {
   features: FeaturesView;
   /** The shapes the team made itself (M176), after `shapes`, with the catalog steps each picked. */
   ownShapes: Array<{ id: ShapeId; title: string; detail: string; basedOn?: string; steps: string[] }>;
-  /** The board of every shape, ours then own (M176): Core, Exploring and Later. */
-  boards: Array<{ shape: ShapeId; name: string } & Record<BoardLane, Array<{ kind: BoardKind; id: string; title: string }>>>;
+  /** Every shape, ours then own, with its lane, icon and colour (M177). */
+  lanes: Array<{ shape: ShapeId; name: string; lane: ShapeLane; icon?: string; color?: string }>;
   /** What the team could build with each shape, the catalog lines it ticked and its own (M68 follow-up). */
-  ideas: { count: number; items: Array<{ shape: ShapeId; text: string; on: boolean; own: boolean; from?: string; lane?: BoardLane }> };
+  ideas: { count: number; items: Array<{ shape: ShapeId; text: string; on: boolean; own: boolean; from?: string }> };
   /**
    * Shapes with no contract template live on this chain's mainnet (M68
    * follow-up), with how many run on the other mainnet and the way forward.
@@ -570,21 +570,14 @@ export function buildResourcePack(
     templates: { counts: templateCounts(templateItems.map((t) => t.id), kit), items: templateItems },
     features: { ...featureProgress(features, kit), items: featureItems },
     ownShapes: (kit.ownShapes ?? []).map((o) => ({ id: o.id, title: o.title, detail: o.detail, ...(o.basedOn ? { basedOn: o.basedOn } : {}), steps: [...o.steps] })),
-    boards: allShapes(kit).map((shape) => {
-      const b = boardFor(kit, shape);
-      const lane = (l: BoardLane) => b[l].map((i) => ({ kind: i.kind, id: i.id, title: i.title }));
-      return { shape, name: shapeName(kit, shape), core: lane("core"), exploring: lane("exploring"), later: lane("later") };
-    }),
+    lanes: allShapes(kit).map((shape) => ({ shape, name: shapeName(kit, shape), lane: laneOf(kit, shape), ...(kit.shapeStyles?.[shape] ?? {}) })),
     ideas: {
       count: kit.ideas?.length ?? 0,
       items: [
         ...shapes.flatMap((s) => ideaRows(kit, s, shapeExamples(s)).map((r) => ({ shape: s as ShapeId, ...r }))),
         // The team's own shapes have no catalog examples, only its own lines (M176).
         ...(kit.ownShapes ?? []).flatMap((o) => ideaRows(kit, o.id, []).map((r) => ({ shape: o.id as ShapeId, ...r }))),
-      ].map((r) => {
-        const lane = kit.ideas?.find((i) => i.shape === r.shape && i.text === r.text)?.lane;
-        return lane ? { ...r, lane } : r;
-      }),
+      ],
     },
     templateGaps: shapes.flatMap((s) => {
       const here = templateChainCounts(templatesForShapes(TEMPLATE_CATALOG, [s], chain), chain);

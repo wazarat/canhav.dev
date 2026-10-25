@@ -26,8 +26,8 @@ import { ProjectPlanProvider } from "@/components/studio/ProjectPlanContext";
 import { usePlan } from "@/components/studio/PlanContext";
 import { buildTabsFor } from "@/lib/build-tabs";
 import { TAB_WIDTH } from "@/components/build/layout";
-import { shapesChange } from "@/lib/classify";
-import { SECTOR_SUBSECTORS, docSectors } from "@/lib/sectors";
+import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
+import { docSectors } from "@/lib/sectors";
 import { ProjectRail } from "@/components/build/ProjectRail";
 import type { AgentTone } from "@/components/build/agent-tone";
 import { AgentActivityToast } from "@/components/ideation/AgentActivityToast";
@@ -48,7 +48,7 @@ import { registerCommands } from "@/lib/command-menu";
 import { deployerView } from "@/lib/deployer";
 import { type ProjectDoc, testnetContractRows } from "@/lib/ideation";
 import { mainnetView } from "@/lib/mainnet-view";
-import { type ProjectKit, emptyProjectKit, kitShapes, shapeCap, shapesFor } from "@/lib/kits";
+import { type ProjectKit, emptyProjectKit, kitShapes, shapeCap } from "@/lib/kits";
 import type { LaunchTarget } from "@/lib/launch-targets";
 
 /**
@@ -232,8 +232,15 @@ export function ProjectBuildPage({
     ),
     build: (
       <BuildTabView
-        offered={shapesFor(docSectors(doc).flatMap((sec) => SECTOR_SUBSECTORS[sec] ?? []))}
-        onAddShape={(shape) => patch(shapesChange(doc, [...kitShapes(doc.kit), shape], shapeCap(plan.plan === "studio_plus")))}
+        sectors={docSectors(doc)}
+        onAddShape={(shape, sector, subsector) => {
+          // A shape from a sector or subsector the project lacks brings them, the same cascade as Decisions (M177).
+          let next: ProjectDoc = doc;
+          if (!docSectors(next).includes(sector)) next = { ...next, ...sectorsChange(next, [...docSectors(next), sector]) };
+          if (!(next.subsectors ?? []).includes(subsector)) next = { ...next, ...subsectorsChange(next, [...(next.subsectors ?? []), subsector]) };
+          next = { ...next, ...shapesChange(next, [...kitShapes(next.kit), shape], shapeCap(plan.plan === "studio_plus")) };
+          patch({ sector: next.sector, sectors: next.sectors, subsectors: next.subsectors, kit: next.kit });
+        }}
         kit={kit}
         chain={projectChainOf(doc)}
         facts={facts}

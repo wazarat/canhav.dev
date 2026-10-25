@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, Check, ChevronDown, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { BookOpen, Check, ChevronDown, ChevronRight, Trash2, X } from "lucide-react";
 
 import { TemplateCard } from "@/components/ideation/kit/TemplateCard";
 import { TemplateDecisionRow } from "@/components/ideation/kit/TemplateDecision";
@@ -10,6 +11,8 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { Input } from "@/components/ui/Input";
 import { Menu, MenuItem } from "@/components/ui/Menu";
 import { SendToAgent } from "@/components/build/SendToAgent";
+import { ShapeGlyph } from "@/components/build/shape-icons";
+import { useModalBehavior } from "@/components/ui/useModalBehavior";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { BUILD_COPY } from "@/content/build";
 import { KIT_CATALOG } from "@/content/kits/catalog";
@@ -272,130 +275,172 @@ export function StepRow({
   send?: StepSend;
 }) {
   const R = BUILD_COPY.row;
+  const [open, setOpen] = useState(false);
+  const state = groupState(group, kit);
+  const na = state === "na";
+  const done = state === "done";
+  const evidence = groupEvidence(group, kit);
+  const templates = rankedTemplates(group, kit).length;
+  const meta = [
+    group.custom ? R.yourStep : null,
+    send?.queuedAt && !done && !na ? R.queued : null,
+    send?.doneByAgentAt && done ? R.byAgent : null,
+    evidence ? R.hasEvidence : null,
+    templates ? R.templatesCount(templates) : null,
+  ].filter((x): x is string => Boolean(x));
+  // The row is the name only (M177); everything else opens in the pop-up.
+  return (
+    <li className={cn("group flex items-center gap-3 border-t border-ink-800/60 py-2.5 first:border-t-0", na && "opacity-70")}>
+      <StepStatusControl group={group} kit={kit} onPatchKit={onPatchKit} />
+      <button type="button" onClick={() => setOpen(true)} aria-label={R.open(group.title)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <span className={cn("min-w-0 flex-1 truncate text-sm text-ink-50 hover:underline", (done || na) && "text-ink-400 line-through decoration-ink-600")}>{group.title}</span>
+        <span className="hidden shrink-0 items-center gap-2 text-[11px] text-ink-500 sm:inline-flex">
+          {meta.join(" · ")}
+          <span className="inline-flex items-center gap-0.5" title={group.shapes.map((x) => shapeName(kit, x)).join(", ")}>
+            {group.shapes.map((x) => (
+              <ShapeGlyph key={x} kit={kit} shape={x} />
+            ))}
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-ink-500" />
+      </button>
+      {open ? <StepDialog group={group} kit={kit} chain={chain} onPatchKit={onPatchKit} send={send} onClose={() => setOpen(false)} /> : null}
+    </li>
+  );
+}
+
+/**
+ * A build step in full (M177), opened from its row: the status, the shapes,
+ * Read and Send to agent at the top, then folds for what done looks like,
+ * the evidence, the contract templates and the reading, and remove.
+ */
+function StepDialog({
+  group,
+  kit,
+  chain,
+  onPatchKit,
+  send,
+  onClose,
+}: {
+  group: StepGroup;
+  kit: ProjectKit;
+  chain: ProjectChain;
+  onPatchKit: (partial: Partial<ProjectKit>) => void;
+  send?: StepSend;
+  onClose: () => void;
+}) {
+  const R = BUILD_COPY.row;
+  const containerRef = useRef<HTMLDivElement>(null);
+  useModalBehavior({ onClose, containerRef });
   const state = groupState(group, kit);
   const na = state === "na";
   const done = state === "done";
   const reason = groupReason(group, kit);
   const evidence = groupEvidence(group, kit) ?? "";
   const templates = rankedTemplates(group, kit);
-  const [first, ...rest] = templates;
+  const links = group.resources.map((id) => BY_ID.get(id)).filter((r): r is NonNullable<typeof r> => Boolean(r));
   const setEvidence = (text: string) => {
     let next: Pick<ProjectKit, "evidence"> = { evidence: kit.evidence };
     for (const id of group.ids) next = setStepEvidence(next, id, text || null);
     onPatchKit(next);
   };
-  return (
-    <li className={cn("flex items-start gap-3 border-t border-ink-800/60 py-3 first:border-t-0", na && "opacity-70")}>
-      <StepStatusControl group={group} kit={kit} onPatchKit={onPatchKit} />
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <p className={cn("text-sm text-ink-50", (done || na) && "text-ink-400 line-through decoration-ink-600")}>{group.title}</p>
-        {na ? (
-          <p className="text-[11px] text-ink-400">{CHECKLIST_COPY.naBecause(reason ?? "")}</p>
-        ) : group.detail ? (
-          <p className="text-xs leading-relaxed text-ink-400">{group.detail}</p>
-        ) : null}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ShapesLine group={group} kit={kit} onPatchKit={onPatchKit} />
-          {group.custom ? <span className="text-[11px] text-ink-500">{R.yourStep}</span> : null}
-          {group.source === "dependency" ? <span className="text-[11px] text-ink-400">{R.fromDependencyCheck}</span> : null}
-          <ReadMenu ids={group.resources} />
-          {send && !done && !na ? <SendToAgent prompt={send.prompt} canQueue={send.canQueue} full={send.full} onQueue={send.onQueue} /> : null}
-        </div>
-        {send?.queuedAt && !done && !na ? (
-          <p className="text-[11px] text-ink-400">
-            {R.queuedSince(when(send.queuedAt))}{" "}
-            <button type="button" onClick={send.onCancel} className="text-ink-400 transition-colors hover:text-ink-50 hover:underline">
-              {R.cancelQueue}
-            </button>
-          </p>
-        ) : send?.doneByAgentAt && done ? (
-          <p className="text-[11px] text-ink-400">{R.doneByAgent(when(send.doneByAgentAt))}</p>
-        ) : null}
-        {!na ? (
-          <Input
-            value={evidence}
-            maxLength={KIT_LIMITS.evidence.textMax}
-            placeholder={R.evidencePlaceholder}
-            aria-label={CHECKLIST_COPY.evidence}
-            onChange={(e) => setEvidence(e.target.value)}
-            className="h-8 max-w-md text-xs"
-          />
-        ) : null}
-        {first ? (
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
-            <a href={first.t.repoUrl} target="_blank" rel="noreferrer" className="text-ink-200 transition-colors hover:text-electric-200">
-              {first.t.name}
-            </a>
-            {first.by.length ? <span className="text-ink-500">{CHECKLIST_COPY.featureSuggests(first.by)}</span> : null}
-            <TemplateChoice state={templateState(kit, first.t.id)} onDecide={(d) => onPatchKit(setTemplateDecision(kit, first.t.id, d))} />
-            {rest.length ? (
-              <Collapsible summary={R.more(rest.length)} summaryClassName="text-[11px]" className="w-full">
-                <div className="space-y-2">
-                  {rest.map(({ t, by }) => (
-                    <TemplateCard
-                      key={t.id}
-                      template={t}
-                      chains={[chain]}
-                      className="p-3"
-                      footer={
-                        <TemplateDecisionRow
-                          state={templateState(kit, t.id)}
-                          suggestedBy={by.length ? CHECKLIST_COPY.featureSuggests(by) : undefined}
-                          onDecide={(d) => onPatchKit(setTemplateDecision(kit, t.id, d))}
-                        />
-                      }
-                    />
-                  ))}
-                </div>
-              </Collapsible>
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={group.title} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 md:py-14">
+      <div className="fixed inset-0 bg-ink-950/80" onClick={onClose} />
+      <div ref={containerRef} tabIndex={-1} className="relative z-10 w-full max-w-2xl rounded-xl border border-ink-700/60 bg-ink-900 focus:outline-none">
+        <div className="flex items-start justify-between gap-4 border-b border-ink-700/40 px-5 py-4 md:px-6">
+          <div className="min-w-0 space-y-2">
+            <h2 className={cn("font-display text-lg font-semibold tracking-tight text-ink-50", (done || na) && "text-ink-400 line-through decoration-ink-600")}>{group.title}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <StepStatusControl group={group} kit={kit} onPatchKit={onPatchKit} />
+              <ShapesLine group={group} kit={kit} onPatchKit={onPatchKit} />
+              {group.custom ? <span className="text-[11px] text-ink-500">{R.yourStep}</span> : null}
+              {group.source === "dependency" ? <span className="text-[11px] text-ink-400">{R.fromDependencyCheck}</span> : null}
+              <ReadMenu ids={group.resources} />
+              {send && !done && !na ? <SendToAgent prompt={send.prompt} canQueue={send.canQueue} full={send.full} onQueue={send.onQueue} /> : null}
+            </div>
+            {send?.queuedAt && !done && !na ? (
+              <p className="text-[11px] text-ink-400">
+                {R.queuedSince(when(send.queuedAt))}{" "}
+                <button type="button" onClick={send.onCancel} className="text-ink-400 transition-colors hover:text-ink-50 hover:underline">
+                  {R.cancelQueue}
+                </button>
+              </p>
+            ) : send?.doneByAgentAt && done ? (
+              <p className="text-[11px] text-ink-400">{R.doneByAgent(when(send.doneByAgentAt))}</p>
             ) : null}
           </div>
-        ) : null}
+          <button type="button" onClick={onClose} aria-label={R.close} className="shrink-0 rounded-lg border border-ink-700/60 p-1.5 text-ink-300 transition-colors hover:bg-ink-800/60 hover:text-ink-50">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="space-y-3 px-5 py-5 md:px-6">
+          <Collapsible summary={R.sectionDone} defaultOpen>
+            <p className="text-sm leading-relaxed text-ink-300">{na ? CHECKLIST_COPY.naBecause(reason ?? "") : group.detail || R.noDetail}</p>
+          </Collapsible>
+          {!na ? (
+            <Collapsible summary={R.sectionEvidence} defaultOpen>
+              <Input
+                value={evidence}
+                maxLength={KIT_LIMITS.evidence.textMax}
+                placeholder={R.evidencePlaceholder}
+                aria-label={CHECKLIST_COPY.evidence}
+                onChange={(e) => setEvidence(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </Collapsible>
+          ) : null}
+          {templates.length ? (
+            <Collapsible summary={R.sectionTemplates(templates.length)} defaultOpen={templates.length <= 2}>
+              <div className="space-y-2">
+                {templates.map(({ t, by }) => (
+                  <TemplateCard
+                    key={t.id}
+                    template={t}
+                    chains={[chain]}
+                    className="p-3"
+                    footer={
+                      <TemplateDecisionRow
+                        state={templateState(kit, t.id)}
+                        suggestedBy={by.length ? CHECKLIST_COPY.featureSuggests(by) : undefined}
+                        onDecide={(d) => onPatchKit(setTemplateDecision(kit, t.id, d))}
+                      />
+                    }
+                  />
+                ))}
+              </div>
+            </Collapsible>
+          ) : null}
+          {links.length ? (
+            <Collapsible summary={R.sectionRead(links.length)}>
+              <ul className="space-y-1.5">
+                {links.map((r) => (
+                  <li key={r.id}>
+                    <a href={r.href} target="_blank" rel="noreferrer" className="text-sm text-ink-200 hover:text-ink-50 hover:underline">
+                      {r.title}
+                    </a>
+                    {r.why ? <p className="text-xs text-ink-500">{r.why}</p> : null}
+                  </li>
+                ))}
+              </ul>
+            </Collapsible>
+          ) : null}
+          <div className="pt-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                onPatchKit(removeStepGroup(kit, group));
+                onClose();
+              }}
+            >
+              <Trash2 aria-hidden className="h-3.5 w-3.5" /> {R.removeStep}
+            </Button>
+          </div>
+        </div>
       </div>
-      <button
-        type="button"
-        aria-label={CHECKLIST_COPY.remove(group.title)}
-        title={CHECKLIST_COPY.remove(group.title)}
-        onClick={() => onPatchKit(removeStepGroup(kit, group))}
-        className="shrink-0 rounded-lg p-1.5 text-ink-500 transition-colors hover:bg-ink-900/40 hover:text-rose-400"
-      >
-        <Trash2 className="h-3.5 w-3.5" aria-hidden />
-      </button>
-    </li>
+    </div>,
+    document.body,
   );
 }
 
-/** Using or Not using on the first template of a step; the chosen one again clears. */
-function TemplateChoice({
-  state,
-  onDecide,
-}: {
-  state: "accepted" | "rejected" | "open";
-  onDecide: (decision: "accepted" | "rejected" | null) => void;
-}) {
-  const R = BUILD_COPY.row;
-  const pill = (value: "accepted" | "rejected", label: string) => (
-    <button
-      type="button"
-      aria-pressed={state === value}
-      onClick={() => onDecide(state === value ? null : value)}
-      className={cn(
-        "rounded-md border px-2 py-0.5 text-[11px] transition-colors",
-        state === value ? "border-ink-500 bg-ink-800/60 text-ink-50" : "border-ink-700/60 text-ink-400 hover:text-ink-100",
-      )}
-    >
-      {label}
-    </button>
-  );
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {pill("accepted", R.using)}
-      {pill("rejected", R.notUsing)}
-      {state !== "open" ? (
-        <StatusChip tone={TEMPLATE_COPY.stateTone[state]} className="px-1.5 py-0 text-[10px]">
-          {TEMPLATE_COPY.state[state]}
-        </StatusChip>
-      ) : null}
-    </span>
-  );
-}

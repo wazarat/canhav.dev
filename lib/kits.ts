@@ -360,12 +360,26 @@ export interface ProjectKit {
   /** Shapes the team made itself (M176), after the catalog shapes. Read with allShapes(). */
   ownShapes?: OwnShape[];
   /**
-   * The shape boards (M176): catalog features, resources and contract
-   * templates placed in a lane per shape. A feature in Core is also in
-   * `features`, so it gates its steps; see lib/board.ts.
+   * Where each shape sits (M177): core (part of the product), exploring
+   * (being ideated) or later (to add and test later). Keyed by shape id,
+   * ours or own; a shape with no entry reads as core.
    */
-  board?: BoardCard[];
+  shapeLanes?: Record<string, ShapeLane>;
+  /** The icon and colour each shape shows with (M177), keyed by shape id, ours or own. */
+  shapeStyles?: Record<string, ShapeStyle>;
 }
+
+/** The colours a shape can take (M177), theme tokens --shape-<name> in app/globals.css. */
+export const SHAPE_COLORS = ["grey", "slate", "indigo", "cyan", "green", "yellow", "orange", "pink", "red"] as const;
+export type ShapeColor = (typeof SHAPE_COLORS)[number];
+
+/** A shape's icon (a name from components/build/shape-icons.ts) and colour (M177). */
+export interface ShapeStyle {
+  icon?: string;
+  color?: ShapeColor;
+}
+
+export const SHAPE_ICON_NAME = /^[a-z0-9-]{1,40}$/;
 
 /** A shape the team made (M176). `steps` are catalog step ids picked from any of our shapes. */
 export interface OwnShape {
@@ -378,23 +392,12 @@ export interface OwnShape {
   steps: string[];
 }
 
-/** The three lanes of a shape board (M176). */
-export const BOARD_LANES = ["core", "exploring", "later"] as const;
-export type BoardLane = (typeof BOARD_LANES)[number];
-
-/** One placed card (M176). `ref` is "feature:<id>", "resource:<id>" or "template:<id>". */
-export interface BoardCard {
-  shape: ShapeId;
-  ref: string;
-  lane: BoardLane;
-}
-
-export const BOARD_REF = /^(feature|resource|template):[A-Za-z0-9._-]{1,120}$/;
+/** The three lanes the shapes sort into (M177). */
+export const SHAPE_LANES = ["core", "exploring", "later"] as const;
+export type ShapeLane = (typeof SHAPE_LANES)[number];
 
 export interface KitIdea {
   shape: ShapeId;
-  /** Its board lane (M176); absent reads as exploring. */
-  lane?: BoardLane;
   /** One line. A catalog example is stored by its exact text. */
   text: string;
   /** The catalog example this line was edited from. That example is shown no more while this line exists. */
@@ -442,9 +445,7 @@ export const KIT_LIMITS = {
    */
   shapes: { max: 3, maxPlus: 10 },
   /** A shape the team makes (M176). */
-  ownShapes: { titleMin: 3, titleMax: 60, detailMax: 200, steps: 200 },
-  /** Placed board cards across the shapes (M176). */
-  board: { max: 200 },
+  ownShapes: { titleMin: 3, titleMax: 60, detailMax: 400, steps: 200 },
   /** Cap on each id list, well above any catalog size. */
   ids: { max: 400 },
   /** Cap on stored checklist entries. */
@@ -555,11 +556,10 @@ export function setOwnShapeSteps(kit: Pick<ProjectKit, "ownShapes">, id: OwnShap
  * serves other shapes stays on them; a step on this shape alone goes.
  */
 export function withoutShape(
-  kit: Pick<ProjectKit, "ownShapes" | "board" | "ideas" | "customSteps">,
+  kit: Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes">,
   id: ShapeId,
-): Pick<ProjectKit, "ownShapes" | "board" | "ideas" | "customSteps"> {
+): Pick<ProjectKit, "ownShapes" | "ideas" | "customSteps" | "shapeStyles" | "shapeLanes"> {
   const own = (kit.ownShapes ?? []).filter((o) => o.id !== id);
-  const board = (kit.board ?? []).filter((c) => c.shape !== id);
   const ideas = (kit.ideas ?? []).filter((i) => i.shape !== id);
   const steps: CustomStep[] = [];
   for (const c of kit.customSteps ?? []) {
@@ -570,10 +570,34 @@ export function withoutShape(
   }
   return {
     ownShapes: own.length ? own : undefined,
-    board: board.length ? board : undefined,
     ideas: ideas.length ? ideas : undefined,
     customSteps: steps.length ? steps.map(({ shapes, ...c }) => (shapes?.length ? { ...c, shapes } : c)) : undefined,
+    ...setShapeStyle(kit, id, { icon: undefined, color: undefined }),
+    ...setShapeLane(kit, id, "core"),
   };
+}
+
+/** The lane a shape sits in (M177); core when none is set. */
+export function laneOf(kit: Pick<ProjectKit, "shapeLanes"> | undefined, shape: ShapeId): ShapeLane {
+  return kit?.shapeLanes?.[shape] ?? "core";
+}
+
+/** Put a shape in a lane (M177). Core is the default, so it is stored as no entry. */
+export function setShapeLane(kit: Pick<ProjectKit, "shapeLanes">, shape: ShapeId, lane: ShapeLane): Pick<ProjectKit, "shapeLanes"> {
+  const next: Record<string, ShapeLane> = { ...(kit.shapeLanes ?? {}) };
+  if (lane === "core") delete next[shape];
+  else next[shape] = lane;
+  return { shapeLanes: Object.keys(next).length ? next : undefined };
+}
+
+/** Set or clear a shape's icon and colour (M177). Empty values are dropped. */
+export function setShapeStyle(kit: Pick<ProjectKit, "shapeStyles">, shape: ShapeId, style: ShapeStyle): Pick<ProjectKit, "shapeStyles"> {
+  const next: Record<string, ShapeStyle> = { ...(kit.shapeStyles ?? {}) };
+  const merged = { ...(next[shape] ?? {}), ...style };
+  const clean: ShapeStyle = { ...(merged.icon ? { icon: merged.icon } : {}), ...(merged.color ? { color: merged.color } : {}) };
+  if (clean.icon || clean.color) next[shape] = clean;
+  else delete next[shape];
+  return { shapeStyles: Object.keys(next).length ? next : undefined };
 }
 
 /** Every shape an added step serves, `shape` first (M176). */
@@ -715,8 +739,7 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
       if (seen.has(key) || ideas.length >= L.max) continue;
       seen.add(key);
       const from = typeof c.from === "string" && c.from.trim() ? c.from.trim().slice(0, L.textMax) : undefined;
-      const lane = BOARD_LANES.includes(c.lane as BoardLane) && c.lane !== "exploring" ? { lane: c.lane as BoardLane } : {};
-      ideas.push({ shape: c.shape, text, ...(from ? { from } : {}), ...lane });
+      ideas.push({ shape: c.shape, text, ...(from ? { from } : {}) });
     }
     if (ideas.length) kit.ideas = ideas;
   }
@@ -733,17 +756,22 @@ export function normalizeProjectKit(raw: unknown, kits: readonly KitId[] = []): 
   }
   const features = idList(r.features).slice(0, KIT_LIMITS.features.max);
   if (features.length) kit.features = features;
-  if (Array.isArray(r.board)) {
-    const cards: BoardCard[] = [];
-    for (const raw of r.board as unknown[]) {
-      if (!raw || typeof raw !== "object") continue;
-      const c = raw as Record<string, unknown>;
-      if (!isShape(c.shape) || typeof c.ref !== "string" || !BOARD_REF.test(c.ref)) continue;
-      if (!BOARD_LANES.includes(c.lane as BoardLane)) continue;
-      if (cards.some((x) => x.shape === c.shape && x.ref === c.ref) || cards.length >= KIT_LIMITS.board.max) continue;
-      cards.push({ shape: c.shape, ref: c.ref, lane: c.lane as BoardLane });
+  if (r.shapeLanes && typeof r.shapeLanes === "object" && !Array.isArray(r.shapeLanes)) {
+    const lanes: Record<string, ShapeLane> = {};
+    for (const [k, v] of Object.entries(r.shapeLanes as Record<string, unknown>))
+      if (isShape(k) && (v === "exploring" || v === "later")) lanes[k] = v;
+    if (Object.keys(lanes).length) kit.shapeLanes = lanes;
+  }
+  if (r.shapeStyles && typeof r.shapeStyles === "object" && !Array.isArray(r.shapeStyles)) {
+    const styles: Record<string, ShapeStyle> = {};
+    for (const [k, v] of Object.entries(r.shapeStyles as Record<string, unknown>)) {
+      if (!isShape(k) || !v || typeof v !== "object") continue;
+      const o = v as Record<string, unknown>;
+      const icon = typeof o.icon === "string" && SHAPE_ICON_NAME.test(o.icon) ? o.icon : undefined;
+      const color = SHAPE_COLORS.includes(o.color as ShapeColor) ? (o.color as ShapeColor) : undefined;
+      if (icon || color) styles[k] = { ...(icon ? { icon } : {}), ...(color ? { color } : {}) };
     }
-    if (cards.length) kit.board = cards;
+    if (Object.keys(styles).length) kit.shapeStyles = styles;
   }
   if (r.evidence && typeof r.evidence === "object" && !Array.isArray(r.evidence)) {
     const L = KIT_LIMITS.evidence;
@@ -820,7 +848,7 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
       if (o.detail.length > L.detailMax) return `A shape description is over ${L.detailMax} characters.`;
     }
   }
-  if ((kit.board?.length ?? 0) > KIT_LIMITS.board.max) return `At most ${KIT_LIMITS.board.max} cards across the shape boards.`;
+
   if (kit.evidence) {
     const L = KIT_LIMITS.evidence;
     const entries = Object.entries(kit.evidence);
@@ -1042,7 +1070,7 @@ export function editIdea(
   const prev = (kit.ideas ?? []).find((i) => i.shape === shape && i.text === prevText);
   const from = isCatalog ? prevText : prev?.from;
   const rest = (kit.ideas ?? []).filter((i) => !(i.shape === shape && (i.text === prevText || i.text === clean)));
-  const line: KitIdea = { shape, text: clean, ...(from ? { from } : {}), ...(prev?.lane ? { lane: prev.lane } : {}) };
+  const line: KitIdea = { shape, text: clean, ...(from ? { from } : {}) };
   return { ideas: [...rest, line].slice(0, KIT_LIMITS.ideas.max) };
 }
 

@@ -72,7 +72,7 @@ import {
   shapeLabels,
   startingPointLabel,
   KIT_COPY,
-  BOARD_COPY,
+  LANE_COPY,
 } from "@/content/kits/copy";
 import { launchChain } from "@/content/launch";
 import { deployerEnvFile, DEPLOYER_ENV, deployerHint, deployerView } from "@/lib/deployer";
@@ -291,14 +291,12 @@ function resourcePackSections(
         lines.push("", CHECKLIST_COPY.sharedAboveLine([...new Set(above.map((g) => label(g.shape)))]));
     }
   }
-  // The shape boards (M176), the lanes that hold anything.
-  if (pack.boards.some((b) => b.core.length + b.exploring.length + b.later.length > 0)) {
-    lines.push("", `${heading} ${BOARD_COPY.export}`);
-    for (const b of pack.boards) {
-      const lanes = (["core", "exploring", "later"] as const).filter((l) => b[l].length);
-      if (!lanes.length) continue;
-      lines.push("", `${heading}# ${b.name}`, "");
-      for (const l of lanes) lines.push(`- ${BOARD_COPY.exportLine(BOARD_COPY.lanes[l].label, b[l].map((i) => `${i.title} (${BOARD_COPY.kinds[i.kind].toLowerCase()})`).join(", "))}`);
+  // The shapes by lane (M177), once the project has more than one.
+  if (pack.lanes.length > 1) {
+    lines.push("", `${heading} ${LANE_COPY.export}`, "");
+    for (const l of ["core", "exploring", "later"] as const) {
+      const here = pack.lanes.filter((x) => x.lane === l);
+      if (here.length) lines.push(`- ${LANE_COPY.exportLine(LANE_COPY.lanes[l].label, here.map((x) => x.name).join(", "))}`);
     }
   }
   if (pack.ideas.items.length > 0) {

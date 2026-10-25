@@ -27,13 +27,13 @@ import { TEMPLATE_ID } from "@/lib/templates";
 import { reachableTemplateIds } from "@/lib/template-reach";
 import { chainInfo, projectChainOf } from "@/lib/chains";
 import { catalogStepIds, checklistFor, checklistItemById, groupsFor } from "@/content/kits/checklists";
-import { featureById, placeCard, placeIdea, removeCard, removeIdea } from "@/lib/board";
+import { isShapeIconName } from "@/content/kits/shape-icons";
 import { offeredShapes } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
 import { PROJECT_CHAINS } from "@/lib/chains";
 import { sectorsChange, shapesChange, subsectorsChange } from "@/lib/classify";
 import { TOKEN_STEPS } from "@/content/token-steps";
-import { withoutAgentRequest, withoutStepRequests } from "@/lib/agent-requests";
+import { withoutAgentRequest, withoutShapeRequests, withoutStepRequests } from "@/lib/agent-requests";
 import {
   AUDIENCE_VALUES,
   CRYPTO_EXPERIENCE_VALUES,
@@ -80,8 +80,9 @@ import {
   toggleIdea,
   toggleResource,
   setReviewEvidence,
-  BOARD_LANES,
   OWN_SHAPE_ID,
+  SHAPE_COLORS,
+  SHAPE_LANES,
   type OwnShapeId,
   type ShapeId,
   addOwnShape,
@@ -91,6 +92,8 @@ import {
   isProductShape,
   setCustomStepShapes,
   setOwnShapeSteps,
+  setShapeLane,
+  setShapeStyle,
   withoutShape,
 } from "@/lib/kits";
 import {
@@ -430,8 +433,6 @@ export const projectPatchSchema = z
             z.strictObject({
               // One of ours or an own shape id, "own.<slug>" (M176).
               shape: SHAPE_REF,
-              // The board lane (M176); exploring when left out.
-              lane: z.enum(BOARD_LANES).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               // The catalog example the line was edited from, which then steps aside.
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
@@ -443,7 +444,6 @@ export const projectPatchSchema = z
           .array(
             z.strictObject({
               shape: SHAPE_REF,
-              lane: z.enum(BOARD_LANES).optional(),
               text: z.string().min(KIT_LIMITS.ideas.textMin).max(KIT_LIMITS.ideas.textMax),
               from: z.string().min(1).max(KIT_LIMITS.ideas.textMax).optional(),
             }),
@@ -499,17 +499,17 @@ export const projectPatchSchema = z
               .max(KIT_LIMITS.shapes.maxPlus),
           })
           .partial(),
-        // Shape boards (M176): place, move or remove a card. kind own is a line of the team's own, id its text.
-        board: z
-          .array(
-            z.strictObject({
-              shape: SHAPE_REF,
-              kind: z.enum(["feature", "resource", "template", "own"]),
-              id: z.string().min(1).max(KIT_LIMITS.ideas.textMax),
-              lane: z.enum([...BOARD_LANES, "remove"]),
-            }),
+        // Where each shape sits (M177), shape id to core, exploring or later.
+        shapeLanes: z
+          .record(z.string().max(60), z.enum(SHAPE_LANES))
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
+        // Each shape's icon and colour (M177); null clears a field.
+        shapeStyles: z
+          .record(
+            z.string().max(60),
+            z.strictObject({ icon: z.string().max(40).nullable().optional(), color: z.enum(SHAPE_COLORS).nullable().optional() }),
           )
-          .max(100),
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
       })
       .partial(),
   })
@@ -962,22 +962,24 @@ function applyProjectPatchInner(doc: ProjectDoc, patch: ProjectPatch): ProjectDo
       const names = new Set<string>(allShapes(kit));
       const seen = new Set<string>();
       const ideas = kitPatch.ideas
-        .map((i) => ({ shape: i.shape as ShapeId, text: i.text.trim(), ...(i.from ? { from: i.from.trim() } : {}), ...(i.lane && i.lane !== "exploring" ? { lane: i.lane } : {}) }))
+        .map((i) => ({ shape: i.shape as ShapeId, text: i.text.trim(), ...(i.from ? { from: i.from.trim() } : {}) }))
         .filter((i) => names.has(i.shape) && i.text && !seen.has(`${i.shape}\n${i.text}`) && seen.add(`${i.shape}\n${i.text}`));
       kit = { ...kit, ideas: ideas.length ? ideas : undefined };
     }
     for (const i of kitPatch.removeIdeas ?? []) kit = { ...kit, ...toggleIdea(kit, i.shape as ShapeId, i.text, false) };
-    for (const i of kitPatch.addIdeas ?? []) {
+    for (const i of kitPatch.addIdeas ?? [])
       kit = { ...kit, ...(i.from ? editIdea(kit, i.shape as ShapeId, i.from, i.text, true) : toggleIdea(kit, i.shape as ShapeId, i.text, true)) };
-      if (i.lane) kit = { ...kit, ...placeIdea(kit, i.shape as ShapeId, i.text, i.lane) };
-    }
-    for (const c of kitPatch.board ?? []) {
-      const shape = c.shape as ShapeId;
-      if (c.kind === "own") kit = { ...kit, ...(c.lane === "remove" ? removeIdea(kit, shape, c.id) : placeIdea(kit, shape, c.id, c.lane)) };
-      else kit = { ...kit, ...(c.lane === "remove" ? removeCard(kit, shape, c.kind, c.id) : placeCard(kit, shape, c.kind, c.id, c.lane)) };
-    }
+    for (const [shape, lane] of Object.entries(kitPatch.shapeLanes ?? {})) kit = { ...kit, ...setShapeLane(kit, shape as ShapeId, lane) };
+    for (const [shape, st] of Object.entries(kitPatch.shapeStyles ?? {}))
+      kit = { ...kit, ...setShapeStyle(kit, shape as ShapeId, { icon: st.icon === null ? undefined : (st.icon ?? kit.shapeStyles?.[shape]?.icon), color: st.color === null ? undefined : (st.color ?? kit.shapeStyles?.[shape]?.color) }) };
     // Keys set to undefined by the helpers must not be stored.
     next = { ...next, kit: Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as unknown as ProjectKit };
+    // Steps picked onto a shape answer the owner's request to ideate it (M177).
+    const ideated = new Set<string>((kitPatch.ownShapes?.steps ?? []).map((e) => e.shape));
+    if (ideated.size && next.agentRequests?.some((r) => r.kind === "shape")) {
+      const left = withoutShapeRequests(next, ideated);
+      next = left ? { ...next, agentRequests: left } : dropKey(next, "agentRequests");
+    }
   }
   // Mainnet record (M70). Stamp the chain id, drop nulls, and leave the key out when nothing is recorded.
   if ("mainnet" in patch) {
@@ -1094,15 +1096,12 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     const stray = ideaLines.filter((i) => !allNames.has(i.shape));
     if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}), so a line cannot name it.`;
   }
-  if (k.board?.length) {
-    const stray = k.board.find((c) => !allNames.has(c.shape));
-    if (stray) return `${stray.shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}). Add it with add_shape first.`;
-    for (const c of k.board) {
-      if (c.kind === "feature" && !featureById(c.id)) return `Unknown feature ${c.id}. Read get_build_steps for feature ids.`;
-      if (c.kind === "resource" && !KIT_CATALOG.some((r) => r.id === c.id)) return `Unknown resource ${c.id}. Read get_resource_pack for resource ids.`;
-      if (c.kind === "template" && !templateById(c.id)) return `Unknown contract template ${c.id}. Read get_templates for template ids.`;
-      if (c.kind === "own" && c.lane !== "remove" && c.id.trim().length < KIT_LIMITS.ideas.textMin) return `A line of your own needs at least ${KIT_LIMITS.ideas.textMin} characters.`;
-    }
+  const named = [...Object.keys(k.shapeLanes ?? {}), ...Object.keys(k.shapeStyles ?? {})];
+  if (named.length) {
+    const stray = named.find((x) => !allNames.has(x));
+    if (stray) return `${stray} is not one of this project's shapes (${[...allNames].join(", ") || "none"}). Add it with add_shape first.`;
+    const badIcon = Object.values(k.shapeStyles ?? {}).find((v) => v.icon && !isShapeIconName(v.icon));
+    if (badIcon) return `Unknown icon ${badIcon.icon}. Read the icon names on set_shape.`;
   }
   const ticked = Object.keys(k.features ?? {});
   if (ticked.length) {
@@ -1213,6 +1212,13 @@ export function applyBuildSteps(doc: ProjectDoc, patch: BuildStepsPatch): Projec
   // Keys set to undefined by the helpers must not be stored.
   const clean = Object.fromEntries(Object.entries(kit).filter(([, v]) => v !== undefined)) as ProjectDoc["kit"];
   // A step ticked, marked not applicable or removed answers the owner's request for it (M152). The request's target is the group key.
+  // Steps added onto a shape answer the owner's request to ideate it (M177).
+  const ideated = new Set<string>([...(patch.add ?? []).flatMap((a) => [a.shape, ...(a.shapes ?? [])]), ...(patch.shapes ?? []).flatMap((e) => e.shapes)]);
+  if (ideated.size && doc.agentRequests?.some((r) => r.kind === "shape")) {
+    const left = withoutShapeRequests(doc, ideated);
+    const { agentRequests: _a, ...rest } = doc;
+    doc = { ...rest, ...(left ? { agentRequests: left } : {}) } as ProjectDoc;
+  }
   const touched = [...(patch.done ?? []), ...(patch.remove ?? []), ...(patch.notApplicable ?? []).map((e) => e.id)];
   if (touched.length && doc.agentRequests?.some((r) => r.kind === "step")) {
     const groups = groupsFor(kitShapes(doc.kit), doc.kit);
