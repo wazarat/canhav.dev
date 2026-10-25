@@ -28,6 +28,8 @@ export function CanvasEditor({
   agentMode,
   canvas,
   onChange,
+  verdicts,
+  testHref,
 }: {
   projectId: string;
   name: string;
@@ -37,6 +39,9 @@ export function CanvasEditor({
   agentMode: AgentWriteMode;
   canvas: Canvas | undefined;
   onChange: (next: Canvas) => void;
+  /** The verdicts experiments gave the items (M170) and the Test this link (M171), when the session has Viability. */
+  verdicts?: ReadonlyMap<string, { verdict: "validated" | "invalidated"; experimentId: string }>;
+  testHref?: (itemId: string) => string;
 }) {
   const C = STUDIO_PLUS_COPY.canvas;
   const current = canvas ?? {};
@@ -109,7 +114,7 @@ export function CanvasEditor({
               {open ? (
                 <ItemsEditor items={items} onChange={(next) => set(block, next)} onDone={() => setEditing(null)} limits={CANVAS_ITEM_LIMITS} />
               ) : (
-                <CanvasItemsList items={items} empty={C.empty} />
+                <CanvasItemsList items={items} empty={C.empty} verdicts={verdicts} testHref={testHref} />
               )}
             </CanvasBlockFrame>
           );
