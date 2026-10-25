@@ -75,12 +75,11 @@ export const BUILD_COPY = {
     reasonCancel: "Cancel",
   },
   filters: {
-    now: "Now",
-    all: "All steps",
     everyShape: "Every shape",
     everyMilestone: "Every milestone",
     empty: "Nothing is open. Every step is done or marked not applicable.",
     emptyFiltered: "No steps match these filters.",
+    emptyStatus: "Nothing here under this status. Pick All to see every step.",
     /** The status filter (M177). */
     status: "Status",
     statuses: { all: "All", open: "To do", done: "Done", na: "Not applicable" },

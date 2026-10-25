@@ -28,7 +28,7 @@ import { BUILD_COPY, type BuildTab as BuildTabName } from "@/content/build";
 import { catalogStepIds, removedGroupsFor, sectionsFor } from "@/content/kits/checklists";
 import { CHECKLIST_COPY, REVIEW_COPY, shapeName } from "@/content/kits/copy";
 import { REVIEW_PASSES } from "@/content/kits/review-passes";
-import { MILESTONES, type Milestone, groupsByMilestone, nowSteps } from "@/lib/build-milestones";
+import { MILESTONES, type Milestone, groupsByMilestone } from "@/lib/build-milestones";
 import type { ProjectChain } from "@/lib/chains";
 import type { ProjectDoc } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
@@ -87,8 +87,8 @@ const statusOf = (state: GroupState): Exclude<StatusFilter, "all"> => (state ===
 
 /**
  * The Build tab (M95): every build step of every chosen shape as one list
- * under four milestones, with a shape filter, a milestone filter and a Now
- * view of the next three open steps. Review passes sit under Review, the
+ * under four milestones, with a shape filter, a milestone filter and a
+ * status filter that opens on To do (M180, which retired the Now view). Review passes sit under Review, the
  * Launch rows are derived from the record. Features stay reachable per
  * shape behind a fold since they decide which steps appear.
  */
@@ -133,15 +133,12 @@ export function BuildTab({
   const [shape, setShape] = useState<ShapeId | "">("");
   const plus = usePlan().plan === "studio_plus";
   const cap = shapeCap(plus);
-  const [view, setView] = useState<"now" | "all">(milestone ? "all" : "now");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  // The milestones always show (M180); the status filter opens on To do, so what is next comes first.
+  const [status, setStatus] = useState<StatusFilter>("open");
   // A picked shape shows its four milestones (M178), every one until the team narrows it.
   const pickShape = (s: ShapeId | "") => {
     setShape(s);
-    if (s) {
-      setView("all");
-      if (milestone) onMilestone("");
-    }
+    if (s && milestone) onMilestone("");
   };
   // A shape that left the kit must leave the filter too; a new one opens on its board.
   const prevShapes = useRef(shapesKey);
@@ -150,12 +147,7 @@ export function BuildTab({
     prevShapes.current = shapesKey;
     const added = before.length ? shapes.find((s) => !before.includes(s)) : undefined;
     setShape((cur) => added ?? (cur && shapes.includes(cur) ? cur : ""));
-    if (added) setView("all");
   }, [shapesKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Picking a milestone (the sidebar, the filter) means seeing every step of it.
-  useEffect(() => {
-    if (milestone) setView("all");
-  }, [milestone]);
   const setMilestone = onMilestone;
 
   const sections = useMemo(() => sectionsFor(catalogShapes, kit ?? {}), [shapesKey, kit]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -226,27 +218,15 @@ export function BuildTab({
     review: byMilestone.review.filter(keep),
     launch: [],
   };
-  const now = view === "now" ? nowSteps(filtered, kit, 3) : null;
   const inView = MILESTONES.filter((m) => !milestone || m === milestone).flatMap((m) => filtered[m]);
   const statusCounts: Record<StatusFilter, number> = { all: inView.length, open: 0, done: 0, na: 0 };
   for (const g of inView) statusCounts[statusOf(groupState(g, kit))] += 1;
   const showRow = (g: StepGroup) => status === "all" || statusOf(groupState(g, kit)) === status;
   const visible = MILESTONES.filter((m) => !milestone || m === milestone);
-  const total = MILESTONES.reduce((n, m) => n + filtered[m].length, 0);
 
   return (
     <div className={`${TAB_WIDTH} space-y-6`}>
       <div className="flex flex-wrap items-center gap-3">
-        <Segmented
-          size="sm"
-          ariaLabel={F.now}
-          value={view}
-          onChange={setView}
-          options={[
-            { value: "now", label: F.now },
-            { value: "all", label: F.all },
-          ]}
-        />
         {/* Picking a shape opens its panel (M177); Every shape keeps the page to the steps. */}
         <Segmented<ShapeId | "">
           size="sm"
@@ -290,91 +270,72 @@ export function BuildTab({
         />
       ) : null}
 
-      {/* The milestone row sits right above the sections it filters (M152, F9); the view and shape rows stay at the top. */}
-      {view === "all" ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Segmented<Milestone | "">
-            size="sm"
-            ariaLabel={F.everyMilestone}
-            value={milestone}
-            onChange={setMilestone}
-            options={[
-              { value: "", label: F.everyMilestone },
-              ...MILESTONES.map((m) => ({ value: m, label: BUILD_COPY.milestones[m].label })),
-            ]}
-          />
-          {/* Done, to do or not applicable (M177); the milestone counts stay whole. */}
-          <Segmented<StatusFilter>
-            size="sm"
-            ariaLabel={F.status}
-            value={status}
-            onChange={setStatus}
-            options={STATUS_FILTERS.map((f) => ({
-              value: f,
-              label: (
-                <span>
-                  {F.statuses[f]} <span className="text-ink-500">{statusCounts[f]}</span>
-                </span>
-              ),
-            }))}
-          />
-        </div>
-      ) : null}
+      {/* The milestone row sits right above the sections it filters (M152, F9); the shape row stays at the top. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Segmented<Milestone | "">
+          size="sm"
+          ariaLabel={F.everyMilestone}
+          value={milestone}
+          onChange={setMilestone}
+          options={[
+            { value: "", label: F.everyMilestone },
+            ...MILESTONES.map((m) => ({ value: m, label: BUILD_COPY.milestones[m].label })),
+          ]}
+        />
+        {/* Done, to do or not applicable (M177); the milestone counts stay whole. */}
+        <Segmented<StatusFilter>
+          size="sm"
+          ariaLabel={F.status}
+          value={status}
+          onChange={setStatus}
+          options={STATUS_FILTERS.map((f) => ({
+            value: f,
+            label: (
+              <span>
+                {F.statuses[f]} <span className="text-ink-500">{statusCounts[f]}</span>
+              </span>
+            ),
+          }))}
+        />
+      </div>
 
-      {now ? (
-        <Card>
-          <CardSection>
-            <h2 className="font-display text-base font-semibold text-ink-50">{F.now}</h2>
-            {now.length === 0 ? (
-              <p className="mt-2 text-sm text-ink-400">{total === 0 ? F.emptyFiltered : F.empty}</p>
-            ) : (
-              <ul className="mt-2">
-                {now.map((g) => (
-                  <StepRow key={g.key} group={g} kit={kit} chain={chain} onPatchKit={onPatchKit} send={sendFor(g, MILESTONES.find((m) => filtered[m].includes(g)) ?? "design")} />
-                ))}
-              </ul>
-            )}
-          </CardSection>
-        </Card>
-      ) : (
-        visible.map((m) => (
-          <MilestoneSection
-            key={m}
-            milestone={m}
-            groups={filtered[m]}
-            passes={m === "review" ? passes : []}
-            kit={kit}
-            chain={chain}
-            facts={m === "launch" ? facts : null}
-            onPatchKit={onPatchKit}
-            onGoTab={onGoTab}
-            checks={checks}
-            testerKit={m === "testnet" ? testerKit : undefined}
-            sendFor={(g) => sendFor(g, m)}
-            showRow={showRow}
-            sendOpen={
-              agent && m !== "launch"
-                ? (() => {
-                    const open = filtered[m].filter((g) => groupState(g, kit) !== "done" && groupState(g, kit) !== "na");
-                    if (!open.length) return null;
-                    const prompt = open.map((g) => sendFor(g, m)!.prompt).join("\n\n---\n\n");
-                    return {
-                      count: open.length,
-                      prompt,
-                      canQueue: agent.connected && agent.mode !== "off",
-                      full: agentRequestsFull(requestsDoc),
-                      onQueue: () => {
-                        let next: { agentRequests?: AgentRequest[] } = requestsDoc;
-                        for (const g of open) next = { agentRequests: withAgentRequest(next, "step", g.key) };
-                        agent.onRequests(next.agentRequests);
-                      },
-                    };
-                  })()
-                : null
-            }
-          />
-        ))
-      )}
+      {visible.map((m) => (
+        <MilestoneSection
+          key={m}
+          milestone={m}
+          groups={filtered[m]}
+          passes={m === "review" ? passes : []}
+          kit={kit}
+          chain={chain}
+          facts={m === "launch" ? facts : null}
+          onPatchKit={onPatchKit}
+          onGoTab={onGoTab}
+          checks={checks}
+          testerKit={m === "testnet" ? testerKit : undefined}
+          sendFor={(g) => sendFor(g, m)}
+          showRow={showRow}
+          sendOpen={
+            agent && m !== "launch"
+              ? (() => {
+                  const open = filtered[m].filter((g) => groupState(g, kit) !== "done" && groupState(g, kit) !== "na");
+                  if (!open.length) return null;
+                  const prompt = open.map((g) => sendFor(g, m)!.prompt).join("\n\n---\n\n");
+                  return {
+                    count: open.length,
+                    prompt,
+                    canQueue: agent.connected && agent.mode !== "off",
+                    full: agentRequestsFull(requestsDoc),
+                    onQueue: () => {
+                      let next: { agentRequests?: AgentRequest[] } = requestsDoc;
+                      for (const g of open) next = { agentRequests: withAgentRequest(next, "step", g.key) };
+                      agent.onRequests(next.agentRequests);
+                    },
+                  };
+                })()
+              : null
+          }
+        />
+      ))}
 
       <AddStepRow kit={kit} shapes={shapes} preferred={shape || undefined} onPatchKit={onPatchKit} />
       {removed.length ? (
@@ -476,6 +437,8 @@ function MilestoneSection({
       <CardSection className="py-2">
         {groups.length === 0 && passes.length === 0 && launchRows.length === 0 ? (
           <p className="py-2 text-xs text-ink-500">{BUILD_COPY.filters.emptyFiltered}</p>
+        ) : showRow && groups.length > 0 && !groups.some(showRow) && passes.length === 0 && launchRows.length === 0 ? (
+          <p className="py-2 text-xs text-ink-500">{BUILD_COPY.filters.emptyStatus}</p>
         ) : (
           <ul>
             {passes.map((p) => (

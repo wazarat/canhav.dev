@@ -1,9 +1,7 @@
 import {
   type KitStep,
   type ProductSection,
-  type ProjectKit,
   type StepGroup,
-  groupState,
 } from "@/lib/kits";
 
 /**
@@ -53,25 +51,3 @@ export function groupsByMilestone(sections: readonly ProductSection[]): Record<M
   return out;
 }
 
-type StepStateKit = Pick<ProjectKit, "checklist" | "notApplicable">;
-
-/**
- * What to do next (the Now view): the first open or partial groups in
- * milestone order then section order. Done and not applicable groups are
- * skipped. At most `limit` rows.
- */
-export function nowSteps(
-  groups: Readonly<Record<Milestone, readonly StepGroup[]>>,
-  kit: StepStateKit | undefined,
-  limit = 3,
-): StepGroup[] {
-  const out: StepGroup[] = [];
-  for (const m of MILESTONES) {
-    for (const g of groups[m]) {
-      if (out.length >= limit) return out;
-      const state = groupState(g, kit);
-      if (state === "open" || state === "partial") out.push(g);
-    }
-  }
-  return out.slice(0, limit);
-}
