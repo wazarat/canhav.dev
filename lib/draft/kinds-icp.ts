@@ -5,7 +5,8 @@ import { chainInfo, projectChainOf } from "@/lib/chains";
 import { categoriesFor, fetchLlamaProtocols, formatTvl, pickProtocols } from "@/lib/competitors/llama";
 import { DRAFT_VOICE } from "@/lib/draft/context";
 import { registerDraftKind } from "@/lib/draft/kinds";
-import { fetchDuneQueryRows } from "@/lib/dune";
+import { reachLine } from "@/lib/reach";
+import { PROFILE_KEYS } from "@/lib/value-canvas";
 import { ICP_LIMITS, type Icp, icpDraftSchema, normalizeIcp } from "@/lib/icp";
 import { type ProjectDoc, docAudience, filledConsumerPersonas, filledPersonas } from "@/lib/ideation";
 
@@ -37,14 +38,10 @@ async function onchainExtras(doc: ProjectDoc): Promise<string[]> {
       );
     }
   }
-  const queryId = Number(process.env[`DUNE_ICP_QUERY_ID_${chainInfo(chain).chainId}`] ?? "");
-  if (Number.isInteger(queryId) && queryId > 0) {
-    try {
-      const rows = await fetchDuneQueryRows(queryId, 24);
-      if (rows.length) out.push(`## Active wallets of similar protocols (Dune)\n${rows.map((r) => JSON.stringify(r)).join("\n")}`); // copy-ok, model context
-    } catch (err) {
-      console.warn("[draft] dune hint skipped", err);
-    }
+  // The reachable wallets the team already read (M168), with their definitions, never a fresh Dune run here.
+  for (const k of PROFILE_KEYS) {
+    const r = doc.reach?.[k];
+    if (r) out.push(`## Reachable wallets, profile ${Number(k) + 1} (Dune, read ${r.readAt.slice(0, 10)})\n${reachLine(doc.icp?.[Number(k)]?.name?.trim() || `profile ${Number(k) + 1}`, r)}`); // copy-ok, model context
   }
   return out;
 }

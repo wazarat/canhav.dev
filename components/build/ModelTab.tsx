@@ -7,7 +7,8 @@ import { ProspectsTable } from "@/components/build/ProspectsTable";
 import { ValueCanvasEditor } from "@/components/build/ValueCanvasEditor";
 import { InvestorPackSection } from "@/components/build/InvestorPackSection";
 import { TAB_WIDTH } from "@/components/build/layout";
-import { PlusGate } from "@/components/studio/PlusGate";
+import { PlusGate, usePlusHere } from "@/components/studio/PlusGate";
+import { itemVerdicts } from "@/lib/experiments";
 import { Card, CardSection } from "@/components/ui/Card";
 import { BUILD_COPY } from "@/content/build";
 import { STUDIO_PLUS_COPY } from "@/content/studio-plus";
@@ -42,13 +43,18 @@ export function ModelTab({
   token?: { name: string; symbol: string | null; address: string } | null;
 }) {
   const M = BUILD_COPY.model;
+  // The verdicts experiments gave the items and the Test this links (M170, M171), for a session with Viability.
+  const viability = usePlusHere("viability").ok;
+  const verdicts = itemVerdicts(doc.experiments);
+  const testCanvas = viability ? (itemId: string) => `?tab=viability&experiment=new&assumption=canvas:${itemId}` : undefined;
+  const testValue = viability ? (key: string, itemId: string) => `?tab=viability&experiment=new&assumption=value:${key}:${itemId}` : undefined;
   return (
     <div className={TAB_WIDTH}>
       <Card>
         <CardSection id="model-canvas" className="space-y-4">
           <Heading>{M.canvas}</Heading>
           <PlusGate feature="bmc">
-            <CanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} />
+            <CanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} canvas={doc.canvas} onChange={(canvas) => patch({ canvas })} verdicts={verdicts} testHref={testCanvas} />
           </PlusGate>
         </CardSection>
 
@@ -56,7 +62,7 @@ export function ModelTab({
           <Heading>{M.icp}</Heading>
           <p className="text-xs text-ink-500">{M.icpLead}</p>
           <PlusGate feature="icp">
-            <IcpEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} onChange={(icp) => patch({ icp })} />
+            <IcpEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} onChange={(icp) => patch({ icp })} reach={doc.reach} hasAssets={Boolean(doc.assets?.length)} onReach={(reach) => patch({ reach })} />
           </PlusGate>
         </CardSection>
 
@@ -70,14 +76,14 @@ export function ModelTab({
         <CardSection id="model-value" className="space-y-4">
           <Heading>{M.valueCanvas}</Heading>
           <PlusGate feature="icp">
-            <ValueCanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} value={doc.valueCanvas} onChange={(valueCanvas) => (valueCanvas ? patch({ valueCanvas }) : patch({ valueCanvas: undefined }))} differentiator={doc.competitors?.differentiator} />
+            <ValueCanvasEditor projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} profiles={doc.icp} value={doc.valueCanvas} onChange={(valueCanvas) => (valueCanvas ? patch({ valueCanvas }) : patch({ valueCanvas: undefined }))} differentiator={doc.competitors?.differentiator} verdicts={verdicts} testHref={testValue} />
           </PlusGate>
         </CardSection>
 
         <CardSection id="model-competitors" className="space-y-4">
           <Heading>{M.competitors}</Heading>
           <PlusGate feature="competitors">
-            <CompetitorsSection projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} />
+            <CompetitorsSection projectId={id} name={doc.name} meta={doc} patch={patch} agentMode={agentMode} createdAt={createdAt} value={doc.competitors} onChange={(competitors) => patch({ competitors })} profiles={doc.icp} valueCanvas={doc.valueCanvas} onValueCanvas={(valueCanvas) => patch({ valueCanvas })} />
           </PlusGate>
         </CardSection>
 

@@ -81,6 +81,30 @@ async function fetchDuneRows(queryId: number, limit: number) {
   return { rows, asOf: json.execution_ended_at ?? new Date().toISOString() };
 }
 
+/**
+ * Execute a saved Dune query with parameters and wait for its rows (M168).
+ * Costs credits on every call, so the caller caches. Throws on a missing
+ * key, an upstream error or a run that does not finish in time.
+ */
+export async function executeDuneQuery(queryId: number, parameters: Record<string, string | number>, opts: { timeoutMs?: number; limit?: number } = {}): Promise<{ rows: Array<Record<string, unknown>>; executionId: string; endedAt: string }> {
+  const apiKey = process.env.DUNE_API_KEY;
+  if (!apiKey) throw new Error("DUNE_API_KEY is not set");
+  const headers = { "X-Dune-API-Key": apiKey, "content-type": "application/json" };
+  const start = await fetch(`${DUNE_API_BASE}/query/${queryId}/execute`, { method: "POST", headers, body: JSON.stringify({ query_parameters: parameters }), cache: "no-store" });
+  if (!start.ok) throw new Error(`Dune execute ${queryId} responded ${start.status}`);
+  const { execution_id: executionId } = (await start.json()) as { execution_id: string };
+  const deadline = Date.now() + (opts.timeoutMs ?? 90_000);
+  for (;;) {
+    const res = await fetch(`${DUNE_API_BASE}/execution/${executionId}/results?limit=${opts.limit ?? 200}`, { headers, cache: "no-store" });
+    if (!res.ok) throw new Error(`Dune results ${executionId} responded ${res.status}`);
+    const json = (await res.json()) as { state?: string; execution_ended_at?: string; result?: { rows?: Array<Record<string, unknown>> }; error?: { message?: string } };
+    if (json.state === "QUERY_STATE_COMPLETED") return { rows: json.result?.rows ?? [], executionId, endedAt: json.execution_ended_at ?? new Date().toISOString() };
+    if (json.state === "QUERY_STATE_FAILED" || json.state === "QUERY_STATE_CANCELLED" || json.state === "QUERY_STATE_EXPIRED") throw new Error(`Dune query ${queryId} ${json.state}${json.error?.message ? `, ${json.error.message}` : ""}`);
+    if (Date.now() > deadline) throw new Error(`Dune query ${queryId} did not finish in time`);
+    await new Promise((r) => setTimeout(r, 2_000));
+  }
+}
+
 /** DefiLlama chain TVL history: [{date: unixSeconds, tvl}] */
 async function fetchLlamaChainTvl(slug: string): Promise<{ points: SeriesPoint[]; asOf: string }> {
   const res = await fetch(
