@@ -38,7 +38,7 @@ CanHav has three connected parts.
 
 | Part | What it does |
 |------|--------------|
-| **Studio** | A team designs its product and, if it wants one, its token. Guided research, build steps and review passes for the chosen product shape. |
+| **Studio** | A team designs its product and, if it wants one, its token. Guided research, build steps and review passes for the chosen product module. |
 | **Token Launch** | One transaction creates a token on a bonding curve. At a set threshold it graduates into a liquidity pool that can never be withdrawn. Optional rails add commitments, milestone lockups, fixed price sales and progress updates. |
 | **Agents** | A shared MCP server reads every launch and published design. Each project also gets its own MCP server, bound to that one project, that an agent can read and, with the owner's permission, write to. |
 
@@ -52,23 +52,23 @@ The Studio is where a team works out what it is building before it writes code o
 
 ### 3.1 Projects in plain sentences
 
-A project starts with a few plain sentences about the product, who it serves and whether it is for businesses or consumers. The team then picks one or more sectors, the subsectors inside them, and the product shapes it is building.
+A project starts with a few plain sentences about the product, who it serves and whether it is for businesses or consumers. The team then picks one or more sectors, the subsectors inside them, and the product modules it is building.
 
-| Sector | Subsectors | Product shapes |
+| Sector | Subsectors | Product modules |
 |--------|------------|----------------|
-| Credit | Lending, Fixed income, Leveraged yield | Eight shapes, including a curated lending vault, earn inside an existing app, collateral-backed loans, fixed rate yield, fixed rate savings, borrowing against fixed rate positions, leveraged fixed yield loops and yield token products |
-| Liquidity | Vaults, Pools | Five shapes, a liquidity allocator, a permissioned vault, a basic AMM pool, a concentrated liquidity pool and a pool with custom hooks |
+| Credit | Lending, Fixed income, Leveraged yield | Eight modules, including a curated lending vault, earn inside an existing app, collateral-backed loans, fixed rate yield, fixed rate savings, borrowing against fixed rate positions, leveraged fixed yield loops and yield token products |
+| Liquidity | Vaults, Pools | Five modules, a liquidity allocator, a permissioned vault, a basic AMM pool, a concentrated liquidity pool and a pool with custom hooks |
 
-More sectors are listed as coming soon. Each shape comes with a short teaching card and worked examples, written in CanHav's own words.
+More sectors are listed as coming soon. Each module comes with a short teaching card and worked examples, written in CanHav's own words.
 
 ### 3.2 The research kit
 
-Choosing a shape opens a research kit built for it.
+Choosing a module opens a research kit built for it.
 
 - **Resource pack.** A reading list drawn from a catalog of several hundred curated sources across Morpho, Pendle, Uniswap, Robinhood Chain and shared standards, grouped Core, Recommended and Deep dive, each with a line on why it matters and a flag where a source is unofficial, mainnet only or something a team must deploy itself. Every link was checked before it was added.
-- **Build steps.** An ordered list of ten or so steps for the shape, each tied to the part of the editor it informs. Progress shows on the studio row and the public page, for example "Build 4 of 11". Teams can add their own steps and remove ones that do not apply.
-- **Pre-launch review passes.** The security checks that matter for the shape, each with what counts as evidence and a pass, fail or not applicable verdict saved with the project.
-- **Where it runs.** For each protocol the shape relies on, whether the chosen testnet and its mainnet have an official deployment, a community one, a manifest only or nothing, with the recommended path from testnet with mocks to a local fork to capped mainnet staging. A missing protocol produces a note, never a block.
+- **Build steps.** An ordered list of ten or so steps for the module, each tied to the part of the editor it informs. Progress shows on the studio row and the public page, for example "Build 4 of 11". Teams can add their own steps and remove ones that do not apply.
+- **Pre-launch review passes.** The security checks that matter for the module, each with what counts as evidence and a pass, fail or not applicable verdict saved with the project.
+- **Where it runs.** For each protocol the module relies on, whether the chosen testnet and its mainnet have an official deployment, a community one, a manifest only or nothing, with the recommended path from testnet with mocks to a local fork to capped mainnet staging. A missing protocol produces a note, never a block.
 - **Kit files.** Templates a team can take into its repository, such as an architecture document, a risk framework, a role model, invariants, rate transparency and per-asset research.
 
 ### 3.3 Token design
@@ -219,7 +219,7 @@ CanHav moves forward only once each loop is proven on testnet.
 **Available now**
 - Token Launch with bonding curve and locked liquidity on Robinhood Chain Testnet and Arbitrum Sepolia
 - Credibility rails, commitments, milestone escrow, allocation sales and progress updates
-- The Studio with Credit and Liquidity sectors, thirteen product shapes and their research kits
+- The Studio with Credit and Liquidity sectors, thirteen product modules and their research kits
 - Shared and per-project MCP servers, agent edits with owner approval, Markdown export
 
 **Next**
@@ -285,7 +285,7 @@ Explorer https://arbitrum-sepolia.blockscout.com
 | Snipe tax | A tax on buys in the first 60 seconds, paid into the graduation pool |
 | Commitment | A hash of a plan or design recorded onchain at launch |
 | Timelock | A contract that forces a public waiting period before an admin change can run |
-| Product shape | The specific kind of product a team is building inside a sector, such as a curated vault |
+| Product module | The specific kind of product a team is building inside a sector, such as a curated vault |
 | MCP | Model Context Protocol, the standard AI agents use to connect to tools and data |
 
 ---

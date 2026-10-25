@@ -304,7 +304,7 @@ export async function submitAgentChange(
     const shapesBefore = allShapes(project.draft_doc.kit).length;
     const shapesAfter = allShapes(applyProjectPatch(project.draft_doc, input.patch as ProjectPatch).kit).length;
     if (shapesAfter > shapesBefore && shapesAfter > shapeCap(plus))
-      return { ok: false, message: `This project can hold ${shapeCap(plus)} shapes on ${plus ? "Studio+" : "Studio"}, ours and own together${plus ? "" : ", and 10 on Studio+"}. Remove one first.` };
+      return { ok: false, message: `This project can hold ${shapeCap(plus)} modules on ${plus ? "Studio+" : "Studio"}, ours and own together${plus ? "" : ", and 10 on Studio+"}. Remove one first.` };
   }
   if (Object.keys(input.patch).length === 0)
     return { ok: false, message: "The change is empty. Send at least one field." };

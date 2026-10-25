@@ -273,7 +273,7 @@ export const SECTOR_COPY = {
   otherHint: "Optional once a subsector is picked. A few words on what the product is.",
   /** Under the subsector chips when the overlap rule ticked something. */
   overlapHint: (added: string, because: string) =>
-    `${added} is ticked because it shares product shapes with ${because}.`,
+    `${added} is ticked because it shares product modules with ${because}.`,
 } as const;
 
 /** Labels for a project's sectors, in option order, honouring the free-text "other". */
@@ -814,9 +814,9 @@ export const IDEATION_RESOURCES: Record<DesignWarning, IdeationResource> = {
       "optionality. All three beat finding out live.",
   },
   rationale_shape_mismatch: {
-    title: "The reason does not fit the product shape",
+    title: "The reason does not fit the product module",
     body:
-      "The project linked to this design builds a shape where this reason for a token rarely holds up. The advice on the Rationale step lists the reasons that fit and what a token for that shape should lock. Pick one of those, or write down in the next field why this product is the exception.",
+      "The project linked to this design builds a module where this reason for a token rarely holds up. The advice on the Rationale step lists the reasons that fit and what a token for that module should lock. Pick one of those, or write down in the next field why this product is the exception.",
     example:
       "Worked example: an earn feature inside a wallet picks Bootstrapping a supply side. The vaults it routes to already have suppliers, so the emissions would pay for nothing. Fee capture on the cut the app keeps is the reason that fits.",
   },

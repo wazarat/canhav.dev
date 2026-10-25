@@ -199,7 +199,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
   {
     id: "review.cross-protocol",
     title: "Cross-protocol invariants are under property tests on a fork",
-    detail: "Each numbered statement in the cross-protocol file that applies to the shape maps to a passing property on a fork of mainnet 4663, with the vault-loss case traced through every seam. Evidence is the mapping table and the test run.",
+    detail: "Each numbered statement in the cross-protocol file that applies to the module maps to a passing property on a fork of mainnet 4663, with the vault-loss case traced through every seam. Evidence is the mapping table and the test run.",
     shapes: MATURITY_SIDE,
     resources: ["canhav.cross-protocol-invariants", "foundry.invariant-testing", "canhav.pendle-mainnet-manifest"],
   },
@@ -294,7 +294,7 @@ export const REVIEW_PASSES: readonly ReviewPass[] = [
   {
     id: "review.pool-invariants",
     title: "The pool invariants are under property tests",
-    detail: "Each numbered statement in the pool invariants file that applies to the shape maps to a passing Foundry property, re-run with the hook attached where one exists. Evidence is the mapping table and the run.",
+    detail: "Each numbered statement in the pool invariants file that applies to the module maps to a passing Foundry property, re-run with the hook attached where one exists. Evidence is the mapping table and the run.",
     shapes: POOLS,
     resources: ["canhav.pool-invariants", "foundry.invariant-testing", "crytic.medusa-agents"],
   },

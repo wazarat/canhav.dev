@@ -1043,9 +1043,9 @@ export const FIELD_INTROS = {
       "the strongest trust signal on this page.",
   },
   "project.kit.shape": {
-    title: "How the shapes relate",
+    title: "How the modules relate",
     body:
-      "The shapes are one stack, not thirteen products. Markets are where " +
+      "The modules are one stack, not thirteen products. Markets are where " +
       "borrowing happens, vaults allocate deposits across markets, and apps " +
       "embed either one. Any yield source, a vault share included, can then be " +
       "split into a fixed half and a variable half that each trade until a " +

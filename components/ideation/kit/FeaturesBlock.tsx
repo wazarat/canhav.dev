@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { ChevronUp, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { CheckItem } from "@/components/ui/CheckItem";
@@ -35,12 +35,15 @@ export function FeaturesBlock({
   features,
   kit,
   onPatchKit,
+  onCollapse,
 }: {
   shape: ShapeId;
   /** Our catalog features for the shape (the copied one for an own shape); may be empty. */
   features: readonly FeatureItem[];
   kit: ProjectKit;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  /** Folds the list away again (M181). */
+  onCollapse?: () => void;
 }) {
   const C = CHECKLIST_COPY;
   const progress = featureProgress(features, kit);
@@ -56,9 +59,16 @@ export function FeaturesBlock({
           {C.featuresTitle}
           <InfoTip>{C.featuresHint}</InfoTip>
         </p>
-        <p className="text-[11px] text-ink-400">
-          {[features.length ? C.featuresProgress(progress.on, progress.total) : null, own.length ? C.featuresOwn(own.length) : null].filter(Boolean).join(" · ")}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-[11px] text-ink-400">
+            {[features.length ? C.featuresProgress(progress.on, progress.total) : null, own.length ? C.featuresOwn(own.length) : null].filter(Boolean).join(" · ")}
+          </p>
+          {onCollapse ? (
+            <button type="button" onClick={onCollapse} aria-expanded aria-label={C.featuresCollapse} title={C.featuresCollapse} className="rounded p-1 text-ink-400 transition-colors hover:bg-ink-800/60 hover:text-ink-100">
+              <ChevronUp aria-hidden className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
       </div>
       <ul className="space-y-2">
         {features.map((f) => {

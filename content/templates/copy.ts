@@ -119,5 +119,5 @@ export const TEMPLATE_COPY = {
   envTitle: (chain: string) => `Templates on ${chain}`,
   envIntro: "Where each accepted template stands on the mainnet this project is heading for. Confirm every address on the explorer before building on it.",
   exportIntro: (c: { accepted: number; rejected: number; open: number; total: number }) =>
-    `${c.total} candidates for the project's product shapes, ${c.accepted} accepted, ${c.rejected} rejected, ${c.open} undecided. Accepted means the team will build on or integrate it, rejected means do not propose it again, undecided means the team has not chosen yet.`,
+    `${c.total} candidates for the project's product modules, ${c.accepted} accepted, ${c.rejected} rejected, ${c.open} undecided. Accepted means the team will build on or integrate it, rejected means do not propose it again, undecided means the team has not chosen yet.`,
 } as const;

@@ -216,7 +216,8 @@ export function BuildTab({
     design: byMilestone.design.filter(keep),
     testnet: byMilestone.testnet.filter(keep),
     review: byMilestone.review.filter(keep),
-    launch: [],
+    // Steps the team added under Launch (M181) sit beside the derived launch rows.
+    launch: byMilestone.launch.filter(keep),
   };
   const inView = MILESTONES.filter((m) => !milestone || m === milestone).flatMap((m) => filtered[m]);
   const statusCounts: Record<StatusFilter, number> = { all: inView.length, open: 0, done: 0, na: 0 };
@@ -314,6 +315,7 @@ export function BuildTab({
           testerKit={m === "testnet" ? testerKit : undefined}
           sendFor={(g) => sendFor(g, m)}
           showRow={showRow}
+          addTo={{ shapes, preferred: shape || undefined }}
           sendOpen={
             agent && m !== "launch"
               ? (() => {
@@ -337,7 +339,6 @@ export function BuildTab({
         />
       ))}
 
-      <AddStepRow kit={kit} shapes={shapes} preferred={shape || undefined} onPatchKit={onPatchKit} />
       {removed.length ? (
         <Collapsible summary={BUILD_COPY.row.removed(removed.length)}>
           <p className="text-xs leading-relaxed text-ink-500">{CHECKLIST_COPY.removedHint}</p>
@@ -376,9 +377,12 @@ function MilestoneSection({
   sendFor,
   sendOpen,
   showRow,
+  addTo,
 }: {
   /** The status filter (M177): rows it hides still count in the milestone's progress. */
   showRow?: (g: StepGroup) => boolean;
+  /** The + on the milestone (M181): the project's modules, and the picked one ticked first. */
+  addTo?: { shapes: ShapeId[]; preferred?: ShapeId };
   testerKit?: React.ReactNode;
   /** Send to agent per row and for the whole milestone (M152). */
   sendFor?: (g: StepGroup) => StepSend | undefined;
@@ -401,6 +405,7 @@ function MilestoneSection({
   const review = passes.length ? reviewProgress(passes, kit) : null;
   const launchRows = facts ? launchRowsOf(facts) : [];
   const launchDone = launchRows.filter((r) => r.done).length;
+  const [adding, setAdding] = useState(false);
   return (
     <Card>
       <CardSection>
@@ -421,19 +426,37 @@ function MilestoneSection({
           </div>
           <MetaLine
             items={[
-              groups.length ? (
+              // Launch counts its derived rows and any step the team added there as one (M181).
+              groups.length && !facts ? (
                 <>
                   <ProgressBar done={progress.done} total={progress.total} />
                   {CHECKLIST_COPY.progress(progress.done, progress.total)}
                 </>
               ) : null,
               review ? REVIEW_COPY.summary(review) : null,
-              facts ? CHECKLIST_COPY.progress(launchDone, launchRows.length) : null,
+              facts ? CHECKLIST_COPY.progress(launchDone + progress.done, launchRows.length + progress.total) : null,
+              addTo ? (
+                <button
+                  type="button"
+                  onClick={() => setAdding((a) => !a)}
+                  aria-expanded={adding}
+                  aria-label={BUILD_COPY.row.addTo(M.label)}
+                  title={BUILD_COPY.row.addTo(M.label)}
+                  className="rounded-md p-1 text-ink-400 transition-colors hover:bg-ink-800/60 hover:text-ink-50"
+                >
+                  <Plus aria-hidden className="h-4 w-4" />
+                </button>
+              ) : null,
             ]}
           />
         </div>
         <p className="max-w-3xl mt-1 text-xs leading-relaxed text-ink-400">{M.blurb}</p>
       </CardSection>
+      {adding && addTo ? (
+        <CardSection>
+          <AddStepForm kit={kit} shapes={addTo.shapes} preferred={addTo.preferred} milestone={milestone} onPatchKit={onPatchKit} onDone={() => setAdding(false)} />
+        </CardSection>
+      ) : null}
       <CardSection className="py-2">
         {groups.length === 0 && passes.length === 0 && launchRows.length === 0 ? (
           <p className="py-2 text-xs text-ink-500">{BUILD_COPY.filters.emptyFiltered}</p>
@@ -474,88 +497,86 @@ function MilestoneSection({
   );
 }
 
-/** Add a step under one or more of the project's shapes (M50, M176), as one row. */
-function AddStepRow({
+/** Add a step to one milestone on one or more modules (M50, M176), opened from the + on the milestone (M181). */
+function AddStepForm({
   kit,
   shapes,
   preferred,
+  milestone,
   onPatchKit,
+  onDone,
 }: {
   kit: ProjectKit;
   shapes: ShapeId[];
-  /** The shape picked in the filter, ticked by default. */
+  /** The module picked in the filter, ticked by default. */
   preferred?: ShapeId;
+  milestone: Milestone;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
+  onDone: () => void;
 }) {
   const R = BUILD_COPY.row;
   const L = KIT_LIMITS.customSteps;
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [picked, setPicked] = useState<ShapeId[]>([preferred ?? shapes[0]]);
-  useEffect(() => {
-    if (preferred) setPicked([preferred]);
-  }, [preferred]);
   const on = picked.filter((s) => shapes.includes(s));
   const full = (kit.customSteps?.length ?? 0) >= L.max;
   const canAdd = title.trim().length >= L.titleMin && !full && on.length > 0;
   const add = () => {
     if (!canAdd) return;
-    onPatchKit(addCustomStep(kit, on, title, detail));
-    setTitle("");
-    setDetail("");
+    onPatchKit(addCustomStep(kit, on, title, detail, { milestone }));
+    onDone();
   };
   return (
-    <Collapsible summary={R.addStep}>
-      <div className="space-y-2">
-        {full ? <p className="text-xs text-ink-500">{CHECKLIST_COPY.addLimit(L.max)}</p> : null}
-        <Input
-          value={title}
-          maxLength={L.titleMax}
-          disabled={full}
-          placeholder={R.addStepTitle}
-          aria-label={R.addStepTitle}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-        />
-        <Input
-          value={detail}
-          maxLength={L.detailMax}
-          disabled={full}
-          placeholder={R.addStepDetail}
-          aria-label={R.addStepDetail}
-          onChange={(e) => setDetail(e.target.value)}
-        />
-        {shapes.length > 1 ? (
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={R.addStepShape}>
-            <span className="mr-1 text-xs text-ink-400">{BUILD_COPY.shapes.shapesLine}</span>
-            {shapes.map((s) => {
-              const active = on.includes(s);
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setPicked(active ? on.filter((x) => x !== s) : [...on, s])}
-                  className={cn(
-                    "rounded-md border px-2 py-1 text-xs transition-colors",
-                    active ? "border-ink-500 bg-ink-800/60 text-ink-50" : "border-ink-700/60 text-ink-400 hover:text-ink-100",
-                  )}
-                >
-                  {shapeName(kit, s)}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-        <Button size="sm" variant="outline" disabled={!canAdd} onClick={add}>
+    <div className="space-y-2">
+      {full ? <p className="text-xs text-ink-500">{CHECKLIST_COPY.addLimit(L.max)}</p> : null}
+      <Input
+        autoFocus
+        value={title}
+        maxLength={L.titleMax}
+        disabled={full}
+        placeholder={R.addStepTitle}
+        aria-label={R.addStepTitle}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            add();
+          }
+          if (e.key === "Escape") onDone();
+        }}
+      />
+      <Input value={detail} maxLength={L.detailMax} disabled={full} placeholder={R.addStepDetail} aria-label={R.addStepDetail} onChange={(e) => setDetail(e.target.value)} />
+      {shapes.length > 1 ? (
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={R.addStepShape}>
+          <span className="mr-1 text-xs text-ink-400">{BUILD_COPY.shapes.shapesLine}</span>
+          {shapes.map((s) => {
+            const active = on.includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setPicked(active ? on.filter((x) => x !== s) : [...on, s])}
+                className={cn(
+                  "rounded-md border px-2 py-1 text-xs transition-colors",
+                  active ? "border-ink-500 bg-ink-800/60 text-ink-50" : "border-ink-700/60 text-ink-400 hover:text-ink-100",
+                )}
+              >
+                {shapeName(kit, s)}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      <div className="flex gap-2">
+        <Button size="sm" disabled={!canAdd} onClick={add}>
           <Plus className="h-3.5 w-3.5" aria-hidden /> {R.add}
         </Button>
+        <Button size="sm" variant="ghost" onClick={onDone}>
+          {R.cancelAdd}
+        </Button>
       </div>
-    </Collapsible>
+    </div>
   );
 }

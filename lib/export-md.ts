@@ -427,7 +427,7 @@ export function buildResourcesMd(doc: ProjectDoc, draft = true): string {
       : "Generated from the team's published CanHav record.",
   ];
   if (!pack) {
-    lines.push("", "No product shape chosen yet, so no resource pack.");
+    lines.push("", "No product module chosen yet, so no resource pack.");
   } else {
     lines.push("", pack.howToUse, ...resourcePackSections(doc, "##"));
   }

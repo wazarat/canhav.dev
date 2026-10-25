@@ -23,7 +23,7 @@ The description text is stored off-chain. The page shows it only when it re-hash
 
 ## Project and commitment
 
-- **Project.** A linked project shows its name and a link only once it is published. An unpublished one shows its sectors and shapes without the name.
+- **Project.** A linked project shows its name and a link only once it is published. An unpublished one shows its sectors and modules without the name.
 - **Commitment.** "Launched without a commitment", or how many milestones were committed, with a link to the document further down the page.
 - **Fees.** What the contracts charge: nothing on the curve, 0.30% in the pool after graduation, the snipe window, locked liquidity.
 

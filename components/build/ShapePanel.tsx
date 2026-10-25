@@ -70,7 +70,8 @@ export function ShapePanel({
   const features = featureShape ? featuresFor([featureShape]) : [];
   // The list shows once a feature is ticked or a line added (M178, M179); until then one link opens it.
   const ticked = features.filter((f) => kit.features?.includes(f.id)).length + (kit.ownFeatures ?? []).filter((f) => f.shape === shape).length;
-  const [showFeatures, setShowFeatures] = useState(false);
+  // Open when something is ticked or added; folds either way (M181).
+  const [featuresOpen, setFeaturesOpen] = useState(ticked > 0);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(para);
   const L = KIT_LIMITS.ownShapes;
@@ -126,9 +127,10 @@ export function ShapePanel({
             </Button>
           </div>
         )}
-        {!ticked && !showFeatures ? (
-          <button type="button" onClick={() => setShowFeatures(true)} className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-ink-100">
-            <Plus aria-hidden className="h-3.5 w-3.5" /> {S.addFeatures}
+        {!featuresOpen ? (
+          <button type="button" onClick={() => setFeaturesOpen(true)} aria-expanded={false} className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-ink-100">
+            <ChevronDown aria-hidden className="h-3.5 w-3.5" /> {S.addFeatures}
+            {ticked ? <span className="text-ink-500"> · {S.includesCount(ticked)}</span> : null}
           </button>
         ) : null}
         {queued ? (
@@ -140,9 +142,9 @@ export function ShapePanel({
           </p>
         ) : null}
       </CardSection>
-      {ticked || showFeatures ? (
+      {featuresOpen ? (
         <CardSection>
-          <FeaturesBlock shape={shape} features={features} kit={kit} onPatchKit={onPatchKit} />
+          <FeaturesBlock shape={shape} features={features} kit={kit} onPatchKit={onPatchKit} onCollapse={() => setFeaturesOpen(false)} />
         </CardSection>
       ) : null}
       {own ? (
@@ -165,7 +167,6 @@ function LaneControl({ lane, onSave }: { lane: ShapeLane; onSave: (lane: ShapeLa
   if (!editing)
     return (
       <div className="flex shrink-0 items-center gap-2">
-        <span className="text-xs text-ink-500">{LANE_COPY.title}</span>
         <span className="text-sm font-medium text-ink-100" title={LANE_COPY.lanes[lane].hint}>
           {LANE_COPY.lanes[lane].label}
         </span>

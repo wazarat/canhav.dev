@@ -162,7 +162,7 @@ export interface BuildStepsPatch {
   done: string[];
   undone: string[];
   /** Steps to add under a shape (M50). Project build steps only. A milestone lands it under Testnet or Review (M163), design when left out. */
-  add?: Array<{ shape: string; shapes?: string[]; title: string; detail?: string; milestone?: "design" | "testnet" | "review"; feature?: string }>;
+  add?: Array<{ shape: string; shapes?: string[]; title: string; detail?: string; milestone?: "design" | "testnet" | "review" | "launch"; feature?: string }>;
   /** Step ids to remove from the sections. A catalog id hides its whole shared group. */
   remove?: string[];
   /** Removed catalog step ids to bring back. */
@@ -240,7 +240,7 @@ const consumerPersona = z.strictObject({
 const SHAPE_REF = z
   .string()
   .max(60)
-  .refine((v): boolean => isProductShape(v) || isOwnShapeId(v), "Name one of our shapes or an own shape id (own.<slug>)");
+  .refine((v): boolean => isProductShape(v) || isOwnShapeId(v), "Name one of our modules or an own module id (own.<slug>)");
 
 export const projectPatchSchema = z
   .strictObject({
@@ -509,7 +509,7 @@ export const projectPatchSchema = z
         // Where each shape sits (M177), shape id to core, exploring or later.
         shapeLanes: z
           .record(z.string().max(60), z.enum(SHAPE_LANES))
-          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many modules"),
         // Lines added to what a shape includes (M179): add under a shape, remove by id.
         ownFeatures: z
           .strictObject({
@@ -528,14 +528,14 @@ export const projectPatchSchema = z
         // The team's definition of one of our shapes (M178); empty restores ours. An own shape's goes through ownShapes.edit detail.
         shapeParagraphs: z
           .record(z.string().max(60), z.string().max(KIT_LIMITS.ownShapes.detailMax))
-          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many modules"),
         // Each shape's icon and colour (M177); null clears a field.
         shapeStyles: z
           .record(
             z.string().max(60),
             z.strictObject({ icon: z.string().max(40).nullable().optional(), color: z.enum(SHAPE_COLORS).nullable().optional() }),
           )
-          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many shapes"),
+          .refine((o) => Object.keys(o).length <= KIT_LIMITS.shapes.maxPlus, "Too many modules"),
       })
       .partial(),
   })
@@ -1075,19 +1075,19 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
   const k = patch.kit;
   if (!k) return null;
   if (kitsForSectors(sectors, next.subsectors ?? []).length === 0 && !next.kit)
-    return "This project has no subsector with product shapes yet. Send sectors and subsectors first, in the same change or an earlier one.";
+    return "This project has no subsector with product modules yet. Send sectors and subsectors first, in the same change or an earlier one.";
   if (k.shapes) {
-    if (k.shapes.length + (next.kit?.ownShapes?.length ?? 0) > KIT_LIMITS.shapes.maxPlus) return `At most ${KIT_LIMITS.shapes.maxPlus} shapes per project, ours and own together (3 on Studio). Pick the ones the product is really made of.`;
+    if (k.shapes.length + (next.kit?.ownShapes?.length ?? 0) > KIT_LIMITS.shapes.maxPlus) return `At most ${KIT_LIMITS.shapes.maxPlus} modules per project, ours and own together (3 on Studio). Pick the ones the product is really made of.`;
     const offered = offeredShapes(next.subsectors ?? []);
     const stray = k.shapes.filter((s) => !offered.includes(s));
-    if (stray.length) return `${stray[0]} is not offered under this project's subsectors (${(next.subsectors ?? []).join(", ") || "none"}). Offered shapes are ${offered.join(", ") || "none"}.`;
+    if (stray.length) return `${stray[0]} is not offered under this project's subsectors (${(next.subsectors ?? []).join(", ") || "none"}). Offered modules are ${offered.join(", ") || "none"}.`;
     next = { ...next, ...shapesChange(next, k.shapes, KIT_LIMITS.shapes.maxPlus) };
   }
   const shapes = kitShapes(next.kit);
   const tick = k.resources?.tick ?? [];
   const untick = k.resources?.untick ?? [];
   if ((tick.length || untick.length || k.review?.length) && shapes.length === 0)
-    return "This project has no product shape yet, so it has no resource pack and no review passes. Send kit.shapes first.";
+    return "This project has no product module yet, so it has no resource pack and no review passes. Send kit.shapes first.";
   if (tick.length || untick.length) {
     const pack = new Set(packFor(KIT_CATALOG, next.kit, next).map((r) => r.id));
     const unknown = [...tick, ...untick].filter((id) => !pack.has(id));
@@ -1103,7 +1103,7 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
   const decided = Object.keys(k.templates ?? {});
   if (decided.length) {
     if (shapes.length === 0)
-      return "This project has no product shape yet, so it has no contract templates. Send kit.shapes first.";
+      return "This project has no product module yet, so it has no contract templates. Send kit.shapes first.";
     // The one decidable set (M80), the same get_templates lists.
     const reachable = reachableTemplateIds(shapes, projectChainOf(next), { includeInactive: true });
     const unknown = decided.filter((id) => !reachable.has(id));
@@ -1111,7 +1111,7 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
       const ids = [...reachable];
       const shown = ids.slice(0, 20).join(", ");
       const rest = ids.length > 20 ? ` and ${ids.length - 20} more on get_templates` : "";
-      return `Unknown template ${unknown.slice(0, 3).join(", ")}. This project's shapes can decide ${shown}${rest}.`;
+      return `Unknown template ${unknown.slice(0, 3).join(", ")}. This project's modules can decide ${shown}${rest}.`;
     }
   }
   // Own shapes (M176): the ids named must exist, a new one must fit the cap, picked steps must be ours.
@@ -1120,37 +1120,37 @@ export function projectPatchProblem(doc: ProjectDoc, patch: ProjectPatch): strin
     const mine = new Set((next.kit?.ownShapes ?? []).map((x) => x.id as string));
     const named = [...(o.edit ?? []).map((e) => e.id), ...(o.remove ?? []), ...(o.steps ?? []).map((e) => e.shape)];
     const missing = named.filter((id) => !mine.has(id));
-    if (missing.length) return `${missing[0]} is not a shape this project made. Read get_build_steps for ownShapes.`;
+    if (missing.length) return `${missing[0]} is not a module this project made. Read get_build_steps for ownShapes.`;
     const after = allShapes(next.kit).length + (o.add?.length ?? 0) - (o.remove?.length ?? 0);
-    if ((o.add?.length ?? 0) > 0 && after > KIT_LIMITS.shapes.maxPlus) return `At most ${KIT_LIMITS.shapes.maxPlus} shapes per project, ours and own together (3 on Studio).`;
+    if ((o.add?.length ?? 0) > 0 && after > KIT_LIMITS.shapes.maxPlus) return `At most ${KIT_LIMITS.shapes.maxPlus} modules per project, ours and own together (3 on Studio).`;
     const stepIds = (o.steps ?? []).flatMap((e) => e.add);
     const unknownSteps = stepIds.filter((id) => !checklistItemById(id));
-    if (unknownSteps.length) return `Unknown catalog step ${unknownSteps.slice(0, 3).join(", ")}. Pick ids from get_build_steps of our shapes, or add a step of your own with set_build_steps.`;
+    if (unknownSteps.length) return `Unknown catalog step ${unknownSteps.slice(0, 3).join(", ")}. Pick ids from get_build_steps of our modules, or add a step of your own with set_build_steps.`;
   }
   const allNames = new Set<string>([...allShapes(next.kit)]);
   const ideaLines = [...(k.ideas ?? []), ...(k.addIdeas ?? []), ...(k.removeIdeas ?? [])];
   if (ideaLines.length) {
     const stray = ideaLines.filter((i) => !allNames.has(i.shape));
-    if (stray.length) return `${stray[0].shape} is not one of this project's shapes (${[...allNames].join(", ") || "none"}), so a line cannot name it.`;
+    if (stray.length) return `${stray[0].shape} is not one of this project's modules (${[...allNames].join(", ") || "none"}), so a line cannot name it.`;
   }
   const named = [...Object.keys(k.shapeLanes ?? {}), ...Object.keys(k.shapeStyles ?? {}), ...Object.keys(k.shapeParagraphs ?? {}), ...(k.ownFeatures?.add ?? []).map((f) => f.shape)];
   const unknownLine = (k.ownFeatures?.remove ?? []).find((id) => !(next.kit?.ownFeatures ?? []).some((f) => f.id === id));
   if (unknownLine) return `${unknownLine} is not a line this project added. Read ownFeatures on get_build_steps.`;
-  if ((next.kit?.ownFeatures?.length ?? 0) + (k.ownFeatures?.add?.length ?? 0) > KIT_LIMITS.ownFeatures.max) return `At most ${KIT_LIMITS.ownFeatures.max} lines of your own across the shapes.`;
+  if ((next.kit?.ownFeatures?.length ?? 0) + (k.ownFeatures?.add?.length ?? 0) > KIT_LIMITS.ownFeatures.max) return `At most ${KIT_LIMITS.ownFeatures.max} lines of your own across the modules.`;
   const ownPara = Object.keys(k.shapeParagraphs ?? {}).find((x) => isOwnShapeId(x));
-  if (ownPara) return `${ownPara} is a shape the team made; change its definition with ownShapes.edit detail.`;
+  if (ownPara) return `${ownPara} is a module the team made; change its definition with ownShapes.edit detail.`;
   if (named.length) {
     const stray = named.find((x) => !allNames.has(x));
-    if (stray) return `${stray} is not one of this project's shapes (${[...allNames].join(", ") || "none"}). Add it with add_shape first.`;
+    if (stray) return `${stray} is not one of this project's modules (${[...allNames].join(", ") || "none"}). Add it with add_module first.`;
     const badIcon = Object.values(k.shapeStyles ?? {}).find((v) => v.icon && !isShapeIconName(v.icon));
-    if (badIcon) return `Unknown icon ${badIcon.icon}. Read the icon names on set_shape.`;
+    if (badIcon) return `Unknown icon ${badIcon.icon}. Read the icon names on set_module.`;
   }
   const ticked = Object.keys(k.features ?? {});
   if (ticked.length) {
-    if (shapes.length === 0) return "This project has no product shape yet, so it has no features. Send kit.shapes first.";
+    if (shapes.length === 0) return "This project has no product module yet, so it has no features. Send kit.shapes first.";
     const known = new Set(featuresFor(shapes).map((f) => f.id));
     const unknown = ticked.filter((id) => !known.has(id));
-    if (unknown.length) return `Unknown feature ${unknown.slice(0, 3).join(", ")}. Read get_build_steps for the feature ids of this project's shapes.`;
+    if (unknown.length) return `Unknown feature ${unknown.slice(0, 3).join(", ")}. Read get_build_steps for the feature ids of this project's modules.`;
   }
   return null;
 }
@@ -1179,7 +1179,7 @@ export function buildStepIds(doc: ProjectDoc): Set<string> {
 /** Null when every id belongs to this project's build steps, else the problem. */
 export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): string | null {
   if (!doc.kit || allShapes(doc.kit).length === 0)
-    return "This project has no product shape yet, so it has no build steps. Set kit.shapes with update_project, or the owner picks a shape in the studio.";
+    return "This project has no product module yet, so it has no build steps. Set kit.shapes with update_project, or the owner picks a module in the studio.";
   if (buildStepKeys(patch).length === 0) return "Name at least one build step.";
   const known = buildStepIds(doc);
   const add = patch.add ?? [];
@@ -1201,7 +1201,7 @@ export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): stri
   const shapes: string[] = allShapes(doc.kit);
   const badShape = [...add.flatMap((a) => [a.shape, ...(a.shapes ?? [])]), ...(patch.shapes ?? []).flatMap((e) => e.shapes)].find((x) => !shapes.includes(x));
   if (badShape)
-    return `${badShape} is not one of this project's shapes (${shapes.join(", ")}). A step goes on a shape the project builds; add one with add_shape.`;
+    return `${badShape} is not one of this project's modules (${shapes.join(", ")}). A step goes on a module the project builds; add one with add_module.`;
   // A feature a step names must be ours or a line this project added (M179).
   const knownFeature = (f: string) => FEATURE_IDS.has(f) || (doc.kit?.ownFeatures ?? []).some((o) => o.id === f);
   const badFeature = [...add.map((a) => a.feature), ...(patch.featureLinks ?? []).map((e) => e.feature)].find((f): f is string => Boolean(f) && !knownFeature(f!));
@@ -1209,7 +1209,7 @@ export function buildStepsProblem(doc: ProjectDoc, patch: BuildStepsPatch): stri
   const notLinkable = (patch.featureLinks ?? []).find((e) => !(doc.kit?.customSteps ?? []).some((c) => c.id === e.id));
   if (notLinkable) return `${notLinkable.id} is not a step the team added. Only added steps link to a feature; a catalog step's feature comes from the catalog.`;
   const notAdded = (patch.shapes ?? []).find((e) => !(doc.kit?.customSteps ?? []).some((c) => c.id === e.id));
-  if (notAdded) return `${notAdded.id} is not a step the team added. Only added steps change shapes; a catalog step follows its shapes.`;
+  if (notAdded) return `${notAdded.id} is not a step the team added. Only added steps change modules; a catalog step follows its modules.`;
   const room = KIT_LIMITS.customSteps.max - (doc.kit.customSteps?.length ?? 0);
   if (add.length > room) return `This project can add ${Math.max(room, 0)} more build steps.`;
   const hidden = new Set(doc.kit.hiddenSteps ?? []);
@@ -1515,7 +1515,7 @@ const PATH_LABELS: Record<string, string> = {
   "architecture.adminFunctionsLegacy": "Admin functions, the earlier answer",
   references: "Project files",
   waived: "Not applicable",
-  "kit.shapes": "Product shapes",
+  "kit.shapes": "Product modules",
   "kit.startingPoint": "Starting point",
   "kit.existingProduct": "Existing product",
   "kit.resources.tick": "Resources to tick",

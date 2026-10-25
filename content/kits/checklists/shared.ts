@@ -20,7 +20,7 @@ export const SHARED_STEPS: readonly SharedStep[] = [
     shapes: PRODUCT_SHAPE_VALUES,
     title: "Run the review passes and record the evidence",
     detail:
-      "Every pass on the Security step for the shapes you build, with a verdict and the evidence behind it. One review for the whole product.",
+      "Every pass on the Security step for the modules you build, with a verdict and the evidence behind it. One review for the whole product.",
   },
   {
     slug: "environment",

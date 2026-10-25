@@ -35,8 +35,8 @@ export const NEW_PROJECT_COPY = {
     whatItDoesLabel: "What are you building?",
     whatItDoesHint: "One line is enough here. The full description comes later, or your agent writes it from this over MCP.",
     whatItDoesPlaceholder: "A vault that lends idle treasury into fixed rate markets.",
-    subsectorHint: "Pick what fits. Each subsector brings its own build steps and research, and the chosen shape fills the Build tab from day one.",
-    agentHint: "No sector yet, so the subsector and shape wait. Your agent can classify the project from the description over MCP, or pick them under Decisions.",
+    subsectorHint: "Pick what fits. Each subsector brings its own build steps and research, and the chosen module fills the Build tab from day one.",
+    agentHint: "No sector yet, so the subsector and module wait. Your agent can classify the project from the description over MCP, or pick them under Decisions.",
   },
   chain: {
     /** Robinhood testnet is picked from the start (M148); the project stores what is picked. */

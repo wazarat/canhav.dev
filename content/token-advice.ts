@@ -289,7 +289,7 @@ export const TOKEN_ADVICE_COPY = {
   lock: "What to lock",
   example: "For example",
   merged:
-    "Merged across the shapes this project builds. A reason counts as fitting when it fits any of them.",
-  mismatch: "The reason picked below is one to avoid for every shape this project builds.",
+    "Merged across the modules this project builds. A reason counts as fitting when it fits any of them.",
+  mismatch: "The reason picked below is one to avoid for every module this project builds.",
   none: "None",
 } as const;

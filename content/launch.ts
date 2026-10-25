@@ -642,7 +642,7 @@ export const MCP_GUIDE = {
       status: "What is left before launch",
       pack: "Load the resource pack",
       token: "Where the token stands",
-      packNone: "The resource pack opens once this project has a product shape, under What are you building in Basics.",
+      packNone: "The resource pack opens once this project has a product module, under What are you building in Basics.",
       review: "Walk the pre-launch review",
       reviewNote: "This one is a slash command. Type it in Claude Code.",
     },
@@ -731,7 +731,7 @@ export const MCP_GUIDE = {
     const title = name.trim() ? `my CanHav project "${name.trim()}"` : "my CanHav project";
     const read = opts.hasKit
       ? `Then call get_resource_pack, fetch the rawUrl of every core resource in readFirst order and read them before you suggest any code. Respect the flags. mainnet_only, not_on_robinhood and self_deploy decide where things can run. Call get_comparables before you propose architecture, for how protocols in the same subsector are built and what goes wrong with each design, and read its risks before the security review passes.`
-      : `There is no resource pack yet because the project has no product shape. Skip get_resource_pack until I pick what I am building under Decisions, or classify the project yourself with update_project. Once a subsector is set, call get_comparables before you propose architecture.`;
+      : `There is no resource pack yet because the project has no product module. Skip get_resource_pack until I pick what I am building under Decisions, or classify the project yourself with update_project. Once a subsector is set, call get_comparables before you propose architecture.`;
     const last =
       opts.mode === "propose"
         ? `6. Agent writes are set to propose on this project. Offer to fill in the missing fields with update_project and to tick finished build steps with set_build_steps, using this repository as evidence. As you work in this repository, tick each build step with set_build_steps as soon as it is done, with a note naming the file that proves it, and record architecture facts with update_project when you learn them. Keep the project summary current with set_summary, a few plain lines on what is built and what is being built, whenever something lands. Do not wait for the end of the run. Each change waits under Agent changes on the project page until I accept it. Every read on this server already shows the draft with my waiting proposals applied (pending names them, preview false shows the stored draft), so keep building on what you proposed and tell me when to look. If a proposal of yours turns out wrong or is replaced by a later one, take it back with withdraw_changes rather than leaving both for me. Before you start, call report_session with your plan; call it again after each step with the plan updated, with awaiting_input when you need something from me, and with done and a short message at the end.`
@@ -782,7 +782,7 @@ export const EXPLORE_COPY = {
   },
   projects: {
     title: "Published projects",
-    lead: "Every project published from the CanHav studio, newest first. Open one to see what it builds, its sectors and shapes, its security declarations and any token launched from it. A project needs no token to be here.",
+    lead: "Every project published from the CanHav studio, newest first. Open one to see what it builds, its sectors and modules, its security declarations and any token launched from it. A project needs no token to be here.",
     cta: "Start a project →",
     href: "/studio",
   },

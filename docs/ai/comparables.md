@@ -17,7 +17,7 @@ Nothing time bound leaves the store. No metrics (TVL, APY, supply, volume), no d
 |--------|------|-----------|
 | Shared, no sign in | `get_comparables` | `subsector`, `shape` (resolved through the shape's subsectors), `entity` (one id), `include` (any of `components`, `contrasts`, `risks`, `dependencies`, `links`, all by default) |
 | Shared, no sign in | `get_asset_types` | `pegMechanism`, `receiptType`, `baseAsset`; the answer lists the distinct values under `facets` |
-| Project | `get_comparables` | `include` only. Bound to the project's subsectors (declared ones plus the ones its shapes imply), with `templateIds` per entity so the agent can jump to `get_templates` |
+| Project | `get_comparables` | `include` only. Bound to the project's subsectors (declared ones plus the ones its modules imply), with `templateIds` per entity so the agent can jump to `get_templates` |
 
 The paste prompt, the kit `SKILL.md` files, `AGENTS.md` and the resource pack's how to use line all tell the agent to call `get_comparables` before proposing architecture and to read the risks for its subsectors before the security review passes.
 

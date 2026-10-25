@@ -42,6 +42,14 @@ classes:
 - `Menu` and `MenuItem` (`Menu.tsx`) for dropdowns, `InfoTip` for helper
   copy behind an info icon, `Collapsible` for "Learn more" rows.
 
+### Modules are shapes in code (M181)
+
+What the code calls a shape (`ProductShape`, `kit.shapes`, `ownShapes`,
+`shape` on a step) people read as a **module**. Every UI string, export,
+doc and MCP description says module; ids, stored fields and parameter
+names keep shape. The MCP tools are `add_module`, `remove_module` and
+`set_module`, with the `*_shape` names kept as aliases.
+
 ### Status and facts are plain text (M137)
 
 Status and facts are written as text, never as a box. `MetaLine`

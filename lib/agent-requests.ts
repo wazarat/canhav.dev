@@ -101,7 +101,7 @@ export function agentRequestHowTo(kind: AgentRequestKind, envFile = ".env"): str
   if (kind === "assets")
     return "Read the contracts in this repository and record the tokens they touch with update_project assets, each with a symbol, a role (collateral, borrow, quote, underlying or reward) and the address where you know it. Writing assets clears this request.";
   if (kind === "shape")
-    return "Ideate the shape the team made, named in target. Read its name and the paragraph on what the team wants it to do under ownShapes on get_build_steps, then put the build steps it needs on it (pick catalog steps onto it with update_project kit.ownShapes.steps, or add steps of your own with set_build_steps), place it in a lane with set_shape if it is not core, and name the work in report_session's plan. Writing its steps clears this request.";
+    return "Ideate the module the team made, named in target. Read its name and the paragraph on what the team wants it to do under ownShapes on get_build_steps, then put the build steps it needs on it (pick catalog steps onto it with update_project kit.ownShapes.steps, or add steps of your own with set_build_steps), place it in a lane with set_module if it is not core, and name the work in report_session's plan. Writing its steps clears this request.";
   return "Work the step in this repository, add the file, test or address as evidence and tick it with set_build_steps, and name it in report_session's plan. Ticking it clears this request.";
 }
 

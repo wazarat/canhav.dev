@@ -19,7 +19,7 @@ export function renderProjectContext(doc: ProjectDoc, extras: string[] = []): st
       "",
       "## Kit",
       "",
-      `Shapes: ${s.shapeLabels.join(", ") || "none"}. Chain: ${s.chain}. Build steps ${s.sections.checklist.done} of ${s.sections.checklist.total} done.`, // copy-ok, model context
+      `Modules: ${s.shapeLabels.join(", ") || "none"}. Chain: ${s.chain}. Build steps ${s.sections.checklist.done} of ${s.sections.checklist.total} done.`, // copy-ok, model context
     );
   }
   // The kind's extras carry what the draft is about (the questions, the

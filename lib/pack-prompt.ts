@@ -50,7 +50,7 @@ function facts(input: PackPromptInput): string[] {
   const out: string[] = [];
   out.push(`Chain, ${chainInfo(chain).name}${chainIsBeta(chain) ? " (beta)" : ""}, standing in for ${chainInfo(chain).mainnetName}.`);
   const shapes = kitShapes(doc.kit);
-  if (shapes.length) out.push(`Product shapes, ${shapes.map((s) => shapeLabel(s) ?? s).join(", ")}.`);
+  if (shapes.length) out.push(`Product modules, ${shapes.map((s) => shapeLabel(s) ?? s).join(", ")}.`);
   const progress = buildProgress(doc.kit);
   if (progress.total) out.push(`Build progress, ${progress.done} of ${progress.total} steps done.`);
   const contracts = testnetContractRows(doc).filter((c) => /^0x[0-9a-f]{40}$/i.test(c.address));

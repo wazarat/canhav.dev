@@ -25,7 +25,7 @@ export const VIABILITY_COPY = {
     dependencies: {
       title: "Can it be built here",
       question: "Does everything this idea depends on exist on the project's chain today, and if not, what is the workaround?",
-      empty: "The check reads the protocols your shapes rely on, the templates you accepted, the external dependencies on Decisions and the assets below, then says for each one whether it is available, mainnet only, a workaround or missing.",
+      empty: "The check reads the protocols your modules rely on, the templates you accepted, the external dependencies on Decisions and the assets below, then says for each one whether it is available, mainnet only, a workaround or missing.",
     },
     gaps: {
       title: "What is live on this chain",
@@ -92,7 +92,7 @@ export const VIABILITY_COPY = {
     },
     /** The sentence on top. */
     summary: (available: number, total: number, chain: string) =>
-      total === 0 ? `Nothing to check yet on ${chain}. Pick a product shape and add the assets.` : `${available} of ${total} dependencies ${available === 1 ? "is" : "are"} available on ${chain}.`,
+      total === 0 ? `Nothing to check yet on ${chain}. Pick a product module and add the assets.` : `${available} of ${total} dependencies ${available === 1 ? "is" : "are"} available on ${chain}.`,
     missingLine: (names: readonly string[]) => (names.length === 1 ? `${names[0]} is missing.` : `${names.join(", ")} are missing.`),
     workaroundLine: (n: number) => (n === 1 ? "One needs a workaround." : `${n} need a workaround.`),
     mainnetOnlyLine: (n: number) => (n === 1 ? "One runs on the mainnet only." : `${n} run on the mainnet only.`),
@@ -153,7 +153,7 @@ export const VIABILITY_COPY = {
     addStep: "Add as a step",
     addedStep: (milestone: string) => `Added under ${milestone}`,
     stepsFull: "The forty added steps are used. Remove one on Build first.",
-    noShape: "Pick a product shape under Decisions and the protocols it relies on appear here.",
+    noShape: "Pick a product module under Decisions and the protocols it relies on appear here.",
     noAssets: "Add the assets above and each one gets its price feed and liquidity here.",
   },
   /** The gap map (M165). Counts are words and numbers in text, shading is the ink scale, never a chip. */

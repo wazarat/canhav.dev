@@ -68,7 +68,7 @@ export const KIT_COPY = {
   shapeLabel: "What are you building",
   shapeHint: "Pick every layer your users touch, up to three. The research kit merges the packs for what you choose.",
   /** Under the shape chips (M131). */
-  shapeCap: (max: number) => `Up to ${max} shapes per project, ours and your own together. Studio holds 3 and Studio+ holds 10.`,
+  shapeCap: (max: number) => `Up to ${max} modules per project, ours and your own together. Studio holds 3 and Studio+ holds 10.`,
   /** One line per subsector that names its shape on its own. */
   buildingLine: (phrase: string, sentence: string) => `I am building ${phrase}. ${sentence}`,
   buildingHint: "These follow from the subsectors you picked. Untick a subsector to drop its product.",
@@ -85,7 +85,7 @@ export const KIT_COPY = {
   ideaCancel: "Cancel",
   ideasExport: (n: number) => (n === 1 ? "One line the team ticked or wrote." : `${n} lines the team ticked or wrote.`),
   /** The shapes dialog (M68 follow-up). */
-  overlapTrigger: "How the shapes relate",
+  overlapTrigger: "How the modules relate",
   overlapLead: (n: number) =>
     n === 1
       ? "One product. Its research pack, build steps and contract templates are its own."
@@ -98,7 +98,7 @@ export const KIT_COPY = {
   overlapNone: "Nothing is shared between these products yet.",
   overlapHow: "How the stack fits together",
   /** The collapsed row that holds the shape blurbs and the overlap dialog (M76). */
-  aboutShapes: "About these shapes",
+  aboutShapes: "About these modules",
   startingPointLabel: "Starting point",
   existingProductLabel: "What exists today",
   existingProductHint: "A link or one line. Optional.",
@@ -179,13 +179,13 @@ export const LANE_COPY = {
     later: { label: "Later", hint: "Add and test later" },
   },
   noParagraph: "No description yet.",
-  export: "Shapes by lane",
+  export: "Modules by lane",
   exportLine: (lane: string, items: string) => `${lane}. ${items}`,
 } as const;
 
 export const CHECKLIST_COPY = {
   intro: "The order a small team should take these. Tick a step when it is written down, not when it is started.",
-  none: "Build steps for this shape are on the way.",
+  none: "Build steps for this module are on the way.",
   progress: (done: number, total: number) => `${done} of ${total} done`,
   rowChip: (done: number, total: number) => `Build ${done} of ${total}`,
   /** The product sections in the step nav (M43). */
@@ -196,10 +196,10 @@ export const CHECKLIST_COPY = {
   sharedNote: (labels: readonly string[]) => `This step is also part of ${joinAnd(labels)}.`,
   sharedAbove: (n: number, labels: readonly string[]) =>
     `${n === 1 ? "1 more step is" : `${n} more steps are`} shared with ${joinAnd(labels)} and listed ${labels.length === 1 ? "in that section" : "in those sections"}.`,
-  partial: (n: number, m: number) => `Ticked for ${n} of ${m} shapes`,
+  partial: (n: number, m: number) => `Ticked for ${n} of ${m} modules`,
   sharedTag: (labels: readonly string[]) => `also part of ${joinAnd(labels)}`,
   sharedAboveLine: (labels: readonly string[]) => `Shared with ${joinAnd(labels)}, listed above.`,
-  countNote: "Steps shared between shapes count once.",
+  countNote: "Steps shared between modules count once.",
   /** Added and removed steps (M50). */
   customBadge: "Your step",
   customTag: "added by the team",
@@ -245,6 +245,7 @@ export const CHECKLIST_COPY = {
   featureCancel: "Cancel",
   featureRemove: (title: string) => `Remove ${title}`,
   featureYours: "Yours",
+  featuresCollapse: "Hide what this product includes",
   featureAdds: (steps: number, templates: number) =>
     [
       steps ? `Adds ${steps} ${steps === 1 ? "step" : "steps"}` : "",
@@ -286,7 +287,7 @@ export const REVIEW_COPY = {
 export const ENVIRONMENT_COPY = {
   title: "Where this runs today",
   intro:
-    "Your chain and each protocol your shapes rely on, on its testnet and its mainnet, checked by hand on the date shown. The same block reaches your agent through get_resource_pack.",
+    "Your chain and each protocol your modules rely on, on its testnet and its mainnet, checked by hand on the date shown. The same block reaches your agent through get_resource_pack.",
   testnet: (chainId: number) => `Testnet ${chainId}`,
   mainnet: (chainId: number) => `Mainnet ${chainId}`,
   status: {
@@ -376,7 +377,7 @@ export const GATE_COPY = {
   section: (families: readonly string[], chain: string) =>
     `${joinAnd(families)} ${families.length === 1 ? "has" : "have"} no deployment on ${chain} yet. Remove the steps that do not fit and add your own below, or ask your agent to write them. Work against mocks, your own deployment or a fork of mainnet until one lands.`,
   catalogRule:
-    "A shape is marked when a protocol family it relies on has no official or community deployment on the project's testnet. It can still be picked, and the team or its agent writes the build steps that fit.",
+    "A module is marked when a protocol family it relies on has no official or community deployment on the project's testnet. It can still be picked, and the team or its agent writes the build steps that fit.",
 } as const;
 
 /** "A", "A and B", "A, B and C". */

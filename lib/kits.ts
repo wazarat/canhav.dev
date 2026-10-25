@@ -435,7 +435,8 @@ export const TEMPLATE_DECISIONS: readonly TemplateDecision[] = ["accepted", "rej
 export type TemplateState = TemplateDecision | "open";
 
 /** The milestones an added step can land under (M163); absent reads as design. Launch holds no added steps. */
-export const CUSTOM_STEP_MILESTONES = ["design", "testnet", "review"] as const;
+/** The milestones a step the team adds can sit under (M163; launch since M181, from the + on each milestone). */
+export const CUSTOM_STEP_MILESTONES = ["design", "testnet", "review", "launch"] as const;
 export type CustomStepMilestone = (typeof CUSTOM_STEP_MILESTONES)[number];
 
 /** Where an added step came from (M163): the dependency check on the Viability tab. Absent for a step typed by the team or its agent. */
@@ -901,12 +902,12 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
   if (kit.kits.length === 0 || kit.kits[0] !== kit.id) return "Research kits are out of step.";
   if (expected.length && (expected.length !== kit.kits.length || expected.some((k, i) => k !== kit.kits[i])))
     return "Research kits are out of step.";
-  if (kit.shape && !PRODUCT_SHAPE_VALUES.includes(kit.shape)) return "Unknown product shape.";
-  if (kit.shapes.some((s) => !PRODUCT_SHAPE_VALUES.includes(s))) return "Unknown product shape.";
+  if (kit.shape && !PRODUCT_SHAPE_VALUES.includes(kit.shape)) return "Unknown product module.";
+  if (kit.shapes.some((s) => !PRODUCT_SHAPE_VALUES.includes(s))) return "Unknown product module.";
   // Stored docs from before the cap (M131) may hold more shapes than the picker allows now.
   if (new Set(kit.shapes).size !== kit.shapes.length || kit.shapes.length > PRODUCT_SHAPE_VALUES.length)
-    return "Too many product shapes.";
-  if (kit.shape && !kit.shapes.includes(kit.shape)) return "Product shapes are out of step.";
+    return "Too many product modules.";
+  if (kit.shape && !kit.shapes.includes(kit.shape)) return "Product modules are out of step.";
   if (kit.startingPoint && !STARTING_POINT_VALUES.includes(kit.startingPoint))
     return "Unknown starting point.";
   if ((kit.existingProduct?.length ?? 0) > KIT_LIMITS.existingProduct.max)
@@ -924,7 +925,7 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     const L = KIT_LIMITS.customSteps;
     if (kit.customSteps.length > L.max) return `At most ${L.max} added build steps.`;
     for (const c of kit.customSteps) {
-      if (customStepShapes(c).some((x) => !isProductShape(x) && !ownShapeOf(kit, x))) return "An added build step names an unknown product shape.";
+      if (customStepShapes(c).some((x) => !isProductShape(x) && !ownShapeOf(kit, x))) return "An added build step names an unknown product module.";
       if (c.title.trim().length < L.titleMin) return `An added build step needs a title of at least ${L.titleMin} characters.`;
       if (c.title.length > L.titleMax) return `An added build step title is over ${L.titleMax} characters.`;
       if (c.detail.length > L.detailMax) return `An added build step detail is over ${L.detailMax} characters.`;
@@ -934,10 +935,10 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
   if (kit.ownShapes) {
     const L = KIT_LIMITS.ownShapes;
     for (const o of kit.ownShapes) {
-      if (!isOwnShapeId(o.id)) return "A shape you made has an unreadable id.";
-      if (o.title.trim().length < L.titleMin) return `A shape you made needs a name of at least ${L.titleMin} characters.`;
-      if (o.title.length > L.titleMax) return `A shape name is over ${L.titleMax} characters.`;
-      if (o.detail.length > L.detailMax) return `A shape description is over ${L.detailMax} characters.`;
+      if (!isOwnShapeId(o.id)) return "A module you made has an unreadable id.";
+      if (o.title.trim().length < L.titleMin) return `A module you made needs a name of at least ${L.titleMin} characters.`;
+      if (o.title.length > L.titleMax) return `A module name is over ${L.titleMax} characters.`;
+      if (o.detail.length > L.detailMax) return `A module description is over ${L.detailMax} characters.`;
     }
   }
 
@@ -958,7 +959,7 @@ export function validateProjectKit(kit: ProjectKit, expected: readonly KitId[] =
     const L = KIT_LIMITS.ideas;
     if (kit.ideas.length > L.max) return `At most ${L.max} lines under what you could build.`;
     for (const i of kit.ideas) {
-      if (!isProductShape(i.shape) && !ownShapeOf(kit, i.shape)) return "A what you could build line names an unknown product shape.";
+      if (!isProductShape(i.shape) && !ownShapeOf(kit, i.shape)) return "A what you could build line names an unknown product module.";
       if (i.text.trim().length < L.textMin) return `A what you could build line needs at least ${L.textMin} characters.`;
       if (i.text.length > L.textMax) return `A what you could build line is over ${L.textMax} characters.`;
     }

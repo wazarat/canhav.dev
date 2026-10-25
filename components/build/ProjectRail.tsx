@@ -74,7 +74,10 @@ export function ProjectRail({
   const shapes = shapeLabels(kit);
   const launch = launchRows(facts);
   const progress = (m: Milestone) =>
-    m === "launch" ? { done: launch.filter((r) => r.done).length, total: launch.length } : groupProgress(by[m], kit);
+    m === "launch"
+      ? // The derived launch rows plus any step the team added under Launch (M181).
+        { done: launch.filter((r) => r.done).length + groupProgress(by.launch, kit).done, total: launch.length + groupProgress(by.launch, kit).total }
+      : groupProgress(by[m], kit);
   const open = (Object.keys(tabProblems) as ProblemTab[]).filter((t) => tabProblems[t]);
   const started = MILESTONES.some((m) => progress(m).done > 0);
   const stage = projectStage(facts, problems, started);
