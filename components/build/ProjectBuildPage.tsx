@@ -167,7 +167,6 @@ export function ProjectBuildPage({
   const tabDots = useMemo(() => tabProblems(problems), [problems]);
   const kit = doc.kit;
   const kitIds = kitsForDoc(doc);
-  const hasKit = Boolean(kit?.shape);
   const patchKit = (partial: Partial<ProjectKit>) =>
     patch({ kit: { ...(kit ?? emptyProjectKit(kitIds)), ...partial } });
 
@@ -217,7 +216,6 @@ export function ProjectBuildPage({
         id={id}
         doc={doc}
         kit={kit}
-        hasKit={hasKit}
         agent={agent}
         paused={stale}
         onPatchKit={patchKit}

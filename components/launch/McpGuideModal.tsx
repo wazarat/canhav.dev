@@ -27,7 +27,8 @@ const MODE_TONE: Record<AgentWriteMode, StatusTone> = {
 
 /**
  * The full guide to connecting an agent to one project, opened from the
- * project's MCP card. It leads with the write-mode switch and one prompt to
+ * Agent prompt button across from the project's name (the Overview card went
+ * in M184). It leads with the write-mode switch and one prompt to
  * paste into Claude whose last step follows that mode (M40). The six
  * step-by-step sections sit under a "Read the steps yourself" toggle for
  * anyone who wants to do it by hand.
@@ -151,6 +152,8 @@ export function McpGuideModal({
           )}
           {error ? <p className="text-xs text-rose-400">{error}</p> : null}
 
+          {/* The add command up front (M184), since the Overview no longer carries the MCP card. */}
+          <CopyLine label={MCP_CONNECT.steps.addProject} text={MCP_CONNECT.projectAddCommand(projectId, name)} />
           <CopyBlock
             label={MCP_GUIDE.paste}
             text={MCP_GUIDE.pastePrompt(projectId, name, {

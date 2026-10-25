@@ -16,7 +16,6 @@ import { ResourcesLine } from "@/components/build/ResourcesLine";
 import { TextField } from "@/components/ideation/TextField";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
 import type { DeployerFunding } from "@/components/build/useDeployerBalances";
-import { McpConnectCard } from "@/components/launch/McpConnectCard";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
 import { InfoTip } from "@/components/ui/InfoTip";
@@ -67,7 +66,6 @@ export function OverviewTab({
   id,
   doc,
   kit,
-  hasKit,
   agent,
   paused,
   onPatchKit,
@@ -82,7 +80,6 @@ export function OverviewTab({
   id: string;
   doc: ProjectDoc;
   kit: ProjectKit | undefined;
-  hasKit: boolean;
   agent: AgentChangesHandle;
   paused: boolean;
   onPatchKit: (partial: Partial<ProjectKit>) => void;
@@ -201,8 +198,6 @@ export function OverviewTab({
           <AgentFeed agent={agent} doc={doc} paused={paused} />
         </CardSection>
       </Card>
-
-      <McpConnectCard compact target={{ kind: "project", id, name: doc.name, hasKit }} />
 
       {linkPanel}
       <SummaryDialog open={summaryOpen} onClose={() => setSummaryOpen(false)} name={doc.name} projectId={id} summary={doc.summary ?? null} />

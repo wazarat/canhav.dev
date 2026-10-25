@@ -73,8 +73,8 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
       />
     </>
   );
-  // The panels sit inside Overview as flat cards; Overview renders the
-  // compact MCP card itself and Deployments owns the mainnet record.
+  // The panels sit inside Overview as flat cards; the agent prompt lives in
+  // the header's Agent prompt pop-up (M184) and Deployments owns the mainnet record.
   const panelClass = "rounded-xl border border-ink-700/60 bg-ink-900 p-5";
   const linkPanel = (
     <>
