@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 
 import { type DraftMeta, DraftControl } from "@/components/build/DraftControl";
 import { PlusGate } from "@/components/studio/PlusGate";
 import { Button } from "@/components/ui/Button";
 import { Card, CardSection } from "@/components/ui/Card";
-import { Field, Input } from "@/components/ui/Input";
+import { Input, TextArea } from "@/components/ui/Input";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { Segmented } from "@/components/ui/Segmented";
 import { Select, optionClasses } from "@/components/ui/Select";
-import { TextField } from "@/components/ideation/TextField";
 import { BUILD_COPY } from "@/content/build";
 import type { AgentWriteMode } from "@/lib/agent-writes";
 import { sectionsFor } from "@/content/kits/checklists";
@@ -23,21 +23,22 @@ import { DEFAULT_CADENCE, HIGHLIGHT_MILESTONES, type ProjectUpdate, UPDATE_CADEN
 
 type UpdateDoc = DraftMeta & Pick<ProjectDoc, "updateCadence" | "kit">;
 
-/** A highlight row while it is edited; an empty milestone is none. */
+/** A highlight row while it is edited; an empty milestone, module or step is any (M189). */
 interface Row {
   text: string;
   milestone: Milestone | "";
+  shape: string;
   step: string;
 }
 
-const toRows = (items: readonly UpdateHighlight[]): Row[] => items.map((h) => ({ text: h.text, milestone: h.milestone ?? "", step: h.step ?? "" }));
+const toRows = (items: readonly UpdateHighlight[]): Row[] => items.map((h) => ({ text: h.text, milestone: h.milestone ?? "", shape: h.shape ?? "", step: h.step ?? "" }));
 const toItems = (rows: readonly Row[]): UpdateHighlight[] =>
   rows
-    .map((r) => ({ text: r.text.trim(), milestone: r.milestone || null, ...(r.milestone && r.step ? { step: r.step } : {}) }))
+    .map((r) => ({ text: r.text.trim(), milestone: r.milestone || null, ...(r.shape ? { shape: r.shape } : {}), ...(r.milestone && r.step ? { step: r.step } : {}) }))
     .filter((h) => h.text)
     .slice(0, UPDATE_LIMITS.highlights.max);
 /** One string per row set, to tell whether the editor differs from the saved row. */
-const sig = (items: readonly UpdateHighlight[]) => JSON.stringify(items.map((h) => [h.text, h.milestone, h.step ?? ""]));
+const sig = (items: readonly UpdateHighlight[]) => JSON.stringify(items.map((h) => [h.text, h.milestone, h.shape ?? "", h.step ?? ""]));
 
 /** A focus row while it is edited (M183); an empty module or step is any. */
 interface FocusRow {
@@ -232,53 +233,84 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
           }}
         />
       )}
-      <TextField label={C.bodyLabel} value={body} onChange={setBody} max={UPDATE_LIMITS.body.max} rows={6} placeholder={C.bodyPlaceholder} />
-      <Field label={C.highlightsLabel} hint={C.highlightsHint}>
-        <div className="space-y-2">
-          {rows.map((r, i) => (
-            <div key={i} className="grid gap-2 sm:grid-cols-[9rem_14rem_minmax(0,1fr)_auto] sm:items-center">
-              <Select value={r.milestone} aria-label={C.highlightMilestone} onChange={(e) => setRow(i, { milestone: e.target.value as Milestone | "", step: "" })}>
-                <option value="" className={optionClasses}>
-                  {C.noMilestone}
-                </option>
-                {HIGHLIGHT_MILESTONES.map((m) => (
-                  <option key={m} value={m} className={optionClasses}>
-                    {BUILD_COPY.milestones[m].label}
+      <Block title={C.bodyLabel} aside={`${body.trim().length.toLocaleString("en-US")} / ${UPDATE_LIMITS.body.max.toLocaleString("en-US")}`}>
+        <TextArea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          maxLength={UPDATE_LIMITS.body.max}
+          rows={6}
+          placeholder={C.bodyPlaceholder}
+          aria-label={C.bodyLabel}
+          className="min-h-40 leading-relaxed"
+        />
+      </Block>
+      <Block title={C.highlightsLabel} hint={C.highlightsHint} aside={`${rows.length} / ${UPDATE_LIMITS.highlights.max}`}>
+        <div className="space-y-3">
+          {rows.length === 0 ? <p className="text-sm text-ink-500">{C.highlightsEmpty}</p> : null}
+          {rows.map((r, i) => {
+            const steps = r.milestone ? stepsFor(r.milestone, r.shape) : [];
+            return (
+              <div key={i} className="grid gap-2 sm:grid-cols-3 xl:grid-cols-[9rem_11rem_14rem_minmax(0,1fr)_auto] xl:items-center">
+                <Select value={r.milestone} aria-label={C.highlightMilestone} muted={!r.milestone} onChange={(e) => setRow(i, { milestone: e.target.value as Milestone | "", step: "" })}>
+                  <option value="" className={optionClasses}>
+                    {C.noMilestone}
                   </option>
-                ))}
-              </Select>
-              <Select
-                value={r.milestone ? stepKey(r.milestone, r.step) : ""}
-                aria-label={C.highlightStep}
-                disabled={!r.milestone || groups[r.milestone].length === 0}
-                onChange={(e) => setRow(i, { step: e.target.value })}
-              >
-                <option value="" className={optionClasses}>
-                  {C.anyStep}
-                </option>
-                {r.milestone
-                  ? groups[r.milestone].map((g) => (
-                      <option key={g.key} value={g.key} className={optionClasses}>
-                        {g.title}
-                      </option>
-                    ))
-                  : null}
-              </Select>
-              <Input value={r.text} onChange={(e) => setRow(i, { text: e.target.value })} maxLength={UPDATE_LIMITS.highlights.each} placeholder={C.highlightsPlaceholder} aria-label={C.highlightsLabel} />
-              <button type="button" onClick={() => setRows((all) => all.filter((_, j) => j !== i))} className="justify-self-start text-xs text-ink-400 hover:text-ink-100 hover:underline">
-                {C.removeHighlight}
-              </button>
-            </div>
-          ))}
+                  {HIGHLIGHT_MILESTONES.map((m) => (
+                    <option key={m} value={m} className={optionClasses}>
+                      {BUILD_COPY.milestones[m].label}
+                    </option>
+                  ))}
+                </Select>
+                <Select value={r.shape} aria-label={C.highlightModule} muted={!r.shape} onChange={(e) => setRow(i, { shape: e.target.value, step: "" })}>
+                  <option value="" className={optionClasses}>
+                    {C.anyModule}
+                  </option>
+                  {modules.map((m) => (
+                    <option key={m.id} value={m.id} className={optionClasses}>
+                      {m.name}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  value={r.milestone ? (steps.some((g) => g.key === r.step) ? r.step : stepKey(r.milestone, r.step)) : ""}
+                  aria-label={C.highlightStep}
+                  muted={!r.step}
+                  disabled={steps.length === 0}
+                  onChange={(e) => setRow(i, { step: e.target.value })}
+                >
+                  <option value="" className={optionClasses}>
+                    {C.anyStep}
+                  </option>
+                  {steps.map((g) => (
+                    <option key={g.key} value={g.key} className={optionClasses}>
+                      {g.title}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  value={r.text}
+                  onChange={(e) => setRow(i, { text: e.target.value })}
+                  maxLength={UPDATE_LIMITS.highlights.each}
+                  placeholder={C.highlightsPlaceholder}
+                  aria-label={C.highlightsLabel}
+                  className="sm:col-span-2 xl:col-span-1"
+                />
+                <button type="button" onClick={() => setRows((all) => all.filter((_, j) => j !== i))} className="justify-self-start text-xs text-ink-400 hover:text-ink-100 hover:underline">
+                  {C.removeHighlight}
+                </button>
+              </div>
+            );
+          })}
           {rows.length < UPDATE_LIMITS.highlights.max ? (
-            <button type="button" onClick={() => setRows((all) => [...all, { text: "", milestone: "", step: "" }])} className="text-xs text-ink-300 hover:text-ink-100 hover:underline">
-              {C.addHighlight}
-            </button>
+            <Button size="sm" variant="outline" onClick={() => setRows((all) => [...all, { text: "", milestone: all[all.length - 1]?.milestone ?? "", shape: all[all.length - 1]?.shape ?? "", step: "" }])}>
+              <Plus aria-hidden className="h-3.5 w-3.5" /> {C.addHighlight}
+            </Button>
           ) : null}
         </div>
-      </Field>
-      <Field label={C.focusesLabel[cadence]} hint={C.focusesHint}>
-        <div className="space-y-2">
+      </Block>
+      <Block title={C.focusesLabel[cadence]} hint={C.focusesHint} aside={`${focuses.length} / ${UPDATE_LIMITS.focuses.max}`}>
+        <div className="space-y-3">
+          {focuses.length === 0 ? <p className="text-sm text-ink-500">{C.focusesEmpty}</p> : null}
           {focuses.map((f, i) => {
             const steps = stepsFor(f.milestone, f.shape);
             return (
@@ -290,7 +322,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
                     </option>
                   ))}
                 </Select>
-                <Select value={f.shape} aria-label={C.focusModule} onChange={(e) => setFocus(i, { shape: e.target.value, step: "" })}>
+                <Select value={f.shape} aria-label={C.focusModule} muted={!f.shape} onChange={(e) => setFocus(i, { shape: e.target.value, step: "" })}>
                   <option value="" className={optionClasses}>
                     {C.anyModule}
                   </option>
@@ -300,7 +332,7 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
                     </option>
                   ))}
                 </Select>
-                <Select value={steps.some((g) => g.key === f.step) ? f.step : stepKey(f.milestone, f.step)} aria-label={C.focusStep} disabled={steps.length === 0} onChange={(e) => setFocus(i, { step: e.target.value })}>
+                <Select value={steps.some((g) => g.key === f.step) ? f.step : stepKey(f.milestone, f.step)} aria-label={C.focusStep} muted={!f.step} disabled={steps.length === 0} onChange={(e) => setFocus(i, { step: e.target.value })}>
                   <option value="" className={optionClasses}>
                     {C.anyStep}
                   </option>
@@ -325,16 +357,16 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
             );
           })}
           {focuses.length < UPDATE_LIMITS.focuses.max ? (
-            <button
-              type="button"
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setFocuses((all) => [...all, { milestone: all[all.length - 1]?.milestone ?? "design", shape: all[all.length - 1]?.shape ?? "", step: "", text: "" }])}
-              className="text-xs text-ink-300 hover:text-ink-100 hover:underline"
             >
-              {C.addFocus}
-            </button>
+              <Plus aria-hidden className="h-3.5 w-3.5" /> {C.addFocus}
+            </Button>
           ) : null}
         </div>
-      </Field>
+      </Block>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" disabled={busy || !body.trim() || !dirty} onClick={() => void save()}>
           {C.save}
@@ -355,5 +387,21 @@ function Inner({ projectId, name, doc, patch, agentMode }: { projectId: string; 
         </ul>
       ) : null}
     </div>
+  );
+}
+
+/** One part of the update (M189): a readable heading, its hint and a count, set off by a rule. */
+function Block({ title, hint, aside, children }: { title: string; hint?: string; aside?: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3 border-t border-ink-800/70 pt-5">
+      <div className="space-y-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-semibold text-ink-50">{title}</h3>
+          {aside ? <span className="shrink-0 text-xs tabular-nums text-ink-500">{aside}</span> : null}
+        </div>
+        {hint ? <p className="text-xs text-ink-400">{hint}</p> : null}
+      </div>
+      {children}
+    </section>
   );
 }

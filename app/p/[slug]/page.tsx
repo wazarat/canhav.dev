@@ -627,7 +627,8 @@ export default async function ProjectPublicPage({
                   {u.highlightItems.length ? (
                     <ul className="space-y-1">
                       {u.highlightItems.map((h, i) => {
-                        const where = [h.milestone ? BUILD_COPY.milestones[h.milestone].label : null, stepTitle(h.step)].filter(Boolean).join(" · ");
+                        const mod = allShapes(doc.kit).find((id) => id === h.shape);
+                        const where = [h.milestone ? BUILD_COPY.milestones[h.milestone].label : null, mod ? shapeName(doc.kit, mod) : null, stepTitle(h.step)].filter(Boolean).join(" · ");
                         return (
                           <li key={i} className="text-xs text-ink-300">
                             {where ? <span className="text-ink-500">{where} · </span> : null}

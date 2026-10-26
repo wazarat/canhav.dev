@@ -56,9 +56,9 @@ import { lastTestAt, listAlerts, recordTestEvent } from "@/lib/alerts/db";
 import { ALERT_LIMITS, testMessage } from "@/lib/alerts/kinds";
 import { deliverToChannels } from "@/lib/alerts/send";
 import { setWatch, syncWatch } from "@/lib/alerts/watch";
-import { DEFAULT_CADENCE, UPDATE_LIMITS, periodOf, toFocus, toHighlight, updateDue, updateInputSchema } from "@/lib/updates";
+import { DEFAULT_CADENCE, UPDATE_LIMITS, appendUpdateLines, periodOf, toFocus, toHighlight, updateDue, updateInputSchema, updateLinesSchema } from "@/lib/updates";
 import { inviteState } from "@/lib/tester";
-import { listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
+import { getUpdate, listUpdates, publishUpdate, upsertUpdate } from "@/lib/updates-db";
 import { listFeedback, listInvites } from "@/lib/tester-db";
 import { type LaunchRow, getLaunchesByProject } from "@/lib/launches-db";
 import {
@@ -1819,7 +1819,7 @@ export function registerProjectTools(server: McpServer, projectId: string): void
     "set_weekly_update",
     {
       title: "Write the team update",
-      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. Give each highlight as { text, milestone, step } where milestone is the build milestone it moved (design, testnet, review or launch) and step is the id of the build step from get_build_steps when one fits; a plain string still works. Give the main focuses for the next period, up to ${UPDATE_LIMITS.focuses.max}, as { milestone, shape, step, text } where milestone is the build milestone the work is toward, shape the module id and step the build step id from get_build_steps when they fit, and text a line of at most ${UPDATE_LIMITS.focuses.each} characters, which may be empty when a step is named. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Refused when agent writes are off. Clears the owner's open team update draft request.`,
+      description: `Studio+. Write the team update for the public page (M124). The body is two or three short paragraphs in the first person plural, at most ${UPDATE_LIMITS.body.max} characters, and up to ${UPDATE_LIMITS.highlights.max} highlights of at most ${UPDATE_LIMITS.highlights.each} characters. Give each highlight as { text, milestone, shape, step } where milestone is the build milestone it moved (design, testnet, review or launch), shape the module id and step the id of the build step from get_build_steps, each only when one fits; a plain string still works. Give the main focuses for the next period, up to ${UPDATE_LIMITS.focuses.max}, as { milestone, shape, step, text } where milestone is the build milestone the work is toward, shape the module id and step the build step id from get_build_steps when they fit, and text a line of at most ${UPDATE_LIMITS.focuses.each} characters, which may be empty when a step is named. One row per period of the team's cadence (daily, every other day, weekly or manual, read it and whether one is due on get_project_status under updates); weekOf is the period start as YYYY-MM-DD and defaults to the current period; writing again replaces it. It lands as a draft the owner publishes from the Overview; publish true publishes at once and is only honoured when agents write directly. This is the team's own post, not the wallet signed milestone update anchored on chain. Changing a published row's body, highlights or focuses puts it back to draft. To add one line at a time without rewriting the rest, use add_weekly_update_lines. Refused when agent writes are off. Clears the owner's open team update draft request.`,
       inputSchema: updateInputSchema.extend({ publish: z.boolean().optional(), note: noteField }),
     },
     async (args, ctx) => {
@@ -1849,10 +1849,47 @@ export function registerProjectTools(server: McpServer, projectId: string): void
 
   registerMeteredTool(
     server,
+    "add_weekly_update_lines",
+    {
+      title: "Add lines to the team update",
+      description: `Studio+. Add to the current team update line by line instead of rewriting it (M189). paragraph is appended to the body as a new paragraph; each highlight ({ text, milestone, shape, step }, or a plain string) and each focus for the next period ({ milestone, shape, step, text }) is appended after the ones already there, with milestone, shape (module id) and step (build step id from get_build_steps) as on set_weekly_update. Send at least one of them. Creates the period's row when there is none yet; the owner needs a body before publishing it. At most ${UPDATE_LIMITS.highlights.max} highlights and ${UPDATE_LIMITS.focuses.max} focuses in all and ${UPDATE_LIMITS.body.max} characters of body; a call that would go over is refused and says how much room is left. weekOf defaults to the current period. A published row goes back to draft, so the owner publishes it again from the Overview; publish true publishes at once and is only honoured when agents write directly. Refused when agent writes are off.`,
+      inputSchema: updateLinesSchema.extend({ publish: z.boolean().optional(), note: noteField }),
+      annotations: { readOnlyHint: false },
+    },
+    async (args, ctx) => {
+      if (!args.paragraph && !args.highlights?.length && !args.focuses?.length) return errorResult("Send a paragraph, highlights or focuses to add.");
+      const loaded = await withProject(projectId, ctx, false);
+      if (!loaded.ok) return errorResult(loaded.message);
+      const { project } = loaded.value;
+      const mode = agentStateOf(project).mode;
+      if (mode === "off") return errorResult("Agent writes are off for this project. The owner can turn them on in the studio, on the project page under Agent changes.");
+      const cadence = project.draft_doc.updateCadence ?? DEFAULT_CADENCE;
+      const week = args.weekOf ?? periodOf(cadence);
+      const current = await getUpdate(project.id, week);
+      const merged = appendUpdateLines(current, { paragraph: args.paragraph, highlights: args.highlights?.map(toHighlight), focuses: args.focuses?.map(toFocus) });
+      if (!merged.ok) return errorResult(merged.message);
+      const row = await upsertUpdate({ projectId: project.id, weekOf: week, cadence, body: merged.body, highlights: merged.highlights, focuses: merged.focuses, author: "agent", source: args.note ? { note: args.note } : null });
+      if (!row) return errorResult("Could not save the update.");
+      const published = args.publish && mode === "direct" && row.body.trim() ? await publishUpdate(project.id, row.id) : null;
+      return jsonResult({
+        id: row.id,
+        weekOf: row.weekOf,
+        status: published?.status ?? row.status,
+        highlights: row.highlightItems.length,
+        focuses: row.focusItems.length,
+        roomLeft: { highlights: UPDATE_LIMITS.highlights.max - row.highlightItems.length, focuses: UPDATE_LIMITS.focuses.max - row.focusItems.length },
+        message: published ? "Added and published to the public page." : row.body.trim() ? "Added to the draft. The owner publishes it from the Overview." : "Added to the draft. It has no body yet, so add a paragraph before the owner can publish it.",
+      });
+    },
+    { ...scope, plus: "weekly_update" },
+  );
+
+  registerMeteredTool(
+    server,
     "get_weekly_updates",
     {
       title: "This project's team updates",
-      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights (highlightItems carries the milestone and step of each), the focuses for the next period (focusItems, each with milestone, shape, step and text), who wrote it and whether it is published. Write the current one with set_weekly_update.",
+      description: "Studio+. The team updates, newest first, each with the period, the body, the highlights (highlightItems carries the milestone, shape and step of each), the focuses for the next period (focusItems, each with milestone, shape, step and text), who wrote it and whether it is published. Write the current one with set_weekly_update.",
       inputSchema: z.object({}),
     },
     async (_args, ctx) => {

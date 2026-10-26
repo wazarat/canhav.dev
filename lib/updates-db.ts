@@ -81,7 +81,20 @@ export async function listUpdates(projectId: string, publishedOnly = false): Pro
   }
 }
 
-/** Write or replace the week's row; a published row goes back to draft when its body changes. */
+/** One period's row, or null when it is not written yet. */
+export async function getUpdate(projectId: string, weekOf: string): Promise<ProjectUpdate | null> {
+  const sql = getDb();
+  if (!sql) return null;
+  try {
+    const rows = await sql`select * from launchpad.project_updates where project_id = ${projectId} and week_of = ${weekOf} limit 1`;
+    return rows[0] ? map(rows[0] as Row) : null;
+  } catch (err) {
+    console.error("[updates] get failed", err);
+    return null;
+  }
+}
+
+/** Write or replace the week's row; a published row goes back to draft when its body, highlights or focuses change (M189). */
 export async function upsertUpdate(input: { projectId: string; weekOf?: string; cadence?: UpdateCadence; body: string; highlights?: UpdateHighlight[]; focuses?: UpdateFocus[]; author: string; source?: Record<string, unknown> | null }): Promise<ProjectUpdate | null> {
   const sql = getDb();
   if (!sql) return null;
@@ -95,7 +108,7 @@ export async function upsertUpdate(input: { projectId: string; weekOf?: string; 
       values (${input.projectId}, ${week}, ${cadence}, ${input.body}, ${items.map((h) => h.text)}, ${JSON.stringify(items)}, ${JSON.stringify(focuses)}, 'draft', ${input.author}, ${input.source ? JSON.stringify(input.source) : null})
       on conflict (project_id, week_of) do update
         set body = excluded.body, highlights = excluded.highlights, highlight_items = excluded.highlight_items, focus_items = excluded.focus_items, cadence = excluded.cadence, author = excluded.author, source = excluded.source,
-            status = case when launchpad.project_updates.body = excluded.body then launchpad.project_updates.status else 'draft' end,
+            status = case when launchpad.project_updates.body = excluded.body and launchpad.project_updates.highlight_items is not distinct from excluded.highlight_items and launchpad.project_updates.focus_items is not distinct from excluded.focus_items then launchpad.project_updates.status else 'draft' end,
             updated_at = now()
       returning *
     `;
@@ -113,7 +126,7 @@ export async function upsertUpdate(input: { projectId: string; weekOf?: string; 
       values (${input.projectId}, ${week}, ${cadence}, ${input.body}, ${items.map((h) => h.text)}, ${JSON.stringify(items)}, 'draft', ${input.author}, ${input.source ? JSON.stringify(input.source) : null})
       on conflict (project_id, week_of) do update
         set body = excluded.body, highlights = excluded.highlights, highlight_items = excluded.highlight_items, cadence = excluded.cadence, author = excluded.author, source = excluded.source,
-            status = case when launchpad.project_updates.body = excluded.body then launchpad.project_updates.status else 'draft' end,
+            status = case when launchpad.project_updates.body = excluded.body and launchpad.project_updates.highlight_items is not distinct from excluded.highlight_items then launchpad.project_updates.status else 'draft' end,
             updated_at = now()
       returning *
     `;

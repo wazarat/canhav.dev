@@ -76,25 +76,28 @@ export const HIGHLIGHT_MILESTONES = ["design", "testnet", "review", "launch"] as
 
 /**
  * One highlight (M174): a fact, the milestone it moved and, when known,
- * the build step (a group key from the kit). Rows from before M174 carry
- * text only and read with no milestone.
+ * the module and the build step (a group key from the kit), all optional
+ * like a focus's (M189). Rows from before M174 carry text only and read
+ * with no milestone.
  */
 export interface UpdateHighlight {
   text: string;
   milestone: Milestone | null;
+  shape?: string;
   step?: string;
 }
 
 export const highlightSchema = z.object({
   text: z.string().trim().min(1).max(UPDATE_LIMITS.highlights.each),
   milestone: z.enum(HIGHLIGHT_MILESTONES).nullable().optional(),
+  shape: z.string().trim().min(1).max(80).optional(),
   step: z.string().trim().min(1).max(120).optional(),
 });
 
 /** A highlight as text or as an item, read into an item. */
 export function toHighlight(h: string | z.infer<typeof highlightSchema>): UpdateHighlight {
   if (typeof h === "string") return { text: h, milestone: null };
-  return { text: h.text, milestone: h.milestone ?? null, ...(h.step ? { step: h.step } : {}) };
+  return { text: h.text, milestone: h.milestone ?? null, ...(h.shape ? { shape: h.shape } : {}), ...(h.step ? { step: h.step } : {}) };
 }
 
 /**
@@ -152,6 +155,42 @@ export const updateInputSchema = z.object({
   /** The main focuses for the next period, each under a milestone (M183). */
   focuses: z.array(focusSchema).max(UPDATE_LIMITS.focuses.max).optional(),
 });
+
+/**
+ * Lines added to a period's update one at a time (M189): a paragraph
+ * appended to the body, highlights and focuses appended to theirs. The MCP
+ * tool add_weekly_update_lines takes it.
+ */
+export const updateLinesSchema = z.object({
+  weekOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  paragraph: z.string().trim().min(1).max(UPDATE_LIMITS.body.max).optional(),
+  highlights: z
+    .array(z.union([z.string().trim().min(1).max(UPDATE_LIMITS.highlights.each), highlightSchema]))
+    .max(UPDATE_LIMITS.highlights.max)
+    .optional(),
+  focuses: z.array(focusSchema).max(UPDATE_LIMITS.focuses.max).optional(),
+});
+
+/** The row after the lines are added, or why they do not fit. */
+export function appendUpdateLines(
+  current: Pick<ProjectUpdate, "body" | "highlightItems" | "focusItems"> | null,
+  lines: { paragraph?: string; highlights?: UpdateHighlight[]; focuses?: UpdateFocus[] },
+): { ok: true; body: string; highlights: UpdateHighlight[]; focuses: UpdateFocus[] } | { ok: false; message: string } {
+  const body = [current?.body.trim(), lines.paragraph?.trim()].filter(Boolean).join("\n\n");
+  const highlights = [...(current?.highlightItems ?? []), ...(lines.highlights ?? [])];
+  const focuses = [...(current?.focusItems ?? []), ...(lines.focuses ?? [])];
+  const room = (have: number, max: number) => Math.max(0, max - have);
+  if (body.length > UPDATE_LIMITS.body.max) {
+    return { ok: false, message: `The body would be ${body.length} characters, over the ${UPDATE_LIMITS.body.max} limit. Shorten the paragraph or rewrite the update with set_weekly_update.` };
+  }
+  if (highlights.length > UPDATE_LIMITS.highlights.max) {
+    return { ok: false, message: `The update has room for ${room(current?.highlightItems.length ?? 0, UPDATE_LIMITS.highlights.max)} more highlight(s), at most ${UPDATE_LIMITS.highlights.max} in all. Rewrite the list with set_weekly_update to replace one.` };
+  }
+  if (focuses.length > UPDATE_LIMITS.focuses.max) {
+    return { ok: false, message: `The update has room for ${room(current?.focusItems.length ?? 0, UPDATE_LIMITS.focuses.max)} more focus(es), at most ${UPDATE_LIMITS.focuses.max} in all. Rewrite the list with set_weekly_update to replace one.` };
+  }
+  return { ok: true, body, highlights, focuses };
+}
 
 /** The three questions a team update answers (M142), filled by Auto-summarize from the period's activity (M174). */
 export const weeklyBriefSchema = z.object({ landed: z.string(), next: z.string(), blocked: z.string() });

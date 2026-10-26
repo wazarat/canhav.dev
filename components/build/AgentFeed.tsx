@@ -1,13 +1,15 @@
 "use client";
 
-import { AgentSessionCard } from "@/components/ideation/AgentSessionCard";
+import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
+
 import type { AgentChangeRow, AgentChangesHandle } from "@/components/build/useAgentChanges";
 import { Button } from "@/components/ui/Button";
 import { Collapsible } from "@/components/ui/Collapsible";
-import { Segmented } from "@/components/ui/Segmented";
+import { Select, optionClasses } from "@/components/ui/Select";
 import { StatusChip, type StatusTone } from "@/components/ui/StatusChip";
 import { AGENT_COPY } from "@/content/ideation";
-import { type AgentChangeStatus, type ChangeLine, changeLines, pathLabel } from "@/lib/agent-writes";
+import { type AgentChangeStatus, type AgentWriteMode, type ChangeLine, changeLines, pathLabel } from "@/lib/agent-writes";
 import type { ProjectDoc } from "@/lib/ideation";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +22,12 @@ const STATUS_TONE: Record<AgentChangeStatus, StatusTone> = {
 };
 
 /**
- * The agent's side of the Overview tab (M94): the session card, the write
- * mode, the proposals waiting with the draft's value beside the agent's,
- * and the earlier changes. A proposal is accepted or rejected whole; the
+ * The agent's side of the Overview tab (M94): the write mode as a dropdown
+ * that shows Saved once the server has it (M189), the proposals waiting
+ * with the draft's value beside the agent's, and the earlier changes. The
+ * session card left the Overview in M189; the agent line under the
+ * project's name still reads the session. A proposal is accepted or
+ * rejected whole; the
  * per line editing of the old panel is gone. Keeps the `agent-changes`
  * anchor the studio list and the guide modal link to.
  */
@@ -37,9 +42,19 @@ export function AgentFeed({
   paused: boolean;
 }) {
   const { state, pending, earlier, working, error, notice } = agent;
+  /** A short Saved beside the dropdown once the server has the mode. */
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!saved) return;
+    const t = window.setTimeout(() => setSaved(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [saved]);
+  async function changeMode(mode: AgentWriteMode) {
+    setSaved(false);
+    setSaved(await agent.setMode(mode));
+  }
   return (
     <section id={AGENT_COPY.anchor} className="scroll-mt-24 space-y-4" aria-label={AGENT_COPY.title}>
-      <AgentSessionCard session={state?.session ?? null} />
       {state && !state.available ? (
         <StatusChip tone="neutral" variant="block">
           {AGENT_COPY.unavailable}
@@ -47,14 +62,26 @@ export function AgentFeed({
       ) : state ? (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-medium text-ink-200">{AGENT_COPY.modeLabel}</span>
-            <Segmented
-              size="sm"
-              ariaLabel={AGENT_COPY.modeLabel}
+            <label htmlFor="agent-write-mode" className="text-xs font-medium text-ink-200">
+              {AGENT_COPY.modeLabel}
+            </label>
+            <Select
+              id="agent-write-mode"
+              className="h-8 w-44 py-0 text-xs"
               value={state.mode}
-              onChange={(m) => void agent.setMode(m)}
-              options={AGENT_COPY.modes}
-            />
+              onChange={(e) => void changeMode(e.target.value as AgentWriteMode)}
+            >
+              {AGENT_COPY.modes.map((m) => (
+                <option key={m.value} value={m.value} className={optionClasses}>
+                  {m.label}
+                </option>
+              ))}
+            </Select>
+            {saved ? (
+              <span role="status" className="inline-flex items-center gap-1 text-xs text-ink-400">
+                <Check aria-hidden className="h-3.5 w-3.5" /> {AGENT_COPY.modeSaved}
+              </span>
+            ) : null}
             <span className="text-xs text-ink-500">{AGENT_COPY.modeHints[state.mode]}</span>
           </div>
 

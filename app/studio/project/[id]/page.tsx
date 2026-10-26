@@ -6,6 +6,7 @@ import { LinkPanel } from "@/components/ideation/LinkPanel";
 import { MoveToTeamButton } from "@/components/studio/MoveToTeamButton";
 import { ProjectHeaderActions } from "@/components/studio/ProjectHeaderActions";
 import { type PanelLaunch, ProjectLaunchPanel } from "@/components/studio/ProjectLaunchPanel";
+import { ProjectTokenCard } from "@/components/studio/ProjectTokenCard";
 import { getSessionUser } from "@/lib/auth";
 import { projectChainOf } from "@/lib/chains";
 import { launchTargetHandoffLine } from "@/content/launch-targets";
@@ -76,26 +77,32 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
   // The panels sit inside Overview as flat cards; the agent prompt lives in
   // the header's Agent prompt pop-up (M184) and Deployments owns the mainnet record.
   const panelClass = "rounded-xl border border-ink-700/60 bg-ink-900 p-5";
+  // One Token card holds the linked design and the launch (M189).
   const linkPanel = (
-    <>
-      <LinkPanel
-        className={panelClass}
-        selfType="project"
-        selfId={row.id}
-        selfName={row.draft_doc.name}
-        linked={linked ? { id: linked.id, name: linked.draft_doc.name, status: linked.status, slug: linked.slug } : null}
-        candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
-      />
-      <ProjectLaunchPanel
-        className={panelClass}
-        showMainnet={false}
-        project={{ id: row.id, name: row.draft_doc.name, hasKit }}
-        linked={recorded.filter((l) => l.project?.id === row.id).map(panelLaunch)}
-        candidates={recorded.filter((l) => !l.project && l.chain === chain).map(panelLaunch)}
-        venueLine={venueLine}
-        mainnet={mainnetView(row.draft_doc)}
-      />
-    </>
+    <ProjectTokenCard
+      className={panelClass}
+      design={
+        <LinkPanel
+          embedded
+          selfType="project"
+          selfId={row.id}
+          selfName={row.draft_doc.name}
+          linked={linked ? { id: linked.id, name: linked.draft_doc.name, status: linked.status, slug: linked.slug } : null}
+          candidates={(myDesigns ?? []).map((d) => ({ id: d.id, name: d.draft_doc.name }))}
+        />
+      }
+      launch={
+        <ProjectLaunchPanel
+          embedded
+          showMainnet={false}
+          project={{ id: row.id, name: row.draft_doc.name, hasKit }}
+          linked={recorded.filter((l) => l.project?.id === row.id).map(panelLaunch)}
+          candidates={recorded.filter((l) => !l.project && l.chain === chain).map(panelLaunch)}
+          venueLine={venueLine}
+          mainnet={mainnetView(row.draft_doc)}
+        />
+      }
+    />
   );
 
   return (

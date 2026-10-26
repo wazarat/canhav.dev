@@ -66,7 +66,8 @@ export interface AgentChangesHandle {
   error: string | null;
   /** A one line notice after an accepted token design change. */
   notice: string | null;
-  setMode: (mode: AgentWriteMode) => Promise<void>;
+  /** Resolves true once the server has saved the mode. */
+  setMode: (mode: AgentWriteMode) => Promise<boolean>;
   /**
    * Accept a proposal. Without a decision the whole patch lands as
    * proposed; the old panel passes its per line decision. Resolves to a
@@ -159,9 +160,11 @@ export function useAgentChanges({
           body: JSON.stringify({ mode }),
         });
         if (!res.ok) throw new Error();
+        return true;
       } catch {
         setState(before);
         setError(AGENT_COPY.modeFailed);
+        return false;
       }
     },
     [base],

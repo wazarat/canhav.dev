@@ -16,9 +16,6 @@ export const STUDIO_PLUS_COPY = {
   manage: "Manage team",
   /** The pill on every gated surface. */
   pill: "Studio+",
-  /** The one sentence a free account sees in the editor (M136), on the Overview. */
-  oneLine: "Studio+ adds the business model, brand kit, analytics, alerts and the investor pack.",
-  oneLineLink: "See what it includes",
   gate: {
     /** Above the teaser on a gated surface. */
     title: "Part of Studio+",

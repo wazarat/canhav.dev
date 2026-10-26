@@ -37,6 +37,7 @@ export function ProjectLaunchPanel({
   mainnet = null,
   className,
   showMainnet = true,
+  embedded = false,
 }: {
   project: { id: string; name: string; hasKit: boolean };
   linked: PanelLaunch[];
@@ -50,6 +51,8 @@ export function ProjectLaunchPanel({
   className?: string;
   /** False on the Studio project page, where Deployments owns the mainnet record. */
   showMainnet?: boolean;
+  /** Inside the project page's Token card (M189): the controls alone; the card carries the anchor and heading. */
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [choice, setChoice] = useState("");
@@ -96,16 +99,20 @@ export function ProjectLaunchPanel({
 
   return (
     <div
-      id={LAUNCH_PROJECT_COPY.panelAnchor}
-      className={cn("scroll-mt-28", className ?? "glass mt-6 max-w-2xl rounded-xl border border-ink-800/70 p-5")}
+      id={embedded ? undefined : LAUNCH_PROJECT_COPY.panelAnchor}
+      className={embedded ? className : cn("scroll-mt-28", className ?? "glass mt-6 max-w-2xl rounded-xl border border-ink-800/70 p-5")}
     >
-      <h3 className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.panelTitle}</h3>
-      <p className="mt-1 text-xs text-ink-500">{LAUNCH_PROJECT_COPY.panelLead}</p>
-      {venueLine ? <p className="mt-2 text-xs text-ink-300">{venueLine}</p> : null}
+      {embedded ? null : (
+        <>
+          <h3 className="text-sm font-medium text-ink-100">{LAUNCH_PROJECT_COPY.panelTitle}</h3>
+          <p className="mt-1 text-xs text-ink-500">{LAUNCH_PROJECT_COPY.panelLead}</p>
+        </>
+      )}
+      {venueLine ? <p className={cn("text-xs text-ink-300", embedded ? "mb-3" : "mt-2")}>{venueLine}</p> : null}
 
-      <div className="mt-4 space-y-3">
+      <div className={cn("space-y-3", !embedded && "mt-4")}>
         {linked.length === 0 ? (
-          <p className="text-sm text-ink-400">{LAUNCH_PROJECT_COPY.panelNone}</p>
+          embedded ? null : <p className="text-sm text-ink-400">{LAUNCH_PROJECT_COPY.panelNone}</p>
         ) : (
           linked.map((l) => (
             <div key={l.address} className="flex flex-wrap items-center gap-3">

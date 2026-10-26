@@ -376,7 +376,7 @@ export const MCP_CONNECT = {
    */
   allowRules: (projectId: string, name: string): string => {
     const alias = mcpAlias(name, projectId);
-    const rules = ["get_*", "check_*", "set_*", "update_*", "create_*", "report_*", "withdraw_*", "link_*", "unlink_*"].map((t) => `mcp__${alias}__${t}`);
+    const rules = ["get_*", "check_*", "set_*", "update_*", "add_*", "create_*", "report_*", "withdraw_*", "link_*", "unlink_*"].map((t) => `mcp__${alias}__${t}`);
     return JSON.stringify({ permissions: { allow: rules } }, null, 2);
   },
   projectPrompt: (projectId: string, name: string) =>
@@ -572,6 +572,13 @@ export const LAUNCH_PROJECT_COPY = {
   change: "Change",
   failed: "The link could not be changed.",
   panelTitle: "Token launch",
+  /** The project page's one Token card, the linked design and the launch together (M189). */
+  token: {
+    title: "Token",
+    info: "A project can carry a token design and a launched token. Neither is required. Linked records show a card on each other's public page, and linking a launch fixes the project to the chain it launched on.",
+    design: "Design",
+    launch: "Launched token",
+  },
   /** Anchor the project header button scrolls to. */
   panelAnchor: "project-launch",
   headerLink: "Link a token",

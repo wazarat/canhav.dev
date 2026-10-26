@@ -11,7 +11,6 @@ import { WeeklyUpdateCard } from "@/components/build/WeeklyUpdateCard";
 import { TAB_WIDTH } from "@/components/build/layout";
 import { usePlan } from "@/components/studio/PlanContext";
 import { useProjectPlan } from "@/components/studio/ProjectPlanContext";
-import { PlusLine } from "@/components/studio/PlusLine";
 import { ResourcesLine } from "@/components/build/ResourcesLine";
 import { TextField } from "@/components/ideation/TextField";
 import type { AgentChangesHandle } from "@/components/build/useAgentChanges";
@@ -167,8 +166,6 @@ export function OverviewTab({
               <DeployerChip key="deployer" deployer={deployer} funding={funding} onClick={onGoDeployments} />,
             ]}
           />
-          {!kit?.shape ? <p className="text-xs text-ink-500">{BUILD_COPY.overview.noShape}</p> : null}
-          <PlusLine />
           <div>
             <Button size="sm" variant="outline" onClick={() => setSummaryOpen(true)}>
               <ListChecks aria-hidden className="h-3.5 w-3.5" /> {BUILD_COPY.overview.summary.button}
